@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:window:allow-set-size",
+    "core:window:allow-set-title",
+    "core:default",
+    "opener:default",
+    "core:webview:allow-internal-toggle-devtools",
+    "log:default",
+    "cli:default",
+    "updater:default"
+  ]
+}

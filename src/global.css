@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* HeroUI Design Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 17 24% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 17 24% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 17 24% 11%;
+
+    --primary: 212 100% 47%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 262 83% 65%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 60 9% 98%;
+    --muted-foreground: 25 5% 45%;
+
+    --accent: 60 9% 98%;
+    --accent-foreground: 17 24% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 96%;
+    --ring: 212 100% 47%;
+
+    --radius: 0.75rem;
+    
+    /* HeroUI semantic colors */
+    --default: 0 0% 90%;
+    --default-foreground: 17 24% 11%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 100% 50%;
+    --warning-foreground: 17 24% 11%;
+    --danger: 0 84% 60%;
+    --danger-foreground: 0 0% 100%;
+    
+    /* HeroUI content colors */
+    --content1: 0 0% 100%;
+    --content1-foreground: 17 24% 11%;
+    --content2: 60 9% 98%;
+    --content2-foreground: 25 5% 45%;
+    --content3: 0 0% 94%;
+    --content3-foreground: 25 5% 35%;
+    --content4: 0 0% 90%;
+    --content4-foreground: 25 5% 25%;
+    
+    /* HeroUI focus and overlay */
+    --focus: 212 100% 47%;
+    --overlay: 0 0% 0%;
+    --divider: 0 0% 90%;
+  }
+
+  .dark {
+    /* HeroUI Design Dark Mode */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 93%;
+
+    --card: 240 3% 9%;
+    --card-foreground: 0 0% 93%;
+
+    --popover: 240 3% 9%;
+    --popover-foreground: 0 0% 93%;
+
+    --primary: 212 100% 47%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 262 83% 65%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 3% 11%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 240 3% 11%;
+    --accent-foreground: 0 0% 93%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 3% 14%;
+    --input: 240 3% 11%;
+    --ring: 212 100% 47%;
+    
+    /* HeroUI semantic colors dark */
+    --default: 240 3% 44%;
+    --default-foreground: 0 0% 93%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 100% 50%;
+    --warning-foreground: 17 24% 11%;
+    --danger: 0 84% 60%;
+    --danger-foreground: 0 0% 100%;
+    
+    /* HeroUI content colors dark */
+    --content1: 240 3% 9%;
+    --content1-foreground: 0 0% 93%;
+    --content2: 240 3% 11%;
+    --content2-foreground: 0 0% 85%;
+    --content3: 240 3% 14%;
+    --content3-foreground: 0 0% 80%;
+    --content4: 240 3% 18%;
+    --content4-foreground: 0 0% 75%;
+    
+    /* HeroUI focus and overlay dark */
+    --focus: 212 100% 47%;
+    --overlay: 0 0% 0%;
+    --divider: 240 3% 14%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* HeroUI Design scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--default));
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--default) / 0.8);
+  }
+  
+  /* HeroUI Design glass morphism effect - 移除阴影和模糊效果 */
+  .glass-effect {
+    background-color: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+  }
+  
+  /* HeroUI Design focus styles */
+  .focus-ring {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+  
+  .focus-ring:focus {
+    outline: 2px solid hsl(var(--focus));
+    outline-offset: 2px;
+  }
+  
+  /* HeroUI Design animations */
+  .heroui-transition {
+    transition: all 0.25s ease;
+  }
+  
+  .heroui-bounce {
+    animation: heroui-bounce 0.6s cubic-bezier(0.4, 0.14, 0.3, 1);
+  }
+  
+  @keyframes heroui-bounce {
+    0%, 100% { 
+      transform: scale(1);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% { 
+      transform: scale(1.05);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+  
+  /* HeroUI Design card styles - 扁平化无阴影 */
+  .heroui-card {
+    background-color: hsl(var(--content1));
+    border: 1px solid hsl(var(--divider));
+    border-radius: calc(var(--radius) * 1.5);
+  }
+  
+  .heroui-card-hover {
+    transition: all 0.25s ease;
+  }
+  
+  .heroui-card-hover:hover {
+    border-color: hsl(var(--primary) / 0.3);
+  }
+  
+  /* HeroUI Design button styles */
+  .heroui-button {
+    transition: all 0.25s ease;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+  
+  .heroui-button:focus {
+    outline: 2px solid hsl(var(--focus));
+    outline-offset: 2px;
+  }
+  
+  .heroui-button-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .heroui-button-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
+  }
+  
+  .heroui-button-secondary {
+    background-color: hsl(var(--content2));
+    color: hsl(var(--foreground));
+  }
+  
+  .heroui-button-secondary:hover {
+    background-color: hsl(var(--content3));
+  }
+  
+  /* HeroUI Design flat variant */
+  .heroui-button-flat {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--primary));
+  }
+  
+  .heroui-button-flat:hover {
+    background-color: hsl(var(--primary) / 0.3);
+  }
+  
+  /* HeroUI Design ghost variant */
+  .heroui-button-ghost {
+    background-color: transparent;
+    border: 1px solid hsl(var(--primary));
+    color: hsl(var(--primary));
+  }
+  
+  .heroui-button-ghost:hover {
+    background-color: hsl(var(--primary) / 0.1);
+  }
+}
+
+/* Safari/WKWebView compatibility: ensure backdrop blur works with -webkit- prefix */
+@layer utilities {
+  /* Match all Tailwind backdrop blur utilities, including custom sizes (e.g., backdrop-blur-heroui) */
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness)
+      var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate)
+      var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate)
+      var(--tw-backdrop-sepia);
+  }
+}

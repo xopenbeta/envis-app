@@ -1,0 +1,198 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Envis",
+  "version": "0.1.10",
+  "identifier": "com.envis",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/HeroIsUseless/envis/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM3NzUzNTBENUVBNTVDQzUKUldURlhLVmVEVFYxeDZzVmZ0RmVhYjYzK1E4UkNjTStCclJxOUxRQmVOZ1hmSTJIYXJvYXg0UXYK"
+    },
+    "cli": {
+      "description": "Envis - Environment and Service Management Tool",
+      "subcommands": {
+        "use": {
+          "description": "Activate a service version in an environment",
+          "args": [
+            {
+              "name": "service",
+              "description": "Service type (nodejs, mongodb, mysql, redis)",
+              "index": 1,
+              "takesValue": true
+            },
+            {
+              "name": "version",
+              "description": "Version to activate",
+              "index": 2,
+              "takesValue": true
+            },
+            {
+              "short": "e",
+              "name": "environment",
+              "description": "Environment ID or name",
+              "takesValue": true
+            }
+          ]
+        },
+        "list": {
+          "description": "List available versions or environments",
+          "args": [
+            {
+              "name": "target",
+              "description": "What to list: services, versions, envs",
+              "index": 1,
+              "takesValue": true
+            },
+            {
+              "short": "s",
+              "name": "service",
+              "description": "Service type filter",
+              "takesValue": true
+            }
+          ]
+        },
+        "install": {
+          "description": "Download and install a service version",
+          "args": [
+            {
+              "name": "service",
+              "description": "Service type (nodejs, mongodb, mysql, redis)",
+              "index": 1,
+              "takesValue": true
+            },
+            {
+              "name": "version",
+              "description": "Version to install",
+              "index": 2,
+              "takesValue": true
+            }
+          ]
+        },
+        "start": {
+          "description": "Start a service",
+          "args": [
+            {
+              "name": "service",
+              "description": "Service type",
+              "index": 1,
+              "takesValue": true
+            },
+            {
+              "short": "e",
+              "name": "environment",
+              "description": "Environment ID or name",
+              "takesValue": true
+            }
+          ]
+        },
+        "stop": {
+          "description": "Stop a service",
+          "args": [
+            {
+              "name": "service",
+              "description": "Service type",
+              "index": 1,
+              "takesValue": true
+            },
+            {
+              "short": "e",
+              "name": "environment",
+              "description": "Environment ID or name",
+              "takesValue": true
+            }
+          ]
+        },
+        "status": {
+          "description": "Check service status",
+          "args": [
+            {
+              "name": "service",
+              "description": "Service type (optional, shows all if not specified)",
+              "index": 1,
+              "takesValue": true
+            },
+            {
+              "short": "e",
+              "name": "environment",
+              "description": "Environment ID or name",
+              "takesValue": true
+            }
+          ]
+        },
+        "env": {
+          "description": "Environment management",
+          "subcommands": {
+            "create": {
+              "description": "Create a new environment",
+              "args": [
+                {
+                  "name": "name",
+                  "description": "Environment name",
+                  "index": 1,
+                  "takesValue": true
+                }
+              ]
+            },
+            "list": {
+              "description": "List all environments"
+            },
+            "activate": {
+              "description": "Activate an environment",
+              "args": [
+                {
+                  "name": "name",
+                  "description": "Environment name or ID",
+                  "index": 1,
+                  "takesValue": true
+                }
+              ]
+            },
+            "delete": {
+              "description": "Delete an environment",
+              "args": [
+                {
+                  "name": "name",
+                  "description": "Environment name or ID",
+                  "index": 1,
+                  "takesValue": true
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Envis",
+        "width": 800,
+        "height": 600,
+        "devtools": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

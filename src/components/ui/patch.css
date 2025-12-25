@@ -1,0 +1,5 @@
+.ScrollAreaViewportPatch > div {
+  display:block !important;
+  min-width:0 !important; /* 关键，用于文字缩略提供压缩空间 */
+  /* background-color: pink !important; */
+}
