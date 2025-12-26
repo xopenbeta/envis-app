@@ -68,8 +68,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: app-v__VERSION__ # the action automatically replaces __VERSION__ with the app version
-          releaseName: 'App v__VERSION__'
-          releaseBody: 'See the release notes below'
+          releaseName: 'Envis v__VERSION__'
           bodyPath: .release-notes.md
           draft: false
           prerelease: false
