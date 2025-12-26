@@ -56,6 +56,13 @@ jobs:
       - name: Extract Release Notes
         run: node scripts/extract-changelog.js
 
+      - name: Read Release Notes
+        id: release_notes
+        run: |
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          cat .release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Add Rust targets for macOS
         if: matrix.platform == 'macos-latest'
         run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
@@ -69,7 +76,7 @@ jobs:
         with:
           tagName: v__VERSION__ # the action automatically replaces __VERSION__ with the app version
           releaseName: 'Envis v__VERSION__'
-          bodyPath: .release-notes.md
-          draft: false
+          releaseBody: ${{ steps.release_notes.outputs.NOTES }}
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
