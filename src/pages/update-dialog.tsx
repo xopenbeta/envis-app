@@ -19,9 +19,10 @@ export function UpdateDialog() {
   useEffect(() => {
     const checkForUpdates = async () => {
       try {
+        console.log('正在检查更新...')
         const updateResult = await check()
         console.log('检查更新结果:', updateResult)
-        if (updateResult?.available) {
+        if (updateResult) {
           setUpdate(updateResult)
           setIsDialogOpen(true)
           setUpdateAvailable(true)
