@@ -1,6 +1,6 @@
 [package]
 name = "envis"
-version = "0.0.14"
+version = "0.0.15"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -50,4 +50,5 @@ tempfile = "3.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
 
