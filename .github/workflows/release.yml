@@ -54,16 +54,13 @@ jobs:
         run: pnpm install
 
       - name: Extract Release Notes
-        run: node scripts/extract-changelog.js
-
-      - name: Read Release Notes
         id: release_notes
         run: |
-          {
-            echo "NOTES<<RELEASE_NOTES_DELIMITER"
-            cat .release-notes.md
-            echo "RELEASE_NOTES_DELIMITER"
-          } >> $GITHUB_OUTPUT
+          NOTES=$(node scripts/extract-changelog.js)
+          delimiter="EOF_$(date +%s%N)"
+          echo "NOTES<<${delimiter}" >> "$GITHUB_OUTPUT"
+          echo "${NOTES}" >> "$GITHUB_OUTPUT"
+          echo "${delimiter}" >> "$GITHUB_OUTPUT"
 
       - name: Add Rust targets for macOS
         if: matrix.platform == 'macos-latest'

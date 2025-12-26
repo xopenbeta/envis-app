@@ -61,11 +61,5 @@ function extractCurrentVersionChangelog(content, version) {
 
 const releaseNotes = extractCurrentVersionChangelog(changelog, currentVersion);
 
-// 将结果写入临时文件
-const outputPath = path.join(__dirname, '../.release-notes.md');
-fs.writeFileSync(outputPath, releaseNotes, 'utf8');
-
-console.log('Release notes extracted successfully:');
-console.log('---');
+// 直接输出到标准输出
 console.log(releaseNotes);
-console.log('---');
