@@ -1336,7 +1336,7 @@ dependencies = [
 
 [[package]]
 name = "envis"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
