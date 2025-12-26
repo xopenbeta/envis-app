@@ -488,7 +488,7 @@ export default function SettingsDialog(props: {
                 <Button
                   variant="outline"
                   className="w-full dark:bg-content3 justify-start heroui-button-secondary border-divider hover:border-primary shadow-none"
-                  onClick={() => window.open('https://github.com/heroisuseless/envis', '_blank')}
+                  onClick={() => window.open('https://github.com/xopenbeta/envis-app', '_blank')}
                 >
                   <Info className="mr-2 h-4 w-4" /> {t('settings.about_us')}
                 </Button>

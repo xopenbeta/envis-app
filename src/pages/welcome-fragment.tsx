@@ -113,7 +113,7 @@ export function WelcomeFragment({ onOpen }: {
                     <div className="text-center space-y-4 mt-6">
                         <div className="w-full flex justify-center">
                             <a
-                                href="https://github.com/heroisuseless/configeditor"
+                                href="https://github.com/xopenbeta/envis-app"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20"
@@ -152,7 +152,7 @@ export function WelcomeFragment({ onOpen }: {
                             icon={<Book className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />} 
                             title="Documentation" 
                             desc="Learn how to use Envis"
-                            onClick={() => window.open('https://github.com/heroisuseless/configeditor', '_blank')}
+                            onClick={() => window.open('https://github.com/xopenbeta/envis-app', '_blank')}
                         />
                     </div>
 
