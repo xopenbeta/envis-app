@@ -55,6 +55,7 @@ jobs:
 
       - name: Extract Release Notes
         id: release_notes
+        shell: bash
         run: |
           NOTES=$(node scripts/extract-changelog.js)
           delimiter="EOF_$(date +%s%N)"
