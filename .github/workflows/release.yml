@@ -53,6 +53,13 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          cat CHANGELOG.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Add Rust targets for macOS
         if: matrix.platform == 'macos-latest'
         run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
@@ -66,7 +73,8 @@ jobs:
         with:
           tagName: app-v__VERSION__ # the action automatically replaces __VERSION__ with the app version
           releaseName: 'App v__VERSION__'
-          body: 'See the assets to download this version and install.'
+          releaseBody: 'See the CHANGELOG.md for details.'
+          bodyPath: CHANGELOG.md
           draft: false
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
