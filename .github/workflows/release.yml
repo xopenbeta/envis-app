@@ -59,9 +59,11 @@ jobs:
       - name: Read Release Notes
         id: release_notes
         run: |
-          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
-          cat .release-notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "NOTES<<RELEASE_NOTES_DELIMITER"
+            cat .release-notes.md
+            echo "RELEASE_NOTES_DELIMITER"
+          } >> $GITHUB_OUTPUT
 
       - name: Add Rust targets for macOS
         if: matrix.platform == 'macos-latest'
