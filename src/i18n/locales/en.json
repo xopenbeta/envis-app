@@ -298,5 +298,13 @@
     "deepseek_key_req": "Valid DeepSeek API Key required",
     "revert_settings": "Revert Settings",
     "save_settings": "Save Settings"
+  },
+  "update_dialog": {
+    "title": "New Version Available",
+    "description": "Version {{version}} has been released. Would you like to update now?",
+    "whats_new": "What's New:",
+    "install": "Install Now",
+    "updating": "Updating...",
+    "later": "Remind Me Later"
   }
 }
