@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Progress } from '@/components/ui/progress'
 import { useState, useEffect } from 'react'
 import { check, Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
@@ -14,6 +15,7 @@ export function UpdateDialog() {
   const [update, setUpdate] = useState<Update | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [, setUpdateAvailable] = useAtom(updateAvailableAtom)
 
   useEffect(() => {
@@ -42,9 +44,30 @@ export function UpdateDialog() {
     if (!update) return
     
     setIsUpdating(true)
+    setProgress(0)
     try {
       console.log('开始下载并安装更新...')
-      await update.downloadAndInstall()
+      let downloadedBytes = 0
+      let totalBytes = 0
+
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case 'Started':
+            totalBytes = event.data.contentLength || 0
+            console.log(`Update started, total size: ${totalBytes}`)
+            break
+          case 'Progress':
+            downloadedBytes += event.data.chunkLength
+            if (totalBytes > 0) {
+              setProgress((downloadedBytes / totalBytes) * 100)
+            }
+            break
+          case 'Finished':
+            console.log('Update finished')
+            setProgress(100)
+            break
+        }
+      })
       console.log('更新已安装，重启应用...')
       await relaunch()
     } catch (error) {
@@ -79,6 +102,18 @@ export function UpdateDialog() {
                   {update.body}
                 </div>
               </ScrollArea>
+            </div>
+          )}
+          {isUpdating && (
+            <div className="space-y-2 pt-2">
+              <div className="flex justify-between text-sm">
+                <span>{t('update_dialog.downloading')}</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center pt-1">
+                {t('update_dialog.restart_warning')}
+              </p>
             </div>
           )}
         </div>

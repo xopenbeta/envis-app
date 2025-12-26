@@ -305,6 +305,8 @@
     "whats_new": "更新内容：",
     "install": "立即更新",
     "updating": "更新中...",
-    "later": "稍后提醒"
+    "later": "稍后提醒",
+    "downloading": "正在下载更新...",
+    "restart_warning": "更新安装完成后应用将自动重启"
   }
 }

@@ -305,6 +305,8 @@
     "whats_new": "What's New:",
     "install": "Install Now",
     "updating": "Updating...",
-    "later": "Remind Me Later"
+    "later": "Remind Me Later",
+    "downloading": "Downloading update...",
+    "restart_warning": "The application will restart automatically after installation"
   }
 }
