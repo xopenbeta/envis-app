@@ -85,7 +85,6 @@ export default function NavBar({ onClose }: NavBarProps) {
     selectEnvironment
   } = useEnvironment()
   const [appSettings] = useAtom(appSettingsAtom)
-  const [, setIsAppLoading] = useAtom(isAppLoadingAtom)
   const [updateAvailable] = useAtom(updateAvailableAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
   const [, setIsLogOpen] = useAtom(isLogPanelOpenAtom)

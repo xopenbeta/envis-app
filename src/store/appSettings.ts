@@ -10,7 +10,7 @@ export const defaultAppSettings: AppSettings = {
     apiKey: '',
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-3.5-turbo',
-    enabled: false
+    enabled: true
   }
 }
 
