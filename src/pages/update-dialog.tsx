@@ -6,14 +6,14 @@ import { useState, useEffect } from 'react'
 import { check, Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { useAtom } from 'jotai'
-import { updateAvailableAtom } from '@/store/appSettings'
+import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/appSettings'
 import { useTranslation } from 'react-i18next'
 import { Download, Loader2 } from 'lucide-react'
 
 export function UpdateDialog() {
   const { t } = useTranslation()
   const [update, setUpdate] = useState<Update | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useAtom(isUpdateDialogOpenAtom)
   const [isUpdating, setIsUpdating] = useState(false)
   const [progress, setProgress] = useState(0)
   const [, setUpdateAvailable] = useAtom(updateAvailableAtom)
@@ -68,6 +68,7 @@ export function UpdateDialog() {
             break
         }
       })
+
       console.log('更新已安装，重启应用...')
       await relaunch()
     } catch (error) {

@@ -29,12 +29,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart } from "@/components/ui/pie-chart";
 import { Progress } from "@/components/ui/progress";
 import { SystemMonitor, useSystemMonitorData } from '@/components/system-monitor';
+import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/appSettings';
+import pkg from '../../package.json';
 
 export function WelcomeFragment({ onOpen }: {
     onOpen?: () => void;
 }) {
     const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
     const [environments] = useAtom(environmentsAtom)
+    const [updateAvailable] = useAtom(updateAvailableAtom)
+    const [, setIsUpdateDialogOpen] = useAtom(isUpdateDialogOpenAtom)
     const { updateEnvironmentsOrder } = useEnvironment()
     const { switchEnvAndServDatasActive } = useEnvironmentServiceData()
     const systemInfo = useSystemMonitorData()
@@ -214,8 +218,15 @@ export function WelcomeFragment({ onOpen }: {
                     <span>Docker Engine: Connected</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="hover:text-gray-900 dark:hover:text-gray-400 cursor-pointer transition-colors">Check for Updates</span>
-                    <span>v2.0.0</span>
+                    <span>{`v${pkg.version}`}</span>
+                    {updateAvailable && (
+                        <button
+                            onClick={() => setIsUpdateDialogOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 transition-colors font-medium"
+                        >
+                            Update Available
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
