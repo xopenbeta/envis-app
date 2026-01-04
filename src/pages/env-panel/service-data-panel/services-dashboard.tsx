@@ -8,8 +8,9 @@ import { ServiceData } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { isAIPanelOpenAtom } from "@/store";
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
-import { SystemMonitor, useSystemMonitorData } from '@/components/system-monitor'
+import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor'
 import pkg from '../../../../package.json';
+import { AppFooter } from '@/pages/app-footer'
 
 interface ServiceResourceInfo {
   serviceId: string
@@ -111,17 +112,7 @@ export function ServicesDashboard() {
       </div>
 
       {/* Footer Status Bar */}
-      <div className="border-t border-gray-200 dark:border-white/5 bg-white dark:bg-[#030303] px-4 py-2 flex justify-between items-center text-[10px] text-gray-500 dark:text-gray-600 select-none">
-          <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> System Ready</span>
-              <span>•</span>
-              <span>Docker Engine: Connected</span>
-          </div>
-          <div className="flex items-center gap-4">
-              <span className="hover:text-gray-900 dark:hover:text-gray-400 cursor-pointer transition-colors">Check for Updates</span>
-              <span>{`v${pkg.version}`}</span>
-          </div>
-      </div>
+      <AppFooter isShowConsoleBtn={true} onConsoleBtnClick={() => { /* Add your console button click handler here */ }} />
     </div>
   )
 }

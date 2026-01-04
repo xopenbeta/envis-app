@@ -28,17 +28,14 @@ import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart } from "@/components/ui/pie-chart";
 import { Progress } from "@/components/ui/progress";
-import { SystemMonitor, useSystemMonitorData } from '@/components/system-monitor';
-import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/appSettings';
-import pkg from '../../package.json';
+import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor';
+import { AppFooter } from "@/pages/app-footer";
 
 export function WelcomeFragment({ onOpen }: {
     onOpen?: () => void;
 }) {
     const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
     const [environments] = useAtom(environmentsAtom)
-    const [updateAvailable] = useAtom(updateAvailableAtom)
-    const [, setIsUpdateDialogOpen] = useAtom(isUpdateDialogOpenAtom)
     const { updateEnvironmentsOrder } = useEnvironment()
     const { switchEnvAndServDatasActive } = useEnvironmentServiceData()
     const systemInfo = useSystemMonitorData()
@@ -211,24 +208,7 @@ export function WelcomeFragment({ onOpen }: {
             </div>
 
             {/* Footer Status Bar */}
-            <div className="border-t border-gray-200 dark:border-white/5 bg-white dark:bg-[#030303] px-4 py-2 flex justify-between items-center text-[10px] text-gray-500 dark:text-gray-600 select-none">
-                <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> System Ready</span>
-                    <span>•</span>
-                    <span>Docker Engine: Connected</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    <span>{`v${pkg.version}`}</span>
-                    {updateAvailable && (
-                        <button
-                            onClick={() => setIsUpdateDialogOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 transition-colors font-medium"
-                        >
-                            Update Available
-                        </button>
-                    )}
-                </div>
-            </div>
+            <AppFooter />
         </div>
     )
 }
