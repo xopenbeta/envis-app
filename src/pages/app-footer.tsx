@@ -20,12 +20,9 @@ export function AppFooter(props: {
                         className="h-4 w-4 text-[10px]"
                         onClick={props.onConsoleBtnClick}
                     >
-                        <Terminal className="h-3 w-3" /> 终端
+                        <Terminal className="h-3 w-3" />
                     </Button>
                 )}
-                <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> System Ready</span>
-                <span>•</span>
-                <span>Docker Engine: Connected</span>
             </div>
             <div className="flex items-center gap-4">
                 <span>{`v${pkg.version}`}</span>

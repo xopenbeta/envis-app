@@ -74,44 +74,38 @@ export function WelcomeFragment({ onOpen }: {
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
             </div>
 
-            {/* Top Navigation */}
-            <div className="flex justify-between items-center px-6 z-50 border-b border-gray-200 dark:border-white/5 bg-white/50 dark:bg-[#030303]/50 backdrop-blur-xl sticky top-0">
-                <div className="flex items-center gap-2">
-                   {onOpen && (
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onOpen()
-                            }}
-                            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all h-8 w-8"
-                        >
-                            <PanelLeft className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setIsAIPanelOpen(isAIPanelOpen => !isAIPanelOpen)
-                        }}
-                        className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all h-8 w-8"
-                    >
-                        <Bot className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
+            {/* Floating Buttons */}
+            {onOpen && (
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onOpen()
+                    }}
+                    className="absolute top-1.5 left-2 z-50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all h-8 w-8"
+                >
+                    <PanelLeft className="h-4 w-4" />
+                </Button>
+            )}
+            <Button
+                size="icon"
+                variant="ghost"
+                onClick={(e) => {
+                    e.stopPropagation()
+                    setIsAIPanelOpen(isAIPanelOpen => !isAIPanelOpen)
+                }}
+                className="absolute top-1.5 right-2 z-50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all h-8 w-8"
+            >
+                <Bot className="h-4 w-4" />
+            </Button>
 
             {/* Main Content - App Welcome Screen */}
             <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
                 <div className="w-full max-w-2xl px-6 flex flex-col gap-8">
                     
                     {/* Brand Header */}
-                    <div className="text-center space-y-4 mt-6">
+                    <div className="text-center space-y-4 mt-12">
                         <div className="w-full flex justify-center">
                             <a
                                 href="https://github.com/xopenbeta/envis-app"

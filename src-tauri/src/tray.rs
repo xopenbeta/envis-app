@@ -26,6 +26,7 @@ pub fn setup_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), Box<dyn s
     // 创建托盘图标
     let _tray = TrayIconBuilder::new()
         .icon(icon)
+        .icon_as_template(true) // 在 macOS 上启用模板模式，自动适应明暗主题
         .menu(&menu)
         .show_menu_on_left_click(false)
         .tooltip("Envis - 环境和服务管理工具")
