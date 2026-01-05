@@ -87,86 +87,28 @@ pub fn handle_use(matches: &tauri_plugin_cli::Matches) {
 }
 
 /// 处理 `list` 命令
-pub fn handle_list(matches: &tauri_plugin_cli::Matches) {
-    let target = get_string_arg(matches, "target");
-    let service = get_string_arg(matches, "service");
-
-    match target.as_deref() {
-        Some("versions") => {
-            let service_name = service.unwrap_or_else(|| {
-                eprintln!("错误: 必须指定服务类型");
-                eprintln!("用法: envis list versions --service <service>");
-                std::process::exit(1);
-            });
-
-            println!("可用的 {} 版本:", service_name);
-            match service_name.as_str() {
-                "nodejs" => {
-                    let nodejs_service = NodejsService::global();
-                    let versions = nodejs_service.get_available_versions();
-                    for v in versions {
-                        let installed = if nodejs_service.is_installed(&v.version) {
-                            "✓ 已安装"
-                        } else {
-                            ""
-                        };
-                        let lts = if v.lts { "[LTS]" } else { "" };
-                        println!("  {} {} {} {}", v.version, lts, v.date, installed);
-                    }
-                }
-                "mongodb" => {
-                    let mongodb_service = MongodbService::global();
-                    let versions = mongodb_service.get_available_versions();
-                    for v in versions {
-                        let installed = if mongodb_service.is_installed(&v.version) {
-                            "✓ 已安装"
-                        } else {
-                            ""
-                        };
-                        println!("  {} {} {}", v.version, v.date, installed);
-                    }
-                }
-                _ => {
-                    eprintln!("错误: 不支持的服务类型: {}", service_name);
-                    std::process::exit(1);
-                }
-            }
-        }
-        Some("envs") => {
-            println!("环境列表:");
-            let manager = EnvironmentManager::global();
-            let manager = manager.lock().unwrap();
-            match manager.get_all_environments() {
-                Ok(envs) => {
-                    if envs.is_empty() {
-                        println!("  (无环境)");
+pub fn handle_list() {
+    // 默认显示环境列表
+    println!("环境列表:");
+    let manager = EnvironmentManager::global();
+    let manager = manager.lock().unwrap();
+    match manager.get_all_environments() {
+        Ok(envs) => {
+            if envs.is_empty() {
+                println!("  (无环境)");
+            } else {
+                for env in envs {
+                    let active = if env.status == crate::types::EnvironmentStatus::Active {
+                        "[Active] "
                     } else {
-                        for env in envs {
-                            let active = if env.is_default.unwrap_or(false) {
-                                "* "
-                            } else {
-                                "  "
-                            };
-                            println!("{}{} ({})", active, env.name, env.id);
-                        }
-                    }
-                }
-                Err(e) => {
-                    eprintln!("错误: 获取环境列表失败: {}", e);
-                    std::process::exit(1);
+                        "         "
+                    };
+                    println!("{}{} ({})", active, env.name, env.id);
                 }
             }
         }
-        Some("services") => {
-            println!("支持的服务类型:");
-            println!("  nodejs   - Node.js 运行时");
-            println!("  mongodb  - MongoDB 数据库");
-            println!("  mysql    - MySQL 数据库");
-            println!("  redis    - Redis 缓存");
-        }
-        _ => {
-            eprintln!("错误: 必须指定列表目标");
-            eprintln!("用法: envis list <versions|envs|services>");
+        Err(e) => {
+            eprintln!("错误: 获取环境列表失败: {}", e);
             std::process::exit(1);
         }
     }
@@ -333,11 +275,12 @@ pub fn handle_env(matches: &tauri_plugin_cli::Matches) {
                             println!("  (无环境)");
                         } else {
                             for env in envs {
-                                let active = if env.is_default.unwrap_or(false) {
-                                    "* "
-                                } else {
-                                    "  "
-                                };
+                                let active =
+                                    if env.status == crate::types::EnvironmentStatus::Active {
+                                        "[Active] "
+                                    } else {
+                                        "         "
+                                    };
                                 println!("{}{} ({})", active, env.name, env.id);
                             }
                         }

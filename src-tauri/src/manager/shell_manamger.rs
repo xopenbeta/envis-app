@@ -147,6 +147,28 @@ impl ShellManager {
 
     /// 初始化环境变量块
     fn initialize_env_block(&self) -> Result<()> {
+        // 获取 envis 可执行文件路径
+        let envis_path = match std::env::current_exe() {
+            Ok(exe) => {
+                log::debug!("ShellManager: 当前可执行文件路径: {:?}", exe);
+                match exe.parent() {
+                    Some(parent) => {
+                        let path = parent.to_path_buf();
+                        log::debug!("ShellManager: envis 命令目录: {:?}", path);
+                        Some(path)
+                    }
+                    None => {
+                        log::warn!("ShellManager: 无法获取可执行文件的父目录");
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                log::warn!("ShellManager: 无法获取当前可执行文件路径: {}", e);
+                None
+            }
+        };
+        
         // 对所有配置文件执行初始化
         for config_file_path in &self.config_file_paths {
             // 确保配置文件所在目录存在
@@ -170,6 +192,21 @@ impl ShellManager {
 
             // 判断文件类型以使用正确的注释前缀
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+            
+            // 构建 envis 路径添加命令（如果可执行文件路径可用）
+            let envis_path_line = if let Some(ref path) = envis_path {
+                let path_str = path.to_string_lossy();
+                if is_cmd {
+                    format!("set PATH={};%PATH%\n", path_str)
+                } else if is_ps {
+                    format!("$env:Path = \"{};\" + $env:Path\n", path_str)
+                } else {
+                    format!("export PATH=\"{}:$PATH\"\n", path_str)
+                }
+            } else {
+                String::new()
+            };
             
             let block_content = if is_cmd {
                 // CMD 使用 REM 作为注释（不包含 # 符号）
@@ -179,14 +216,14 @@ impl ShellManager {
                     "\n"
                 };
                 format!(
-                    "{}REM {}\nREM {}\nREM {}\n",
-                    prefix, ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, ENVIS_ACTIVE_BLOCK_END
+                    "{}REM {}\nREM {}\n{}REM {}\n",
+                    prefix, ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, envis_path_line, ENVIS_ACTIVE_BLOCK_END
                 )
             } else {
                 // PowerShell 和 Unix Shell 使用 # 作为注释
                 format!(
-                    "\n{}\n{}\n{}\n",
-                    ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, ENVIS_ACTIVE_BLOCK_END
+                    "\n{}\n{}\n{}{}\n",
+                    ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, envis_path_line, ENVIS_ACTIVE_BLOCK_END
                 )
             };
 
@@ -197,6 +234,14 @@ impl ShellManager {
             };
             // 原子写入并备份原文件
             self.write_content_atomic_for_path(config_file_path, &new_content)?;
+        }
+        
+        // 记录日志
+        if let Some(path) = envis_path {
+            log::info!("ShellManager: 已将 envis 命令路径添加到环境配置: {}", path.display());
+            log::debug!("ShellManager: 现在可以在终端中使用 'envis' 命令了");
+        } else {
+            log::warn!("ShellManager: 未能添加 envis 命令路径（无法获取可执行文件路径）");
         }
 
         Ok(())
@@ -240,6 +285,27 @@ impl ShellManager {
             };
             let _ = self.remove_line_from_file(config_file_path, prefix);
             self.add_line_to_file(config_file_path, &echo_line)?;
+        }
+        
+        Ok(())
+    }
+
+    /// 移除环境 echo 信息
+    pub fn remove_echo_environment(&self) -> Result<()> {
+        // 为每个配置文件删除对应的 echo 命令
+        for config_file_path in &self.config_file_paths {
+            let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+            
+            let prefix = if is_cmd {
+                "echo Envis: Current environment is"
+            } else if is_ps {
+                "Write-Host 'Envis: Current environment is"
+            } else {
+                "echo Envis: Current environment is"
+            };
+            
+            let _ = self.remove_line_from_file(config_file_path, prefix);
         }
         
         Ok(())
@@ -387,6 +453,7 @@ impl ShellManager {
     }
 
     /// 获取当前在环境变量块中的 PATH 路径（从第一个配置文件）
+    #[allow(dead_code)]
     fn get_current_paths(&self) -> Result<HashSet<String>> {
         let path = &self.config_file_paths[0];
         self.get_current_paths_from_file(path)

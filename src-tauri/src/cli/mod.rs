@@ -6,8 +6,6 @@ mod handlers;
 pub fn handle_cli(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     match app.cli().matches() {
         Ok(matches) => {
-            log::info!("CLI 匹配成功: {:?}", matches);
-
             // 处理顶层参数
             if matches.args.get("version").is_some() {
                 println!("Envis version {}", app.package_info().version);
@@ -23,7 +21,7 @@ pub fn handle_cli(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
             if let Some(subcommand) = &matches.subcommand {
                 match subcommand.name.as_str() {
                     "use" => handlers::handle_use(&subcommand.matches),
-                    "list" => handlers::handle_list(&subcommand.matches),
+                    "list" => handlers::handle_list(),
                     "install" => handlers::handle_install(&subcommand.matches),
                     "start" => handlers::handle_start(&subcommand.matches),
                     "stop" => handlers::handle_stop(&subcommand.matches),

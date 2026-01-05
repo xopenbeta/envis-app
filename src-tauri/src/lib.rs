@@ -43,11 +43,17 @@ pub fn run() {
                                           // Host 管理器延迟初始化，在第一次调用时自动创建
                                           // let _ = initialize_host_manager();
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
-            log::info!("检测到尝试启动新实例");
-            log::info!("启动参数: {:?}", args);
-            log::info!("工作目录: {}", cwd);
+    // 检查是否是 CLI 模式（有命令行参数）
+    let is_cli_mode = std::env::args().len() > 1;
+    
+    let mut builder = tauri::Builder::default();
+    
+    // 只在非 CLI 模式下启用单实例插件
+    if !is_cli_mode {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            log::debug!("检测到尝试启动新实例");
+            log::debug!("启动参数: {:?}", args);
+            log::debug!("工作目录: {}", cwd);
             
             // 获取主窗口并聚焦
             if let Some(window) = app.get_webview_window("main") {
@@ -70,13 +76,22 @@ pub fn run() {
             } else {
                 log::warn!("未找到主窗口");
             }
-        }))
+        }));
+    }
+
+    builder
         .plugin(
             tauri_plugin_log::Builder::new()
-                .targets([
-                    Target::new(TargetKind::Stdout),
-                    Target::new(TargetKind::Webview),
-                ])
+                .targets(if is_cli_mode {
+                    // CLI 模式下不输出日志到 stdout，避免干扰命令输出
+                    vec![Target::new(TargetKind::Webview)]
+                } else {
+                    // GUI 模式下同时输出到 stdout 和 webview
+                    vec![
+                        Target::new(TargetKind::Stdout),
+                        Target::new(TargetKind::Webview),
+                    ]
+                })
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
@@ -84,8 +99,10 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_cli::init())
-        .setup(|app| {
-            log::info!("应用启动成功");
+        .setup(move |app| {
+            if !is_cli_mode {
+                log::info!("GUI 模式启动成功");
+            }
 
             // 处理 CLI 参数
             if let Err(e) = cli::handle_cli(app) {

@@ -223,12 +223,12 @@ impl EnvironmentManager {
         &self,
         environment: &mut Environment,
     ) -> Result<EnvironmentResult> {
-        // 清除当前活跃环境的 shell 环境块内容
+        // 移除当前活跃环境的 echo 信息
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
         shell_manager
-            .clear_shell_environment_block_content()
-            .context("清除shell环境块失败")?;
+            .remove_echo_environment()
+            .context("移除echo环境信息失败")?;
 
         // 更新环境状态和时间戳
         environment.status = EnvironmentStatus::Inactive;
