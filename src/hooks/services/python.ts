@@ -1,5 +1,5 @@
 import { ServiceData } from "@/types/index";
-import { ipcGetPipConfig, ipcSetPipIndexUrl, ipcSetPipTrustedHost } from "../../ipc/services/python";
+import { ipcGetPipConfig, ipcSetPipIndexUrl, ipcSetPipTrustedHost, ipcSetPython3AsPython } from "../../ipc/services/python";
 
 export function usePythonService() {
     async function getPipConfig() {
@@ -20,9 +20,16 @@ export function usePythonService() {
         return ipcRes;
     }
 
+    async function setPython3AsPython(environmentId: string, serviceData: ServiceData, enable: boolean) {
+        const ipcRes = await ipcSetPython3AsPython(environmentId, serviceData, enable);
+        console.log(`[hooks/python] setPython3AsPython IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
     return {
         getPipConfig,
         setPipIndexUrl,
-        setPipTrustedHost
+        setPipTrustedHost,
+        setPython3AsPython
     }
 }

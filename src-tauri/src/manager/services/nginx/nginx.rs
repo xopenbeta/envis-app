@@ -210,11 +210,11 @@ impl NginxService {
 
             // 基本编译参数（尽量通用）
             let mut args: Vec<String> = vec![
-                format!("--prefix={}", install_path.to_string_lossy()),
-                "--with-http_ssl_module".to_string(),
-                "--with-http_v2_module".to_string(),
-                "--with-http_gzip_static_module".to_string(),
-                "--with-http_stub_status_module".to_string(),
+                format!("--prefix={}", install_path.to_string_lossy()), // 指定安装目录
+                "--with-http_ssl_module".to_string(), // 启用 HTTPS 支持
+                "--with-http_v2_module".to_string(), // 启用 HTTP/2 协议
+                "--with-http_gzip_static_module".to_string(), // 启用静态文件 gzip 压缩
+                "--with-http_stub_status_module".to_string(), // 启用状态监控模块
             ];
 
             // macOS: 修复 pwritev 可用性导致的编译报错
@@ -226,7 +226,7 @@ impl NginxService {
                 args.push(
                     "--with-cc-opt=\"-Wno-unguarded-availability-new -Wno-error=unguarded-availability-new -mmacosx-version-min=11.0\"".to_string(),
                 );
-                args.push("--with-ld-opt=\"-mmacosx-version-min=11.0\"".to_string());
+                args.push("--with-ld-opt=\"-mmacosx-version-min=11.0\"".to_string()); // (macOS) 编译器和链接器选项
             }
 
             // 执行 ./configure

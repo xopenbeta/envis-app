@@ -17,3 +17,7 @@ export const ipcSetPipIndexUrl = ipcLogFunc('设置 pip 镜像源', async (envir
 export const ipcSetPipTrustedHost = ipcLogFunc('设置 pip 信任主机', async (environmentId: string, serviceData: ServiceData, trustedHost: string): Promise<IPCResult> => {
     return invokeCommand(`set_pip_trusted_host`, { environmentId, serviceData, trustedHost })
 })
+
+export const ipcSetPython3AsPython = ipcLogFunc('设置 python3 别名为 python', async (environmentId: string, serviceData: ServiceData, enable: boolean): Promise<IPCResult> => {
+    return invokeCommand(`set_python3_as_python`, { environmentId, serviceData, enable })
+})

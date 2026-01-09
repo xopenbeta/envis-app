@@ -158,3 +158,44 @@ pub async fn set_pip_trusted_host(
         ))),
     }
 }
+
+/// 设置 python3 别名为 python
+#[tauri::command]
+pub async fn set_python3_as_python(
+    environment_id: String,
+    mut service_data: ServiceData,
+    enable: bool,
+) -> Result<CommandResponse, String> {
+    // 先写入 metadata
+    let env_serv_data_manager = EnvServDataManager::global();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let _ = env_serv_data_manager.set_metadata(
+        &environment_id,
+        &mut service_data,
+        "PYTHON3_AS_PYTHON",
+        serde_json::Value::Bool(enable),
+    );
+
+    // 将配置写入终端（设置别名）
+    let python_service = PythonService::global();
+    match python_service.set_python3_as_python(&mut service_data, enable) {
+        Ok(_) => {
+            let data = serde_json::json!({
+                "enable": enable,
+            });
+            let message = if enable {
+                "已设置 python3 别名为 python"
+            } else {
+                "已移除 python 别名"
+            };
+            Ok(CommandResponse::success(
+                message.to_string(),
+                Some(data),
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!(
+            "设置 python3 别名失败: {}",
+            e
+        ))),
+    }
+}

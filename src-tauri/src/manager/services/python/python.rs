@@ -453,4 +453,26 @@ impl PythonService {
 
         Ok(())
     }
+
+    /// 设置 python3 别名为 python
+    pub fn set_python3_as_python(
+        &self,
+        service_data: &ServiceData,
+        enable: bool,
+    ) -> Result<()> {
+        let shell_manager = ShellManager::global();
+        let shell_manager = shell_manager.lock().unwrap();
+
+        if enable {
+            // 添加 alias python=python3
+            shell_manager.add_alias("python", "python3")?;
+            log::info!("已设置 python3 别名为 python");
+        } else {
+            // 删除 alias
+            shell_manager.delete_alias("python")?;
+            log::info!("已移除 python 别名");
+        }
+
+        Ok(())
+    }
 }

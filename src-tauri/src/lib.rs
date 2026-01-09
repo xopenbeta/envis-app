@@ -278,6 +278,7 @@ pub fn run() {
             // pip 配置命令
             set_pip_index_url,
             set_pip_trusted_host,
+            set_python3_as_python,
             // SSL 证书服务命令
             check_ca_initialized,
             initialize_ca,

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ServiceData, ServiceDataStatus } from '@/types/index'
 import {
@@ -18,8 +19,9 @@ export function PipConfigView({
     selectedEnvironmentId,
     serviceData,
 }: PipConfigViewProps) {
-    const { setPipIndexUrl, setPipTrustedHost } = usePythonService()
+    const { setPipIndexUrl, setPipTrustedHost, setPython3AsPython } = usePythonService()
     const [config, setConfig] = useState<{ indexUrl: string; trustedHost: string } | null>(null)
+    const [python3AsPython, setPython3AsPythonState] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
@@ -29,6 +31,7 @@ export function PipConfigView({
             indexUrl: serviceData.metadata?.PIP_INDEX_URL || '',
             trustedHost: serviceData.metadata?.PIP_TRUSTED_HOST || ''
         })
+        setPython3AsPythonState(serviceData.metadata?.PYTHON3_AS_PYTHON === true)
     }, [serviceData])
 
     const setIndexUrl = async (indexUrl: string) => {
@@ -56,6 +59,20 @@ export function PipConfigView({
                 console.error('设置 trusted-host 失败:', res)
             }
             return res
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handlePython3AsPythonChange = async (enable: boolean) => {
+        try {
+            setIsLoading(true)
+            const res = await setPython3AsPython(selectedEnvironmentId, serviceData, enable)
+            if (res && (res as any).success) {
+                setPython3AsPythonState(enable)
+            } else {
+                console.error('设置 python3 别名失败:', res)
+            }
         } finally {
             setIsLoading(false)
         }
@@ -214,6 +231,36 @@ export function PipConfigView({
                     >
                         清除
                     </Button>
+                </div>
+            </div>
+
+            {/* Python3 as Python Configuration */}
+            <div>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex items-center space-x-2 cursor-help">
+                                <Label className="text-sm font-medium">将 python3 命名为 python</Label>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>为 python3 创建 python 别名，让 python 命令指向 python3</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <p className="text-xs text-muted-foreground mt-1">
+                    启用后，在终端中使用 python 命令将执行 python3
+                </p>
+                <div className="flex items-center space-x-2 mt-2">
+                    <Switch
+                        checked={python3AsPython}
+                        onCheckedChange={handlePython3AsPythonChange}
+                        disabled={isLoading || !isServiceDataActive}
+                    />
+                    <Label className="text-sm">
+                        {python3AsPython ? '已启用' : '已禁用'}
+                    </Label>
                 </div>
             </div>
         </div>
