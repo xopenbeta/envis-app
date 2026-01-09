@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "icon": "tauri icon",
     "dev:pc": "tauri dev",
     "pack": "tauri build",
     "publish": "node scripts/release.js"
