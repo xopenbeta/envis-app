@@ -30,8 +30,7 @@ import { PieChart } from "@/components/ui/pie-chart";
 import { Progress } from "@/components/ui/progress";
 import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor';
 import { AppFooter } from "@/pages/app-footer";
-import { DialogHeader } from "@/components/ui/dialog";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@radix-ui/react-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { t } from "i18next";
 
 export function WelcomeFragment({ onOpen }: {
@@ -272,7 +271,7 @@ export function WelcomeFragment({ onOpen }: {
                             </div>
                             <div>
                                 <div className="font-medium text-gray-900 dark:text-white">{t('welcome.qq_group')}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">{t('welcome.qq_group_id', { id: '1077940774' })}</div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">{t('welcome.qq_group_id', { id: '1036572489' })}</div>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
