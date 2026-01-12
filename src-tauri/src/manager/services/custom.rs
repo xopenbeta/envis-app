@@ -1,13 +1,22 @@
 use anyhow::{Context, Result};
 use serde_json;
+use std::sync::{Arc, OnceLock};
 
 use crate::manager::services::traits::ServiceLifecycle;
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::ServiceData;
 
+static GLOBAL_CUSTOM_SERVICE: OnceLock<Arc<CustomService>> = OnceLock::new();
+
 pub struct CustomService;
 
 impl CustomService {
+    pub fn global() -> Arc<Self> {
+        GLOBAL_CUSTOM_SERVICE
+            .get_or_init(|| Arc::new(Self::new()))
+            .clone()
+    }
+
     pub fn new() -> Self {
         Self
     }

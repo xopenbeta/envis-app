@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use std::path::Path;
+use std::sync::{Arc, OnceLock};
 
 use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::builders::{EnvPathBuilder, EnvVarBuilder};
@@ -7,9 +8,17 @@ use crate::manager::services::traits::ServiceLifecycle;
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::ServiceData;
 
+static GLOBAL_STANDARD_SERVICE: OnceLock<Arc<StandardService>> = OnceLock::new();
+
 pub struct StandardService;
 
 impl StandardService {
+    pub fn global() -> Arc<Self> {
+        GLOBAL_STANDARD_SERVICE
+            .get_or_init(|| Arc::new(Self::new()))
+            .clone()
+    }
+
     pub fn new() -> Self {
         Self
     }

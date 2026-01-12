@@ -1,4 +1,5 @@
 use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::services::traits::ServiceLifecycle;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::ServiceData;
@@ -29,8 +30,8 @@ impl NodejsService {
             .clone()
     }
 
-    /// 创建新的 Node.js 服务管理器（内部使用）
-    fn new() -> Self {
+    /// 创建新的 Node.js 服务管理器
+    pub fn new() -> Self {
         Self {}
     }
 
@@ -479,6 +480,24 @@ impl NodejsService {
             }
             }
         }
+
+        // 添加 NPM_CONFIG_PREFIX 环境变量 (如果有)
+        if let Some(prefix) = npm_config_prefix {
+            if !prefix.is_empty() {
+                shell_manager.add_export("NPM_CONFIG_PREFIX", prefix)?;
+            }
+        }
+
+        // 添加 NPM_CONFIG_REGISTRY 环境变量 (如果有)
+        if let Some(registry) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("NPM_CONFIG_REGISTRY"))
+            .and_then(|v| v.as_str())
+        {
+            shell_manager.add_export("NPM_CONFIG_REGISTRY", registry)?;
+        }
+
         Ok(())
     }
 
@@ -512,6 +531,11 @@ impl NodejsService {
             }
             }
         }
+
+        // 移除 NPM_CONFIG_PREFIX 环境变量
+        shell_manager.delete_export("NPM_CONFIG_PREFIX")?;
+        // 移除 NPM_CONFIG_REGISTRY 环境变量
+        shell_manager.delete_export("NPM_CONFIG_REGISTRY")?;
         Ok(())
     }
 
@@ -533,5 +557,25 @@ impl NodejsService {
         let shell_manager = shell_manager.lock().unwrap();
         shell_manager.add_export("NPM_CONFIG_PREFIX", config_prefix)?;
         Ok(())
+    }
+}
+
+impl ServiceLifecycle for NodejsService {
+    fn active(
+        &self,
+        _environment_id: &str,
+        service_data: &ServiceData,
+        _password: Option<String>,
+    ) -> Result<()> {
+        self.activate_service(service_data)
+    }
+
+    fn deactive(
+        &self,
+        _environment_id: &str,
+        service_data: &ServiceData,
+        _password: Option<String>,
+    ) -> Result<()> {
+        self.deactivate_service(service_data)
     }
 }

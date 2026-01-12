@@ -11,7 +11,7 @@ use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::builders::{EnvPathBuilder, EnvVarBuilder, MetadataBuilder};
 use crate::manager::host_manager::{HostEntry, HostManager};
 use crate::manager::services::{
-    CustomService, HostService, ServiceLifecycle, StandardService,
+    CustomService, HostService, NodejsService, ServiceLifecycle, StandardService,
 };
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::{ServiceData, ServiceDataStatus, ServiceType};
@@ -231,10 +231,11 @@ impl EnvServDataManager {
         service_data: &mut ServiceData,
         password: Option<String>,
     ) -> Result<ServiceDataResult> {
-        let handler: Box<dyn ServiceLifecycle> = match service_data.service_type {
-            ServiceType::Host => Box::new(HostService::new()),
-            ServiceType::Custom => Box::new(CustomService::new()),
-            _ => Box::new(StandardService::new()),
+        let handler: Arc<dyn ServiceLifecycle> = match service_data.service_type {
+            ServiceType::Host => HostService::global(),
+            ServiceType::Custom => CustomService::global(),
+            ServiceType::Nodejs => NodejsService::global(),
+            _ => StandardService::global(),
         };
 
         handler.active(environment_id, service_data, password)?;
@@ -258,10 +259,11 @@ impl EnvServDataManager {
         service_data: &mut ServiceData,
         password: Option<String>,
     ) -> Result<ServiceDataResult> {
-        let handler: Box<dyn ServiceLifecycle> = match service_data.service_type {
-            ServiceType::Host => Box::new(HostService::new()),
-            ServiceType::Custom => Box::new(CustomService::new()),
-            _ => Box::new(StandardService::new()),
+        let handler: Arc<dyn ServiceLifecycle> = match service_data.service_type {
+            ServiceType::Host => HostService::global(),
+            ServiceType::Custom => CustomService::global(),
+            ServiceType::Nodejs => NodejsService::global(),
+            _ => StandardService::global(),
         };
 
         handler.deactive(environment_id, service_data, password)?;

@@ -1,13 +1,22 @@
 use anyhow::{anyhow, Context, Result};
 use serde_json;
+use std::sync::{Arc, OnceLock};
 
 use crate::manager::host_manager::{HostEntry, HostManager};
 use crate::manager::services::traits::ServiceLifecycle;
 use crate::types::ServiceData;
 
+static GLOBAL_HOST_SERVICE: OnceLock<Arc<HostService>> = OnceLock::new();
+
 pub struct HostService;
 
 impl HostService {
+    pub fn global() -> Arc<Self> {
+        GLOBAL_HOST_SERVICE
+            .get_or_init(|| Arc::new(Self::new()))
+            .clone()
+    }
+
     pub fn new() -> Self {
         Self
     }
