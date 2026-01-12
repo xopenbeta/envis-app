@@ -347,7 +347,10 @@ impl NodejsService {
         let mut archive = ZipArchive::new(file)?;
 
         // 临时解压目录
-        let temp_dir = target_dir.parent().unwrap().join(format!("temp_{}", uuid::Uuid::new_v4()));
+        let temp_dir = target_dir
+            .parent()
+            .unwrap()
+            .join(format!("temp_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&temp_dir)?;
 
         // 解压所有文件
@@ -380,7 +383,7 @@ impl NodejsService {
 
         // 查找解压后的根目录 (通常是 node-vX.X.X-win-x64)
         let entries: Vec<_> = std::fs::read_dir(&temp_dir)?.collect();
-        
+
         if entries.len() == 1 {
             let entry = entries[0].as_ref().unwrap();
             if entry.path().is_dir() {
@@ -450,6 +453,9 @@ impl NodejsService {
             return Err(anyhow!("Node.js {} 未安装", service_data.version));
         }
 
+        let shell_manager = crate::manager::shell_manamger::ShellManager::global();
+        let shell_manager = shell_manager.lock().unwrap();
+        
         // 添加 Node.js 到 PATH
         let node_bin_path = if cfg!(target_os = "windows") {
             install_path.to_string_lossy().to_string()
@@ -457,16 +463,31 @@ impl NodejsService {
             install_path.join("bin").to_string_lossy().to_string()
         };
 
-        let shell_manager = crate::manager::shell_manamger::ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-    shell_manager.add_path(&node_bin_path)?;
+        shell_manager.add_path(&node_bin_path)?;
 
+        // 添加 ${NPM_CONFIG_PREFIX}/bin 到 PATH (如果 NPM_CONFIG_PREFIX 不是空值)
+        let npm_config_prefix = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("NPM_CONFIG_PREFIX"))
+            .and_then(|v| v.as_str());
+        if let Some(prefix) = npm_config_prefix {
+            if !prefix.is_empty() {
+            let npm_bin_path = PathBuf::from(prefix).join("bin");
+            if npm_bin_path.exists() {
+                shell_manager.add_path(&npm_bin_path.to_string_lossy().to_string())?;
+            }
+            }
+        }
         Ok(())
     }
 
     /// 取消激活 Node.js 服务及其包管理器环境
     pub fn deactivate_service(&self, service_data: &ServiceData) -> Result<()> {
         let install_path = self.get_install_path(&service_data.version);
+
+        let shell_manager = crate::manager::shell_manamger::ShellManager::global();
+        let shell_manager = shell_manager.lock().unwrap();
 
         // 从 PATH 中移除 Node.js
         let node_bin_path = if cfg!(target_os = "windows") {
@@ -475,19 +496,27 @@ impl NodejsService {
             install_path.join("bin").to_string_lossy().to_string()
         };
 
-        let shell_manager = crate::manager::shell_manamger::ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-    shell_manager.delete_path(&node_bin_path)?;
+        shell_manager.delete_path(&node_bin_path)?;
 
+        // 从 PATH 中移除 ${NPM_CONFIG_PREFIX}/bin (如果 NPM_CONFIG_PREFIX 不是空值)
+        let npm_config_prefix = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("NPM_CONFIG_PREFIX"))
+            .and_then(|v| v.as_str());
+        if let Some(prefix) = npm_config_prefix {
+            if !prefix.is_empty() {
+            let npm_bin_path = PathBuf::from(prefix).join("bin");
+            if npm_bin_path.exists() {
+                shell_manager.delete_path(&npm_bin_path.to_string_lossy().to_string())?;
+            }
+            }
+        }
         Ok(())
     }
 
     /// 设置包管理器仓库
-    pub fn set_npm_registry(
-        &self,
-        service_data: &mut ServiceData,
-        registry: &str,
-    ) -> Result<()> {
+    pub fn set_npm_registry(&self, service_data: &mut ServiceData, registry: &str) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
         shell_manager.add_export("NPM_CONFIG_REGISTRY", registry)?;

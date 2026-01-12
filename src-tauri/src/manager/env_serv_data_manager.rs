@@ -10,6 +10,9 @@ use std::sync::{Arc, Mutex, OnceLock};
 use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::builders::{EnvPathBuilder, EnvVarBuilder, MetadataBuilder};
 use crate::manager::host_manager::{HostEntry, HostManager};
+use crate::manager::services::{
+    CustomService, HostService, ServiceLifecycle, StandardService,
+};
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::{ServiceData, ServiceDataStatus, ServiceType};
 
@@ -228,131 +231,13 @@ impl EnvServDataManager {
         service_data: &mut ServiceData,
         password: Option<String>,
     ) -> Result<ServiceDataResult> {
-        // 获取 Shell 管理器
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager
-            .lock()
-            .map_err(|e| anyhow::anyhow!("获取 Shell 管理器锁失败: {}", e))?;
+        let handler: Box<dyn ServiceLifecycle> = match service_data.service_type {
+            ServiceType::Host => Box::new(HostService::new()),
+            ServiceType::Custom => Box::new(CustomService::new()),
+            _ => Box::new(StandardService::new()),
+        };
 
-        // 处理自定义服务和其他服务的不同逻辑
-        match service_data.service_type {
-            ServiceType::Host => {
-                if let Some(metadata) = &service_data.metadata {
-                    if let Some(hosts_value) = metadata.get("hosts") {
-                        if let Ok(hosts) =
-                            serde_json::from_value::<Vec<HostEntry>>(hosts_value.clone())
-                        {
-                            if let Some(pwd) = &password {
-                                let host_manager = HostManager::global();
-                                let host_manager = host_manager
-                                    .lock()
-                                    .map_err(|e| anyhow::anyhow!("获取 Host 管理器锁失败: {}", e))?;
-                                host_manager
-                                    .add_hosts(hosts.clone(), pwd)
-                                    .context("添加 hosts 失败")?;
-                                log::info!("已添加 hosts: {} 条目", hosts.len());
-                            } else {
-                                return Err(anyhow::anyhow!("needAdminPasswordToModifyHosts"));
-                            }
-                        }
-                    }
-                }
-            }
-            ServiceType::Custom => {
-                // 自定义服务的特殊处理
-                if let Some(metadata) = &service_data.metadata {
-                    // 处理自定义环境变量
-                    if let Some(env_vars_value) = metadata.get("envVars") {
-                        if let serde_json::Value::Object(env_vars_obj) = env_vars_value {
-                            for (key, value) in env_vars_obj {
-                                let value_str = match value {
-                                    serde_json::Value::String(s) => s.clone(),
-                                    _ => value.to_string().trim_matches('"').to_string(),
-                                };
-                                shell_manager
-                                    .add_export(key, &value_str)
-                                    .with_context(|| format!("设置自定义环境变量 {} 失败", key))?;
-                                log::debug!("已设置自定义环境变量: {}={}", key, value_str);
-                            }
-                        }
-                    }
-
-                    // 处理自定义路径
-                    if let Some(paths_value) = metadata.get("paths") {
-                        if let serde_json::Value::Array(paths_array) = paths_value {
-                            for path_value in paths_array {
-                                if let serde_json::Value::String(path_str) = path_value {
-                                    // 即使路径不存在也添加到 PATH
-                                    shell_manager.add_path(path_str).with_context(
-                                        || format!("添加自定义路径到 PATH 失败: {}", path_str),
-                                    )?;
-                                    log::debug!("已添加自定义路径到 PATH: {}", path_str);
-                                }
-                            }
-                        }
-                    }
-
-                    // 处理自定义 Alias
-                    if let Some(aliases_value) = metadata.get("aliases") {
-                        if let serde_json::Value::Object(aliases_obj) = aliases_value {
-                            for (key, value) in aliases_obj {
-                                let value_str = match value {
-                                    serde_json::Value::String(s) => s.clone(),
-                                    _ => value.to_string().trim_matches('"').to_string(),
-                                };
-                                shell_manager
-                                    .add_alias(key, &value_str)
-                                    .with_context(|| format!("设置自定义 Alias {} 失败", key))?;
-                                log::debug!("已设置自定义 Alias: {}={}", key, value_str);
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {
-                // 其他服务类型的原有逻辑
-                let (_, _, _, service_folder, _, _) =
-                    self.build_service_paths(environment_id, service_data)?;
-                let env_vars = EnvVarBuilder::build_env_vars_for_service(
-                    &service_data.service_type,
-                    &service_folder,
-                )?;
-
-                // 优先从 service_data.metadata 替换值（如有），否则使用构建器默认值
-                for (env_var_name, default_value) in env_vars.iter() {
-                    let value_str = if let Some(metadata) = &service_data.metadata {
-                        if let Some(env_var_value) = metadata.get(env_var_name) {
-                            match env_var_value {
-                                serde_json::Value::String(s) => s.clone(),
-                                _ => env_var_value.to_string().trim_matches('"').to_string(),
-                            }
-                        } else {
-                            default_value.clone()
-                        }
-                    } else {
-                        default_value.clone()
-                    };
-
-                    shell_manager
-                        .add_export(env_var_name, &value_str)
-                        .with_context(|| format!("设置环境变量 {} 失败", env_var_name))?;
-                    log::debug!("已设置环境变量: {}={}", env_var_name, value_str);
-                }
-
-                // 添加 PATH 路径
-                let paths = EnvPathBuilder::build_paths(service_data)?;
-                for path_str in paths {
-                    if std::path::Path::new(&path_str).exists() {
-                        shell_manager
-                            .add_path(&path_str)
-                            .with_context(|| format!("添加路径到 PATH 失败: {}", path_str))?;
-                        log::debug!("已添加到 PATH: {}", path_str);
-                    } else {
-                        log::debug!("路径不存在，跳过添加到 PATH: {}", path_str);
-                    }
-                }
-            }
-        }
+        handler.active(environment_id, service_data, password)?;
 
         // 更新服务状态为 Active
         service_data.status = ServiceDataStatus::Active;
@@ -373,105 +258,13 @@ impl EnvServDataManager {
         service_data: &mut ServiceData,
         password: Option<String>,
     ) -> Result<ServiceDataResult> {
-        // 获取 Shell 管理器
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager
-            .lock()
-            .map_err(|e| anyhow::anyhow!("获取 Shell 管理器锁失败: {}", e))?;
+        let handler: Box<dyn ServiceLifecycle> = match service_data.service_type {
+            ServiceType::Host => Box::new(HostService::new()),
+            ServiceType::Custom => Box::new(CustomService::new()),
+            _ => Box::new(StandardService::new()),
+        };
 
-        // 处理自定义服务和其他服务的不同逻辑
-        match service_data.service_type {
-            ServiceType::Host => {
-                if let Some(metadata) = &service_data.metadata {
-                    if let Some(hosts_value) = metadata.get("hosts") {
-                        if let Ok(hosts) =
-                            serde_json::from_value::<Vec<HostEntry>>(hosts_value.clone())
-                        {
-                            if let Some(pwd) = &password {
-                                let host_manager = HostManager::global();
-                                let host_manager = host_manager
-                                    .lock()
-                                    .map_err(|e| anyhow::anyhow!("获取 Host 管理器锁失败: {}", e))?;
-                                host_manager
-                                    .remove_hosts(hosts.clone(), pwd)
-                                    .context("移除 hosts 失败")?;
-                                log::info!("已移除 hosts: {} 条目", hosts.len());
-                            } else {
-                                return Err(anyhow::anyhow!("needAdminPasswordToModifyHosts"));
-                            }
-                        }
-                    }
-                }
-            }
-            ServiceType::Custom => {
-                // 自定义服务的特殊处理
-                if let Some(metadata) = &service_data.metadata {
-                    // 移除自定义环境变量
-                    if let Some(env_vars_value) = metadata.get("envVars") {
-                        if let serde_json::Value::Object(env_vars_obj) = env_vars_value {
-                            for key in env_vars_obj.keys() {
-                                shell_manager
-                                    .delete_export(key)
-                                    .with_context(|| format!("移除自定义环境变量 {} 失败", key))?;
-                                log::debug!("已移除自定义环境变量: {}", key);
-                            }
-                        }
-                    }
-
-                    // 移除自定义路径
-                    if let Some(paths_value) = metadata.get("paths") {
-                        if let serde_json::Value::Array(paths_array) = paths_value {
-                            for path_value in paths_array {
-                                if let serde_json::Value::String(path_str) = path_value {
-                                    shell_manager
-                                        .delete_path(path_str)
-                                        .with_context(|| {
-                                            format!("从 PATH 移除自定义路径失败: {}", path_str)
-                                        })?;
-                                    log::debug!("已从 PATH 移除自定义路径: {}", path_str);
-                                }
-                            }
-                        }
-                    }
-
-                    // 移除自定义 Alias
-                    if let Some(aliases_value) = metadata.get("aliases") {
-                        if let serde_json::Value::Object(aliases_obj) = aliases_value {
-                            for key in aliases_obj.keys() {
-                                shell_manager
-                                    .delete_alias(key)
-                                    .with_context(|| format!("移除自定义 Alias {} 失败", key))?;
-                                log::debug!("已移除自定义 Alias: {}", key);
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {
-                // 其他服务类型的原有逻辑
-                let (_, _, _, service_folder, _, _) =
-                    self.build_service_paths(environment_id, service_data)?;
-                let env_vars = EnvVarBuilder::build_env_vars_for_service(
-                    &service_data.service_type,
-                    &service_folder,
-                )?;
-                for (env_var_name, _) in env_vars.iter() {
-                    shell_manager
-                        .delete_export(env_var_name)
-                        .with_context(|| format!("移除环境变量 {} 失败", env_var_name))?;
-                    log::debug!("已移除环境变量: {}", env_var_name);
-                }
-
-                // 从 PATH 中移除对应路径
-                let paths = EnvPathBuilder::build_paths(service_data)?;
-                for path_str in paths {
-                    shell_manager
-                        .delete_path(&path_str)
-                        .with_context(|| format!("从 PATH 移除失败: {}", path_str))?;
-                    log::debug!("已从 PATH 移除: {}", path_str);
-                }
-            }
-        }
+        handler.deactive(environment_id, service_data, password)?;
 
         // 更新服务状态为 Inactive
         service_data.status = ServiceDataStatus::Inactive;

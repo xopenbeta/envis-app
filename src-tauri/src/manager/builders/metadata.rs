@@ -74,16 +74,31 @@ impl MetadataBuilder {
         service_data: &ServiceData,
         metadata: &mut HashMap<String, serde_json::Value>,
     ) -> Result<()> {
+        // 获取 services 根目录
+        let app_config_manager = AppConfigManager::global();
+        let app_config_manager = app_config_manager.lock().unwrap();
+        let envs_folder = app_config_manager.get_envs_folder();
+        let service_data_folder = PathBuf::from(envs_folder)
+            .join(environment_id)
+            .join("nodejs")
+            .join(&service_data.version);
+
+        // 确保服务目录存在
+        if !service_data_folder.exists() {
+            fs::create_dir_all(&service_data_folder)?;
+        }
+
         // 设置 Node.js 相关环境变量
-        metadata.insert(
-            "NODE_PATH".to_string(),
-            serde_json::Value::String(String::new()),
-        );
+        // NODE_PATH 已经不推荐使用
+        // metadata.insert(
+        //     "NODE_PATH".to_string(),
+        //     serde_json::Value::String(String::new()),
+        // );
 
         // 设置全局安装路径前缀
         metadata.insert(
             "NPM_CONFIG_PREFIX".to_string(),
-            serde_json::Value::String(String::new()),
+            serde_json::Value::String(service_data_folder.to_string_lossy().to_string()),
         );
 
         // 设置仓库地址

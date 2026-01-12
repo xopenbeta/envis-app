@@ -8,6 +8,10 @@ pub mod postgresql;
 pub mod python;
 pub mod ssl;
 pub mod dnsmasq;
+pub mod traits;
+pub mod host;
+pub mod custom;
+pub mod standard;
 
 pub use download_manager::{DownloadManager, DownloadResult, DownloadStatus, DownloadTask};
 pub use mariadb::MariadbService;
@@ -19,4 +23,8 @@ pub use postgresql::PostgresqlService;
 pub use python::PythonService;
 pub use ssl::SslService;
 pub use dnsmasq::DnsmasqService;
+pub use traits::ServiceLifecycle;
+pub use host::HostService;
+pub use custom::CustomService;
+pub use standard::StandardService;
 
