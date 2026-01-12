@@ -1,6 +1,6 @@
 [package]
 name = "envis"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -21,7 +21,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["devtools", "tray-icon"] }
 tauri-plugin-opener = "2.5.0"
 tauri-plugin-dialog = "2"
-tauri-plugin-log = "2"
+tauri-plugin-log = "2.8.0"
 tauri-plugin-cli = "2"
 log = "0.4"
 serde = { version = "1", features = ["derive"] }
