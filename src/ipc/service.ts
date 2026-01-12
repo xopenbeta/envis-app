@@ -29,8 +29,8 @@ export const ipcGetServiceSize = ipcLogFunc('获取服务大小', async (service
     return invokeCommand('get_service_size', { serviceType, version })
 })
 
-export const ipcDownloadService = ipcLogFunc('下载服务', async (serviceType: string, version: string): Promise<IPCResult<{task: DownloadTask}>> => {
-    return invokeCommand(`download_${serviceType}`, { version })
+export const ipcDownloadService = ipcLogFunc('下载服务', async (serviceType: string, version: string, buildMethod: 'prebuilt' | 'from_source' = 'prebuilt'): Promise<IPCResult<{task: DownloadTask}>> => {
+    return invokeCommand(`download_${serviceType}`, { version, buildMethod })
 })
 
 export const ipcCancelServiceDownload = ipcLogFunc('取消服务下载', async (serviceType: string, version: string): Promise<IPCResult<undefined>> => {

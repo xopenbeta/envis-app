@@ -29,8 +29,8 @@ export function useService() {
         return ipcRes;
     }
 
-    async function downloadService(serviceType: string, version: string) {
-        const res = await ipcDownloadService(serviceType, version);
+    async function downloadService(serviceType: string, version: string, buildMethod: 'prebuilt' | 'from_source' = 'prebuilt') {
+        const res = await ipcDownloadService(serviceType, version, buildMethod);
         return res;
     }
 

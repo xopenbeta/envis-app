@@ -10,6 +10,10 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
+import { ChevronDown } from 'lucide-react'
 
 import { serviceCategories, ServiceData, ServiceType, serviceTypeNames } from '@/types/index'
 import { useAtom } from 'jotai'
@@ -99,6 +103,11 @@ export function AddServiceMenu({ buttonType = "icon" }: {
         serviceData: ServiceData;
         dialogOpen: boolean;
     } | null>(null)
+
+    // 编译方式选择：prebuilt(预编译包) 或 from_source(从源码编译)
+    const [buildMethod, setBuildMethod] = useState<'prebuilt' | 'from_source'>('prebuilt')
+    // 高级选项展开状态
+    const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false)
 
     if (!selectedEnvironmentId) return null
 
@@ -202,17 +211,23 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     // 处理下载确认
     const handleDownloadConfirm = async () => {
         if (!downloadingServiceDialogData) return
-        downloadService(downloadingServiceDialogData.serviceType, downloadingServiceDialogData.version)
+        downloadService(downloadingServiceDialogData.serviceType, downloadingServiceDialogData.version, buildMethod)
         setTimeout(() => {
             setShouldDownloadService({ ...downloadingServiceDialogData.serviceData })
         }, 300); // 确保状态更新后再设置
         setDownloadingServiceDialogData(null)
+        // 重置高级选项
+        setBuildMethod('prebuilt')
+        setAdvancedOptionsOpen(false)
     }
 
     // 处理下载取消
     const handleDownloadCancel = async () => {
         if (!downloadingServiceDialogData) return
         setDownloadingServiceDialogData(null)
+        // 重置高级选项
+        setBuildMethod('prebuilt')
+        setAdvancedOptionsOpen(false)
     }
 
     const getServiceName = (name: string) => {
@@ -332,6 +347,8 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                 onOpenChange={(open) => {
                     if (!open) {
                         setDownloadingServiceDialogData(null)
+                        setBuildMethod('prebuilt')
+                        setAdvancedOptionsOpen(false)
                     }
                 }}
             >
@@ -348,6 +365,33 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    
+                    {/* 高级选项 */}
+                    <div className="py-2">
+                        <Collapsible open={advancedOptionsOpen} onOpenChange={setAdvancedOptionsOpen}>
+                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+                                <ChevronDown className={`h-4 w-4 transition-transform ${advancedOptionsOpen ? 'rotate-180' : ''}`} />
+                                {t('add_service.advanced_options')}
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-3 space-y-3">
+                                <RadioGroup value={buildMethod} onValueChange={(value) => setBuildMethod(value as 'prebuilt' | 'from_source')}>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="prebuilt" id="prebuilt" />
+                                        <Label htmlFor="prebuilt" className="cursor-pointer font-normal">
+                                            {t('add_service.use_prebuilt')}
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="from_source" id="from_source" />
+                                        <Label htmlFor="from_source" className="cursor-pointer font-normal">
+                                            {t('add_service.compile_from_source')}
+                                        </Label>
+                                    </div>
+                                </RadioGroup>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
+
                     <AlertDialogFooter>
                         <AlertDialogCancel className='shadow-none' onClick={handleDownloadCancel}>
                             {t('add_service.skip_download')}

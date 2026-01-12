@@ -176,6 +176,9 @@
     "download_confirm_ask": "Do you want to download and install it now?",
     "skip_download": "Skip Download",
     "download_install": "Download & Install",
+    "advanced_options": "Advanced Options",
+    "use_prebuilt": "Use Prebuilt Package",
+    "compile_from_source": "Compile from Source",
     "categories": {
       "custom": "Custom",
       "languages": "Languages",

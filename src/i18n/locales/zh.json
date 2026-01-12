@@ -176,6 +176,12 @@
     "download_confirm_ask": "是否现在下载并安装？",
     "skip_download": "跳过下载",
     "download_install": "下载安装",
+    "advanced_options": "高级选项",
+    "use_prebuilt": "使用预编译包",
+    "compile_from_source": "从源码编译",
+    "advanced_options": "高级选项",
+    "use_prebuilt": "使用预编译包",
+    "compile_from_source": "从源码编译",
     "categories": {
       "custom": "自定义",
       "languages": "编程语言",
