@@ -36,7 +36,8 @@ import {
   Cpu,
   Users,
   MoreHorizontal,
-  RotateCw
+  RotateCw,
+  User
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BaseService } from './base-service'
@@ -1508,7 +1509,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 <div className="border rounded-lg p-3 space-y-2 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Key className="h-3.5 w-3.5 text-gray-500" />
+                      <User className="h-3.5 w-3.5 text-gray-500" />
                       <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{serviceData.metadata['MONGODB_ADMIN_USERNAME']}</span>
                       <Badge variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 h-5">
                         超级管理员
@@ -1577,7 +1578,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Key className="h-3.5 w-3.5 text-gray-500" />
+                          <User className="h-3.5 w-3.5 text-gray-500" />
                           <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{user.user}</span>
                         </div>
                         <div className="flex gap-1">
