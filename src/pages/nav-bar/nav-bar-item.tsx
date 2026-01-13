@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/utilities'
 import { Environment, EnvironmentStatus } from '@/types/index'
 import {
+  Folder,
   GripVertical,
   MoreHorizontal,
   Play,
@@ -23,6 +24,9 @@ import {
   Trash,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useFileOperations } from '@/hooks/file-operations'
+import { useAppSettings } from '@/hooks/appSettings'
+import { toast } from 'sonner'
 
 interface SortableEnvironmentItemProps {
   environment: Environment;
@@ -44,6 +48,8 @@ export function SortableEnvironmentItem({
   onDelete
 }: SortableEnvironmentItemProps) {
   const { t } = useTranslation()
+  const { openFolderInFinder } = useFileOperations()
+  const { systemSettings } = useAppSettings()
   const {
     attributes,
     listeners,
@@ -55,6 +61,16 @@ export function SortableEnvironmentItem({
     id: environment.id,
     disabled: !isDragEnabled
   });
+
+  // 打开环境文件夹
+  const handleOpenFolder = () => {
+    if (!systemSettings?.envisFolder) {
+      toast.error(t('nav_bar_item.no_env_folder'))
+      return
+    }
+    const envFolderPath = `${systemSettings.envisFolder}/envs/${environment.id}`
+    openFolderInFinder(envFolderPath)
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -142,6 +158,11 @@ export function SortableEnvironmentItem({
               >
                 <Trash className="h-4 w-4 mr-2" />
                 {t('nav_bar_item.delete')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleOpenFolder}>
+                <Folder className="mr-2 h-4 w-4" />
+                <span>{t('nav_bar_item.open_folder')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

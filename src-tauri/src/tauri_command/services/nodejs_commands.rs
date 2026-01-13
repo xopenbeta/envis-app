@@ -158,3 +158,26 @@ pub async fn set_npm_config_prefix(
         ))),
     }
 }
+
+/// 获取全局安装的 npm 包列表
+#[tauri::command]
+pub async fn get_global_npm_packages(
+    service_data: ServiceData,
+) -> Result<CommandResponse, String> {
+    let nodejs_service = NodejsService::global();
+    match nodejs_service.get_global_packages(&service_data) {
+        Ok(packages) => {
+            let data = serde_json::json!({
+                "packages": packages,
+            });
+            Ok(CommandResponse::success(
+                "获取全局 npm 包列表成功".to_string(),
+                Some(data),
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!(
+            "获取全局 npm 包列表失败: {}",
+            e
+        ))),
+    }
+}

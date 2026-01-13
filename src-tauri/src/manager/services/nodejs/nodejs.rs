@@ -16,6 +16,13 @@ pub struct NodejsVersion {
     pub date: String,
 }
 
+/// 全局 npm 包信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GlobalPackage {
+    pub name: String,
+    pub version: String,
+}
+
 /// 全局 Node.js 服务管理器单例
 static GLOBAL_NODEJS_SERVICE: OnceLock<Arc<NodejsService>> = OnceLock::new();
 
@@ -555,8 +562,98 @@ impl NodejsService {
     ) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
+        
+        // 如果之前有 NPM_CONFIG_PREFIX，先从 PATH 中移除旧的 prefix/bin
+        if let Some(old_prefix) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("NPM_CONFIG_PREFIX"))
+            .and_then(|v| v.as_str())
+        {
+            let old_prefix_bin = format!("{}/bin", old_prefix);
+            let _ = shell_manager.delete_path(&old_prefix_bin);
+        }
+        
+        // 设置新的 NPM_CONFIG_PREFIX 环境变量
         shell_manager.add_export("NPM_CONFIG_PREFIX", config_prefix)?;
+        
+        // 添加新的 prefix/bin 到 PATH
+        let new_prefix_bin = format!("{}/bin", config_prefix);
+        shell_manager.add_path(&new_prefix_bin)?;
+        
         Ok(())
+    }
+
+    /// 获取全局安装的 npm 包列表
+    pub fn get_global_packages(&self, service_data: &ServiceData) -> Result<Vec<GlobalPackage>> {
+        use std::process::Command;
+
+        let install_path = self.get_install_path(&service_data.version);
+        
+        // 检查 Node.js 是否已安装
+        if !self.is_installed(&service_data.version) {
+            return Err(anyhow!("Node.js {} 未安装", service_data.version));
+        }
+
+        // 构建 npm 命令路径
+        let npm_path = if cfg!(target_os = "windows") {
+            install_path.join("npm.cmd")
+        } else {
+            install_path.join("bin").join("npm")
+        };
+
+        if !npm_path.exists() {
+            return Err(anyhow!("npm 不存在: {:?}", npm_path));
+        }
+
+        // 设置环境变量
+        let mut cmd = Command::new(&npm_path);
+        cmd.args(&["list", "-g", "--depth=0", "--json"]);
+
+        // 添加 NPM_CONFIG_PREFIX 环境变量（如果有）
+        if let Some(prefix) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("NPM_CONFIG_PREFIX"))
+            .and_then(|v| v.as_str())
+        {
+            cmd.env("NPM_CONFIG_PREFIX", prefix);
+        }
+
+        // 执行命令
+        let output = cmd.output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("获取全局包列表失败: {}", stderr));
+        }
+
+        // 解析 JSON 输出
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let json: serde_json::Value = serde_json::from_str(&stdout)
+            .map_err(|e| anyhow!("解析 npm list 输出失败: {}", e))?;
+
+        let mut packages = Vec::new();
+
+        if let Some(dependencies) = json.get("dependencies").and_then(|d| d.as_object()) {
+            for (name, info) in dependencies {
+                let version = info
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+
+                packages.push(GlobalPackage {
+                    name: name.clone(),
+                    version,
+                });
+            }
+        }
+
+        // 按名称排序
+        packages.sort_by(|a, b| a.name.cmp(&b.name));
+
+        Ok(packages)
     }
 }
 

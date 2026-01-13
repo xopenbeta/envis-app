@@ -158,7 +158,9 @@
     "active": "运行中",
     "inactive": "未运行",
     "edit": "编辑",
-    "delete": "删除"
+    "delete": "删除",
+    "open_folder": "打开文件夹",
+    "no_env_folder": "无法获取环境文件夹路径"
   },
   "service_list": {
     "close_nav": "关闭导航栏",

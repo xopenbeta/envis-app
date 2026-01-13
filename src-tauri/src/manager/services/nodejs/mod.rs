@@ -1,3 +1,3 @@
 pub mod nodejs;
 
-pub use nodejs::{NodejsService, NodejsVersion};
+pub use nodejs::{NodejsService, NodejsVersion, GlobalPackage};

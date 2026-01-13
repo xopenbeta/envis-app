@@ -3,7 +3,9 @@ import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
 import {
     Hexagon,
     Info,
-    AlertTriangle
+    AlertTriangle,
+    Package,
+    RefreshCw
 } from 'lucide-react'
 import { BaseService } from '../base-service'
 import { Input } from "@/components/ui/input"
@@ -36,18 +38,41 @@ interface NodeServiceCardProps {
 }
 
 function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCardProps) {
-    const { setNpmRegistry, setConfigPrefix } = useNodejsService()
+    const { setNpmRegistry, setConfigPrefix, getGlobalPackages } = useNodejsService()
     const { updateServiceData } = useEnvironmentServiceData()
     const [registry, setRegistry] = useState('')
     const [prefix, setPrefix] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [globalPackages, setGlobalPackages] = useState<Array<{ name: string, version: string }>>([])
+    const [isLoadingPackages, setIsLoadingPackages] = useState(false)
 
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
     useEffect(() => {
         setRegistry(serviceData.metadata?.NPM_CONFIG_REGISTRY || '')
         setPrefix(serviceData.metadata?.NPM_CONFIG_PREFIX || '')
+        
+        // 如果服务激活，自动加载全局包列表
+        if (isServiceDataActive) {
+            loadGlobalPackages()
+        }
     }, [serviceData])
+
+    const loadGlobalPackages = async () => {
+        try {
+            setIsLoadingPackages(true)
+            const res = await getGlobalPackages(serviceData)
+            if (res && (res as any).success) {
+                setGlobalPackages((res as any).data?.packages || [])
+            } else {
+                console.error('获取全局包列表失败:', res)
+            }
+        } catch (error) {
+            console.error('获取全局包列表异常:', error)
+        } finally {
+            setIsLoadingPackages(false)
+        }
+    }
 
     const applyRegistry = async (val: string) => {
         try {
@@ -227,5 +252,59 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 </div>
             </div>
         </div>
+
+        {/* Global npm Packages */}
+        {isServiceDataActive && (
+            <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            Global Packages
+                        </Label>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                            ({globalPackages.length})
+                        </span>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={loadGlobalPackages}
+                        disabled={isLoadingPackages}
+                        className="h-6 px-2 text-[10px]"
+                    >
+                        <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
+                    </Button>
+                </div>
+
+                {isLoadingPackages ? (
+                    <div className="flex items-center justify-center py-8 text-xs text-gray-500">
+                        Loading packages...
+                    </div>
+                ) : globalPackages.length === 0 ? (
+                    <div className="flex items-center justify-center py-8 text-xs text-gray-500">
+                        No global packages installed
+                    </div>
+                ) : (
+                    <div className="max-h-60 overflow-y-auto">
+                        <div className="space-y-1">
+                            {globalPackages.map((pkg, index) => (
+                                <div
+                                    key={index}
+                                    className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                                >
+                                    <span className="text-xs font-mono text-gray-700 dark:text-gray-300">
+                                        {pkg.name}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                                        {pkg.version}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
     </>)
 }

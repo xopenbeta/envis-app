@@ -1,5 +1,5 @@
 import { ServiceData } from "@/types/index";
-import { ipcCheckPackageManagers, ipcGetNpmConfig, ipcSetNpmConfigPrefix, ipcSetNpmRegistry } from "../../ipc/services/nodejs";
+import { ipcCheckPackageManagers, ipcGetNpmConfig, ipcSetNpmConfigPrefix, ipcSetNpmRegistry, ipcGetGlobalNpmPackages } from "../../ipc/services/nodejs";
 
 export function useNodejsService() {
     async function setNpmRegistry(environmentId: string, serviceData: ServiceData, registry: string) {
@@ -14,8 +14,15 @@ export function useNodejsService() {
         return ipcRes;
     }
 
+    async function getGlobalPackages(serviceData: ServiceData) {
+        const ipcRes = await ipcGetGlobalNpmPackages(serviceData);
+        console.log(`[hooks/nodejs] getGlobalPackages IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
     return {
         setNpmRegistry,
-        setConfigPrefix
+        setConfigPrefix,
+        getGlobalPackages
     }
 }

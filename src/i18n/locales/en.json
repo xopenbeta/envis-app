@@ -158,7 +158,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "open_folder": "Open Folder",
+    "no_env_folder": "Cannot get environment folder path"
   },
   "service_list": {
     "close_nav": "Close navigation bar",

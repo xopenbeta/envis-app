@@ -165,6 +165,7 @@ pub fn run() {
             // npm 配置命令
             set_npm_registry,
             set_npm_config_prefix,
+            get_global_npm_packages,
             // Nginx 服务命令
             check_nginx_installed,
             get_nginx_versions,

@@ -26,3 +26,7 @@ export const ipcSetNpmRegistry = ipcLogFunc('设置包管理器镜像源', async
 export const ipcSetNpmConfigPrefix = ipcLogFunc('设置包管理器前缀', async (environmentId: string, serviceData: ServiceData, configPrefix: string): Promise<IPCResult> => {
   return invokeCommand(`set_npm_config_prefix`, { environmentId, serviceData, configPrefix })
 })
+
+export const ipcGetGlobalNpmPackages = ipcLogFunc('获取全局 npm 包', async (serviceData: ServiceData): Promise<IPCResult<{ packages: Array<{ name: string, version: string }> }>> => {
+  return invokeCommand(`get_global_npm_packages`, { serviceData })
+})
