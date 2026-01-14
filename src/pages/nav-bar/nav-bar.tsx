@@ -269,12 +269,12 @@ export default function NavBar({ onClose }: NavBarProps) {
       icon: <SquareTerminal className="h-4 w-4" />,
       onClick: onOpenTerminal,
     },
-    // {
-    //   key: 'log',
-    //   title: t('nav_bar.diagnosis'),
-    //   icon: <FlaskConical className="h-4 w-4" />,
-    //   onClick: onOpenLogPanel,
-    // },
+    {
+      key: 'log',
+      title: t('nav_bar.diagnosis'),
+      icon: <FlaskConical className="h-4 w-4" />,
+      onClick: onOpenLogPanel,
+    },
   ] as const
 
   // 计算可显示按钮数量，溢出时用“更多”替代最后一个并放入菜单
