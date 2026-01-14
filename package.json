@@ -1,7 +1,7 @@
 {
   "name": "envis",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "icon": "tauri icon",
     "dev:pc": "tauri dev",
     "pack": "tauri build",
-    "publish": "node scripts/release.js"
+    "publish": "node scripts/release.js",
+    "AI:log": "我希望统计上次tag到当前的所有代码改动（例如先执行 git tag --sort=-v:refname | head -1 查看最近tag，再执行 git diff vx.y.z..HEAD 查看所有改动代码），然后分析这些代码改动，将changelog写到changelog文件中（根据改动情况，如果只是修复那么小版本+1，如果有新能力那么中版本+1，小版本归零）(只需要改changelog文件，其他不用改)"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
