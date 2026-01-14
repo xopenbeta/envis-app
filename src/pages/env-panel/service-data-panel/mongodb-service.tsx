@@ -700,7 +700,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   }
 
   return (
-    <BaseService service={serviceData}>
+    <div className="p-4 space-y-6">
       {/* 初始化对话框 */}
       <Dialog open={showInitDialog} onOpenChange={setShowInitDialog}>
         <DialogContent>
@@ -1930,6 +1930,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           )}
         </div>
       </div>
-    </BaseService>
+    </div>
   )
 }

@@ -78,10 +78,14 @@ export function EnvironmentPanel({ onOpen }: {
 
       {/* Service Detail or Dashboard */}
       <ResizablePanel defaultSize={69} minSize={40}>
-        <EnvPanelHeader />
-        <ServiceDetailRouter />
-        {/* Footer Status Bar */}
-        <AppFooter isShowConsoleBtn={true} onConsoleBtnClick={() => { /* Add your console button click handler here */ }} />
+        <div className="h-full flex flex-col">
+          <EnvPanelHeader />
+          <div className="flex-1 min-h-0 overflow-auto">
+            <ServiceDetailRouter />
+          </div>
+          {/* Footer Status Bar */}
+          <AppFooter isShowConsoleBtn={true} onConsoleBtnClick={() => { /* Add your console button click handler here */ }} />
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
   )
