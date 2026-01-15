@@ -1,6 +1,5 @@
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::{CommandResponse, ServiceData};
-use std::process::Command;
 
 /// 更新自定义服务的路径配置
 #[tauri::command]
@@ -100,24 +99,15 @@ pub async fn execute_custom_service_alias(
 ) -> Result<CommandResponse, String> {
     log::info!("执行自定义 Alias 命令: {} -> {}", alias_name, command);
 
-    // 在当前 shell 环境中执行命令
-    let output = if cfg!(target_os = "windows") {
-        Command::new("cmd")
-            .args(["/C", &command])
-            .output()
-    } else {
-        Command::new("sh")
-            .args(["-c", &command])
-            .output()
-    };
+    // 使用 ShellManager 在加载了配置文件的环境中执行命令
+    let shell_manager = ShellManager::global();
+    let shell_manager_lock = shell_manager
+        .lock()
+        .map_err(|e| format!("获取 Shell 管理器锁失败: {}", e))?;
 
-    match output {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            let exit_code = output.status.code().unwrap_or(-1);
-
-            if output.status.success() {
+    match shell_manager_lock.execute_command_with_env(&command) {
+        Ok((stdout, stderr, exit_code)) => {
+            if exit_code == 0 {
                 log::info!("命令执行成功 ({}): 退出码 {}", alias_name, exit_code);
                 Ok(CommandResponse::success(
                     format!("命令执行成功 ({})", alias_name),
@@ -132,7 +122,6 @@ pub async fn execute_custom_service_alias(
                     "命令执行失败 ({}): 退出码 {}, stderr: {}",
                     alias_name, exit_code, stderr
                 );
-                // 对于错误情况，也需要返回 success=false 的 CommandResponse
                 Ok(CommandResponse {
                     success: false,
                     msg: format!("命令执行失败 ({}): 退出码 {}", alias_name, exit_code),

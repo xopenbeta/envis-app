@@ -1017,6 +1017,65 @@ impl ShellManager {
         
         Ok(())
     }
+
+    /// 在加载了 shell 配置文件的环境中执行命令
+    /// 返回 (stdout, stderr, exit_code)
+    pub fn execute_command_with_env(&self, command: &str) -> Result<(String, String, i32)> {
+        let output = if cfg!(target_os = "windows") {
+            // Windows: 尝试使用 PowerShell
+            let documents_dir = dirs::document_dir().context("无法获取文档目录")?;
+            let ps_profile = documents_dir
+                .join("WindowsPowerShell")
+                .join("Microsoft.PowerShell_profile.ps1");
+            
+            // 构造 PowerShell 命令，先加载配置文件（如果存在）
+            let ps_command = if ps_profile.exists() {
+                format!("try {{ . '{}' }} catch {{ }}; {}", ps_profile.display(), command)
+            } else {
+                command.to_string()
+            };
+            
+            Command::new("powershell")
+                .args(["-NoLogo", "-Command", &ps_command])
+                .output()
+        } else {
+            // macOS/Linux: 检测使用的 shell 并加载对应的配置文件
+            let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
+            let home_dir = dirs::home_dir().context("无法获取用户主目录")?;
+            
+            let (shell_cmd, config_file) = if shell.contains("zsh") {
+                ("zsh", home_dir.join(".zshrc"))
+            } else if shell.contains("bash") {
+                ("bash", home_dir.join(".bash_profile"))
+            } else {
+                // 默认使用 bash
+                ("bash", home_dir.join(".bash_profile"))
+            };
+            
+            // 构造命令：先 source 配置文件，然后执行命令
+            let full_command = if config_file.exists() {
+                format!("source '{}' && {}", config_file.display(), command)
+            } else {
+                command.to_string()
+            };
+            
+            Command::new(shell_cmd)
+                .args(["-c", &full_command])
+                .output()
+        };
+
+        match output {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                let exit_code = output.status.code().unwrap_or(-1);
+                Ok((stdout, stderr, exit_code))
+            }
+            Err(e) => {
+                Err(anyhow::anyhow!("执行命令失败: {}", e))
+            }
+        }
+    }
 }
 
 /// 初始化 Shell 管理器
