@@ -1039,28 +1039,24 @@ impl ShellManager {
                 .args(["-NoLogo", "-Command", &ps_command])
                 .output()
         } else {
-            // macOS/Linux: 检测使用的 shell 并加载对应的配置文件
+            // macOS/Linux: 使用 login shell 以获取完整的环境变量
             let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
-            let home_dir = dirs::home_dir().context("无法获取用户主目录")?;
             
-            let (shell_cmd, config_file) = if shell.contains("zsh") {
-                ("zsh", home_dir.join(".zshrc"))
+            // 确定 shell 类型和参数
+            let shell_cmd = if shell.contains("zsh") {
+                "zsh"
             } else if shell.contains("bash") {
-                ("bash", home_dir.join(".bash_profile"))
+                "bash"
             } else {
                 // 默认使用 bash
-                ("bash", home_dir.join(".bash_profile"))
+                "bash"
             };
             
-            // 构造命令：先 source 配置文件，然后执行命令
-            let full_command = if config_file.exists() {
-                format!("source '{}' && {}", config_file.display(), command)
-            } else {
-                command.to_string()
-            };
-            
+            // 使用 -l (login shell) 和 -c 选项来执行命令
+            // login shell 会自动加载 .zshrc (zsh) 或 .bash_profile (bash)
+            // 这样可以获取到完整的 PATH，包括 VS Code 的 code 命令等
             Command::new(shell_cmd)
-                .args(["-c", &full_command])
+                .args(["-l", "-c", command])
                 .output()
         };
 
