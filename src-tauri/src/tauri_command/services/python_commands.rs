@@ -1,5 +1,5 @@
 use crate::manager::env_serv_data_manager::EnvServDataManager;
-use crate::manager::services::python::PythonService;
+use crate::manager::services::python::{PythonService, PythonInstallMode};
 use crate::types::{CommandResponse, ServiceData};
 
 /// 检查 Python 是否已安装的 Tauri 命令
@@ -32,12 +32,37 @@ pub async fn get_python_versions() -> Result<CommandResponse, String> {
     ))
 }
 
-/// 下载 Python 的 Tauri 命令
+/// 下载 Python 的 Tauri 命令（支持可选的安装模式参数）
+/// mode: "prebuilt"（默认）、"python_build" 或 "local_build"
 #[tauri::command]
-pub async fn download_python(version: String) -> Result<CommandResponse, String> {
-    log::info!("tauri::command 开始下载 Python {}...", version);
+pub async fn download_python(
+    version: String,
+    mode: Option<String>,
+) -> Result<CommandResponse, String> {
+    // 解析安装模式，默认为预编译
+    let install_mode = match mode.as_deref() {
+        Some("prebuilt") | None => PythonInstallMode::Prebuilt,
+        Some("python_build") => PythonInstallMode::PythonBuild,
+        Some("local_build") => PythonInstallMode::LocalBuild,
+        Some(m) => {
+            return Ok(CommandResponse::error(format!(
+                "不支持的安装模式: {}，请使用 'prebuilt'、'python_build' 或 'local_build'",
+                m
+            )))
+        }
+    };
+
+    log::info!(
+        "tauri::command 开始下载 Python {} (模式: {:?})...",
+        version,
+        install_mode
+    );
+    
     let python_service = PythonService::global();
-    match python_service.download_and_install(&version).await {
+    match python_service
+        .download_and_install_with_mode(&version, install_mode)
+        .await
+    {
         Ok(result) => {
             let data = serde_json::json!({
                 "task": result.task

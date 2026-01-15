@@ -9,6 +9,24 @@ use std::sync::{Arc, OnceLock};
 
 use std::process::Command;
 
+/// Python 安装模式
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum PythonInstallMode {
+    /// 预编译二进制（默认，来自 astral-sh/python-build-standalone）
+    Prebuilt,
+    /// 使用 python-build 编译（来自 pyenv 项目）
+    PythonBuild,
+    /// 本地编译（使用 configure + make）
+    LocalBuild,
+}
+
+impl Default for PythonInstallMode {
+    fn default() -> Self {
+        Self::Prebuilt
+    }
+}
+
 /// Python 版本信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PythonVersion {
@@ -78,8 +96,53 @@ impl PythonService {
         services_folder.join("python").join(version)
     }
 
-    /// 构建下载 URL 和文件名
-    fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
+    /// 构建下载 URL 和文件名（根据安装模式）
+    fn build_download_info(&self, version: &str, mode: PythonInstallMode) -> Result<(Vec<String>, String)> {
+        match mode {
+            PythonInstallMode::Prebuilt => self.build_prebuilt_download_info(version),
+            PythonInstallMode::PythonBuild | PythonInstallMode::LocalBuild => self.build_source_download_info(version),
+        }
+    }
+
+    /// 构建预编译二进制下载 URL（from astral-sh/python-build-standalone）
+    fn build_prebuilt_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
+        // 确定操作系统和架构
+        let (os, arch) = if cfg!(target_os = "macos") {
+            if cfg!(target_arch = "aarch64") {
+                ("apple-darwin", "aarch64")
+            } else {
+                ("apple-darwin", "x86_64")
+            }
+        } else if cfg!(target_os = "linux") {
+            if cfg!(target_arch = "aarch64") {
+                ("unknown-linux-gnu", "aarch64")
+            } else {
+                ("unknown-linux-gnu", "x86_64")
+            }
+        } else if cfg!(target_os = "windows") {
+            if cfg!(target_arch = "aarch64") {
+                ("pc-windows-msvc-shared", "aarch64")
+            } else {
+                ("pc-windows-msvc-shared", "x86_64")
+            }
+        } else {
+            return Err(anyhow!("不支持的操作系统"));
+        };
+
+        // 构建文件名: cpython-3.12.0+20231002-x86_64-apple-darwin-install_only.tar.gz
+        let filename = format!("cpython-{}+20231002-{}-{}-install_only.tar.gz", version, arch, os);
+        
+        // GitHub releases URL
+        let github_url = format!(
+            "https://github.com/astral-sh/python-build-standalone/releases/download/20231002/{}",
+            filename
+        );
+
+        Ok((vec![github_url], filename))
+    }
+
+    /// 构建源码下载 URL（for python-build or local build）
+    fn build_source_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let filename = format!("Python-{}.tar.xz", version);
         let official_url = format!(
             "https://www.python.org/ftp/python/{}/{}",
@@ -94,8 +157,13 @@ impl PythonService {
         Ok((vec![official_url, mirror_url], filename))
     }
 
-    /// 下载并安装 Python
+    /// 下载并安装 Python（默认使用预编译模式）
     pub async fn download_and_install(&self, version: &str) -> Result<DownloadResult> {
+        self.download_and_install_with_mode(version, PythonInstallMode::default()).await
+    }
+
+    /// 下载并安装 Python（指定安装模式）
+    pub async fn download_and_install_with_mode(&self, version: &str, mode: PythonInstallMode) -> Result<DownloadResult> {
         if self.is_installed(version) {
             return Ok(DownloadResult {
                 success: false,
@@ -104,24 +172,27 @@ impl PythonService {
             });
         }
 
-        let (urls, filename) = self.build_download_info(version)?;
+        let (urls, filename) = self.build_download_info(version, mode)?;
         let install_path = self.get_install_path(version);
         let task_id = format!("python-{}", version);
 
         let download_manager = DownloadManager::global();
         let version_for_callback = version.to_string();
+        let mode_for_callback = mode;
 
         let success_callback = Arc::new(move |task: &DownloadTask| {
             log::info!(
-                "Python {} 下载完成: {} - {}",
+                "Python {} 下载完成: {} - {} (模式: {:?})",
                 version_for_callback,
                 task.id,
-                task.filename
+                task.filename,
+                mode_for_callback
             );
 
             // 异步执行安装步骤
             let task_for_spawn = task.clone();
             let version_for_spawn = version_for_callback.clone();
+            let mode_for_spawn = mode_for_callback;
             let service_for_spawn = PythonService::global();
 
             tokio::spawn(async move {
@@ -134,12 +205,12 @@ impl PythonService {
                 ) {
                     log::error!("更新任务状态失败: {}", e);
                 } else {
-                    log::info!("Python {} 开始安装", version_for_spawn);
+                    log::info!("Python {} 开始安装 (模式: {:?})", version_for_spawn, mode_for_spawn);
                 }
 
-                // 执行安装
+                // 执行安装（统一方法，根据模式选择）
                 match service_for_spawn
-                    .extract_and_install(&task_for_spawn, &version_for_spawn)
+                    .install(&task_for_spawn, &version_for_spawn, mode_for_spawn)
                     .await
                 {
                     Ok(_) => {
@@ -200,8 +271,111 @@ impl PythonService {
         }
     }
 
-    /// 解压和安装 Python (编译安装)
-    pub async fn extract_and_install(&self, task: &DownloadTask, version: &str) -> Result<()> {
+    /// 统一的安装方法（根据模式选择安装方式）
+    pub async fn install(&self, task: &DownloadTask, version: &str, mode: PythonInstallMode) -> Result<()> {
+        match mode {
+            PythonInstallMode::Prebuilt => self.install_prebuilt(task, version).await,
+            PythonInstallMode::PythonBuild => self.install_with_python_build(task, version).await,
+            PythonInstallMode::LocalBuild => self.install_with_local_build(task, version).await,
+        }
+    }
+
+    /// 安装预编译的 Python 二进制
+    async fn install_prebuilt(&self, task: &DownloadTask, version: &str) -> Result<()> {
+        let archive_path = &task.target_path;
+        let install_dir = self.get_install_path(version);
+        
+        // 确保安装目录存在
+        std::fs::create_dir_all(&install_dir)?;
+
+        log::info!("正在解压预编译 Python 到: {:?}", install_dir);
+        
+        // 使用系统 tar 命令解压 .tar.gz
+        let status = Command::new("tar")
+            .arg("-xzf")
+            .arg(archive_path)
+            .arg("-C")
+            .arg(&install_dir)
+            .arg("--strip-components=1")  // 移除顶层目录
+            .status()?;
+
+        if !status.success() {
+            return Err(anyhow!("解压预编译 Python 失败"));
+        }
+
+        // 设置可执行权限（Unix 系统）
+        #[cfg(not(target_os = "windows"))]
+        {
+            let python_binary = install_dir.join("bin").join("python3");
+            if python_binary.exists() {
+                use std::os::unix::fs::PermissionsExt;
+                let mut perms = std::fs::metadata(&python_binary)?.permissions();
+                perms.set_mode(0o755);
+                std::fs::set_permissions(&python_binary, perms)?;
+                log::info!("已设置 python3 可执行权限");
+            }
+        }
+
+        // 清理压缩包
+        log::info!("清理临时文件...");
+        std::fs::remove_file(archive_path)?;
+
+        log::info!("Python {} 预编译版本安装完成", version);
+
+        Ok(())
+    }
+
+    /// 使用 python-build 工具安装
+    async fn install_with_python_build(&self, task: &DownloadTask, version: &str) -> Result<()> {
+        let install_dir = self.get_install_path(version);
+        
+        // 确保安装目录存在
+        std::fs::create_dir_all(&install_dir)?;
+
+        log::info!("使用 python-build 编译安装 Python {}...", version);
+
+        // 检查是否安装了 python-build（来自 pyenv）
+        let python_build_check = Command::new("python-build")
+            .arg("--version")
+            .output();
+
+        if python_build_check.is_err() || !python_build_check.unwrap().status.success() {
+            return Err(anyhow!(
+                "python-build 未安装。请先安装 pyenv 或独立的 python-build 工具。\n\
+                安装方法:\n\
+                - macOS: brew install pyenv\n\
+                - Linux: curl https://pyenv.run | bash\n\
+                - 或访问: https://github.com/pyenv/pyenv#installation"
+            ));
+        }
+
+        log::info!("开始使用 python-build 编译 Python... 这可能需要较长时间");
+
+        // 使用 python-build 编译安装
+        // python-build <version> <install_path>
+        let status = Command::new("python-build")
+            .arg(version)
+            .arg(&install_dir)
+            .env("PYTHON_BUILD_CACHE_PATH", task.target_path.parent().unwrap())
+            .status()?;
+
+        if !status.success() {
+            return Err(anyhow!("python-build 编译失败"));
+        }
+
+        // 清理下载的源码包（如果存在）
+        log::info!("清理临时文件...");
+        if task.target_path.exists() {
+            let _ = std::fs::remove_file(&task.target_path);
+        }
+
+        log::info!("Python {} 使用 python-build 编译完成", version);
+
+        Ok(())
+    }
+
+    /// 使用本地编译安装（configure + make）
+    async fn install_with_local_build(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);
         
@@ -286,7 +460,7 @@ impl PythonService {
         std::fs::remove_dir_all(&build_dir)?;
         std::fs::remove_file(archive_path)?;
 
-        log::info!("Python {} 编译安装完成", version);
+        log::info!("Python {} 本地编译安装完成", version);
 
         Ok(())
     }
