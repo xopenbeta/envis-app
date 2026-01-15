@@ -1,23 +1,20 @@
 # 更新日志 / Changelog
 
-## [0.2.0] - 2026-01-15
+## [0.1.4] - 2026-01-15
 
 ### 新增 / Added
-- ✨ Python 服务支持多种安装模式
-  - 预编译二进制模式（Prebuilt）：从 astral-sh/python-build-standalone 下载预编译版本，安装快速
-  - Python-build 编译模式：使用 pyenv 的 python-build 工具进行编译安装
-  - 本地编译模式（Local Build）：使用传统的 configure + make 方式本地编译
-- ✨ `download_python` 命令新增可选的 `mode` 参数，支持指定安装模式
-- ✨ 新增 `PythonInstallMode` 枚举类型，用于区分不同的安装方式
+- 无
 
 ### 修复 / Fixed
 - 无
 
 ### 改进 / Improved
-- ♻️ 重构 Python 服务下载和安装逻辑，统一安装接口
-- ♻️ 优化预编译二进制的解压流程，使用 strip-components 移除顶层目录
-- ♻️ 改进日志输出，增加安装模式信息显示
-- 📝 为不同安装模式提供详细的安装说明和错误提示
+- ♻️ 移除 `BaseService` 组件包装，简化服务面板组件层级
+- ♻️ 优化 MariaDB、MongoDB、MySQL、Nginx、Node.js、PostgreSQL、Python、SSL 服务面板布局结构
+- ♻️ 统一服务面板的布局样式，使用 `p-3` 和 `space-y-4` 进行一致化处理
+- 🗑️ 删除未使用的 `service-layout.tsx` 文件
+- 💄 优化 Node.js 服务面板的代码结构和缩进
+- 💄 改进 Nginx 配置视图的内边距样式
 
 ---
 
