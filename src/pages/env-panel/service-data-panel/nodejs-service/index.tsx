@@ -192,15 +192,6 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     >
                         Taobao
                     </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => applyRegistry('https://registry.anpm.alibaba-inc.com/')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    >
-                        Ali
-                    </Button>
                 </div>
             </div>
 
