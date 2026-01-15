@@ -134,105 +134,108 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     </AlertDescription>
                 </Alert>
             )}
-            {/* Registry Configuration */}
-            <div>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                Registry URL
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                            </Label>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <div className="text-xs space-y-1">
-                                <div>Current: <code>npm config get registry</code></div>
-                                <div>Set: <code>npm config set registry &lt;url&gt;</code></div>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <div className="flex items-center space-x-2 mt-2">
-                    <Input
-                        value={registry}
-                        onChange={(e) => setRegistry(e.target.value)}
-                        placeholder="Registry URL"
-                        disabled={isLoading || !isServiceDataActive}
-                        className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    />
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => applyRegistry(registry)}
-                        disabled={isLoading || !isServiceDataActive}
-                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    >
-                        Apply
-                    </Button>
+
+            <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                {/* Registry Configuration */}
+                <div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Registry URL
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    <div>Current: <code>npm config get registry</code></div>
+                                    <div>Set: <code>npm config set registry &lt;url&gt;</code></div>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <div className="flex items-center space-x-2 mt-2">
+                        <Input
+                            value={registry}
+                            onChange={(e) => setRegistry(e.target.value)}
+                            placeholder="Registry URL"
+                            disabled={isLoading || !isServiceDataActive}
+                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        />
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => applyRegistry(registry)}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            Apply
+                        </Button>
+                    </div>
+
+                    {/* Quick Registry Options */}
+                    <div className="flex flex-wrap gap-2 items-center mt-3">
+                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">Quick Set</Label>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => applyRegistry('https://registry.npmjs.org/')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            Official
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => applyRegistry('https://registry.npmmirror.com/')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            Taobao
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Quick Registry Options */}
-                <div className="flex flex-wrap gap-2 items-center mt-3">
-                    <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">Quick Set</Label>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => applyRegistry('https://registry.npmjs.org/')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    >
-                        Official
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => applyRegistry('https://registry.npmmirror.com/')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    >
-                        Taobao
-                    </Button>
-                </div>
-            </div>
-
-            {/* Prefix Configuration */}
-            <div>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                Config Prefix (NPM_CONFIG_PREFIX)
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                            </Label>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <div className="text-xs space-y-1">
-                                <div>Current: <code>npm config get prefix</code></div>
-                                <div>Set: <code>npm config set prefix &lt;path&gt;</code></div>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                    Sets the installation location for global packages
-                </p>
-                <div className="flex items-center space-x-2">
-                    <Input
-                        value={prefix}
-                        onChange={(e) => setPrefix(e.target.value)}
-                        placeholder="Prefix path"
-                        disabled={isLoading || !isServiceDataActive}
-                        className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    />
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => applyPrefix(prefix)}
-                        disabled={isLoading || !isServiceDataActive}
-                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    >
-                        Apply
-                    </Button>
+                {/* Prefix Configuration */}
+                <div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Config Prefix (NPM_CONFIG_PREFIX)
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    <div>Current: <code>npm config get prefix</code></div>
+                                    <div>Set: <code>npm config set prefix &lt;path&gt;</code></div>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        Sets the installation location for global packages
+                    </p>
+                    <div className="flex items-center space-x-2">
+                        <Input
+                            value={prefix}
+                            onChange={(e) => setPrefix(e.target.value)}
+                            placeholder="Prefix path"
+                            disabled={isLoading || !isServiceDataActive}
+                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        />
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => applyPrefix(prefix)}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            Apply
+                        </Button>
+                    </div>
                 </div>
             </div>
 

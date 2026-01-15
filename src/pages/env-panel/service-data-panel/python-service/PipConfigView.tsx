@@ -79,188 +79,190 @@ export function PipConfigView({
     }
 
     return (
-        <div className="space-y-6">
-            {/* Index URL Configuration */}
-            <div>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Label className="cursor-help flex items-center gap-1">
-                                镜像源 (index-url)
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                            </Label>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <div className="text-xs space-y-1">
-                                <div>查看当前源: <code>pip config get global.index-url</code></div>
-                                <div>设置源: <code>pip config set global.index-url &lt;url&gt;</code></div>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <div className="flex items-center space-x-2 mt-2">
-                    <Input
-                        value={config?.indexUrl || ''}
-                        onChange={(e) => setConfig(prev => prev ? { ...prev, indexUrl: e.target.value } : { indexUrl: e.target.value, trustedHost: '' })}
-                        placeholder="镜像源地址"
-                        disabled={isLoading || !isServiceDataActive}
-                        className="flex-1 shadow-none"
-                    />
-                    <Button
-                        size="sm"
-                        onClick={() => config?.indexUrl && setIndexUrl(config.indexUrl)}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='shadow-none'
-                        variant="outline"
-                    >
-                        应用
-                    </Button>
+        <div className="w-full p-3 space-y-6">
+            <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                {/* Index URL Configuration */}
+                <div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    镜像源 (index-url)
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    <div>查看当前源: <code>pip config get global.index-url</code></div>
+                                    <div>设置源: <code>pip config set global.index-url &lt;url&gt;</code></div>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <div className="flex items-center space-x-2 mt-2">
+                        <Input
+                            value={config?.indexUrl || ''}
+                            onChange={(e) => setConfig(prev => prev ? { ...prev, indexUrl: e.target.value } : { indexUrl: e.target.value, trustedHost: '' })}
+                            placeholder="镜像源地址"
+                            disabled={isLoading || !isServiceDataActive}
+                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        />
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => config?.indexUrl && setIndexUrl(config.indexUrl)}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            应用
+                        </Button>
+                    </div>
+
+                    {/* Quick Index URL Options */}
+                    <div className="flex flex-wrap gap-2 items-center mt-3">
+                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">快速设置</Label>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIndexUrl('https://pypi.org/simple')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            官方源
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIndexUrl('https://pypi.tuna.tsinghua.edu.cn/simple')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            清华源
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIndexUrl('https://mirrors.aliyun.com/pypi/simple')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            阿里源
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIndexUrl('https://pypi.org/simple')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            恢复默认
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Quick Index URL Options */}
-                <div className="flex gap-2 items-center mt-2">
-                    <Label className="block text-xs">快速设置源</Label>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIndexUrl('https://pypi.org/simple')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        官方源
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIndexUrl('https://pypi.tuna.tsinghua.edu.cn/simple')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        清华源
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIndexUrl('https://mirrors.aliyun.com/pypi/simple')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        阿里源
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIndexUrl('https://pypi.org/simple')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        恢复默认
-                    </Button>
+                {/* Trusted Host Configuration */}
+                <div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    信任主机 (trusted-host)
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    <div>查看当前配置: <code>pip config get global.trusted-host</code></div>
+                                    <div>设置配置: <code>pip config set global.trusted-host &lt;host&gt;</code></div>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        设置信任的主机，用于跳过 SSL 验证
+                    </p>
+                    <div className="flex items-center space-x-2">
+                        <Input
+                            value={config?.trustedHost || ''}
+                            onChange={(e) => setConfig(prev => prev ? { ...prev, trustedHost: e.target.value } : { indexUrl: '', trustedHost: e.target.value })}
+                            placeholder="信任主机地址"
+                            disabled={isLoading || !isServiceDataActive}
+                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        />
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                                const host = config?.trustedHost || ''
+                                setTrustedHost(host)
+                            }}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            应用
+                        </Button>
+                    </div>
+                    {/* Quick Trusted Host Options */}
+                    <div className="flex flex-wrap gap-2 items-center mt-3">
+                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">快速设置</Label>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setTrustedHost('pypi.tuna.tsinghua.edu.cn')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            清华源
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setTrustedHost('mirrors.aliyun.com')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            阿里源
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setTrustedHost('')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            清除
+                        </Button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Trusted Host Configuration */}
-            <div>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Label className="cursor-help flex items-center gap-1">
-                                信任主机 (trusted-host)
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                            </Label>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <div className="text-xs space-y-1">
-                                <div>查看当前配置: <code>pip config get global.trusted-host</code></div>
-                                <div>设置配置: <code>pip config set global.trusted-host &lt;host&gt;</code></div>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <p className="text-xs text-muted-foreground mt-1">
-                    设置信任的主机，用于跳过 SSL 验证
-                </p>
-                <div className="flex items-center space-x-2 mt-1">
-                    <Input
-                        value={config?.trustedHost || ''}
-                        onChange={(e) => setConfig(prev => prev ? { ...prev, trustedHost: e.target.value } : { indexUrl: '', trustedHost: e.target.value })}
-                        placeholder={'信任主机地址'}
-                        disabled={isLoading || !isServiceDataActive}
-                        className="flex-1 shadow-none"
-                    />
-                    <Button
-                        size="sm"
-                        onClick={() => {
-                            const host = config?.trustedHost || ''
-                            setTrustedHost(host)
-                        }}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='shadow-none'
-                        variant="outline"
-                    >
-                        应用
-                    </Button>
-                </div>
-                {/* Quick Trusted Host Options */}
-                <div className="flex gap-2 items-center mt-2">
-                    <Label className="block text-xs">快速设置</Label>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setTrustedHost('pypi.tuna.tsinghua.edu.cn')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        清华源
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setTrustedHost('mirrors.aliyun.com')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        阿里源
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setTrustedHost('')}
-                        disabled={isLoading || !isServiceDataActive}
-                        className='h-6 shadow-none'
-                    >
-                        清除
-                    </Button>
-                </div>
-            </div>
-
-            {/* Python3 as Python Configuration */}
-            <div>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="flex items-center space-x-2 cursor-help">
-                                <Label className="text-sm font-medium">将 python3 命名为 python</Label>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>为 python3 创建 python 别名，让 python 命令指向 python3</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-                <p className="text-xs text-muted-foreground mt-1">
-                    启用后，在终端中使用 python 命令将执行 python3
-                </p>
-                <div className="flex items-center space-x-2 mt-2">
-                    <Switch
-                        checked={python3AsPython}
-                        onCheckedChange={handlePython3AsPythonChange}
-                        disabled={isLoading || !isServiceDataActive}
-                    />
-                    <Label className="text-sm">
-                        {python3AsPython ? '已启用' : '已禁用'}
-                    </Label>
+                {/* Python3 as Python Configuration */}
+                <div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1.5 cursor-help">
+                                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">将 python3 命名为 python</Label>
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>为 python3 创建 python 别名，让 python 命令指向 python3</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        启用后，在终端中使用 python 命令将执行 python3
+                    </p>
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            checked={python3AsPython}
+                            onCheckedChange={handlePython3AsPythonChange}
+                            disabled={isLoading || !isServiceDataActive}
+                        />
+                        <Label className="text-xs text-gray-700 dark:text-gray-300">
+                            {python3AsPython ? '已启用' : '已禁用'}
+                        </Label>
+                    </div>
                 </div>
             </div>
         </div>
