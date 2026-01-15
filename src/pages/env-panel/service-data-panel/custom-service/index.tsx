@@ -5,7 +5,6 @@ import {
     FolderOpen,
     Globe
 } from 'lucide-react'
-import { BaseService } from '../base-service'
 import { PathConfigView } from './PathConfigView'
 import { EnvironmentVariablesView } from './EnvironmentVariablesView'
 import { AliasesConfigView } from './AliasesConfigView'
@@ -19,26 +18,24 @@ export function CustomService({ serviceData, selectedEnvironment }: CustomServic
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
     return (
-        <BaseService service={serviceData}>
-            <div className="w-full space-y-4">
-                {/* Path Configuration */}
-                <PathConfigView
-                    selectedEnvironmentId={selectedEnvironment.id}
-                    serviceData={serviceData}
-                />
+        <div className="w-full p-3 space-y-4">
+            {/* Path Configuration */}
+            <PathConfigView
+                selectedEnvironmentId={selectedEnvironment.id}
+                serviceData={serviceData}
+            />
 
-                {/* Environment Variables Configuration */}
-                <EnvironmentVariablesView
-                    selectedEnvironmentId={selectedEnvironment.id}
-                    serviceData={serviceData}
-                />
+            {/* Environment Variables Configuration */}
+            <EnvironmentVariablesView
+                selectedEnvironmentId={selectedEnvironment.id}
+                serviceData={serviceData}
+            />
 
-                {/* Aliases Configuration */}
-                <AliasesConfigView
-                    selectedEnvironmentId={selectedEnvironment.id}
-                    serviceData={serviceData}
-                />
-            </div>
-        </BaseService>
+            {/* Aliases Configuration */}
+            <AliasesConfigView
+                selectedEnvironmentId={selectedEnvironment.id}
+                serviceData={serviceData}
+            />
+        </div>
     )
 }

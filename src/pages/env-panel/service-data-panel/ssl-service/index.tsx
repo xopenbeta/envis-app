@@ -1,6 +1,5 @@
 import { Label } from "@/components/ui/label"
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
-import { BaseService } from '../base-service'
 import { CAInitDialog } from './ca-init-dialog'
 import { CertificateList } from './certificate-list'
 import { IssueCertificateDialog } from './issue-certificate-dialog'
@@ -72,7 +71,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
         if (isServiceActive && isCAInitialized) {
             // 立即执行一次检查
             checkCAInstalledStatus()
-            
+
             // 设置定时器
             checkIntervalRef.current = setInterval(() => {
                 checkCAInstalledStatus()
@@ -175,146 +174,143 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
     }
 
     return (
-        <BaseService service={serviceData}>
-            <div className="w-full space-y-4">
-                {/* CA 状态 */}
-                <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-2">
-                        <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                            <Shield className="h-3.5 w-3.5" />
-                            证书颁发机构 (CA)
-                        </Label>
-                        {isCAInitialized && (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleExportCA}
-                                className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            >
-                                <FolderOpen className="h-3 w-3 mr-1" />
-                                打开 CA 证书
-                            </Button>
-                        )}
-                    </div>
-
-                    {!isServiceActive && (
-                        <div className="text-center py-6 text-muted-foreground bg-white dark:bg-white/5 rounded-lg border border-dashed border-gray-200 dark:border-white/10">
-                            <AlertCircle className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">服务未激活</p>
-                            <p className="text-xs">请先激活 SSL 服务</p>
-                        </div>
+        <div className="w-full space-y-4">
+            {/* CA 状态 */}
+            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between mb-2">
+                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <Shield className="h-3.5 w-3.5" />
+                        证书颁发机构 (CA)
+                    </Label>
+                    {isCAInitialized && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleExportCA}
+                            className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            <FolderOpen className="h-3 w-3 mr-1" />
+                            打开 CA 证书
+                        </Button>
                     )}
-
-                    {isServiceActive && isCheckingCA && (
-                        <div className="flex items-center justify-center py-6 text-muted-foreground">
-                            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                            <span className="text-sm">正在检查 CA 状态...</span>
-                        </div>
-                    )}
-
-                    {isServiceActive && !isCheckingCA && !isCAInitialized && (
-                        <div className="space-y-3">
-                            <Alert className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription className="text-xs">
-                                    CA 未初始化，请先初始化 CA 后才能签发证书
-                                </AlertDescription>
-                            </Alert>
-                            <Button
-                                onClick={() => setShowCAInitDialog(true)}
-                                className="w-full h-8 text-xs shadow-none"
-                            >
-                                初始化 CA
-                            </Button>
-                        </div>
-                    )}
-
-                    {isServiceActive && !isCheckingCA && isCAInitialized && (
-                        <div className="space-y-4">
-                            {/* CA 安装状态指南 */}
-                            <CAInstallGuide 
-                                isInstalled={isCAInstalledToSystem} 
-                                certPath={caCertPath}
-                            />
-
-                            {/* CA 详细信息 - 可折叠 */}
-                            <Collapsible open={showCADetails} onOpenChange={setShowCADetails}>
-                                <div className="flex items-center justify-between">
-                                    <div className="text-xs font-medium text-muted-foreground">CA 详细信息</div>
-                                    <CollapsibleTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs shadow-none hover:bg-white dark:hover:bg-white/10">
-                                            {showCADetails ? (
-                                                <>
-                                                    <ChevronUp className="h-3 w-3 mr-1" />
-                                                    收起
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ChevronDown className="h-3 w-3 mr-1" />
-                                                    展开
-                                                </>
-                                            )}
-                                        </Button>
-                                    </CollapsibleTrigger>
-                                </div>
-                                
-                                <CollapsibleContent>
-                                    <div className="space-y-2 text-xs mt-2 p-3 bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">通用名称:</span>
-                                            <span className="font-medium">{caInfo?.subject}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">颁发者:</span>
-                                            <span className="font-medium">{caInfo?.issuer}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">有效期:</span>
-                                            <span className="font-medium">
-                                                {caInfo?.validFrom} ~ {caInfo?.validTo}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">序列号:</span>
-                                            <span className="font-mono">{caInfo?.serialNumber}</span>
-                                        </div>
-                                    </div>
-                                </CollapsibleContent>
-                            </Collapsible>
-                        </div>
-                    )}
-
                 </div>
 
-                {/* 证书管理 */}
-                {isCAInitialized && (
-                    <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                        <div className="flex items-center justify-between mb-2">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">证书管理</Label>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setShowIssueCertDialog(true)}
-                                disabled={!isServiceActive}
-                                className="h-7 px-2 shadow-none text-xs"
-                            >
-                                <Plus className="h-3 w-3 mr-1" />
-                                签发新证书
-                            </Button>
-                        </div>
-                        <div>
-                            <CertificateList
-                                certificates={certificates}
-                                isLoading={isLoadingCerts}
-                                onRefresh={loadCertificates}
-                                selectedEnvironment={selectedEnvironment}
-                                serviceData={serviceData}
-                            />
-                        </div>
+                {!isServiceActive && (
+                    <div className="text-center py-6 text-muted-foreground bg-white dark:bg-white/5 rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                        <AlertCircle className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">服务未激活</p>
+                        <p className="text-xs">请先激活 SSL 服务</p>
                     </div>
                 )}
+
+                {isServiceActive && isCheckingCA && (
+                    <div className="flex items-center justify-center py-6 text-muted-foreground">
+                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                        <span className="text-sm">正在检查 CA 状态...</span>
+                    </div>
+                )}
+
+                {isServiceActive && !isCheckingCA && !isCAInitialized && (
+                    <div className="space-y-3">
+                        <Alert className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="text-xs">
+                                CA 未初始化，请先初始化 CA 后才能签发证书
+                            </AlertDescription>
+                        </Alert>
+                        <Button
+                            onClick={() => setShowCAInitDialog(true)}
+                            className="w-full h-8 text-xs shadow-none"
+                        >
+                            初始化 CA
+                        </Button>
+                    </div>
+                )}
+
+                {isServiceActive && !isCheckingCA && isCAInitialized && (
+                    <div className="space-y-4">
+                        {/* CA 安装状态指南 */}
+                        <CAInstallGuide
+                            isInstalled={isCAInstalledToSystem}
+                            certPath={caCertPath}
+                        />
+
+                        {/* CA 详细信息 - 可折叠 */}
+                        <Collapsible open={showCADetails} onOpenChange={setShowCADetails}>
+                            <div className="flex items-center justify-between">
+                                <div className="text-xs font-medium text-muted-foreground">CA 详细信息</div>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs shadow-none hover:bg-white dark:hover:bg-white/10">
+                                        {showCADetails ? (
+                                            <>
+                                                <ChevronUp className="h-3 w-3 mr-1" />
+                                                收起
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ChevronDown className="h-3 w-3 mr-1" />
+                                                展开
+                                            </>
+                                        )}
+                                    </Button>
+                                </CollapsibleTrigger>
+                            </div>
+
+                            <CollapsibleContent>
+                                <div className="space-y-2 text-xs mt-2 p-3 bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">通用名称:</span>
+                                        <span className="font-medium">{caInfo?.subject}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">颁发者:</span>
+                                        <span className="font-medium">{caInfo?.issuer}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">有效期:</span>
+                                        <span className="font-medium">
+                                            {caInfo?.validFrom} ~ {caInfo?.validTo}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">序列号:</span>
+                                        <span className="font-mono">{caInfo?.serialNumber}</span>
+                                    </div>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
+                )}
+
             </div>
 
+            {/* 证书管理 */}
+            {isCAInitialized && (
+                <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="flex items-center justify-between mb-2">
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">证书管理</Label>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowIssueCertDialog(true)}
+                            disabled={!isServiceActive}
+                            className="h-7 px-2 shadow-none text-xs"
+                        >
+                            <Plus className="h-3 w-3 mr-1" />
+                            签发新证书
+                        </Button>
+                    </div>
+                    <div>
+                        <CertificateList
+                            certificates={certificates}
+                            isLoading={isLoadingCerts}
+                            onRefresh={loadCertificates}
+                            selectedEnvironment={selectedEnvironment}
+                            serviceData={serviceData}
+                        />
+                    </div>
+                </div>
+            )}
             {/* CA 初始化对话框 */}
             <CAInitDialog
                 open={showCAInitDialog}
@@ -332,6 +328,6 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                 selectedEnvironment={selectedEnvironment}
                 serviceData={serviceData}
             />
-        </BaseService>
+        </div>
     )
 }

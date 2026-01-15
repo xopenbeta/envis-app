@@ -355,7 +355,7 @@ export function HostManagementView({
     }
 
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full p-3 space-y-4">
 
             <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20 mb-4">
                 <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />

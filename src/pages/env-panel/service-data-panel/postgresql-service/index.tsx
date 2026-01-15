@@ -15,7 +15,6 @@ import {
   Save
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BaseService } from '../base-service'
 import { ServiceData, Environment } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { 
@@ -193,7 +192,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
   }
 
   return (
-    <BaseService service={serviceData}>
+    <>
       {!isServiceActive ? (
         <Card className='shadow-none'>
           <CardContent className="pt-6">
@@ -331,6 +330,6 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
           </Card>
         </>
       )}
-    </BaseService>
+    </>
   )
 }

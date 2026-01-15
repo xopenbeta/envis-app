@@ -168,7 +168,7 @@ export function DnsmasqConfigView({
     }
 
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full p-3 space-y-4">
             {/* 控制面板 */}
             <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-2">

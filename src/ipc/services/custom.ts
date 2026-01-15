@@ -29,3 +29,10 @@ export const ipcUpdateCustomServiceAliases = ipcLogFunc('更新自定义服务 A
 ): Promise<IPCResult> => {
     return invokeCommand(`update_custom_service_aliases`, { environmentId, serviceData, oldAliases, aliases })
 })
+
+export const ipcExecuteCustomServiceAlias = ipcLogFunc('执行自定义服务 Alias 命令', async (
+    aliasName: string,
+    command: string
+): Promise<IPCResult> => {
+    return invokeCommand(`execute_custom_service_alias`, { aliasName, command })
+})

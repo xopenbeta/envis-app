@@ -20,7 +20,6 @@ import {
   Copy
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BaseService } from '../base-service'
 import { ServiceData } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
@@ -210,7 +209,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   }
 
   return (
-    <BaseService service={serviceData}>
+    <div className="w-full p-3 space-y-4">
       {/* MariaDB 状态卡片 */}
       <Card className="shadow-none">
         <CardHeader>
@@ -567,6 +566,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           )}
         </CardContent>
       </Card>
-    </BaseService>
+    </div>
   )
 }

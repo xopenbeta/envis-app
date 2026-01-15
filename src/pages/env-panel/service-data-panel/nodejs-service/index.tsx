@@ -7,7 +7,6 @@ import {
     Package,
     RefreshCw
 } from 'lucide-react'
-import { BaseService } from '../base-service'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip"
@@ -25,10 +24,7 @@ interface NodeServiceProps {
 
 export function NodeService({ serviceData, selectedEnvironment }: NodeServiceProps) {
     return (
-        <BaseService service={serviceData}>
-            {/* Node Service Configuration */}
-            <NodeServiceCard serviceData={serviceData} selectedEnvironmentId={selectedEnvironment.id} />
-        </BaseService>
+        <NodeServiceCard serviceData={serviceData} selectedEnvironmentId={selectedEnvironment.id} />
     )
 }
 
@@ -51,7 +47,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     useEffect(() => {
         setRegistry(serviceData.metadata?.NPM_CONFIG_REGISTRY || '')
         setPrefix(serviceData.metadata?.NPM_CONFIG_PREFIX || '')
-        
+
         // 如果服务激活，自动加载全局包列表
         if (isServiceDataActive) {
             loadGlobalPackages()
@@ -118,6 +114,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     const showLegacyMacWarning = !isNaN(versionNum) && versionNum <= 14 && navigator.userAgent.includes("Mac");
 
     return (<>
+        <div className="w-full p-3 space-y-6">
             {showLegacyMacWarning && (
                 <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20">
                     <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
@@ -137,174 +134,170 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     </AlertDescription>
                 </Alert>
             )}
-        <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-6">
-
-            <div className="space-y-6">
-                {/* Registry Configuration */}
-                <div>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Registry URL
-                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                </Label>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <div className="text-xs space-y-1">
-                                    <div>Current: <code>npm config get registry</code></div>
-                                    <div>Set: <code>npm config set registry &lt;url&gt;</code></div>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    <div className="flex items-center space-x-2 mt-2">
-                        <Input
-                            value={registry}
-                            onChange={(e) => setRegistry(e.target.value)}
-                            placeholder="Registry URL"
-                            disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        />
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => applyRegistry(registry)}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            Apply
-                        </Button>
-                    </div>
-
-                    {/* Quick Registry Options */}
-                    <div className="flex flex-wrap gap-2 items-center mt-3">
-                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">Quick Set</Label>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => applyRegistry('https://registry.npmjs.org/')}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            Official
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => applyRegistry('https://registry.npmmirror.com/')}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            Taobao
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => applyRegistry('https://registry.anpm.alibaba-inc.com/')}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            Ali
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Prefix Configuration */}
-                <div>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Config Prefix (NPM_CONFIG_PREFIX)
-                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                </Label>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <div className="text-xs space-y-1">
-                                    <div>Current: <code>npm config get prefix</code></div>
-                                    <div>Set: <code>npm config set prefix &lt;path&gt;</code></div>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                        Sets the installation location for global packages
-                    </p>
-                    <div className="flex items-center space-x-2">
-                        <Input
-                            value={prefix}
-                            onChange={(e) => setPrefix(e.target.value)}
-                            placeholder="Prefix path"
-                            disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        />
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => applyPrefix(prefix)}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            Apply
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Global npm Packages */}
-        {isServiceDataActive && (
-            <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                            Global Packages
-                        </Label>
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                            ({globalPackages.length})
-                        </span>
-                    </div>
+            {/* Registry Configuration */}
+            <div>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Registry URL
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                            </Label>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <div className="text-xs space-y-1">
+                                <div>Current: <code>npm config get registry</code></div>
+                                <div>Set: <code>npm config set registry &lt;url&gt;</code></div>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <div className="flex items-center space-x-2 mt-2">
+                    <Input
+                        value={registry}
+                        onChange={(e) => setRegistry(e.target.value)}
+                        placeholder="Registry URL"
+                        disabled={isLoading || !isServiceDataActive}
+                        className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    />
                     <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={loadGlobalPackages}
-                        disabled={isLoadingPackages}
-                        className="h-6 px-2 text-[10px]"
+                        variant="outline"
+                        onClick={() => applyRegistry(registry)}
+                        disabled={isLoading || !isServiceDataActive}
+                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                     >
-                        <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
+                        Apply
                     </Button>
                 </div>
 
-                {isLoadingPackages ? (
-                    <div className="flex items-center justify-center py-8 text-xs text-gray-500">
-                        Loading packages...
-                    </div>
-                ) : globalPackages.length === 0 ? (
-                    <div className="flex items-center justify-center py-8 text-xs text-gray-500">
-                        No global packages installed
-                    </div>
-                ) : (
-                    <div className="max-h-60 overflow-y-auto">
-                        <div className="space-y-1">
-                            {globalPackages.map((pkg, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
-                                >
-                                    <span className="text-xs font-mono text-gray-700 dark:text-gray-300">
-                                        {pkg.name}
-                                    </span>
-                                    <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
-                                        {pkg.version}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                {/* Quick Registry Options */}
+                <div className="flex flex-wrap gap-2 items-center mt-3">
+                    <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">Quick Set</Label>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => applyRegistry('https://registry.npmjs.org/')}
+                        disabled={isLoading || !isServiceDataActive}
+                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    >
+                        Official
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => applyRegistry('https://registry.npmmirror.com/')}
+                        disabled={isLoading || !isServiceDataActive}
+                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    >
+                        Taobao
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => applyRegistry('https://registry.anpm.alibaba-inc.com/')}
+                        disabled={isLoading || !isServiceDataActive}
+                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    >
+                        Ali
+                    </Button>
+                </div>
             </div>
-        )}
+
+            {/* Prefix Configuration */}
+            <div>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Config Prefix (NPM_CONFIG_PREFIX)
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                            </Label>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <div className="text-xs space-y-1">
+                                <div>Current: <code>npm config get prefix</code></div>
+                                <div>Set: <code>npm config set prefix &lt;path&gt;</code></div>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                    Sets the installation location for global packages
+                </p>
+                <div className="flex items-center space-x-2">
+                    <Input
+                        value={prefix}
+                        onChange={(e) => setPrefix(e.target.value)}
+                        placeholder="Prefix path"
+                        disabled={isLoading || !isServiceDataActive}
+                        className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    />
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => applyPrefix(prefix)}
+                        disabled={isLoading || !isServiceDataActive}
+                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    >
+                        Apply
+                    </Button>
+                </div>
+            </div>
+
+            {/* Global npm Packages */}
+            {isServiceDataActive && (
+                <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Global Packages
+                            </Label>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                ({globalPackages.length})
+                            </span>
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={loadGlobalPackages}
+                            disabled={isLoadingPackages}
+                            className="h-6 px-2 text-[10px]"
+                        >
+                            <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
+
+                    {isLoadingPackages ? (
+                        <div className="flex items-center justify-center py-8 text-xs text-gray-500">
+                            Loading packages...
+                        </div>
+                    ) : globalPackages.length === 0 ? (
+                        <div className="flex items-center justify-center py-8 text-xs text-gray-500">
+                            No global packages installed
+                        </div>
+                    ) : (
+                        <div className="max-h-60 overflow-y-auto">
+                            <div className="space-y-1">
+                                {globalPackages.map((pkg, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                                    >
+                                        <span className="text-xs font-mono text-gray-700 dark:text-gray-300">
+                                            {pkg.name}
+                                        </span>
+                                        <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                                            {pkg.version}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
     </>)
 }

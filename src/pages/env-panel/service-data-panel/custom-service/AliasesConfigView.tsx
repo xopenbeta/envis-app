@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { ServiceData, ServiceDataStatus } from '@/types/index'
 import { useCustomService } from '@/hooks/services/custom'
+import { ipcExecuteCustomServiceAlias } from '@/ipc/services/custom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Command } from 'lucide-react'
+import { Plus, Trash2, Play } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface AliasItem {
@@ -59,6 +60,38 @@ export function AliasesConfigView({
     const removeAlias = (index: number) => {
         const newAliases = aliases.filter((_, i) => i !== index)
         setAliases(newAliases)
+    }
+
+    // 执行 Alias 命令
+    const executeAlias = async (alias: AliasItem) => {
+        if (!alias.key || !alias.value) {
+            toast.error('别名或命令不能为空')
+            return
+        }
+
+        try {
+            toast.info(`正在执行命令: ${alias.value}`)
+            
+            // 通过 IPC 调用后端执行命令
+            const result = await ipcExecuteCustomServiceAlias(alias.key, alias.value)
+            
+            if (result.success) {
+                const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
+                toast.success(`命令执行成功 (${alias.key})`, {
+                    description: data.stdout ? data.stdout.substring(0, 200) : '执行完成'
+                })
+            } else {
+                const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
+                toast.error(`命令执行失败 (${alias.key})`, {
+                    description: data?.stderr || result.message || '未知错误'
+                })
+            }
+        } catch (error) {
+            console.error('执行命令失败:', error)
+            toast.error('执行命令失败', {
+                description: String(error)
+            })
+        }
     }
 
     // 保存 Alias 配置
@@ -139,6 +172,16 @@ export function AliasesConfigView({
                                 className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                                 disabled={isLoading || !isServiceDataActive}
                             />
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => executeAlias(item)}
+                                disabled={isLoading || !item.key || !item.value}
+                                className="h-8 w-8 text-muted-foreground hover:text-green-600 dark:hover:text-green-400"
+                                title="执行命令"
+                            >
+                                <Play className="h-4 w-4" />
+                            </Button>
                             {isServiceDataActive && (
                                 <Button
                                     variant="ghost"

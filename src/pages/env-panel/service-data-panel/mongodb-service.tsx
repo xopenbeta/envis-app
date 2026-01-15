@@ -40,7 +40,6 @@ import {
   User
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BaseService } from './base-service'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'

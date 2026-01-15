@@ -20,7 +20,6 @@ import {
   Copy
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BaseService } from '../base-service'
 import { ServiceData } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
@@ -204,7 +203,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   }
 
   return (
-    <BaseService service={serviceData}>
+    <div className="w-full p-3 space-y-4">
       {/* MySQL 状态卡片 */}
       <Card className="shadow-none">
         <CardHeader>
@@ -561,6 +560,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           )}
         </CardContent>
       </Card>
-    </BaseService>
+    </div>
   )
 }
