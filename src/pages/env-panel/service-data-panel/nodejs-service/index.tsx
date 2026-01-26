@@ -5,9 +5,11 @@ import {
     Info,
     AlertTriangle,
     Package,
-    RefreshCw
+    RefreshCw,
+    Plus
 } from 'lucide-react'
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip"
 import { useState, useEffect } from "react"
@@ -34,13 +36,16 @@ interface NodeServiceCardProps {
 }
 
 function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCardProps) {
-    const { setNpmRegistry, setConfigPrefix, getGlobalPackages } = useNodejsService()
+    const { setNpmRegistry, setConfigPrefix, getGlobalPackages, installGlobalPackage } = useNodejsService()
     const { updateServiceData } = useEnvironmentServiceData()
     const [registry, setRegistry] = useState('')
     const [prefix, setPrefix] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [globalPackages, setGlobalPackages] = useState<Array<{ name: string, version: string }>>([])
     const [isLoadingPackages, setIsLoadingPackages] = useState(false)
+    const [isInstallDialogOpen, setIsInstallDialogOpen] = useState(false)
+    const [packageToInstall, setPackageToInstall] = useState('')
+    const [isInstalling, setIsInstalling] = useState(false)
 
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
@@ -67,6 +72,32 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             console.error('获取全局包列表异常:', error)
         } finally {
             setIsLoadingPackages(false)
+        }
+    }
+
+    const handleInstallPackage = async () => {
+        if (!packageToInstall.trim()) {
+            toast.error('请输入包名')
+            return
+        }
+
+        try {
+            setIsInstalling(true)
+            const res = await installGlobalPackage(serviceData, packageToInstall.trim())
+            if (res && (res as any).success) {
+                toast.success('安装成功')
+                setIsInstallDialogOpen(false)
+                setPackageToInstall('')
+                // 重新加载全局包列表
+                await loadGlobalPackages()
+            } else {
+                toast.error('安装失败: ' + ((res as any).message || '未知错误'))
+            }
+        } catch (error) {
+            console.error('安装全局包异常:', error)
+            toast.error('安装失败')
+        } finally {
+            setIsInstalling(false)
         }
     }
 
@@ -252,15 +283,68 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                 ({globalPackages.length})
                             </span>
                         </div>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={loadGlobalPackages}
-                            disabled={isLoadingPackages}
-                            className="h-6 px-2 text-[10px]"
-                        >
-                            <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            <Dialog open={isInstallDialogOpen} onOpenChange={setIsInstallDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={isLoadingPackages}
+                                        className="h-6 px-2 text-[10px]"
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>安装全局包</DialogTitle>
+                                        <DialogDescription>
+                                            输入要安装的包名，例如 pnpm@7 或 typescript@latest
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="flex items-center space-x-2 py-4">
+                                        <Input
+                                            value={packageToInstall}
+                                            onChange={(e) => setPackageToInstall(e.target.value)}
+                                            placeholder="例如: pnpm@7"
+                                            disabled={isInstalling}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !isInstalling) {
+                                                    handleInstallPackage()
+                                                }
+                                            }}
+                                            className="flex-1"
+                                        />
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setIsInstallDialogOpen(false)}
+                                            disabled={isInstalling}
+                                        >
+                                            取消
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={handleInstallPackage}
+                                            disabled={isInstalling}
+                                        >
+                                            {isInstalling ? '安装中...' : '安装'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={loadGlobalPackages}
+                                disabled={isLoadingPackages}
+                                className="h-6 px-2 text-[10px]"
+                            >
+                                <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
+                            </Button>
+                        </div>
                     </div>
 
                     {isLoadingPackages ? (

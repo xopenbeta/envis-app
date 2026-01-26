@@ -19,7 +19,7 @@ export function PipConfigView({
     selectedEnvironmentId,
     serviceData,
 }: PipConfigViewProps) {
-    const { setPipIndexUrl, setPipTrustedHost, setPython3AsPython } = usePythonService()
+    const { setPipIndexUrl, setPython3AsPython } = usePythonService()
     const [config, setConfig] = useState<{ indexUrl: string; trustedHost: string } | null>(null)
     const [python3AsPython, setPython3AsPythonState] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -49,20 +49,7 @@ export function PipConfigView({
         }
     }
 
-    const setTrustedHost = async (trustedHost: string) => {
-        try {
-            setIsLoading(true)
-            const res = await setPipTrustedHost(selectedEnvironmentId, serviceData, trustedHost)
-            if (res && (res as any).success) {
-                setConfig(prev => prev ? { ...prev, trustedHost } : { indexUrl: '', trustedHost })
-            } else {
-                console.error('设置 trusted-host 失败:', res)
-            }
-            return res
-        } finally {
-            setIsLoading(false)
-        }
-    }
+
 
     const handlePython3AsPythonChange = async (enable: boolean) => {
         try {
@@ -160,108 +147,35 @@ export function PipConfigView({
                     </div>
                 </div>
 
-                {/* Trusted Host Configuration */}
-                <div>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    信任主机 (trusted-host)
-                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                </Label>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <div className="text-xs space-y-1">
-                                    <div>查看当前配置: <code>pip config get global.trusted-host</code></div>
-                                    <div>设置配置: <code>pip config set global.trusted-host &lt;host&gt;</code></div>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                        设置信任的主机，用于跳过 SSL 验证
-                    </p>
-                    <div className="flex items-center space-x-2">
-                        <Input
-                            value={config?.trustedHost || ''}
-                            onChange={(e) => setConfig(prev => prev ? { ...prev, trustedHost: e.target.value } : { indexUrl: '', trustedHost: e.target.value })}
-                            placeholder="信任主机地址"
-                            disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        />
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                                const host = config?.trustedHost || ''
-                                setTrustedHost(host)
-                            }}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            应用
-                        </Button>
-                    </div>
-                    {/* Quick Trusted Host Options */}
-                    <div className="flex flex-wrap gap-2 items-center mt-3">
-                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">快速设置</Label>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setTrustedHost('pypi.tuna.tsinghua.edu.cn')}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            清华源
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setTrustedHost('mirrors.aliyun.com')}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            阿里源
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setTrustedHost('')}
-                            disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        >
-                            清除
-                        </Button>
-                    </div>
-                </div>
-
                 {/* Python3 as Python Configuration */}
-                <div>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1.5 cursor-help">
-                                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">将 python3 命名为 python</Label>
-                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>为 python3 创建 python 别名，让 python 命令指向 python3</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                        启用后，在终端中使用 python 命令将执行 python3
-                    </p>
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 cursor-help w-fit">
+                                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">python/pip 别名设置</Label>
+                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>为 python3 和 pip3 创建 python 和 pip 别名</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                            启用后，在终端中使用 python/pip 命令将分别执行 python3/pip3
+                        </p>
+                    </div>
                     <div className="flex items-center space-x-2">
+                        <Label className="text-xs text-gray-700 dark:text-gray-300">
+                            {python3AsPython ? '已启用' : '已禁用'}
+                        </Label>
                         <Switch
                             checked={python3AsPython}
                             onCheckedChange={handlePython3AsPythonChange}
                             disabled={isLoading || !isServiceDataActive}
                         />
-                        <Label className="text-xs text-gray-700 dark:text-gray-300">
-                            {python3AsPython ? '已启用' : '已禁用'}
-                        </Label>
                     </div>
                 </div>
             </div>

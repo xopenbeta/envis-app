@@ -181,3 +181,24 @@ pub async fn get_global_npm_packages(
         ))),
     }
 }
+
+/// 安装全局 npm 包
+#[tauri::command]
+pub async fn install_global_npm_package(
+    service_data: ServiceData,
+    package: String,
+) -> Result<CommandResponse, String> {
+    let nodejs_service = NodejsService::global();
+    match nodejs_service.install_global_package(&service_data, &package) {
+        Ok(_) => {
+            Ok(CommandResponse::success(
+                format!("成功安装全局包: {}", package),
+                None,
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!(
+            "安装全局包失败: {}",
+            e
+        ))),
+    }
+}

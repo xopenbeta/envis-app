@@ -30,3 +30,7 @@ export const ipcSetNpmConfigPrefix = ipcLogFunc('设置包管理器前缀', asyn
 export const ipcGetGlobalNpmPackages = ipcLogFunc('获取全局 npm 包', async (serviceData: ServiceData): Promise<IPCResult<{ packages: Array<{ name: string, version: string }> }>> => {
   return invokeCommand(`get_global_npm_packages`, { serviceData })
 })
+
+export const ipcInstallGlobalNpmPackage = ipcLogFunc('安装全局 npm 包', async (serviceData: ServiceData, packageName: string): Promise<IPCResult> => {
+  return invokeCommand(`install_global_npm_package`, { serviceData, package: packageName })
+})

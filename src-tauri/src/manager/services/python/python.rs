@@ -640,11 +640,13 @@ impl PythonService {
         if enable {
             // 添加 alias python=python3
             shell_manager.add_alias("python", "python3")?;
-            log::info!("已设置 python3 别名为 python");
+            shell_manager.add_alias("pip", "pip3")?;
+            log::info!("已设置 python3 别名为 python，pip3 别名为 pip");
         } else {
             // 删除 alias
             shell_manager.delete_alias("python")?;
-            log::info!("已移除 python 别名");
+            shell_manager.delete_alias("pip")?;
+            log::info!("已移除 python 和 pip 别名");
         }
 
         Ok(())

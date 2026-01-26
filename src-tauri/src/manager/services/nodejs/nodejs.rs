@@ -547,7 +547,7 @@ impl NodejsService {
     }
 
     /// 设置包管理器仓库
-    pub fn set_npm_registry(&self, service_data: &mut ServiceData, registry: &str) -> Result<()> {
+    pub fn set_npm_registry(&self, _service_data: &mut ServiceData, registry: &str) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
         shell_manager.add_export("NPM_CONFIG_REGISTRY", registry)?;
@@ -654,6 +654,33 @@ impl NodejsService {
         packages.sort_by(|a, b| a.name.cmp(&b.name));
 
         Ok(packages)
+    }
+
+    /// 安装全局 npm 包
+    pub fn install_global_package(&self, _service_data: &ServiceData, package: &str) -> Result<()> {
+        let shell_manager = ShellManager::global();
+        let shell_manager = shell_manager.lock().unwrap();
+        
+        // 构建安装命令
+        let install_command = format!("npm install -g {}", package);
+        
+        // 使用 shell manager 执行命令，这样会加载所有环境变量
+        let (stdout, stderr, exit_code) = shell_manager.execute_command_with_env(&install_command)?;
+        
+        // 检查执行结果
+        if exit_code != 0 {
+            return Err(anyhow!(
+                "安装全局包失败 (exit code: {})\nstdout: {}\nstderr: {}",
+                exit_code,
+                stdout,
+                stderr
+            ));
+        }
+        
+        log::info!("成功安装全局包: {}", package);
+        log::debug!("安装输出: {}", stdout);
+        
+        Ok(())
     }
 }
 

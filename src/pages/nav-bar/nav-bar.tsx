@@ -110,7 +110,7 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 激活/停用环境
   const onActiveEnvBtnClick = async (environment: Environment, e: React.MouseEvent) => {
-    e.stopPropagation(); // 阻止事件冒泡，避免触发环境选择
+    // 允许触发环境选择，这样会更方便
     await switchEnvAndServDatasActive(environment);
   }
 
