@@ -35,7 +35,7 @@ export function useAppSettings() {
     let appSettings = loadAppSettingsFromStorage();
     setAppSettings(appSettings);
     setAppTheme(appSettings.theme);
-    logInfo('初始化应用设置完成');
+    logInfo('【init】初始化应用设置完成');
     return appSettings;
   }
 
@@ -61,10 +61,10 @@ export function useAppSettings() {
     if (ipcRes.success && ipcRes.data?.appConfig) {
       const systemSettings: SystemSettings = ipcRes.data.appConfig;
       setSystemSettings(systemSettings);
-      logInfo('初始化系统设置完成');
+      logInfo('【init】初始化系统设置完成');
       return systemSettings;
     } else {
-      logError('初始化系统设置失败');
+      logError('【init】初始化系统设置失败');
       return null;
     }
   }

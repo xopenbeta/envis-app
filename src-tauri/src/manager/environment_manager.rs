@@ -199,32 +199,43 @@ impl EnvironmentManager {
             app_config_manager.get_app_config()
         };
 
-        // 设置终端配置文件
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-        shell_manager
-            .clear_shell_environment_block_content()
-            .context("清除shell环境块失败")?;
-        
-        // 添加 echo 信息到对应的 block（global 或 active）
-        if app_config.show_environment_name_on_terminal_open {
-            shell_manager
-                .add_echo_environment(&environment_name, &environment_id)
-                .context("添加echo环境信息失败")?;
-        }
-
-        if app_config.show_service_info_on_terminal_open {
+        // 准备服务信息（提前获取以避免锁嵌套）
+        let services_info = if app_config.show_service_info_on_terminal_open {
             let env_serv_data_manager = EnvServDataManager::global();
             let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
-            let service_datas = env_serv_data_manager.get_environment_all_service_datas(&environment_id).unwrap_or_default();
-            
-            let mut services_info = Vec::new();
+            let service_datas = env_serv_data_manager
+                .get_environment_all_service_datas(&environment_id)
+                .unwrap_or_default();
+
+            let mut info = Vec::new();
             for sd in service_datas {
-                services_info.push(format!("{:?} v{}", sd.service_type, sd.version));
+                info.push(format!("{:?} {}", sd.service_type, sd.version));
             }
+            Some(info)
+        } else {
+            None
+        };
+
+        // 设置终端配置文件（限制锁的作用域）
+        {
+            let shell_manager = ShellManager::global();
+            let shell_manager = shell_manager.lock().unwrap();
             shell_manager
-                .add_echo_services(services_info)
-                .context("添加服务信息的Echo失败")?;
+                .clear_shell_environment_block_content()
+                .context("清除shell环境块失败")?;
+
+            // 添加 echo 信息到对应的 block（global 或 active）
+            if app_config.show_environment_name_on_terminal_open {
+                shell_manager
+                    .add_echo_environment(&environment_name, &environment_id)
+                    .context("添加echo环境信息失败")?;
+            }
+
+            if let Some(info) = services_info {
+                shell_manager
+                    .add_echo_services(info)
+                    .context("添加服务信息的Echo失败")?;
+            }
         }
 
         // 更新环境状态和时间戳
@@ -246,16 +257,18 @@ impl EnvironmentManager {
         &self,
         environment: &mut Environment,
     ) -> Result<EnvironmentResult> {
-        // 移除当前活跃环境的 echo 信息
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-        shell_manager
-            .remove_echo_environment()
-            .context("移除echo环境信息失败")?;
+        // 移除当前活跃环境的 echo 信息（限制锁的作用域）
+        {
+            let shell_manager = ShellManager::global();
+            let shell_manager = shell_manager.lock().unwrap();
+            shell_manager
+                .remove_echo_environment()
+                .context("移除echo环境信息失败")?;
 
-        shell_manager
-            .remove_echo_services()
-            .context("移除服务echo信息失败")?;
+            shell_manager
+                .remove_echo_services()
+                .context("移除服务echo信息失败")?;
+        }
 
         // 更新环境状态和时间戳
         environment.status = EnvironmentStatus::Inactive;

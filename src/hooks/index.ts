@@ -26,9 +26,9 @@ export function useInitEnvis() {
                     await initEnvironments(appSettings, systemSettings)
                 }
                 setisEnvisInited(true)
-                logInfo('Envis 应用初始化完成')
+                logInfo('【init】Envis 应用初始化完成')
             } catch (e: any) {
-                logError(`启动失败: ${e?.message || String(e)}`)
+                logError(`【init】启动失败: ${e?.message || String(e)}`)
             }
             setIsAppLoading(false);
         }

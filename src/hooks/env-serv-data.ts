@@ -285,7 +285,9 @@ export function useEnvironmentServiceData() {
     }
 
     const initEnvironments = async (appSettings: AppSettings, systemSettings: SystemSettings) => {
+        console.log('【init】初始化环境和服务数据...')
         const loadedEnvironmentsRes = await ipcGetAllEnvironments()
+        console.log('【init】获取环境:', loadedEnvironmentsRes);
         if (loadedEnvironmentsRes.success && loadedEnvironmentsRes.data?.environments) {
             // 初始化环境
             const environments: Environment[] = loadedEnvironmentsRes.data.environments
@@ -299,13 +301,17 @@ export function useEnvironmentServiceData() {
                 }
             }
             setEnvironments(environments)
+            console.log('【init】初始化环境和服务数据，环境列表:', environments)
             // 首先尝试关闭所有环境
             await deactivateAllEnvAndServDatas(environments)
+            console.log('【init】所有环境和服务已停用')
             // 尝试自动启动上次使用的环境
             if (appSettings && systemSettings) {
                 await autoStartEnvironment(systemSettings, environments)
             }
+            console.log('【init】自动启动上次使用的环境完成')
         }
+        console.log('【init】初始化环境和服务数据完成:', environments)
     }
 
     async function activateEnvAndServDatas(environment: Environment) {
@@ -371,20 +377,21 @@ export function useEnvironmentServiceData() {
     const autoStartEnvironment = async (systemSettings: SystemSettings, environments: Environment[]) => {
         // 检查是否启用了自动启动上次环境功能
         if (systemSettings.autoActivateLastUsedEnvironmentOnAppStart) {
-            console.log('启用自动启动上次环境功能')
+            console.log('【init】启用自动启动上次环境功能')
             const lastUsedEnvironmentIds = deriveLastUsedEnvironmentIds(systemSettings)
             if (lastUsedEnvironmentIds.length === 0) {
-                console.log('未找到可自动启动的历史环境记录')
+                console.log('【init】未找到可自动启动的历史环境记录')
                 return
             }
 
             for (const envId of lastUsedEnvironmentIds) {
                 const targetEnvironment = environments.find(env => env.id === envId)
                 if (targetEnvironment) {
-                    console.log(`自动启动上次使用的环境: ${targetEnvironment.name}`)
+                    console.log(`【init】自动启动上次使用的环境: ${targetEnvironment.name}`)
                     await activateEnvAndServDatas(targetEnvironment)
+                    console.log(`【init】历史环境 ${targetEnvironment.name} 启动完成`)
                 } else {
-                    console.warn(`历史环境 ${envId} 不存在，已跳过自动启动`)
+                    console.warn(`【init】历史环境 ${envId} 不存在，已跳过自动启动`)
                 }
             }
         }
