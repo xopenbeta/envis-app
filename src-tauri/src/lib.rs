@@ -35,14 +35,6 @@ use tauri::Manager;
 // 在桌面端构建时：不会添加这个属性，run 只是普通函数，你通常会在 main() 里调用它。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let _ = initialize_config_manager(); // 初始化配置管理器
-    let _ = initialize_shell_manager(); // 初始化 Shell 管理器
-    let _ = initialize_environment_manager(); // 初始化环境管理器
-    let _ = initialize_env_serv_data_manager(); // 初始化环境服务数据管理器
-    let _ = initialize_service_manager(); // 初始化服务管理器
-                                          // Host 管理器延迟初始化，在第一次调用时自动创建
-                                          // let _ = initialize_host_manager();
-
     // 检查是否是 CLI 模式（有命令行参数）
     let is_cli_mode = std::env::args().len() > 1;
     
@@ -100,6 +92,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_cli::init())
         .setup(move |app| {
+            // 初始化各个管理器（需在日志插件初始化后执行，以便记录初始化日志）
+            let _ = initialize_config_manager(); // 初始化配置管理器
+            let _ = initialize_shell_manager(); // 初始化 Shell 管理器
+            let _ = initialize_environment_manager(); // 初始化环境管理器
+            let _ = initialize_env_serv_data_manager(); // 初始化环境服务数据管理器
+            let _ = initialize_service_manager(); // 初始化服务管理器
+            // Host 管理器延迟初始化，在第一次调用时自动创建
+            // let _ = initialize_host_manager();
+
             if !is_cli_mode {
                 log::info!("GUI 模式启动成功");
             }

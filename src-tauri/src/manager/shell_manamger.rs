@@ -145,29 +145,71 @@ impl ShellManager {
         Ok(())
     }
 
-    /// 初始化环境变量块
-    fn initialize_env_block(&self) -> Result<()> {
-        // 获取 envis 可执行文件路径
-        let envis_path = match std::env::current_exe() {
+    fn get_envis_executable_info(&self) -> (Option<PathBuf>, Option<PathBuf>) {
+        match std::env::current_exe() {
             Ok(exe) => {
                 log::debug!("ShellManager: 当前可执行文件路径: {:?}", exe);
                 match exe.parent() {
                     Some(parent) => {
                         let path = parent.to_path_buf();
                         log::debug!("ShellManager: envis 命令目录: {:?}", path);
-                        Some(path)
+                        (Some(path), Some(exe))
                     }
                     None => {
                         log::warn!("ShellManager: 无法获取可执行文件的父目录");
-                        None
+                        (None, None)
                     }
                 }
             }
             Err(e) => {
                 log::warn!("ShellManager: 无法获取当前可执行文件路径: {}", e);
-                None
+                (None, None)
             }
+        }
+    }
+
+    fn generate_envis_setup_commands(
+        &self,
+        envis_path: Option<&PathBuf>,
+        envis_exe: Option<&PathBuf>,
+        is_cmd: bool,
+        is_ps: bool,
+    ) -> String {
+        // 构建 envis 路径添加命令（如果可执行文件路径可用）
+        let envis_path_line = if let Some(path) = envis_path {
+            let path_str = path.to_string_lossy();
+            if is_cmd {
+                format!("set PATH={};%PATH%\n", path_str)
+            } else if is_ps {
+                format!("$env:Path = \"{};\" + $env:Path\n", path_str)
+            } else {
+                format!("export PATH=\"{}:$PATH\"\n", path_str)
+            }
+        } else {
+            String::new()
         };
+
+        // 构建 envis alias 命令
+        let envis_alias_line = if let Some(exe) = envis_exe {
+            let exe_str = exe.to_string_lossy();
+            if is_cmd {
+                format!("DOSKEY envis=\"{}\" $*\n", exe_str)
+            } else if is_ps {
+                format!("Set-Alias -Name envis -Value \"{}\"\n", exe_str)
+            } else {
+                format!("alias envis=\"{}\"\n", exe_str)
+            }
+        } else {
+            String::new()
+        };
+
+        format!("{}{}", envis_path_line, envis_alias_line)
+    }
+
+    /// 初始化环境变量块
+    fn initialize_env_block(&self) -> Result<()> {
+        // 获取 envis 可执行文件路径
+        let (envis_path, envis_exe) = self.get_envis_executable_info();
         
         // 对所有配置文件执行初始化
         for config_file_path in &self.config_file_paths {
@@ -194,19 +236,12 @@ impl ShellManager {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
             
-            // 构建 envis 路径添加命令（如果可执行文件路径可用）
-            let envis_path_line = if let Some(ref path) = envis_path {
-                let path_str = path.to_string_lossy();
-                if is_cmd {
-                    format!("set PATH={};%PATH%\n", path_str)
-                } else if is_ps {
-                    format!("$env:Path = \"{};\" + $env:Path\n", path_str)
-                } else {
-                    format!("export PATH=\"{}:$PATH\"\n", path_str)
-                }
-            } else {
-                String::new()
-            };
+            let combined_lines = self.generate_envis_setup_commands(
+                envis_path.as_ref(),
+                envis_exe.as_ref(),
+                is_cmd,
+                is_ps,
+            );
             
             let block_content = if is_cmd {
                 // CMD 使用 REM 作为注释（不包含 # 符号）
@@ -217,13 +252,13 @@ impl ShellManager {
                 };
                 format!(
                     "{}REM {}\nREM {}\n{}REM {}\n",
-                    prefix, ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, envis_path_line, ENVIS_ACTIVE_BLOCK_END
+                    prefix, ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, combined_lines, ENVIS_ACTIVE_BLOCK_END
                 )
             } else {
                 // PowerShell 和 Unix Shell 使用 # 作为注释
                 format!(
                     "\n{}\n{}\n{}{}\n",
-                    ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, envis_path_line, ENVIS_ACTIVE_BLOCK_END
+                    ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, combined_lines, ENVIS_ACTIVE_BLOCK_END
                 )
             };
 
@@ -814,13 +849,33 @@ impl ShellManager {
         Ok(block_lines.join("\n"))
     }
 
-    /// 清除环境块内容(但保留块结构)
+    /// 清除环境块内容(但保留块结构，并自动恢复 envis 基础配置)
     pub fn clear_shell_environment_block_content(&self) -> Result<()> {
+        // 获取 envis 信息
+        let (envis_path, envis_exe) = self.get_envis_executable_info();
+
         // 对所有配置文件执行清除操作
         for path in &self.config_file_paths {
             let content = fs::read_to_string(path).context("读取 Shell 配置文件失败")?;
-            let new_content = self.clear_env_block_content(&content)?;
-            self.write_content_atomic_for_path(path, &new_content)?;
+            // 1. 先清空内容（保留 BLOCK 标记）
+            let cleared_content = self.clear_env_block_content(&content)?;
+            
+            // 2. 生成 envis 基础配置
+            let is_cmd = path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = path.extension().and_then(|s| s.to_str()) == Some("ps1");
+            
+            let setup_cmds = self.generate_envis_setup_commands(
+                envis_path.as_ref(), 
+                envis_exe.as_ref(), 
+                is_cmd, 
+                is_ps
+            );
+
+            // 3. 将 envis 基础配置插入回去
+            // 这样能保证即使外部调用了 clear，envis 命令依然可用
+            let final_content = self.insert_line_in_block(&cleared_content, &setup_cmds)?;
+
+            self.write_content_atomic_for_path(path, &final_content)?;
         }
         Ok(())
     }
