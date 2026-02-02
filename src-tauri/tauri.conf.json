@@ -19,154 +19,19 @@
     "cli": {
       "description": "Envis - Environment and Service Management Tool",
       "subcommands": {
-        "use": {
-          "description": "Activate a service version in an environment",
-          "args": [
-            {
-              "name": "service",
-              "description": "Service type (nodejs, mongodb, mysql, redis)",
-              "index": 1,
-              "takesValue": true
-            },
-            {
-              "name": "version",
-              "description": "Version to activate",
-              "index": 2,
-              "takesValue": true
-            },
-            {
-              "short": "e",
-              "name": "environment",
-              "description": "Environment ID or name",
-              "takesValue": true
-            }
-          ]
-        },
         "list": {
-          "description": "List available versions or environments",
+          "description": "List all environments"
+        },
+        "use": {
+          "description": "Activate an environment",
           "args": [
             {
-              "name": "target",
-              "description": "What to list: services, versions, envs",
+              "name": "name",
+              "description": "Environment name or ID",
               "index": 1,
-              "takesValue": true
-            },
-            {
-              "short": "s",
-              "name": "service",
-              "description": "Service type filter",
               "takesValue": true
             }
           ]
-        },
-        "install": {
-          "description": "Download and install a service version",
-          "args": [
-            {
-              "name": "service",
-              "description": "Service type (nodejs, mongodb, mysql, redis)",
-              "index": 1,
-              "takesValue": true
-            },
-            {
-              "name": "version",
-              "description": "Version to install",
-              "index": 2,
-              "takesValue": true
-            }
-          ]
-        },
-        "start": {
-          "description": "Start a service",
-          "args": [
-            {
-              "name": "service",
-              "description": "Service type",
-              "index": 1,
-              "takesValue": true
-            },
-            {
-              "short": "e",
-              "name": "environment",
-              "description": "Environment ID or name",
-              "takesValue": true
-            }
-          ]
-        },
-        "stop": {
-          "description": "Stop a service",
-          "args": [
-            {
-              "name": "service",
-              "description": "Service type",
-              "index": 1,
-              "takesValue": true
-            },
-            {
-              "short": "e",
-              "name": "environment",
-              "description": "Environment ID or name",
-              "takesValue": true
-            }
-          ]
-        },
-        "status": {
-          "description": "Check service status",
-          "args": [
-            {
-              "name": "service",
-              "description": "Service type (optional, shows all if not specified)",
-              "index": 1,
-              "takesValue": true
-            },
-            {
-              "short": "e",
-              "name": "environment",
-              "description": "Environment ID or name",
-              "takesValue": true
-            }
-          ]
-        },
-        "env": {
-          "description": "Environment management",
-          "subcommands": {
-            "create": {
-              "description": "Create a new environment",
-              "args": [
-                {
-                  "name": "name",
-                  "description": "Environment name",
-                  "index": 1,
-                  "takesValue": true
-                }
-              ]
-            },
-            "list": {
-              "description": "List all environments"
-            },
-            "activate": {
-              "description": "Activate an environment",
-              "args": [
-                {
-                  "name": "name",
-                  "description": "Environment name or ID",
-                  "index": 1,
-                  "takesValue": true
-                }
-              ]
-            },
-            "delete": {
-              "description": "Delete an environment",
-              "args": [
-                {
-                  "name": "name",
-                  "description": "Environment name or ID",
-                  "index": 1,
-                  "takesValue": true
-                }
-              ]
-            }
-          }
         }
       }
     }

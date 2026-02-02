@@ -22,11 +22,7 @@ pub fn handle_cli(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
                 match subcommand.name.as_str() {
                     "use" => handlers::handle_use(&subcommand.matches),
                     "list" => handlers::handle_list(),
-                    "install" => handlers::handle_install(&subcommand.matches),
-                    "start" => handlers::handle_start(&subcommand.matches),
-                    "stop" => handlers::handle_stop(&subcommand.matches),
-                    "status" => handlers::handle_status(&subcommand.matches),
-                    "env" => handlers::handle_env(&subcommand.matches),
+                    "ls" => handlers::handle_list(),
                     _ => {
                         eprintln!("未知命令: {}", subcommand.name);
                         std::process::exit(1);
@@ -59,29 +55,19 @@ OPTIONS:
     -v, --version    Show version information
 
 SUBCOMMANDS:
-    use              Activate a service version
-    list             List available versions or environments
-    install          Download and install a service version
-    start            Start a service
-    stop             Stop a service
-    status           Check service status
-    env              Environment management
+    list             List all environments
+    ls               List all environments
+    use              Activate an environment
 
 EXAMPLES:
-    # Activate Node.js v20.18.0
-    envis use nodejs v20.18.0
+    # List all environments
+    envis list
 
-    # List all Node.js versions
-    envis list versions --service nodejs
+    # Activate an environment by name
+    envis use my-env
 
-    # Install MongoDB 7.0.15
-    envis install mongodb 7.0.15
-
-    # Start MySQL service
-    envis start mysql --env dev
-
-    # Check all service status
-    envis status
+    # Activate an environment by ID
+    envis use 0389cccc-1ed7-4d59-8be0-0c1baec26e5eenv
 
 For more information on a specific command, run:
     envis <SUBCOMMAND> --help

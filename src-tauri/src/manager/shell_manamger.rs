@@ -189,18 +189,46 @@ impl ShellManager {
             String::new()
         };
 
-        // 构建 envis alias 命令
-        let envis_alias_line = if let Some(exe) = envis_exe {
-            let exe_str = exe.to_string_lossy();
-            if is_cmd {
+        // 构建 envis alias/function 命令
+        let envis_alias_line = if is_cmd {
+            if let Some(exe) = envis_exe {
+                let exe_str = exe.to_string_lossy();
                 format!("DOSKEY envis=\"{}\" $*\n", exe_str)
-            } else if is_ps {
+            } else {
+                String::new()
+            }
+        } else if is_ps {
+            if let Some(exe) = envis_exe {
+                let exe_str = exe.to_string_lossy();
                 format!("Set-Alias -Name envis -Value \"{}\"\n", exe_str)
             } else {
-                format!("alias envis=\"{}\"\n", exe_str)
+                String::new()
             }
         } else {
-            String::new()
+            // Unix (Bash/Zsh) Shell Wrapper Function
+            r#"
+envis() {
+    command envis "$@"
+    local exit_code=$?
+    if [ "$1" = "use" ] && [ $exit_code -eq 0 ]; then
+        local config_file=""
+        if [ -n "$ZSH_VERSION" ]; then
+            config_file="$HOME/.zshrc"
+        elif [ -n "$BASH_VERSION" ]; then
+            if [ -f "$HOME/.bash_profile" ]; then
+                config_file="$HOME/.bash_profile"
+            elif [ -f "$HOME/.bashrc" ]; then
+                config_file="$HOME/.bashrc"
+            fi
+        fi
+
+        if [ -n "$config_file" ] && [ -f "$config_file" ]; then
+            source "$config_file"
+        fi
+    fi
+    return $exit_code
+}
+"#.to_string()
         };
 
         format!("{}{}", envis_path_line, envis_alias_line)
