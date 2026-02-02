@@ -7,8 +7,8 @@ export const ipcGetAllEnvironments = ipcLogFunc('获取所有环境', async (): 
     return invokeCommand('get_all_environments')
 })
 
-export const ipcCreateEnvironment = ipcLogFunc('创建环境', async (environment: Environment): Promise<IPCResult<{ environment: Environment }>> => {
-    return invokeCommand('create_environment', { environment })
+export const ipcCreateEnvironment = ipcLogFunc('创建环境', async (name: string, description?: string): Promise<IPCResult<{ environment: Environment }>> => {
+    return invokeCommand('create_environment', { name, description })
 })
 
 export const ipcSaveEnvironment = ipcLogFunc('保存环境', async (environment: Environment): Promise<IPCResult<{ env: Environment }>> => {

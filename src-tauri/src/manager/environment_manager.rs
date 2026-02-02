@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -98,7 +99,38 @@ impl EnvironmentManager {
     }
 
     /// 创建环境
-    pub fn create_environment(&self, environment: &Environment) -> Result<EnvironmentResult> {
+    pub fn create_environment(&self, name: String, description: Option<String>) -> Result<EnvironmentResult> {
+        // 1. 生成 ID
+        let id = format!("{}env", uuid::Uuid::new_v4());
+        let timestamp = Utc::now().to_rfc3339();
+
+        // 2. 计算 Sort
+        // 获取现有的最大 sort 值
+        let environments = self.get_all_environments().unwrap_or_default();
+        let max_sort = environments.iter()
+            .filter_map(|e| e.sort)
+            .max()
+            .unwrap_or(0);
+        
+        // 3. 构建 Metadata
+        let mut metadata = HashMap::new();
+        if let Some(desc) = description {
+            if !desc.is_empty() {
+                metadata.insert("description".to_string(), serde_json::Value::String(desc));
+            }
+        }
+
+        let environment = Environment {
+            id: id.clone(),
+            name: name.clone(),
+            is_default: None,
+            status: EnvironmentStatus::Inactive,
+            sort: Some(max_sort + 1),
+            metadata: if metadata.is_empty() { None } else { Some(metadata) },
+            created_at: timestamp.clone(),
+            updated_at: timestamp,
+        };
+
         // 保存环境配置
         self.save_environment(&environment)?;
 

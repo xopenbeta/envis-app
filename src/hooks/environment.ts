@@ -22,32 +22,22 @@ export function useEnvironment() {
   }, [environments, selectedEnvironmentId])
 
   const createEnvironment = async (name: string, description?: string) => {
-
-    const id = `${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)}env`;
-    const timestamp = new Date().toISOString();
-    // 计算新环境的 sort 值，确保排在最后
-    const maxSort = environments.reduce((max, env) => Math.max(max, env.sort ?? 0), 0);
-    const environment: Environment = {
-      id,
-      name,
-      status: EnvironmentStatus.Inactive,
-      sort: maxSort + 1,
-      metadata: description ? { description } : {},
-      serviceDatas: [],
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    const res = await ipcCreateEnvironment(environment);
+    // 调用主线程创建环境，ID生成和Sort计算等逻辑移至后端
+    const res = await ipcCreateEnvironment(name, description);
+    
     if (res.success && res.data?.environment) {
       const newEnvironment = res.data.environment;
+      // UI 逻辑：更新列表并排序
       const updatedEnvironments = sortEnvironments([newEnvironment, ...environments]);
       setEnvironments(updatedEnvironments);
+      
       setSelectedEnvironmentId(newEnvironment.id);
       setSelectedServiceDataId(''); // 清空选中服务数据
-      // 如果当前没有任何激活环境，则自动激活新创建的环境，不用考虑是否成功失败
-      if (!activeEnvironment) {
-        await activateEnvironment(newEnvironment);
-      }
+      
+      // UI 逻辑：如果当前没有任何激活环境，则自动激活新创建的环境（比较方便，删除该逻辑也没事）
+      // if (!activeEnvironment) {
+      //   await activateEnvironment(newEnvironment);
+      // }
     }
     return res;
   }

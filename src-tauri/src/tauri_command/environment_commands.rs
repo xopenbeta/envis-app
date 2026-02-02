@@ -47,12 +47,13 @@ pub async fn get_all_environments() -> Result<EnvironmentCommandResult, String> 
 /// 创建环境
 #[tauri::command]
 pub async fn create_environment(
-    environment: Environment,
+    name: String,
+    description: Option<String>,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
     let manager = manager.lock().unwrap();
 
-    match manager.create_environment(&environment) {
+    match manager.create_environment(name, description) {
         Ok(result) => Ok(result.into()),
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,
