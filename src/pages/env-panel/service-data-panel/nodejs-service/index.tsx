@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { useNodejsService } from '@/hooks/services/nodejs'
@@ -145,11 +145,11 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     const showLegacyMacWarning = !isNaN(versionNum) && versionNum <= 14 && navigator.userAgent.includes("Mac");
 
     return (<>
-        <div className="w-full p-3 space-y-6">
+        <div className="w-full p-3 space-y-3">
             {showLegacyMacWarning && (
                 <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-                    <AlertTitle className="text-yellow-800 dark:text-yellow-500 text-xs font-semibold">
+                    <AlertTitle className="text-yellow-800 dark:text-yellow-500 text-xs font-semibold flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
                         macOS Apple Silicon 兼容性提示
                     </AlertTitle>
                     <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">

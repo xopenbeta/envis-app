@@ -17,6 +17,8 @@ export type SystemSettings = {
   lastUsedEnvironmentIds?: string[] // 支持多个最后使用的环境ID，按激活先后排序
   stopAllServicesOnExit: boolean // 是否在退出时停止所有服务
   terminalTool?: string // 终端工具选择
+  showEnvironmentNameOnTerminalOpen?: boolean // 打开终端时显示环境名称
+  showServiceInfoOnTerminalOpen?: boolean // 打开终端时显示服务信息
 }
 
 export enum EnvironmentStatus {

@@ -311,6 +311,50 @@ impl ShellManager {
         Ok(())
     }
 
+    /// 添加服务信息 echo
+    pub fn add_echo_services(&self, services_info: Vec<String>) -> Result<()> {
+        self.remove_echo_services()?;
+
+        if services_info.is_empty() {
+            return Ok(());
+        }
+
+        let info = services_info.join("\t");
+
+        for config_file_path in &self.config_file_paths {
+            let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+
+            if is_cmd {
+                self.add_line_to_file(config_file_path, &format!("echo Envis Service: {}", info))?;
+            } else if is_ps {
+                self.add_line_to_file(config_file_path, &format!("Write-Host 'Envis Service: {}'", info))?;
+            } else {
+                self.add_line_to_file(config_file_path, &format!("echo \"Envis Service: {}\"", info))?;
+            }
+        }
+        Ok(())
+    }
+
+    /// 移除服务信息 echo
+    pub fn remove_echo_services(&self) -> Result<()> {
+        for config_file_path in &self.config_file_paths {
+            let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+            
+            let prefix = if is_cmd {
+                "echo Envis Service:"
+            } else if is_ps {
+                "Write-Host 'Envis Service:"
+            } else {
+                "echo \"Envis Service:"
+            };
+            
+            let _ = self.remove_line_from_file(config_file_path, prefix);
+        }
+        Ok(())
+    }
+
     /// 添加环境变量导出
     pub fn add_export(&self, key: &str, value: &str) -> Result<()> {
         // 为每个配置文件生成对应的环境变量设置命令

@@ -25,6 +25,10 @@ pub struct AppConfig {
     pub terminal_tool: Option<String>,
     #[serde(default = "default_true")]
     pub deactivate_other_environments_on_activate: bool,
+    #[serde(default = "default_true")]
+    pub show_environment_name_on_terminal_open: bool,
+    #[serde(default)]
+    pub show_service_info_on_terminal_open: bool,
 }
 
 fn default_true() -> bool { true }
@@ -53,6 +57,8 @@ impl Default for AppConfig {
             stop_all_services_on_exit: false,
             terminal_tool: default_terminal,
             deactivate_other_environments_on_activate: true,
+            show_environment_name_on_terminal_open: true,
+            show_service_info_on_terminal_open: false,
         }
     }
 }

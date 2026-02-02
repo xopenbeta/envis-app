@@ -692,6 +692,42 @@ export default function SettingsDialog(props: {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showEnvName">打开终端时显示环境名称</Label>
+                      <p className="text-xs text-muted-foreground">在打开的终端中显示当前激活的环境名称</p>
+                    </div>
+                    <Switch
+                      id="showEnvName"
+                      checked={systemSettings?.showEnvironmentNameOnTerminalOpen ?? true}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          await updateSystemSettings({ showEnvironmentNameOnTerminalOpen: checked });
+                        } catch (e) {
+                          toast.error(t('settings.setting_failed'));
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showServiceInfo">打开终端时显示服务信息</Label>
+                      <p className="text-xs text-muted-foreground">在打开的终端中显示当前环境所有服务的名称和版本</p>
+                    </div>
+                    <Switch
+                      id="showServiceInfo"
+                      checked={systemSettings?.showServiceInfoOnTerminalOpen ?? false}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          await updateSystemSettings({ showServiceInfoOnTerminalOpen: checked });
+                        } catch (e) {
+                          toast.error(t('settings.setting_failed'));
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 

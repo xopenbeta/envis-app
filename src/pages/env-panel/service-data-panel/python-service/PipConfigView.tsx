@@ -168,9 +168,6 @@ export function PipConfigView({
                         </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Label className="text-xs text-gray-700 dark:text-gray-300">
-                            {python3AsPython ? '已启用' : '已禁用'}
-                        </Label>
                         <Switch
                             checked={python3AsPython}
                             onCheckedChange={handlePython3AsPythonChange}

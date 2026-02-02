@@ -6,6 +6,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::env_serv_data_manager::EnvServDataManager;
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::{Environment, EnvironmentStatus};
 
@@ -192,6 +193,12 @@ impl EnvironmentManager {
         let environment_name = environment.name.clone();
         let environment_id = environment.id.clone();
 
+        let app_config = {
+            let app_config_manager = AppConfigManager::global();
+            let app_config_manager = app_config_manager.lock().unwrap();
+            app_config_manager.get_app_config()
+        };
+
         // 设置终端配置文件
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
@@ -200,9 +207,25 @@ impl EnvironmentManager {
             .context("清除shell环境块失败")?;
         
         // 添加 echo 信息到对应的 block（global 或 active）
-        shell_manager
-            .add_echo_environment(&environment_name, &environment_id)
-            .context("添加echo环境信息失败")?;
+        if app_config.show_environment_name_on_terminal_open {
+            shell_manager
+                .add_echo_environment(&environment_name, &environment_id)
+                .context("添加echo环境信息失败")?;
+        }
+
+        if app_config.show_service_info_on_terminal_open {
+            let env_serv_data_manager = EnvServDataManager::global();
+            let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+            let service_datas = env_serv_data_manager.get_environment_all_service_datas(&environment_id).unwrap_or_default();
+            
+            let mut services_info = Vec::new();
+            for sd in service_datas {
+                services_info.push(format!("{:?} v{}", sd.service_type, sd.version));
+            }
+            shell_manager
+                .add_echo_services(services_info)
+                .context("添加服务信息的Echo失败")?;
+        }
 
         // 更新环境状态和时间戳
         environment.status = EnvironmentStatus::Active;
@@ -229,6 +252,10 @@ impl EnvironmentManager {
         shell_manager
             .remove_echo_environment()
             .context("移除echo环境信息失败")?;
+
+        shell_manager
+            .remove_echo_services()
+            .context("移除服务echo信息失败")?;
 
         // 更新环境状态和时间戳
         environment.status = EnvironmentStatus::Inactive;
