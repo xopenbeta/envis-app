@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { UpdateDialog } from '@/pages/update-dialog';
 import { useInitEnvis } from '@/hooks';
+import { useEnvironmentServiceData } from '@/hooks/env-serv-data';
 import { isAppLoadingAtom } from "@/store/appSettings";
 import { useAtom } from "jotai";
 import Envis from "./pages";
@@ -8,6 +9,7 @@ import { useAppTheme } from "./hooks/useTheme";
 import { Loading } from "./Loading";
 import { useAppTitleVersion } from "./hooks/useAppVersion";
 import { useRustLogger } from "./hooks/useRustLogger";
+import { useEffect } from "react";
 
 function App(): JSX.Element {
   const { isEnvisInited } = useInitEnvis();

@@ -275,7 +275,7 @@ export function useEnvironmentServiceData() {
         return ipcGetServiceStatus(environmentId, serviceData);
     }
 
-    const initEnvironments = async (appSettings: AppSettings, systemSettings: SystemSettings) => {
+    const initEnvironments = async () => {
         console.log('【init】初始化环境和服务数据...')
         const loadedEnvironmentsRes = await ipcGetAllEnvironments()
         console.log('【init】获取环境:', loadedEnvironmentsRes);
@@ -293,16 +293,9 @@ export function useEnvironmentServiceData() {
             }
             setEnvironments(environments)
             console.log('【init】初始化环境和服务数据，环境列表:', environments)
-            // 首先尝试关闭所有环境
-            await deactivateAllEnvAndServDatas(environments)
-            console.log('【init】所有环境和服务已停用')
-            // 尝试自动启动上次使用的环境
-            if (appSettings && systemSettings) {
-                await autoStartEnvironment(systemSettings, environments)
-            }
-            console.log('【init】自动启动上次使用的环境完成')
         }
         console.log('【init】初始化环境和服务数据完成:', environments)
+        return environments;
     }
 
     async function activateEnvAndServDatas(environment: Environment, password?: string) {
@@ -427,6 +420,7 @@ export function useEnvironmentServiceData() {
         deactivateServiceData,
         initEnvironments,
         switchEnvAndServDatasActive,
+        deactivateAllEnvAndServDatas,
         autoStartEnvironment,
         startServiceData,
         stopServiceData,
