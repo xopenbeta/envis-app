@@ -193,14 +193,14 @@ impl ShellManager {
         let envis_alias_line = if is_cmd {
             if let Some(exe) = envis_exe {
                 let exe_str = exe.to_string_lossy();
-                format!("DOSKEY envis=\"{}\" $*\n", exe_str)
+                format!("DOSKEY envis=\"{}\" $*\nDOSKEY ev=\"{}\" $*\n", exe_str, exe_str)
             } else {
                 String::new()
             }
         } else if is_ps {
             if let Some(exe) = envis_exe {
                 let exe_str = exe.to_string_lossy();
-                format!("Set-Alias -Name envis -Value \"{}\"\n", exe_str)
+                format!("Set-Alias -Name envis -Value \"{}\"\nSet-Alias -Name ev -Value \"{}\"\n", exe_str, exe_str)
             } else {
                 String::new()
             }
@@ -228,6 +228,7 @@ envis() {
     fi
     return $exit_code
 }
+alias ev=envis
 "#.to_string()
         };
 

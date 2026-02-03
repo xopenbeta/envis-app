@@ -22,6 +22,9 @@
         "list": {
           "description": "List all environments"
         },
+        "ls": {
+          "description": "List all environments"
+        },
         "use": {
           "description": "Activate an environment",
           "args": [
