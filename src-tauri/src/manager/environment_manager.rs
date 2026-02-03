@@ -187,7 +187,7 @@ impl EnvironmentManager {
         if environment.status == EnvironmentStatus::Active {
             // 停用当前活跃环境
             let mut env = environment.clone();
-            self.deactivate_environment(&mut env)?;
+            self.deactivate_environment_and_services(&mut env, None)?;
         }
 
         // 递归删除整个环境文件夹
@@ -217,7 +217,7 @@ impl EnvironmentManager {
         Ok(env_config_path.exists())
     }
 
-    /// 激活环境
+    /// 激活环境（仅更新状态和Shell环境块，不激活服务）
     pub fn activate_environment(
         &self,
         environment: &mut Environment,
@@ -284,7 +284,41 @@ impl EnvironmentManager {
         })
     }
 
-    /// 停用环境
+    /// 激活环境和所有服务
+    pub fn activate_environment_and_services(
+        &self,
+        environment: &mut Environment,
+        password: Option<String>,
+    ) -> Result<EnvironmentResult> {
+        // 1. 先激活环境本身
+        let result = self.activate_environment(environment)?;
+
+        // 2. 激活所有服务
+        let environment_id = environment.id.clone();
+        let mut service_datas = {
+            let env_serv_data_manager = EnvServDataManager::global();
+            let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+            env_serv_data_manager
+                .get_environment_all_service_datas(&environment_id)
+                .unwrap_or_default()
+        };
+
+        let env_serv_data_manager_instance = EnvServDataManager::global();
+        for service_data in &mut service_datas {
+            let env_serv_data_manager = env_serv_data_manager_instance.lock().unwrap();
+            if let Err(e) = env_serv_data_manager.active_service_data(
+                &environment_id,
+                service_data,
+                password.clone(),
+            ) {
+                log::error!("激活服务 {} 失败: {}", service_data.name, e);
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// 停用环境（仅更新状态和Shell环境块，不停用服务）
     pub fn deactivate_environment(
         &self,
         environment: &mut Environment,
@@ -314,6 +348,37 @@ impl EnvironmentManager {
             message: "环境已停用".to_string(),
             data: Some(serde_json::to_value(environment).context("环境序列化到 data 失败")?),
         })
+    }
+
+    /// 停用环境和所有服务
+    pub fn deactivate_environment_and_services(
+        &self,
+        environment: &mut Environment,
+        password: Option<String>,
+    ) -> Result<EnvironmentResult> {
+        // 1. 停用所有服务
+        let mut service_datas = {
+            let env_serv_data_manager = EnvServDataManager::global();
+            let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+            env_serv_data_manager
+                .get_environment_all_service_datas(&environment.id)
+                .unwrap_or_default()
+        };
+
+        let env_serv_data_manager_instance = EnvServDataManager::global();
+        for service_data in &mut service_datas {
+            let env_serv_data_manager = env_serv_data_manager_instance.lock().unwrap();
+            if let Err(e) = env_serv_data_manager.deactive_service_data(
+                &environment.id,
+                service_data,
+                password.clone(),
+            ) {
+                log::error!("停用服务 {} 失败: {}", service_data.name, e);
+            }
+        }
+
+        // 2. 停用环境
+        self.deactivate_environment(environment)
     }
 
     /// 从文件加载环境配置

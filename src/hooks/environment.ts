@@ -1,7 +1,7 @@
 import { Environment, EnvironmentStatus } from "@/types/index"
 import { useAtom } from "jotai"
 import { useMemo } from "react"
-import { ipcActivateEnvironment, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeleteEnvironment, ipcSaveEnvironment } from "../ipc/environment"
+import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeactivateEnvironmentAndServices, ipcDeleteEnvironment, ipcSaveEnvironment } from "../ipc/environment"
 import { environmentsAtom, selectedEnvironmentIdAtom } from "../store/environment"
 import { selectedServiceDataIdAtom } from "../store/service"
 import { sortEnvironments } from "../utils/sort"
@@ -79,18 +79,32 @@ export function useEnvironment() {
     setSelectedServiceDataId('') // 清空选中服务数据，这样就有机会显示环境面板
   }
 
-  // 非常简单的激活环境
-  // 只有设置环境，没有激活服务数据
+  // 非常简单的激活环境，只有设置环境，没有激活服务数据
   // 要求提前已经将其他环境停用，因此业务不能直接使用
   const activateEnvironment = async (environment: Environment) => {
     const ipcRes = await ipcActivateEnvironment(environment)
     if (ipcRes.success) {
       // 使用函数式更新，避免闭包拿到旧的 environments
-      setEnvironments(prev => prev.map(env => ({
-        ...env,
-        status: (env.id === environment.id ? EnvironmentStatus.Active : env.status)
-      })))
+      setEnvironments(prev => prev.map(env => {
+        if (env.id === environment.id) {
+          return ipcRes.data?.env || { ...env, status: EnvironmentStatus.Active };
+        }
+        return env;
+      }))
       // 并不能直接选中环境，因为选中环境必须要加载服务数据
+    }
+    return ipcRes;
+  }
+
+  const activateEnvironmentAndServices = async (environment: Environment, password?: string) => {
+    const ipcRes = await ipcActivateEnvironmentAndServices(environment, password)
+    if (ipcRes.success) {
+      setEnvironments(prev => prev.map(env => {
+        if (env.id === environment.id) {
+          return ipcRes.data?.env || { ...env, status: EnvironmentStatus.Active };
+        }
+        return env;
+      }))
     }
     return ipcRes;
   }
@@ -99,10 +113,12 @@ export function useEnvironment() {
     const ipcRes = await ipcDeactivateEnvironment(environment)
     if (ipcRes.success) {
       // 使用函数式更新，避免闭包拿到旧的 environments
-      setEnvironments(prev => prev.map(env => ({
-        ...env,
-        status: (env.id === environment.id ? EnvironmentStatus.Inactive : env.status)
-      })))
+      setEnvironments(prev => prev.map(env => {
+        if (env.id === environment.id) {
+          return ipcRes.data?.env || { ...env, status: EnvironmentStatus.Inactive };
+        }
+        return env;
+      }))
       if (selectedEnvironmentId && selectedEnvironmentId === environment.id) {
         // 这里不能清空选中环境
         // 这里用不着清空serviceDatas
@@ -111,6 +127,24 @@ export function useEnvironment() {
       }
     } else {
       console.error('停用环境失败:', ipcRes.message)
+    }
+    return ipcRes;
+  }
+
+  const deactivateEnvironmentAndServices = async (environment: Environment, password?: string) => {
+    const ipcRes = await ipcDeactivateEnvironmentAndServices(environment, password)
+    if (ipcRes.success) {
+      setEnvironments(prev => prev.map(env => {
+        if (env.id === environment.id) {
+          return ipcRes.data?.env || { ...env, status: EnvironmentStatus.Inactive };
+        }
+        return env;
+      }))
+      if (selectedEnvironmentId && selectedEnvironmentId === environment.id) {
+        setSelectedServiceDataId('')
+      }
+    } else {
+      console.error('停用环境及服务失败:', ipcRes.message)
     }
     return ipcRes;
   }
@@ -139,7 +173,9 @@ export function useEnvironment() {
     updateEnvironment,
     createEnvironment,
     activateEnvironment,
+    activateEnvironmentAndServices,
     deactivateEnvironment,
+    deactivateEnvironmentAndServices,
     updateEnvironmentsOrder,
     selectEnvironment,
   }

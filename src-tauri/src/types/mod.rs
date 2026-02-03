@@ -172,11 +172,24 @@ pub struct ServiceData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateServiceDataRequest {
-    pub id: String,
-    pub name: String,
     #[serde(rename = "type")]
     pub service_type: ServiceType,
     pub version: String,
+}
+
+/// 更新服务数据的请求参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateServiceDataRequest {
+    pub id: String,
+    pub name: Option<String>,
+    // 不允许更新 type 和 version
+    // #[serde(rename = "type")]
+    // pub service_type: Option<ServiceType>,
+    // pub version: Option<String>,
+    pub status: Option<ServiceDataStatus>,
+    pub sort: Option<i32>,
+    pub metadata: Option<HashMap<String, serde_json::Value>>,
 }
 
 /// 统一的命令响应结构

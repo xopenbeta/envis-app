@@ -9,23 +9,21 @@ export const ipcGetEnvAllServDatas = ipcLogFunc('获取环境所有服务数据'
 
 export const ipcCreateServiceData = ipcLogFunc('创建服务数据', async (
     environmentId: string,
-    serviceId: string,
-    serviceName: string,
     serviceType: ServiceType, 
     version: string
 ): Promise<IPCResult<{ serviceData: ServiceData }>> => {
     return invokeCommand('create_service_data', {  
         environmentId, 
-        request: { id: serviceId, name: serviceName, type: serviceType, version } 
+        request: { type: serviceType, version } 
     });
 })
 
-export const ipcSaveServiceData = ipcLogFunc('保存服务数据', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<undefined>> => {
-    return invokeCommand('save_service_data', {  environmentId, serviceData });
+export const ipcUpdateServiceData = ipcLogFunc('保存服务数据', async (environmentId: string, request: { id: string } & Partial<ServiceData>): Promise<IPCResult<undefined>> => {
+    return invokeCommand('update_service_data', {  environmentId, request });
 })
 
-export const ipcDeleteServiceData = ipcLogFunc('删除服务数据', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<undefined>> => {
-    return invokeCommand('delete_service_data', { environmentId, serviceData });
+export const ipcDeleteServiceData = ipcLogFunc('删除服务数据', async (environmentId: string, serviceId: string): Promise<IPCResult<undefined>> => {
+    return invokeCommand('delete_service_data', { environmentId, serviceId });
 })
 
 export const ipcActivateServiceData = ipcLogFunc('激活服务数据', async (environmentId: string, serviceData: ServiceData, password?: string): Promise<IPCResult<undefined>> => {

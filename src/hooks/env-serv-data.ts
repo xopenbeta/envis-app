@@ -1,7 +1,7 @@
 import { AppSettings, CanRunServices, CannotRunServices, Environment, EnvironmentStatus, NeedDownloadServices, ServiceData, ServiceDataStatus, ServiceStatus, ServiceType, SystemSettings, serviceTypeNames } from "@/types/index"
 import { useAtom } from "jotai"
 import { toast } from 'sonner'
-import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcRestartServiceData, ipcSaveServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
+import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcRestartServiceData, ipcUpdateServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
 import { ipcGetAllEnvironments } from "../ipc/environment"
 import { isAppLoadingAtom } from "../store/appSettings"
 import { environmentsAtom, selectedEnvironmentIdAtom } from "../store/environment"
@@ -39,7 +39,7 @@ export function useEnvironmentServiceData() {
     const [environments, setEnvironments] = useAtom(environmentsAtom)
     const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
     const [selectedServiceDataId, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
-    const { activateEnvironment, deactivateEnvironment, selectEnvironment } = useEnvironment();
+    const { activateEnvironmentAndServices, deactivateEnvironmentAndServices, selectEnvironment } = useEnvironment();
     const { getAllServiceDatas } = useServiceData();
     const { checkServiceInstalled } = useService();
     const { updateSystemSettings, systemSettings } = useAppSettings();
@@ -91,16 +91,7 @@ export function useEnvironmentServiceData() {
             }
         }
 
-        // 在前端生成 service ID
-        const timestamp = Date.now();
-        const uuid_suffix = crypto.randomUUID().split('-')[0];
-        const last6 = timestamp.toString().slice(-6);
-        const serviceId = `${uuid_suffix}${last6}serv`;
-
-        // 在前端生成 service 名称
-        const serviceName = serviceTypeNames[serviceType];
-
-        const result = await ipcCreateServiceData(selectedEnvironmentId, serviceId, serviceName, serviceType, version)
+        const result = await ipcCreateServiceData(selectedEnvironmentId, serviceType, version)
         if (result.success && result.data?.serviceData) {
             const newServiceData = result.data.serviceData
             setEnvironments(prevEnvs =>
@@ -143,7 +134,7 @@ export function useEnvironmentServiceData() {
             updatedAt: new Date().toISOString()
         }
 
-        const result = await ipcSaveServiceData(selectedEnvironmentId, updatedServiceData)
+        const result = await ipcUpdateServiceData(selectedEnvironmentId, { id: serviceId, ...updates })
         if (result.success) {
             const updatedServiceDatas = [...serviceDatas]
             updatedServiceDatas[serviceIndex] = updatedServiceData
@@ -178,7 +169,7 @@ export function useEnvironmentServiceData() {
             return
         }
 
-        const ipcRes = await ipcDeleteServiceData(selectedEnvironmentId, serviceData)
+        const ipcRes = await ipcDeleteServiceData(selectedEnvironmentId, serviceData.id)
         if (ipcRes.success) {
             const updatedServices = serviceDatas.filter(service => service.id !== serviceData.id)
             setEnvironments(prevEnvs =>
@@ -314,40 +305,27 @@ export function useEnvironmentServiceData() {
         console.log('【init】初始化环境和服务数据完成:', environments)
     }
 
-    async function activateEnvAndServDatas(environment: Environment) {
+    async function activateEnvAndServDatas(environment: Environment, password?: string) {
+        const effectivePassword = password || sessionStorage.getItem('envis_sudo_password') || undefined;
         // 激活环境
-        const activeEnvRes = await activateEnvironment(environment)
+        const activeEnvRes = await activateEnvironmentAndServices(environment, effectivePassword)
         if (!activeEnvRes.success) {
             console.error(`激活环境失败: ${activeEnvRes.message}`)
-        } else {
-            // 再激活所有服务数据
-            const serviceDatasRes = await getAllServiceDatas(environment.id)
-            console.log('[activateEnvAndServDatas]获取环境服务数据:', serviceDatasRes);
-            if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
-                const serviceDatas = serviceDatasRes.data.serviceDatas
-                for (const servData of serviceDatas) {
-                    // 这里不检查结果，因为服务数据可能因为某些原因无法启动，但不影响环境的激活，只要服务数据本身状态是active，就尝试启动
-                    await activateServiceData(environment.id, servData)
-                }
-            }
         }
+        // 后端现在负责在激活环境时激活所有关联服务
         return activeEnvRes;
     }
 
-    async function deactivateEnvAndServDatas(environment: Environment) {
+    async function deactivateEnvAndServDatas(environment: Environment, password?: string) {
+        const effectivePassword = password || sessionStorage.getItem('envis_sudo_password') || undefined;
         // 停用环境
-        const deactiveEnvRes = await deactivateEnvironment(environment)
+        const deactiveEnvRes = await deactivateEnvironmentAndServices(environment, effectivePassword)
         if (!deactiveEnvRes.success) {
             console.error(`停用环境失败: ${deactiveEnvRes.message}`)
             return deactiveEnvRes;
         }
 
-        // 停用所有服务数据
-        const serviceDatas = environment.serviceDatas
-        for (const servData of serviceDatas) {
-            // 这里不检查结果，因为服务数据可能因为某些原因无法停用，但不影响环境的停用，只要服务数据本身状态是active，就尝试停用
-            await deactivateServiceData(environment.id, servData)
-        }
+        // 后端现在负责在停用环境时停用所有关联服务
         return deactiveEnvRes;
     }
 

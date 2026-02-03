@@ -142,6 +142,25 @@ pub async fn activate_environment(
     }
 }
 
+/// 激活环境和服务
+#[tauri::command]
+pub async fn activate_environment_and_services(
+    mut environment: Environment,
+    password: Option<String>,
+) -> Result<EnvironmentCommandResult, String> {
+    let manager = EnvironmentManager::global();
+    let manager = manager.lock().unwrap();
+
+    match manager.activate_environment_and_services(&mut environment, password) {
+        Ok(result) => Ok(result.into()),
+        Err(e) => Ok(EnvironmentCommandResult {
+            success: false,
+            message: e.to_string(),
+            data: None,
+        }),
+    }
+}
+
 /// 停用环境
 #[tauri::command]
 pub async fn deactivate_environment(
@@ -151,6 +170,25 @@ pub async fn deactivate_environment(
     let manager = manager.lock().unwrap();
 
     match manager.deactivate_environment(&mut environment) {
+        Ok(result) => Ok(result.into()),
+        Err(e) => Ok(EnvironmentCommandResult {
+            success: false,
+            message: e.to_string(),
+            data: None,
+        }),
+    }
+}
+
+/// 停用环境和服务
+#[tauri::command]
+pub async fn deactivate_environment_and_services(
+    mut environment: Environment,
+    password: Option<String>,
+) -> Result<EnvironmentCommandResult, String> {
+    let manager = EnvironmentManager::global();
+    let manager = manager.lock().unwrap();
+
+    match manager.deactivate_environment_and_services(&mut environment, password) {
         Ok(result) => Ok(result.into()),
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,

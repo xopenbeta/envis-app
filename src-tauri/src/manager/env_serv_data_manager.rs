@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock};
+use uuid::Uuid;
 
 use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::builders::{EnvPathBuilder, EnvVarBuilder, MetadataBuilder};
@@ -14,7 +15,9 @@ use crate::manager::services::{
     CustomService, HostService, NodejsService, ServiceLifecycle, StandardService,
 };
 use crate::manager::shell_manamger::ShellManager;
-use crate::types::{ServiceData, ServiceDataStatus, ServiceType};
+use crate::types::{
+    ServiceData, ServiceDataStatus, ServiceType, UpdateServiceDataRequest,
+};
 
 const ENV_SERVICE_CONFIG_FILE_NAME: &str = "service.json";
 
@@ -166,6 +169,119 @@ impl EnvServDataManager {
         Ok(service_datas)
     }
 
+    /// 创建服务数据
+    pub fn create_service_data(
+        &self,
+        environment_id: &str,
+        service_type: ServiceType,
+        version: String,
+    ) -> Result<ServiceDataResult> {
+        // 1. 生成 ID (uuid v4 前8位 + 时间戳)
+        let uuid = Uuid::new_v4().to_string();
+        let short_id = &uuid[0..8];
+        let timestamp = Utc::now().timestamp();
+        let id = format!("{}-{}", short_id, timestamp);
+
+        // 2. 生成名称
+        let name = format!("New {} Service", self.service_type_to_string(&service_type));
+
+        // 3. 计算 Sort Order
+        let service_datas = self.get_environment_all_service_datas(environment_id)?;
+        let max_sort = service_datas
+            .iter()
+            .filter_map(|sd| sd.sort)
+            .max()
+            .unwrap_or(0);
+
+        let now = Utc::now().to_rfc3339();
+
+        let mut service_data = ServiceData {
+            id: id.clone(),
+            name,
+            service_type: service_type.clone(),
+            version,
+            status: ServiceDataStatus::Inactive,
+            sort: Some(max_sort + 1),
+            metadata: None,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+
+        // 4. 构建默认 Metadata
+        match self.build_default_metadata(environment_id, &service_data) {
+            Ok(default_md) => {
+                service_data.metadata = Some(default_md);
+            }
+            Err(e) => {
+                log::warn!("构建默认 metadata 失败: {}", e);
+            }
+        }
+
+        // 5. 保存
+        self.save_service_data(environment_id, &service_data)?;
+
+        Ok(ServiceDataResult {
+            success: true,
+            message: "服务创建成功".to_string(),
+            data: Some(serde_json::json!({ "serviceData": service_data })),
+        })
+    }
+
+    /// 更新服务数据
+    pub fn update_service_data(
+        &self,
+        environment_id: &str,
+        request: UpdateServiceDataRequest,
+    ) -> Result<ServiceDataResult> {
+        let service_datas = self.get_environment_all_service_datas(environment_id)?;
+        let mut target_service = service_datas
+            .into_iter()
+            .find(|sd| sd.id == request.id)
+            .context("找不到指定的服务数据")?;
+
+        // 应用更新
+        if let Some(name) = request.name {
+            target_service.name = name;
+        }
+        // 不再允许更新 service_type 和 version
+        
+        if let Some(status) = request.status {
+            target_service.status = status;
+        }
+        if let Some(sort) = request.sort {
+            target_service.sort = Some(sort);
+        }
+        if let Some(metadata) = request.metadata {
+            target_service.metadata = Some(metadata);
+        }
+
+        target_service.updated_at = Utc::now().to_rfc3339();
+
+        // 直接保存，不再处理路径变化（因为 type/version 不变，路径就不会变）
+        self.save_service_data(environment_id, &target_service)?;
+
+        Ok(ServiceDataResult {
+            success: true,
+            message: "服务更新成功".to_string(),
+            data: Some(serde_json::json!({ "serviceData": target_service })),
+        })
+    }
+
+    /// 根据 ID 删除服务数据
+    pub fn delete_service_data(
+        &self,
+        environment_id: &str,
+        service_id: &str,
+    ) -> Result<ServiceDataResult> {
+        let service_datas = self.get_environment_all_service_datas(environment_id)?;
+        let target_service = service_datas
+            .into_iter()
+            .find(|sd| sd.id == service_id)
+            .context("找不到指定的服务数据")?;
+
+        self.remove_service_directories(environment_id, &target_service)
+    }
+
     /// 保存服务数据到环境
     pub fn save_service_data(
         &self,
@@ -198,8 +314,8 @@ impl EnvServDataManager {
         })
     }
 
-    /// 删除服务数据
-    pub fn delete_service_data(
+    /// 删除服务数据文件夹 (底层实现)
+    fn remove_service_directories(
         &self,
         environment_id: &str,
         service_data: &ServiceData,

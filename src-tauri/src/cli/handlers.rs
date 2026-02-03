@@ -46,7 +46,7 @@ pub fn handle_use(matches: &tauri_plugin_cli::Matches) {
         }
 
         // 4. 激活目标环境
-        match manager.activate_environment(&mut target_env) {
+        match manager.activate_environment_and_services(&mut target_env, None) {
             Ok(res) => {
                 if res.success {
                     println!("✓ 成功激活环境: {}", target_env.name);

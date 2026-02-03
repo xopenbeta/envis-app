@@ -30,3 +30,11 @@ export const ipcActivateEnvironment = ipcLogFunc('激活环境', async (environm
 export const ipcDeactivateEnvironment = ipcLogFunc('停用环境', async (environment: Environment): Promise<IPCResult<{ env: Environment }>> => {
     return invokeCommand('deactivate_environment', { environment })
 })
+
+export const ipcActivateEnvironmentAndServices = ipcLogFunc('激活环境及服务', async (environment: Environment, password?: string): Promise<IPCResult<{ env: Environment }>> => {
+    return invokeCommand('activate_environment_and_services', { environment, password })
+})
+
+export const ipcDeactivateEnvironmentAndServices = ipcLogFunc('停用环境及服务', async (environment: Environment, password?: string): Promise<IPCResult<{ env: Environment }>> => {
+    return invokeCommand('deactivate_environment_and_services', { environment, password })
+})
