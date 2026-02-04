@@ -31,14 +31,16 @@ export function useInitEnvis() {
         setIsAppLoading(true);
         try {
             const environments = await refresh()
-            // 首先尝试关闭所有环境
-            await deactivateAllEnvAndServDatas(environments)
-            console.log('【init】所有环境和服务已停用')
-            // 尝试自动启动上次使用的环境
-            if (appSettings && systemSettings) {
-                await autoStartEnvironment(systemSettings, environments)
-            }
-            console.log('【init】自动启动上次使用的环境完成')
+
+            // 现在有命令行了，实际上不必要了
+            // // 首先尝试关闭所有环境
+            // await deactivateAllEnvAndServDatas(environments)
+            // console.log('【init】所有环境和服务已停用')
+            // // 尝试自动启动上次使用的环境
+            // if (appSettings && systemSettings) {
+            //     await autoStartEnvironment(systemSettings, environments)
+            // }
+            // console.log('【init】自动启动上次使用的环境完成')
 
             setisEnvisInited(true)
             logInfo('【init】Envis 应用初始化完成')

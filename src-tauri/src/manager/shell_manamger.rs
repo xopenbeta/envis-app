@@ -67,28 +67,28 @@ impl ShellManager {
         let config_file_paths = if cfg!(target_os = "windows") {
             // Windows 系统
             let documents_dir = dirs::document_dir().context("无法获取文档目录")?;
-            
+
             let mut paths = Vec::new();
-            
+
             // CMD 配置文件（开发和线上都需要）
             let cmd_dir = documents_dir.join("envis");
             let cmd_profile = cmd_dir.join("envis_autorun.cmd");
             paths.push(cmd_profile);
-            
+
             if !is_development {
                 // 线上环境才添加 PowerShell 配置文件
-                
+
                 // PowerShell 5.x 配置文件
                 let ps5_dir = documents_dir.join("WindowsPowerShell");
                 let ps5_profile = ps5_dir.join("Microsoft.PowerShell_profile.ps1");
                 paths.push(ps5_profile);
-                
+
                 // PowerShell 7+ 配置文件
                 let ps7_dir = documents_dir.join("PowerShell");
                 let ps7_profile = ps7_dir.join("Microsoft.PowerShell_profile.ps1");
                 paths.push(ps7_profile);
             }
-            
+
             paths
         } else {
             // 无论是开发还是生产环境，都同时管理 Bash 和 Zsh
@@ -117,7 +117,9 @@ impl ShellManager {
     #[cfg(target_os = "windows")]
     fn setup_cmd_autorun(&self) -> Result<()> {
         // 获取 CMD 配置文件路径
-        let cmd_config_path = self.config_file_paths.iter()
+        let cmd_config_path = self
+            .config_file_paths
+            .iter()
             .find(|p| p.extension().and_then(|s| s.to_str()) == Some("cmd"))
             .context("无法找到 CMD 配置文件路径")?;
 
@@ -136,7 +138,10 @@ impl ShellManager {
 
         if !output.status.success() {
             let error_msg = String::from_utf8_lossy(&output.stderr);
-            log::warn!("设置 CMD AutoRun 失败: {}，但这不会影响 PowerShell 使用", error_msg);
+            log::warn!(
+                "设置 CMD AutoRun 失败: {}，但这不会影响 PowerShell 使用",
+                error_msg
+            );
             // 不返回错误，允许继续初始化（CMD AutoRun 是可选功能）
             return Ok(());
         }
@@ -172,9 +177,11 @@ impl ShellManager {
         &self,
         envis_path: Option<&PathBuf>,
         envis_exe: Option<&PathBuf>,
-        is_cmd: bool,
-        is_ps: bool,
+        config_file_path: &PathBuf,
     ) -> String {
+        let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+        let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+
         // 构建 envis 路径添加命令（如果可执行文件路径可用）
         let envis_path_line = if let Some(path) = envis_path {
             let path_str = path.to_string_lossy();
@@ -193,25 +200,37 @@ impl ShellManager {
         let envis_alias_line = if is_cmd {
             if let Some(exe) = envis_exe {
                 let exe_str = exe.to_string_lossy();
-                format!("DOSKEY envis=\"{}\" $*\nDOSKEY ev=\"{}\" $*\n", exe_str, exe_str)
+                format!(
+                    "DOSKEY envis=\"{}\" $*\nDOSKEY ev=\"{}\" $*\n",
+                    exe_str, exe_str
+                )
             } else {
                 String::new()
             }
         } else if is_ps {
             if let Some(exe) = envis_exe {
                 let exe_str = exe.to_string_lossy();
-                format!("Set-Alias -Name envis -Value \"{}\"\nSet-Alias -Name ev -Value \"{}\"\n", exe_str, exe_str)
+                format!(
+                    "Set-Alias -Name envis -Value \"{}\"\nSet-Alias -Name ev -Value \"{}\"\n",
+                    exe_str, exe_str
+                )
             } else {
                 String::new()
             }
         } else {
             // Unix (Bash/Zsh) Shell Wrapper Function
-            r#"
-envis() {
-    command envis "$@"
-    local exit_code=$?
-    if [ "$1" = "use" ] && [ $exit_code -eq 0 ]; then
-        local config_file=""
+            let file_name = config_file_path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("");
+            let reload_cmd = if file_name == ".zshrc" {
+                "source \"$HOME/.zshrc\""
+            } else if file_name == ".bash_profile" {
+                "source \"$HOME/.bash_profile\""
+            } else if file_name == ".bashrc" {
+                "source \"$HOME/.bashrc\""
+            } else {
+                r#"local config_file=""
         if [ -n "$ZSH_VERSION" ]; then
             config_file="$HOME/.zshrc"
         elif [ -n "$BASH_VERSION" ]; then
@@ -224,12 +243,25 @@ envis() {
 
         if [ -n "$config_file" ] && [ -f "$config_file" ]; then
             source "$config_file"
-        fi
+        fi"#
+            };
+
+            format!(
+                r#"
+envis() {{
+    command envis "$@"
+    local exit_code=$?
+    if [ "$1" = "use" ] && [ $exit_code -eq 0 ]; then
+        {}
     fi
     return $exit_code
-}
+}}
 alias ev=envis
-"#.to_string()
+alias asdf=envis
+alias mise=envis
+"#,
+                reload_cmd
+            )
         };
 
         format!("{}{}", envis_path_line, envis_alias_line)
@@ -239,7 +271,7 @@ alias ev=envis
     fn initialize_env_block(&self) -> Result<()> {
         // 获取 envis 可执行文件路径
         let (envis_path, envis_exe) = self.get_envis_executable_info();
-        
+
         // 对所有配置文件执行初始化
         for config_file_path in &self.config_file_paths {
             // 确保配置文件所在目录存在
@@ -264,14 +296,13 @@ alias ev=envis
             // 判断文件类型以使用正确的注释前缀
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let combined_lines = self.generate_envis_setup_commands(
                 envis_path.as_ref(),
                 envis_exe.as_ref(),
-                is_cmd,
-                is_ps,
+                config_file_path,
             );
-            
+
             let block_content = if is_cmd {
                 // CMD 使用 REM 作为注释（不包含 # 符号）
                 let prefix = if base_content.is_empty() {
@@ -281,7 +312,11 @@ alias ev=envis
                 };
                 format!(
                     "{}REM {}\nREM {}\n{}REM {}\n",
-                    prefix, ENVIS_ACTIVE_BLOCK_START, ENVIS_WARNING, combined_lines, ENVIS_ACTIVE_BLOCK_END
+                    prefix,
+                    ENVIS_ACTIVE_BLOCK_START,
+                    ENVIS_WARNING,
+                    combined_lines,
+                    ENVIS_ACTIVE_BLOCK_END
                 )
             } else {
                 // PowerShell 和 Unix Shell 使用 # 作为注释
@@ -299,10 +334,13 @@ alias ev=envis
             // 原子写入并备份原文件
             self.write_content_atomic_for_path(config_file_path, &new_content)?;
         }
-        
+
         // 记录日志
         if let Some(path) = envis_path {
-            log::info!("ShellManager: 已将 envis 命令路径添加到环境配置: {}", path.display());
+            log::info!(
+                "ShellManager: 已将 envis 命令路径添加到环境配置: {}",
+                path.display()
+            );
             log::debug!("ShellManager: 现在可以在终端中使用 'envis' 命令了");
         } else {
             log::warn!("ShellManager: 未能添加 envis 命令路径（无法获取可执行文件路径）");
@@ -312,16 +350,12 @@ alias ev=envis
     }
 
     /// echo Envis: Current environment is environment name, environment id
-    pub fn add_echo_environment(
-        &self,
-        environment_name: &str,
-        environment_id: &str,
-    ) -> Result<()> {
+    pub fn add_echo_environment(&self, environment_name: &str, environment_id: &str) -> Result<()> {
         // 为每个配置文件生成对应的 echo 命令
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let echo_line = if is_cmd {
                 // CMD 语法 - 不使用 ANSI 颜色代码
                 format!(
@@ -336,9 +370,12 @@ alias ev=envis
                 )
             } else {
                 // Unix Shell 语法
-                format!("echo Envis: Current environment is {}, {}", environment_name, environment_id)
+                format!(
+                    "echo Envis: Current environment is {}, {}",
+                    environment_name, environment_id
+                )
             };
-            
+
             // 先删除已有的 echo 行，避免重复显示
             let prefix = if is_cmd {
                 "echo Envis: Current environment is"
@@ -350,7 +387,7 @@ alias ev=envis
             let _ = self.remove_line_from_file(config_file_path, prefix);
             self.add_line_to_file(config_file_path, &echo_line)?;
         }
-        
+
         Ok(())
     }
 
@@ -360,7 +397,7 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let prefix = if is_cmd {
                 "echo Envis: Current environment is"
             } else if is_ps {
@@ -368,10 +405,10 @@ alias ev=envis
             } else {
                 "echo Envis: Current environment is"
             };
-            
+
             let _ = self.remove_line_from_file(config_file_path, prefix);
         }
-        
+
         Ok(())
     }
 
@@ -392,9 +429,15 @@ alias ev=envis
             if is_cmd {
                 self.add_line_to_file(config_file_path, &format!("echo Envis Service: {}", info))?;
             } else if is_ps {
-                self.add_line_to_file(config_file_path, &format!("Write-Host 'Envis Service: {}'", info))?;
+                self.add_line_to_file(
+                    config_file_path,
+                    &format!("Write-Host 'Envis Service: {}'", info),
+                )?;
             } else {
-                self.add_line_to_file(config_file_path, &format!("echo \"Envis Service: {}\"", info))?;
+                self.add_line_to_file(
+                    config_file_path,
+                    &format!("echo \"Envis Service: {}\"", info),
+                )?;
             }
         }
         Ok(())
@@ -405,7 +448,7 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let prefix = if is_cmd {
                 "echo Envis Service:"
             } else if is_ps {
@@ -413,7 +456,7 @@ alias ev=envis
             } else {
                 "echo \"Envis Service:"
             };
-            
+
             let _ = self.remove_line_from_file(config_file_path, prefix);
         }
         Ok(())
@@ -425,32 +468,29 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let (prefix, export_line) = if is_cmd {
                 // CMD 语法
-                (
-                    format!("set {}=", key),
-                    format!("set {}={}", key, value)
-                )
+                (format!("set {}=", key), format!("set {}={}", key, value))
             } else if is_ps {
                 // PowerShell 语法
                 (
                     format!("$env:{} =", key),
-                    format!("$env:{} = \"{}\"", key, value)
+                    format!("$env:{} = \"{}\"", key, value),
                 )
             } else {
                 // Unix Shell 语法
                 (
                     format!("export {}=", key),
-                    format!("export {}=\"{}\"", key, value)
+                    format!("export {}=\"{}\"", key, value),
                 )
             };
-            
+
             // 先删除已有的同名 export 行，避免重复添加
             let _ = self.remove_line_from_file(config_file_path, &prefix);
             self.add_line_to_file(config_file_path, &export_line)?;
         }
-        
+
         Ok(())
     }
 
@@ -459,7 +499,7 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let prefix = if is_cmd {
                 format!("set {}=", key)
             } else if is_ps {
@@ -467,10 +507,10 @@ alias ev=envis
             } else {
                 format!("export {}=", key)
             };
-            
+
             self.remove_line_from_file(config_file_path, &prefix)?;
         }
-        
+
         Ok(())
     }
 
@@ -480,7 +520,7 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             // 先读取当前的 PATH 设置
             let current_paths = self.get_current_paths_from_file(config_file_path)?;
 
@@ -519,7 +559,7 @@ alias ev=envis
             // 添加新的 PATH 设置
             self.add_line_to_file(config_file_path, &path_line)?;
         }
-        
+
         Ok(())
     }
 
@@ -528,7 +568,7 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let mut current_paths = self.get_current_paths_from_file(config_file_path)?;
             current_paths.remove(path);
 
@@ -553,7 +593,7 @@ alias ev=envis
                 } else {
                     format!("export PATH=\"{}:$PATH\"", all_paths.join(":"))
                 };
-        self.add_line_to_file(config_file_path, &path_line)?;
+                self.add_line_to_file(config_file_path, &path_line)?;
             }
         }
 
@@ -573,9 +613,9 @@ alias ev=envis
         if !config_file_path.exists() {
             return Ok(HashSet::new());
         }
-        
+
         let content = fs::read_to_string(config_file_path).context("读取 Shell 配置文件失败")?;
-    let block_content = self.extract_env_block_content(&content)?;
+        let block_content = self.extract_env_block_content(&content)?;
         let mut paths = HashSet::new();
 
         let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
@@ -637,14 +677,14 @@ alias ev=envis
             let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
             let backup = path.with_extension(format!("envbak{}", ts));
             fs::copy(path, &backup).context("备份 Shell 配置文件失败")?;
-            
+
             // 清理旧备份文件，只保留最近的 2 个
             self.cleanup_old_backups(path, 2)?;
         }
 
         // 写临时文件并重命名
         let tmp = path.with_extension("tmp");
-        
+
         // 使用 Result 确保临时文件在失败时被清理
         let write_result = (|| -> Result<()> {
             fs::write(&tmp, new_content).context("写入临时文件失败")?;
@@ -680,7 +720,10 @@ alias ev=envis
                 if let Some(ext) = path.extension() {
                     let ext_str = ext.to_string_lossy();
                     // 匹配格式为 .envbak{timestamp} 的备份文件
-                    if ext_str.starts_with("envbak") && path.file_stem().map(|s| s.to_string_lossy().to_string()) == Some(file_stem.clone()) {
+                    if ext_str.starts_with("envbak")
+                        && path.file_stem().map(|s| s.to_string_lossy().to_string())
+                            == Some(file_stem.clone())
+                    {
                         if let Ok(metadata) = entry.metadata() {
                             if let Ok(modified) = metadata.modified() {
                                 backups.push((path, modified));
@@ -695,7 +738,7 @@ alias ev=envis
         if backups.len() > keep_count {
             // 按修改时间排序（最新的在前）
             backups.sort_by(|a, b| b.1.cmp(&a.1));
-            
+
             // 删除超出数量的旧备份
             for (old_backup, _) in backups.iter().skip(keep_count) {
                 if let Err(e) = fs::remove_file(old_backup) {
@@ -720,7 +763,7 @@ alias ev=envis
             }
             fs::write(config_file_path, "").context("创建配置文件失败")?;
         }
-        
+
         let content = fs::read_to_string(config_file_path).context("读取 Shell 配置文件失败")?;
         let new_content = self.insert_line_in_block(&content, line)?;
         self.write_content_atomic_for_path(config_file_path, &new_content)?;
@@ -732,7 +775,7 @@ alias ev=envis
         if !config_file_path.exists() {
             return Ok(());
         }
-        
+
         let content = fs::read_to_string(config_file_path).context("读取 Shell 配置文件失败")?;
         let new_content = self.remove_lines_with_prefix_from_block(&content, line_prefix)?;
         self.write_content_atomic_for_path(config_file_path, &new_content)?;
@@ -757,19 +800,14 @@ alias ev=envis
         // 对所有配置文件执行删除操作
         for path in &self.config_file_paths {
             let content = fs::read_to_string(path).context("读取 Shell 配置文件失败")?;
-            let new_content =
-                self.remove_lines_with_prefix_from_block(&content, line_prefix)?;
+            let new_content = self.remove_lines_with_prefix_from_block(&content, line_prefix)?;
             self.write_content_atomic_for_path(path, &new_content)?;
         }
         Ok(())
     }
 
     /// 在环境变量块中插入新行
-    fn insert_line_in_block(
-        &self,
-        content: &str,
-        new_line: &str,
-    ) -> Result<String> {
+    fn insert_line_in_block(&self, content: &str, new_line: &str) -> Result<String> {
         let lines: Vec<&str> = content.lines().collect();
         let mut result_lines = Vec::new();
         let mut inside_block = false;
@@ -785,7 +823,7 @@ alias ev=envis
             } else {
                 trimmed
             };
-            
+
             if cleaned == block_start {
                 inside_block = true;
                 result_lines.push(line);
@@ -806,11 +844,7 @@ alias ev=envis
     }
 
     /// 从环境变量块中删除包含指定前缀的行
-    fn remove_lines_with_prefix_from_block(
-        &self,
-        content: &str,
-        prefix: &str,
-    ) -> Result<String> {
+    fn remove_lines_with_prefix_from_block(&self, content: &str, prefix: &str) -> Result<String> {
         let lines: Vec<&str> = content.lines().collect();
         let mut result_lines = Vec::new();
         let mut inside_block = false;
@@ -826,7 +860,7 @@ alias ev=envis
             } else {
                 trimmed
             };
-            
+
             if cleaned == block_start {
                 inside_block = true;
                 result_lines.push(line);
@@ -861,7 +895,7 @@ alias ev=envis
             } else {
                 trimmed
             };
-            
+
             if cleaned == block_start {
                 inside_block = true;
                 continue;
@@ -888,16 +922,16 @@ alias ev=envis
             let content = fs::read_to_string(path).context("读取 Shell 配置文件失败")?;
             // 1. 先清空内容（保留 BLOCK 标记）
             let cleared_content = self.clear_env_block_content(&content)?;
-            
+
             // 2. 生成 envis 基础配置
             let is_cmd = path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let setup_cmds = self.generate_envis_setup_commands(
-                envis_path.as_ref(), 
-                envis_exe.as_ref(), 
-                is_cmd, 
-                is_ps
+                envis_path.as_ref(),
+                envis_exe.as_ref(),
+                is_cmd,
+                is_ps,
             );
 
             // 3. 将 envis 基础配置插入回去
@@ -926,7 +960,7 @@ alias ev=envis
             } else {
                 trimmed
             };
-            
+
             if cleaned == block_start {
                 inside_block = true;
                 result_lines.push(line);
@@ -952,7 +986,7 @@ alias ev=envis
         let mut inside_block = false;
 
         let block_start = ENVIS_ACTIVE_BLOCK_START; // "# BEGIN ..."
-        let block_end = ENVIS_ACTIVE_BLOCK_END;     // "# END ..."
+        let block_end = ENVIS_ACTIVE_BLOCK_END; // "# END ..."
 
         // 同时兼容 CMD 中以 REM 开头的块标记
         let cmd_block_start = format!("REM {}", block_start);
@@ -1033,11 +1067,14 @@ alias ev=envis
         {
             // 获取用户主目录
             let home_dir = dirs::home_dir().context("无法获取用户主目录")?;
-            
+
             match terminal_type.as_deref() {
                 Some("powershell") => {
                     // 使用 start 命令在新窗口中打开 PowerShell，并切换到用户目录
-                    let ps_command = format!("start powershell -NoExit -Command \"Set-Location '{}'\"", home_dir.display());
+                    let ps_command = format!(
+                        "start powershell -NoExit -Command \"Set-Location '{}'\"",
+                        home_dir.display()
+                    );
                     Command::new("cmd")
                         .args(["/C", &ps_command])
                         .spawn()
@@ -1045,7 +1082,10 @@ alias ev=envis
                 }
                 Some("pwsh") => {
                     // 使用 start 命令在新窗口中打开 PowerShell Core，并切换到用户目录
-                    let pwsh_command = format!("start pwsh -NoExit -Command \"Set-Location '{}'\"", home_dir.display());
+                    let pwsh_command = format!(
+                        "start pwsh -NoExit -Command \"Set-Location '{}'\"",
+                        home_dir.display()
+                    );
                     Command::new("cmd")
                         .args(["/C", &pwsh_command])
                         .spawn()
@@ -1092,35 +1132,39 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let (prefix, alias_line) = if is_cmd {
                 // CMD 语法: doskey key=value $*
                 (
                     format!("doskey {}=", key),
-                    format!("doskey {}={} $*", key, value)
+                    format!("doskey {}={} $*", key, value),
                 )
             } else if is_ps {
                 // PowerShell 语法: function key { value $args }
                 // 注意：这里假设 value 是一个合法的命令字符串
                 (
                     format!("function {} {{", key),
-                    format!("function {} {{ {} $args }}", key, value)
+                    format!("function {} {{ {} $args }}", key, value),
                 )
             } else {
                 // Unix Shell 语法: alias key="value"
                 (
                     format!("alias {}=", key),
-                    format!("alias {}=\"{}\"", key, value)
+                    format!("alias {}=\"{}\"", key, value),
                 )
             };
-            
+
             // 先删除已有的同名 alias 行
             let _ = self.remove_line_from_file(config_file_path, &prefix);
             if let Err(e) = self.add_line_to_file(config_file_path, &alias_line) {
-                log::error!("Failed to add alias to {}: {}", config_file_path.display(), e);
+                log::error!(
+                    "Failed to add alias to {}: {}",
+                    config_file_path.display(),
+                    e
+                );
             }
         }
-        
+
         Ok(())
     }
 
@@ -1129,7 +1173,7 @@ alias ev=envis
         for config_file_path in &self.config_file_paths {
             let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
-            
+
             let prefix = if is_cmd {
                 format!("doskey {}=", key)
             } else if is_ps {
@@ -1137,12 +1181,16 @@ alias ev=envis
             } else {
                 format!("alias {}=", key)
             };
-            
+
             if let Err(e) = self.remove_line_from_file(config_file_path, &prefix) {
-                log::error!("Failed to remove alias from {}: {}", config_file_path.display(), e);
+                log::error!(
+                    "Failed to remove alias from {}: {}",
+                    config_file_path.display(),
+                    e
+                );
             }
         }
-        
+
         Ok(())
     }
 
@@ -1155,21 +1203,25 @@ alias ev=envis
             let ps_profile = documents_dir
                 .join("WindowsPowerShell")
                 .join("Microsoft.PowerShell_profile.ps1");
-            
+
             // 构造 PowerShell 命令，先加载配置文件（如果存在）
             let ps_command = if ps_profile.exists() {
-                format!("try {{ . '{}' }} catch {{ }}; {}", ps_profile.display(), command)
+                format!(
+                    "try {{ . '{}' }} catch {{ }}; {}",
+                    ps_profile.display(),
+                    command
+                )
             } else {
                 command.to_string()
             };
-            
+
             Command::new("powershell")
                 .args(["-NoLogo", "-Command", &ps_command])
                 .output()
         } else {
             // macOS/Linux: 使用 login shell 以获取完整的环境变量
             let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
-            
+
             // 确定 shell 类型和参数
             let shell_cmd = if shell.contains("zsh") {
                 "zsh"
@@ -1179,13 +1231,11 @@ alias ev=envis
                 // 默认使用 bash
                 "bash"
             };
-            
+
             // 使用 -l (login shell) 和 -c 选项来执行命令
             // login shell 会自动加载 .zshrc (zsh) 或 .bash_profile (bash)
             // 这样可以获取到完整的 PATH，包括 VS Code 的 code 命令等
-            Command::new(shell_cmd)
-                .args(["-l", "-c", command])
-                .output()
+            Command::new(shell_cmd).args(["-l", "-c", command]).output()
         };
 
         match output {
@@ -1195,9 +1245,7 @@ alias ev=envis
                 let exit_code = output.status.code().unwrap_or(-1);
                 Ok((stdout, stderr, exit_code))
             }
-            Err(e) => {
-                Err(anyhow::anyhow!("执行命令失败: {}", e))
-            }
+            Err(e) => Err(anyhow::anyhow!("执行命令失败: {}", e)),
         }
     }
 }
@@ -1252,7 +1300,7 @@ mod tests {
         let block = "# BEGIN Envis Active Environment Block\n# WARNING: This block is automatically managed by Envis. Do not edit manually!\nexport PATH=\"/a:/b:$PATH\"\nexport PATH='/c:$PATH'\nexport PATH=$PATH:/d\n# END Envis Active Environment Block\n";
         let mgr = make_manager_with_content(block);
 
-    let paths = mgr.get_current_paths().unwrap();
+        let paths = mgr.get_current_paths().unwrap();
         assert!(paths.contains("/a"), "paths: {:?}", paths);
         assert!(paths.contains("/b"), "paths: {:?}", paths);
         assert!(paths.contains("/c"), "paths: {:?}", paths);
