@@ -924,14 +924,10 @@ alias mise=envis
             let cleared_content = self.clear_env_block_content(&content)?;
 
             // 2. 生成 envis 基础配置
-            let is_cmd = path.extension().and_then(|s| s.to_str()) == Some("cmd");
-            let is_ps = path.extension().and_then(|s| s.to_str()) == Some("ps1");
-
             let setup_cmds = self.generate_envis_setup_commands(
                 envis_path.as_ref(),
                 envis_exe.as_ref(),
-                is_cmd,
-                is_ps,
+                path,
             );
 
             // 3. 将 envis 基础配置插入回去

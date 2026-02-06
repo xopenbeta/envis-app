@@ -37,6 +37,7 @@ import {
 import { useAtom } from 'jotai'
 import {
   Download,
+  Folder,
   GripVertical,
   MoreHorizontal,
   Play,
@@ -53,6 +54,7 @@ import { selectedServiceDataIdAtom } from '@/store/service'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { Input } from '@/components/ui/input'
 import { useAppSettings } from '@/hooks/appSettings'
+import { useFileOperations } from '@/hooks/file-operations'
 import { setImmediateInterval } from '@/utils/patch'
 import { useEnvironment } from '@/hooks/environment'
 
@@ -109,6 +111,7 @@ export function SortableServiceItem({
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [password, setPassword] = useState('')
   const { systemSettings } = useAppSettings();
+  const { openFolderInFinder } = useFileOperations();
   const {
     attributes,
     listeners,
@@ -186,6 +189,16 @@ export function SortableServiceItem({
     } finally {
       setShowEnvironmentActivationDialog(false)
     }
+  }
+
+  // 打开服务文件夹
+  const handleOpenFolder = () => {
+    if (!systemSettings?.envisFolder) {
+      toast.error(t('nav_bar_item.no_env_folder'))
+      return
+    }
+    const serviceFolderPath = `${systemSettings.envisFolder}/envs/${selectedEnvironmentId}/${serviceData.type}/${serviceData.version}`
+    openFolderInFinder(serviceFolderPath)
   }
 
   // 取消下载服务
@@ -592,6 +605,11 @@ export function SortableServiceItem({
             >
               <Trash className="h-4 w-4 mr-2" />
               {t('settings.delete')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleOpenFolder}>
+              <Folder className="mr-2 h-4 w-4" />
+              <span>{t('nav_bar_item.open_folder')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

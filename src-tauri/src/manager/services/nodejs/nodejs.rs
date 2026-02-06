@@ -427,10 +427,17 @@ impl NodejsService {
             for entry in std::fs::read_dir(&bin_dir)? {
                 let entry = entry?;
                 let path = entry.path();
-                if path.is_file() {
-                    let mut perms = std::fs::metadata(&path)?.permissions();
+                
+                // 尝试获取 metadata (跟随链接)
+                if let Ok(metadata) = std::fs::metadata(&path) {
+                    let mut perms = metadata.permissions();
+                    // 无论文件还是目录，在 bin 下通常都需要 755 (rwxr-xr-x)
                     perms.set_mode(0o755);
-                    std::fs::set_permissions(&path, perms)?;
+                    
+                    // set_permissions 也会跟随链接，修改目标
+                    if let Err(e) = std::fs::set_permissions(&path, perms) {
+                        log::warn!("无法设置权限 {:?}: {}", path, e);
+                    }
                 }
             }
         }
@@ -463,6 +470,14 @@ impl NodejsService {
 
         let shell_manager = crate::manager::shell_manamger::ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
+
+        // 确保可执行权限 (non-Windows)
+        #[cfg(not(target_os = "windows"))]
+        {
+            if let Err(e) = self.set_executable_permissions(&install_path) {
+                log::warn!("设置 Node.js 可执行权限失败: {}", e);
+            }
+        }
         
         // 添加 Node.js 到 PATH
         let node_bin_path = if cfg!(target_os = "windows") {
@@ -481,10 +496,18 @@ impl NodejsService {
             .and_then(|v| v.as_str());
         if let Some(prefix) = npm_config_prefix {
             if !prefix.is_empty() {
-            let npm_bin_path = PathBuf::from(prefix).join("bin");
-            if npm_bin_path.exists() {
-                shell_manager.add_path(&npm_bin_path.to_string_lossy().to_string())?;
-            }
+                // 确保 NPM_CONFIG_PREFIX/bin 下的文件也有可执行权限
+                #[cfg(not(target_os = "windows"))]
+                {
+                    if let Err(e) = self.set_executable_permissions(&PathBuf::from(prefix)) {
+                        log::warn!("设置 NPM Global Bin 可执行权限失败: {}", e);
+                    }
+                }
+
+                let npm_bin_path = PathBuf::from(prefix).join("bin");
+                if npm_bin_path.exists() {
+                    shell_manager.add_path(&npm_bin_path.to_string_lossy().to_string())?;
+                }
             }
         }
 
@@ -586,7 +609,7 @@ impl NodejsService {
 
     /// 获取全局安装的 npm 包列表
     pub fn get_global_packages(&self, service_data: &ServiceData) -> Result<Vec<GlobalPackage>> {
-        use std::process::Command;
+        use std::collections::HashSet;
 
         let install_path = self.get_install_path(&service_data.version);
         
@@ -595,60 +618,63 @@ impl NodejsService {
             return Err(anyhow!("Node.js {} 未安装", service_data.version));
         }
 
-        // 构建 npm 命令路径
-        let npm_path = if cfg!(target_os = "windows") {
-            install_path.join("npm.cmd")
-        } else {
-            install_path.join("bin").join("npm")
-        };
+        let mut scan_paths = Vec::new();
 
-        if !npm_path.exists() {
-            return Err(anyhow!("npm 不存在: {:?}", npm_path));
+        // 1. Node.js 安装目录 bin path
+        if cfg!(target_os = "windows") {
+            scan_paths.push(install_path.clone());
+        } else {
+            scan_paths.push(install_path.join("bin"));
         }
 
-        // 设置环境变量
-        let mut cmd = Command::new(&npm_path);
-        cmd.args(&["list", "-g", "--depth=0", "--json"]);
-
-        // 添加 NPM_CONFIG_PREFIX 环境变量（如果有）
+        // 2. NPM_CONFIG_PREFIX bin path
         if let Some(prefix) = service_data
             .metadata
             .as_ref()
             .and_then(|m| m.get("NPM_CONFIG_PREFIX"))
             .and_then(|v| v.as_str())
         {
-            cmd.env("NPM_CONFIG_PREFIX", prefix);
+             if !prefix.is_empty() {
+                 let prefix_path = PathBuf::from(prefix);
+                 if cfg!(target_os = "windows") {
+                     // Windows 习惯是 binaries 在 prefix 根目录
+                     scan_paths.push(prefix_path.clone());
+                 } else {
+                     scan_paths.push(prefix_path.join("bin"));
+                 }
+             }
         }
 
-        // 执行命令
-        let output = cmd.output()?;
+        let mut found_files = HashSet::new();
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(anyhow!("获取全局包列表失败: {}", stderr));
-        }
-
-        // 解析 JSON 输出
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let json: serde_json::Value = serde_json::from_str(&stdout)
-            .map_err(|e| anyhow!("解析 npm list 输出失败: {}", e))?;
-
-        let mut packages = Vec::new();
-
-        if let Some(dependencies) = json.get("dependencies").and_then(|d| d.as_object()) {
-            for (name, info) in dependencies {
-                let version = info
-                    .get("version")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("unknown")
-                    .to_string();
-
-                packages.push(GlobalPackage {
-                    name: name.clone(),
-                    version,
-                });
+        for path in scan_paths {
+            if !path.exists() {
+                continue;
+            }
+            if let Ok(entries) = std::fs::read_dir(path) {
+                for entry in entries {
+                    if let Ok(entry) = entry {
+                        if let Ok(file_type) = entry.file_type() {
+                            if file_type.is_file() || file_type.is_symlink() {
+                                if let Some(name) = entry.file_name().to_str() {
+                                    if !name.starts_with('.') {
+                                        found_files.insert(name.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+
+        let mut packages: Vec<GlobalPackage> = found_files
+            .into_iter()
+            .map(|name| GlobalPackage {
+                name,
+                version: "file".to_string(),
+            })
+            .collect();
 
         // 按名称排序
         packages.sort_by(|a, b| a.name.cmp(&b.name));
