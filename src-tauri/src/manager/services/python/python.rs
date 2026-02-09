@@ -269,11 +269,6 @@ impl PythonService {
         Ok((vec![official_url, mirror_url], filename))
     }
 
-    /// 下载并安装 Python（默认使用预编译模式）
-    pub async fn download_and_install(&self, version: &str) -> Result<DownloadResult> {
-        self.download_and_install_with_mode(version, PythonInstallMode::default()).await
-    }
-
     /// 下载并安装 Python（指定安装模式）
     pub async fn download_and_install_with_mode(&self, version: &str, mode: PythonInstallMode) -> Result<DownloadResult> {
         if self.is_installed(version) {

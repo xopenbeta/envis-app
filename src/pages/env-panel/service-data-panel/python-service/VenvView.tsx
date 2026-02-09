@@ -101,7 +101,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                 setNewVenvName("")
                 loadVenvs()
             } else {
-                toast.error("创建失败: " + res.msg)
+                toast.error("创建失败: " + res.message)
             }
         } catch (e) {
             toast.error("创建失败: " + String(e))
@@ -119,7 +119,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                  toast.success("删除成功")
                  loadVenvs()
             } else {
-                 toast.error("删除失败: " + res.msg)
+                 toast.error("删除失败: " + res.message)
             }
         } catch (e) {
             toast.error("删除失败: " + String(e))
@@ -149,7 +149,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                        虚拟环境 (venv)
+                                        虚拟环境 (只统计默认文件夹下的venv)
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </Label>
                                 </TooltipTrigger>
