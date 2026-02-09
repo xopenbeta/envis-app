@@ -73,6 +73,77 @@ impl NodejsService {
         ]
     }
 
+    /// 检查是否存在其他 Node.js 版本管理器
+    pub fn check_version_managers(&self) -> Vec<String> {
+        log::info!("正在检查 Node.js 版本管理器...");
+        let mut managers = Vec::new();
+
+        // 1. 优先检查默认路径/环境变量 (对于 NVM 这种通过脚本加载的工具最有效)
+        let mut nvm_found = false;
+        // 检查 NVM_DIR 环境变量
+        if std::env::var("NVM_DIR").is_ok() {
+            nvm_found = true;
+            log::debug!("通过环境变量 NVM_DIR 发现 nvm");
+        } 
+        // 检查 ~/.nvm 目录
+        if !nvm_found {
+             if let Some(home) = dirs::home_dir() {
+                if home.join(".nvm").exists() {
+                    nvm_found = true;
+                    log::debug!("通过目录 ~/.nvm 发现 nvm");
+                }
+            }
+        }
+        
+        if nvm_found {
+            managers.push("nvm".to_string());
+        }
+
+        // 2. 通过 Shell 检查命令 (解决 PATH 问题和 Shell Function 问题)
+        // 定义需要检查的命令列表
+        let basic_cmds = vec!["fnm", "n", "volt", "nvs"];
+        let mut check_list = basic_cmds;
+        // 如果前面没找到 nvm，这里也加入检查列表试试
+        if !nvm_found {
+            check_list.push("nvm");
+        }
+
+        for cmd in check_list {
+            let exists = if cfg!(target_os = "windows") {
+                std::process::Command::new("where")
+                    .arg(cmd)
+                    .output()
+                    .map(|output| output.status.success())
+                    .unwrap_or(false)
+            } else {
+                // Unix: 尝试使用 login shell 来获取完整的 PATH 和 alias/function
+                let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+                // 使用 command -v 检查，它比 which 更通用，既能查 alias/func 也能查 path
+                let check_cmd = format!("command -v {}", cmd);
+                
+                std::process::Command::new(&shell)
+                    .arg("-l") // Login shell, reads login profiles
+                    .arg("-c")
+                    .arg(&check_cmd)
+                    .output()
+                    .map(|output| output.status.success())
+                    .unwrap_or(false)
+            };
+
+            log::debug!("Shell 检查命令 '{}' 是否存在: {}", cmd, exists);
+            if exists {
+                managers.push(cmd.to_string());
+            }
+        }
+
+        // 去重
+        managers.sort();
+        managers.dedup();
+
+        log::info!("版本管理器检查结果: {:?}", managers);
+        managers
+    }
+
     /// 检查 Node.js 是否已安装
     pub fn is_installed(&self, version: &str) -> bool {
         let install_path = self.get_install_path(version);

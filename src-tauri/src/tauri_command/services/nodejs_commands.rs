@@ -18,6 +18,17 @@ pub async fn check_nodejs_installed(version: String) -> Result<CommandResponse, 
     Ok(CommandResponse::success(message.to_string(), Some(data)))
 }
 
+/// 检查是否存在其他 Node.js 版本管理器的 Tauri 命令
+#[tauri::command]
+pub async fn check_nodejs_version_managers() -> Result<CommandResponse, String> {
+    let nodejs_service = NodejsService::global();
+    let managers = nodejs_service.check_version_managers();
+    let data = serde_json::json!({
+        "managers": managers
+    });
+    Ok(CommandResponse::success("检测完成".to_string(), Some(data)))
+}
+
 /// 获取可用的 Node.js 版本列表的 Tauri 命令
 #[tauri::command]
 pub async fn get_nodejs_versions() -> Result<CommandResponse, String> {

@@ -39,7 +39,7 @@ interface NodeServiceCardProps {
 
 function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCardProps) {
     const { t } = useTranslation()
-    const { setNpmRegistry, setConfigPrefix, getGlobalPackages, installGlobalPackage } = useNodejsService()
+    const { setNpmRegistry, setConfigPrefix, getGlobalPackages, installGlobalPackage, checkVersionManagers } = useNodejsService()
     const { updateServiceData } = useEnvironmentServiceData()
     const [registry, setRegistry] = useState('')
     const [prefix, setPrefix] = useState('')
@@ -49,6 +49,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     const [isInstallDialogOpen, setIsInstallDialogOpen] = useState(false)
     const [packageToInstall, setPackageToInstall] = useState('')
     const [isInstalling, setIsInstalling] = useState(false)
+    const [conflictManagers, setConflictManagers] = useState<string[]>([])
 
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
@@ -60,6 +61,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
         if (isServiceDataActive) {
             loadGlobalPackages()
         }
+        
+        // 检查版本管理器冲突
+        checkVersionManagers().then(res => {
+            console.log(`zws [NodeServiceCard] checkVersionManagers 响应:`, res)
+            if (res && (res as any).success && (res as any).data?.managers) {
+                setConflictManagers((res as any).data.managers)
+            }
+        })
     }, [serviceData])
 
     const loadGlobalPackages = async () => {
@@ -149,6 +158,23 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
 
     return (<>
         <div className="w-full p-3 space-y-3">
+            {conflictManagers.length > 0 && (
+                <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/20">
+                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                    <AlertTitle className="text-red-800 dark:text-red-500 text-xs font-semibold flex items-center gap-2">
+                        {t('node_service.conflict_manager_title', { defaultValue: '检测到版本管理器冲突' })}
+                    </AlertTitle>
+                    <AlertDescription className="text-red-700 dark:text-red-600/90 text-xs mt-1.5">
+                        <p>
+                            {t('node_service.conflict_manager_desc', { 
+                                managers: conflictManagers.join(', '),
+                                defaultValue: `检测到系统中存在以下 Node.js 版本管理器: ${conflictManagers.join(', ')}。这些工具可能会与当前应用冲突，导致功能异常。`
+                            })}
+                        </p>
+                    </AlertDescription>
+                </Alert>
+            )}
+
             {showLegacyMacWarning && (
                 <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20">
                     <AlertTitle className="text-yellow-800 dark:text-yellow-500 text-xs font-semibold flex items-center gap-2">

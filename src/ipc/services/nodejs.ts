@@ -12,6 +12,11 @@ export const ipcCheckPackageManagers = ipcLogFunc('检查包管理器', async (v
     return invokeCommand('check_nodejs_package_managers', { version })
 })
 
+export const ipcCheckVersionManagers = ipcLogFunc('检查版本管理器', async (): Promise<IPCResult<{ managers: string[] }>> => {
+    return invokeCommand('check_nodejs_version_managers')
+})
+
+
 export const ipcGetNpmConfig = ipcLogFunc('获取包管理器配置', async (manager: string): Promise<IPCResult<{
   registry: string
   configPrefix: string

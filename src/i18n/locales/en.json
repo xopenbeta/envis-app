@@ -479,6 +479,8 @@
     "install": "Install",
     "installing": "Installing...",
     "loading_packages": "Loading packages...",
-    "no_packages": "No global packages installed"
+    "no_packages": "No global packages installed",
+    "conflict_manager_title": "Version Manager Conflict Detected",
+    "conflict_manager_desc": "The following Node.js version managers were detected: {{managers}}. These tools may conflict with this application. It is recommended to uninstall or disable them before using this application."
   }
 }

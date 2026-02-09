@@ -163,6 +163,7 @@ pub fn run() {
             download_nodejs,
             get_nodejs_versions,
             check_nodejs_installed,
+            check_nodejs_version_managers,
             cancel_download_nodejs,
             get_nodejs_download_progress,
             // npm 配置命令
