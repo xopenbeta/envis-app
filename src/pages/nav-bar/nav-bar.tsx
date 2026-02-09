@@ -56,7 +56,8 @@ import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { appSettingsAtom, isAppLoadingAtom, updateAvailableAtom } from '../../store/appSettings'
 import {
   environmentsAtom,
-  selectedEnvironmentIdAtom
+  selectedEnvironmentIdAtom,
+  isCreateEnvDialogOpenAtom
 } from '../../store/environment'
 import { sortEnvironments } from '@/utils/sort'
 import { SortableEnvironmentItem } from './nav-bar-item'
@@ -77,6 +78,7 @@ export default function NavBar({ onClose }: NavBarProps) {
   const { t } = useTranslation()
   const [environments] = useAtom(environmentsAtom)
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
+  const [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom)
   const {
     createEnvironment,
     updateEnvironment,
@@ -100,6 +102,16 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [editingEnvironment, setEditingEnvironment] = useState<Environment | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [envInfoFormData, setEnvInfoFormData] = useState({ name: '' })
+
+  // 监听来自 Welcome Fragment 的新建请求
+  useEffect(() => {
+    if (isCreateEnvDialogOpen) {
+      setEditingEnvironment(null)
+      setEnvInfoFormData({ name: '' })
+      setIsNewDialogOpen(true)
+      setIsCreateEnvDialogOpen(false)
+    }
+  }, [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen]);
 
   // 处理环境选择
   const onEnvItemClick = async (environment: Environment) => {
@@ -344,7 +356,7 @@ export default function NavBar({ onClose }: NavBarProps) {
 
       // 更新排序并持久化保存
       await updateEnvironmentsOrder(newEnvironments);
-      logInfo(`环境排序变更: ${String(active.id)} -> 索引 ${newIndex}`)
+      logInfo(t('nav_bar.env_order_changed', { id: String(active.id), index: newIndex }))
     }
   };
 
@@ -362,11 +374,6 @@ export default function NavBar({ onClose }: NavBarProps) {
               style={{ filter: currentTheme === 'dark' ? 'invert(1)' : 'none' }}
               />
               <span className="text-base font-semibold text-foreground group-hover:text-primary hover:underline heroui-transition">Envis</span>
-              {updateAvailable && (
-                <span className="absolute left-12 bottom-3 items-center rounded-full bg-red-500/90 px-1 py-0 text-[10px] font-medium text-white">
-                  update
-                </span>
-              )}
             </div>
             {onClose && (
               <Button

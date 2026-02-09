@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart } from '@/components/ui/pie-chart'
 import { Cpu, HardDrive, Wifi, MemoryStick, ArrowUp, ArrowDown } from 'lucide-react'
 import { useSystemInfo } from '@/hooks/system-info'
+import { useTranslation } from 'react-i18next'
 
 export interface SystemInfo {
   cpu: {
@@ -137,6 +138,7 @@ export function useSystemMonitorData() {
 }
 
 export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null }) {
+  const { t } = useTranslation()
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B'
     const k = 1024
@@ -149,13 +151,13 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
 
   return (
     <div className="w-full space-y-3">
-      <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">System Monitor</h2>
+      <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('system_monitor.title')}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* CPU */}
         <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
           <CardHeader className="p-3 pb-0">
             <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
-              <Cpu className="w-3.5 h-3.5" /> CPU
+              <Cpu className="w-3.5 h-3.5" /> {t('system_monitor.cpu')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -167,11 +169,11 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">System</span>
+                  <span className="text-gray-400">{t('system_monitor.system')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{systemInfo.cpu.systemUsage.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">User</span>
+                  <span className="text-gray-400">{t('system_monitor.user')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{systemInfo.cpu.userUsage.toFixed(1)}%</span>
                 </div>
               </div>
@@ -183,7 +185,7 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
         <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
           <CardHeader className="p-3 pb-0">
             <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
-              <MemoryStick className="w-3.5 h-3.5" /> Memory
+              <MemoryStick className="w-3.5 h-3.5" /> {t('system_monitor.memory')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -195,11 +197,11 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">Used</span>
+                  <span className="text-gray-400">{t('system_monitor.used')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{formatBytes(systemInfo.memory.used)}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">Total</span>
+                  <span className="text-gray-400">{t('system_monitor.total')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{formatBytes(systemInfo.memory.total)}</span>
                 </div>
               </div>
@@ -211,7 +213,7 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
         <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
           <CardHeader className="p-3 pb-0">
             <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
-              <HardDrive className="w-3.5 h-3.5" /> Disk
+              <HardDrive className="w-3.5 h-3.5" /> {t('system_monitor.disk')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -223,11 +225,11 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">Used</span>
+                  <span className="text-gray-400">{t('system_monitor.used')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{formatBytes(systemInfo.disk.used)}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">Total</span>
+                  <span className="text-gray-400">{t('system_monitor.total')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{formatBytes(systemInfo.disk.total)}</span>
                 </div>
               </div>
@@ -239,7 +241,7 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
         <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
           <CardHeader className="p-3 pb-0">
             <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
-              <Wifi className="w-3.5 h-3.5" /> Network
+              <Wifi className="w-3.5 h-3.5" /> {t('system_monitor.network')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -248,14 +250,14 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
                 <div className="flex justify-between text-[10px]">
                   <span className="text-gray-400 flex items-center gap-1">
                     <ArrowUp className={`w-3 h-3 ${systemInfo.network.upload > 0 ? 'text-blue-500' : 'text-gray-300 dark:text-gray-600'}`} />
-                    Upload
+                    {t('system_monitor.upload')}
                   </span>
                   <span className="text-gray-700 dark:text-gray-300">{formatBytes(systemInfo.network.upload)}/s</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
                   <span className="text-gray-400 flex items-center gap-1">
                     <ArrowDown className={`w-3 h-3 ${systemInfo.network.download > 0 ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`} />
-                    Download
+                    {t('system_monitor.download')}
                   </span>
                   <span className="text-gray-700 dark:text-gray-300">{formatBytes(systemInfo.network.download)}/s</span>
                 </div>

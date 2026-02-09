@@ -13,6 +13,7 @@ import { chatMessagesAtom, isAIResponseLoadingAtom } from '@/store/ai'
 import { X, Trash2, Copy, ChevronDown, Pause, RefreshCcw, ChevronRight } from 'lucide-react'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { isAIPanelOpenAtom, isNavPanelOpenAtom } from '@/store'
+import { useTranslation } from 'react-i18next'
 
 function formatTime(ts: number) {
   const d = new Date(ts)
@@ -31,6 +32,7 @@ function LevelBadge({ level }: { level: LogEntry['level'] }) {
 }
 
 function LogEntryItem({ entry }: { entry: LogEntry }) {
+  const { t } = useTranslation()
   const [collapsed, setCollapsed] = useState(true)
   const hasMeta = entry.meta && Object.keys(entry.meta).length > 0
 
@@ -44,7 +46,7 @@ function LogEntryItem({ entry }: { entry: LogEntry }) {
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
-            title={collapsed ? '展开参数' : '收起参数'}
+            title={collapsed ? t('log_panel.expand_params') : t('log_panel.collapse_params')}
           >
             <ChevronRight className={cn('h-3 w-3 transition-transform', !collapsed && 'rotate-90')} />
           </button>
@@ -62,6 +64,7 @@ function LogEntryItem({ entry }: { entry: LogEntry }) {
 }
 
 export default function LogPanel() {
+  const { t } = useTranslation()
   const [entries, setEntries] = useAtom(logEntriesAtom)
   const [open, setOpen] = useAtom(isLogPanelOpenAtom)
   const [autoScroll, setAutoScroll] = useAtom(autoScrollLogAtom)
@@ -189,12 +192,12 @@ export default function LogPanel() {
               dragging ? 'cursor-ns-resize' : 'cursor-ns-resize'
             )}
             onMouseDown={onHeaderMouseDown}
-            title="拖动这里调整高度"
+            title={t('log_panel.drag_resize')}
           >
             <div className="flex items-center gap-2">
               <TabsList>
-                <TabsTrigger value="logs">日志</TabsTrigger>
-                <TabsTrigger value="state">State</TabsTrigger>
+                <TabsTrigger value="logs">{t('log_panel.logs_tab')}</TabsTrigger>
+                <TabsTrigger value="state">{t('log_panel.state_tab')}</TabsTrigger>
               </TabsList>
             </div>
             <div className="flex items-center gap-1">
@@ -205,31 +208,31 @@ export default function LogPanel() {
                     variant="ghost"
                     className="h-7 px-2"
                     onClick={() => setAscending(v => !v)}
-                    title={ascending ? '切换为倒序（新在上）' : '切换为正序（新在下）'}
+                    title={ascending ? t('log_panel.switch_desc') : t('log_panel.switch_asc')}
                   >
-                    <span className="text-xs">{ascending ? '正序' : '倒序'}</span>
+                    <span className="text-xs">{ascending ? t('log_panel.asc') : t('log_panel.desc')}</span>
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setAutoScroll(v => !v)} title={autoScroll ? '暂停自动滚动' : '开启自动滚动'}>
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setAutoScroll(v => !v)} title={autoScroll ? t('log_panel.pause_scroll') : t('log_panel.enable_scroll')}>
                     {autoScroll ? <Pause className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copyAll} title="复制全部日志">
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copyAll} title={t('log_panel.copy_all')}>
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={clearAll} title="清空日志">
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={clearAll} title={t('log_panel.clear_all')}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copyAllState} title="复制所有状态JSON">
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copyAllState} title={t('log_panel.copy_state')}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </>
               )}
-              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => location.reload()} title="刷新页面">
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => location.reload()} title={t('log_panel.refresh')}>
                 <RefreshCcw className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setOpen(false)} title="关闭">
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setOpen(false)} title={t('log_panel.close')}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -242,7 +245,7 @@ export default function LogPanel() {
                 <div className="px-3 py-2 space-y-1">
                   <div ref={topRef} />
                   {entries.length === 0 && (
-                    <div className="text-xs text-muted-foreground">暂无日志</div>
+                    <div className="text-xs text-muted-foreground">{t('log_panel.no_logs')}</div>
                   )}
                   {(ascending ? entries : [...entries].slice().reverse()).map((e) => (
                     <LogEntryItem key={e.id} entry={e} />
@@ -259,7 +262,7 @@ export default function LogPanel() {
                 <div className="px-2 py-1">
                   <Accordion type="multiple" defaultValue={["app","env","service","ai","log"]} className="w-full">
                     <AccordionItem value="app">
-                      <AccordionTrigger className="py-2 text-xs">App</AccordionTrigger>
+                      <AccordionTrigger className="py-2 text-xs">{t('log_panel.app')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
                           <div>
@@ -279,7 +282,7 @@ export default function LogPanel() {
                     </AccordionItem>
 
                     <AccordionItem value="env">
-                      <AccordionTrigger className="py-2 text-xs">Environment</AccordionTrigger>
+                      <AccordionTrigger className="py-2 text-xs">{t('log_panel.environment')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
@@ -292,7 +295,7 @@ export default function LogPanel() {
                     </AccordionItem>
 
                     <AccordionItem value="service">
-                      <AccordionTrigger className="py-2 text-xs">Service</AccordionTrigger>
+                      <AccordionTrigger className="py-2 text-xs">{t('log_panel.service')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
@@ -305,7 +308,7 @@ export default function LogPanel() {
                     </AccordionItem>
 
                     <AccordionItem value="ai">
-                      <AccordionTrigger className="py-2 text-xs">AI</AccordionTrigger>
+                      <AccordionTrigger className="py-2 text-xs">{t('log_panel.ai')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
                           <div className="grid grid-cols-3 gap-2 text-[11px] leading-tight">
@@ -319,7 +322,7 @@ export default function LogPanel() {
                     </AccordionItem>
 
                     <AccordionItem value="log">
-                      <AccordionTrigger className="py-2 text-xs">Log (元信息)</AccordionTrigger>
+                      <AccordionTrigger className="py-2 text-xs">Log ({t('log_panel.meta_info')})</AccordionTrigger>
                       <AccordionContent>
                         <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
                           <div className="bg-muted/30 rounded p-2">logEntriesCount: {entries?.length ?? 0}</div>

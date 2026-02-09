@@ -31,11 +31,14 @@ import { Progress } from "@/components/ui/progress";
 import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor';
 import { AppFooter } from "@/pages/app-footer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { t } from "i18next";
+import { useTranslation } from 'react-i18next';
+import { isCreateEnvDialogOpenAtom } from '@/store/environment';
 
 export function WelcomeFragment({ onOpen }: {
     onOpen?: () => void;
 }) {
+    const { t } = useTranslation();
+    const [, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom);
     const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
     const [environments] = useAtom(environmentsAtom)
     const { updateEnvironmentsOrder } = useEnvironment()
@@ -133,7 +136,10 @@ export function WelcomeFragment({ onOpen }: {
                             icon={<Plus className="w-5 h-5 text-blue-500 dark:text-blue-400" />} 
                             title={t('welcome.new_environment')}
                             desc={t('welcome.new_environment_desc')}
-                            onClick={onOpen}
+                            onClick={() => {
+                                onOpen?.();
+                                setIsCreateEnvDialogOpen(true);
+                            }}
                         />
                         <ActionCard 
                             icon={<Terminal className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />} 
