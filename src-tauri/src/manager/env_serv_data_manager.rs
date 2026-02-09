@@ -183,7 +183,7 @@ impl EnvServDataManager {
         let id = format!("{}-{}", short_id, timestamp);
 
         // 2. 生成名称
-        let name = format!("{}", self.service_type_to_string(&service_type));
+        let name = service_type.default_name();
 
         // 3. 计算 Sort Order - 新增的服务放到最前面
         let service_datas = self.get_environment_all_service_datas(environment_id)?;
@@ -404,23 +404,6 @@ impl EnvServDataManager {
         Ok(service_data)
     }
 
-    /// 将服务类型枚举转换为字符串
-    fn service_type_to_string(&self, service_type: &ServiceType) -> String {
-        match service_type {
-            ServiceType::Mongodb => "mongodb".to_string(),
-            ServiceType::Mariadb => "mariadb".to_string(),
-            ServiceType::Mysql => "mysql".to_string(),
-            ServiceType::Postgresql => "postgresql".to_string(),
-            ServiceType::Nginx => "nginx".to_string(),
-            ServiceType::Nodejs => "nodejs".to_string(),
-            ServiceType::Python => "python".to_string(),
-            ServiceType::Custom => "custom".to_string(),
-            ServiceType::Host => "host".to_string(),
-            ServiceType::SSL => "ssl".to_string(),
-            ServiceType::Dnsmasq => "dnsmasq".to_string(),
-        }
-    }
-
     /// 构建默认的服务 metadata
     /// 根据服务类型和环境ID创建相应的默认配置
     pub fn build_default_metadata(
@@ -455,11 +438,11 @@ impl EnvServDataManager {
 
         let env_folder = Path::new(&envs_folder).join(environment_id);
         let service_folder = Path::new(&services_folder)
-            .join(self.service_type_to_string(&service_data.service_type))
+            .join(service_data.service_type.dir_name())
             .join(&service_data.version);
-        let service_type_str = self.service_type_to_string(&service_data.service_type);
+        let service_type_str = service_data.service_type.dir_name();
         let service_data_folder = env_folder
-            .join(&service_type_str)
+            .join(service_type_str)
             .join(&service_data.version);
         let service_config_path = service_data_folder.join(ENV_SERVICE_CONFIG_FILE_NAME);
 

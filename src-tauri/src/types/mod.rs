@@ -105,6 +105,22 @@ impl ServiceType {
         }
     }
 
+    pub fn default_name(&self) -> String {
+        match self {
+            ServiceType::Mongodb => "MongoDB".to_string(),
+            ServiceType::Mariadb => "MariaDB".to_string(),
+            ServiceType::Mysql => "MySQL".to_string(),
+            ServiceType::Postgresql => "PostgreSQL".to_string(),
+            ServiceType::Nginx => "Nginx".to_string(),
+            ServiceType::Nodejs => "Node.js".to_string(),
+            ServiceType::Python => "Python".to_string(),
+            ServiceType::Custom => "Custom".to_string(),
+            ServiceType::Host => "Host".to_string(),
+            ServiceType::SSL => "SSL".to_string(),
+            ServiceType::Dnsmasq => "Dnsmasq".to_string(),
+        }
+    }
+
     pub fn metadata_keys(&self) -> Vec<&'static str> {
         match self {
             ServiceType::Nodejs => vec!["NPM_CONFIG_PREFIX"],

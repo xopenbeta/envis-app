@@ -172,6 +172,7 @@ export function PipConfigView({
                             checked={python3AsPython}
                             onCheckedChange={handlePython3AsPythonChange}
                             disabled={isLoading || !isServiceDataActive}
+                            className="data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-white/20"
                         />
                     </div>
                 </div>
