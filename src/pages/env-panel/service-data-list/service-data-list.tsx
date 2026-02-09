@@ -128,7 +128,7 @@ export function ServiceList({ onOpen }: {
               <PanelLeft className="h-4 w-4" />
             </Button>
           )}
-          <h2 onClick={onTitleClick} className="text-base font-semibold ml-2 text-foreground">Servs</h2>
+          <h2 onClick={onTitleClick} className="text-base font-semibold ml-2 text-foreground">{t('service_list.servs')}</h2>
         </div>
 
         {/* 搜索框 - 绝对定位覆盖在右侧 */}

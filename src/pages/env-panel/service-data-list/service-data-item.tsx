@@ -345,28 +345,28 @@ export function SortableServiceItem({
       let downloadStr = '';
       switch (downloadStatus) {
         case DownloadStatus.NotInstalled:
-          downloadStr = 'NotInstalled';
+          downloadStr = t('service_item.download_status.not_installed');
           break;
         case DownloadStatus.Pending:
-          downloadStr = 'Pending';
+          downloadStr = t('service_item.download_status.pending');
           break;
         case DownloadStatus.Downloading:
-          downloadStr = 'Downloading';
+          downloadStr = t('service_item.download_status.downloading');
           break;
         case DownloadStatus.Downloaded:
-          downloadStr = 'Downloaded';
+          downloadStr = t('service_item.download_status.downloaded');
           break;
         case DownloadStatus.Installing:
-          downloadStr = 'Installing';
+          downloadStr = t('service_item.download_status.installing');
           break;
         case DownloadStatus.Cancelled:
-          downloadStr = 'Cancelled';
+          downloadStr = t('service_item.download_status.cancelled');
           break;
         case DownloadStatus.Failed:
-          downloadStr = 'Failed';
+          downloadStr = t('service_item.download_status.failed');
           break;
         case DownloadStatus.Unknown:
-          downloadStr = 'Unknown';
+          downloadStr = t('service_item.download_status.unknown');
           break;
       }
       
@@ -400,7 +400,7 @@ export function SortableServiceItem({
               serviceDataStatus === ServiceDataStatus.Unknown && "text-muted-foreground"
             )}
           >
-            {serviceDataStatus === ServiceDataStatus.Active ? 'Active' : 'Inactive'}
+            {serviceDataStatus === ServiceDataStatus.Active ? t('service_item.status.active') : t('service_item.status.inactive')}
           </span>
         )}
 
@@ -415,7 +415,7 @@ export function SortableServiceItem({
               // 不再包含 ServiceStatus.Unknown 的样式，因为 Unknown 时不显示
             )}
           >
-            · {serviceStatus === ServiceStatus.Running ? 'Running' : serviceStatus === ServiceStatus.Stopped ? 'Stopped' : serviceStatus === ServiceStatus.Error ? 'Error' : 'Unknown'}
+            · {serviceStatus === ServiceStatus.Running ? t('service_item.status.running') : serviceStatus === ServiceStatus.Stopped ? t('service_item.status.stopped') : serviceStatus === ServiceStatus.Error ? t('service_item.status.error') : t('service_item.status.unknown')}
           </span>
         )}
       </>
@@ -596,7 +596,7 @@ export function SortableServiceItem({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameValue(serviceData.name || ''); setShowRenameDialog(true); }}>
               <Settings className="h-4 w-4 mr-2" />
-              {t('settings.edit')}
+              {t('common.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -604,7 +604,7 @@ export function SortableServiceItem({
               className="text-danger"
             >
               <Trash className="h-4 w-4 mr-2" />
-              {t('settings.delete')}
+              {t('common.delete')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleOpenFolder}>

@@ -5,6 +5,8 @@
     "loading": "加载中...",
     "save": "保存",
     "saving": "保存中...",
+    "edit": "编辑",
+    "delete": "删除",
     "unknown_error": "未知错误"
   },
   "service_item": {
@@ -38,7 +40,25 @@
     "download_start_error": "开始下载失败: {{message}}",
     "download_cancelled": "下载已取消",
     "cancel_download_error": "取消下载失败",
-    "env_op_error": "环境操作失败"
+    "env_op_error": "环境操作失败",
+    "status": {
+      "active": "已激活",
+      "inactive": "未激活",
+      "running": "运行中",
+      "stopped": "已停止",
+      "error": "错误",
+      "unknown": "未知"
+    },
+    "download_status": {
+      "not_installed": "未安装",
+      "pending": "等待中",
+      "downloading": "下载中",
+      "downloaded": "已下载",
+      "installing": "安装中",
+      "cancelled": "已取消",
+      "failed": "失败",
+      "unknown": "未知"
+    }
   },
   "dashboard": {
     "unknown_env": "未知环境",

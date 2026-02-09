@@ -183,14 +183,14 @@ impl EnvServDataManager {
         let id = format!("{}-{}", short_id, timestamp);
 
         // 2. 生成名称
-        let name = format!("New {} Service", self.service_type_to_string(&service_type));
+        let name = format!("{}", self.service_type_to_string(&service_type));
 
-        // 3. 计算 Sort Order
+        // 3. 计算 Sort Order - 新增的服务放到最前面
         let service_datas = self.get_environment_all_service_datas(environment_id)?;
-        let max_sort = service_datas
+        let min_sort = service_datas
             .iter()
             .filter_map(|sd| sd.sort)
-            .max()
+            .min()
             .unwrap_or(0);
 
         let now = Utc::now().to_rfc3339();
@@ -201,7 +201,7 @@ impl EnvServDataManager {
             service_type: service_type.clone(),
             version,
             status: ServiceDataStatus::Inactive,
-            sort: Some(max_sort + 1),
+            sort: Some(min_sort - 1),
             metadata: None,
             created_at: now.clone(),
             updated_at: now,

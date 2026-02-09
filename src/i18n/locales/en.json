@@ -5,6 +5,8 @@
     "loading": "Loading...",
     "save": "Save",
     "saving": "Saving...",
+    "edit": "Edit",
+    "delete": "Delete",
     "unknown_error": "Unknown error"
   },
   "service_item": {
@@ -38,7 +40,25 @@
     "download_start_error": "Failed to start download: {{message}}",
     "download_cancelled": "Download cancelled",
     "cancel_download_error": "Failed to cancel download",
-    "env_op_error": "Environment operation failed"
+    "env_op_error": "Environment operation failed",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "running": "Running",
+      "stopped": "Stopped",
+      "error": "Error",
+      "unknown": "Unknown"
+    },
+    "download_status": {
+      "not_installed": "Not Installed",
+      "pending": "Pending",
+      "downloading": "Downloading",
+      "downloaded": "Downloaded",
+      "installing": "Installing",
+      "cancelled": "Cancelled",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    }
   },
   "dashboard": {
     "unknown_env": "Unknown Environment",
