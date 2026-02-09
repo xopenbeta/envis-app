@@ -75,7 +75,6 @@ impl NodejsService {
 
     /// 检查是否存在其他 Node.js 版本管理器
     pub fn check_version_managers(&self) -> Vec<String> {
-        log::info!("正在检查 Node.js 版本管理器...");
         let mut managers = Vec::new();
 
         // 1. 优先检查默认路径/环境变量 (对于 NVM 这种通过脚本加载的工具最有效)
@@ -83,14 +82,12 @@ impl NodejsService {
         // 检查 NVM_DIR 环境变量
         if std::env::var("NVM_DIR").is_ok() {
             nvm_found = true;
-            log::debug!("通过环境变量 NVM_DIR 发现 nvm");
         } 
         // 检查 ~/.nvm 目录
         if !nvm_found {
              if let Some(home) = dirs::home_dir() {
                 if home.join(".nvm").exists() {
                     nvm_found = true;
-                    log::debug!("通过目录 ~/.nvm 发现 nvm");
                 }
             }
         }
@@ -130,7 +127,6 @@ impl NodejsService {
                     .unwrap_or(false)
             };
 
-            log::debug!("Shell 检查命令 '{}' 是否存在: {}", cmd, exists);
             if exists {
                 managers.push(cmd.to_string());
             }
