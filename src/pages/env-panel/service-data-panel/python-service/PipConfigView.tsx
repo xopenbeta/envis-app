@@ -74,14 +74,14 @@ export function PipConfigView({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    镜像源 (index-url)
+                                    pip下载源 (index-url)
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
                             <TooltipContent>
                                 <div className="text-xs space-y-1">
-                                    <div>查看当前源: <code>pip config get global.index-url</code></div>
-                                    <div>设置源: <code>pip config set global.index-url &lt;url&gt;</code></div>
+                                    <div>作用: 记录 <code>PIP_INDEX_URL</code> 并写入终端配置</div>
+                                    <div>查看当前源: <code>echo $PIP_INDEX_URL</code></div>
                                 </div>
                             </TooltipContent>
                         </Tooltip>

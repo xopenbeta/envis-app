@@ -1,5 +1,14 @@
 import { ServiceData } from "@/types/index";
-import { ipcGetPipConfig, ipcSetPipIndexUrl, ipcSetPipTrustedHost, ipcSetPython3AsPython } from "../../ipc/services/python";
+import { 
+    ipcGetPipConfig, 
+    ipcSetPipIndexUrl, 
+    ipcSetPipTrustedHost, 
+    ipcSetPython3AsPython,
+    ipcCheckPythonVenvSupport,
+    ipcGetPythonVenvs,
+    ipcCreatePythonVenv,
+    ipcRemovePythonVenv
+} from "../../ipc/services/python";
 
 export function usePythonService() {
     async function getPipConfig() {
@@ -26,10 +35,34 @@ export function usePythonService() {
         return ipcRes;
     }
 
+    async function checkVenvSupport(version: string) {
+        const ipcRes = await ipcCheckPythonVenvSupport(version);
+        return ipcRes;
+    }
+
+    async function getVenvs(environmentId: string, serviceData: ServiceData) {
+        const ipcRes = await ipcGetPythonVenvs(environmentId, serviceData);
+        return ipcRes;
+    }
+
+    async function createVenv(environmentId: string, serviceData: ServiceData, venvName: string) {
+        const ipcRes = await ipcCreatePythonVenv(environmentId, serviceData, venvName);
+        return ipcRes;
+    }
+
+    async function removeVenv(environmentId: string, serviceData: ServiceData, venvName: string) {
+        const ipcRes = await ipcRemovePythonVenv(environmentId, serviceData, venvName);
+        return ipcRes;
+    }
+
     return {
         getPipConfig,
         setPipIndexUrl,
         setPipTrustedHost,
-        setPython3AsPython
+        setPython3AsPython,
+        checkVenvSupport,
+        getVenvs,
+        createVenv,
+        removeVenv
     }
 }

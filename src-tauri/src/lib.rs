@@ -285,6 +285,11 @@ pub fn run() {
             set_pip_index_url,
             set_pip_trusted_host,
             set_python3_as_python,
+            // venv 命令
+            check_python_venv_support,
+            get_python_venvs,
+            create_python_venv,
+            remove_python_venv,
             // SSL 证书服务命令
             check_ca_initialized,
             initialize_ca,

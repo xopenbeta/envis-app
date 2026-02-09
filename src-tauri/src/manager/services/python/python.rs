@@ -1,4 +1,5 @@
 use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::env_serv_data_manager::EnvServDataManager;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::ServiceData;
@@ -46,6 +47,117 @@ impl PythonService {
         GLOBAL_PYTHON_SERVICE
             .get_or_init(|| Arc::new(Self::new()))
             .clone()
+    }
+
+    /// 获取 Python 可执行文件路径
+    pub fn get_executable_path(&self, version: &str) -> PathBuf {
+        let install_path = self.get_install_path(version);
+        if cfg!(target_os = "windows") {
+            install_path.join("python.exe")
+        } else {
+            // Check bin/python3 first
+            let p3 = install_path.join("bin").join("python3");
+            if p3.exists() {
+                p3
+            } else {
+                install_path.join("bin").join("python")
+            }
+        }
+    }
+
+    /// 检查指定版本的 Python 是否支持 venv
+    pub fn check_venv_support(&self, version: &str) -> bool {
+        let python_path = self.get_executable_path(version);
+        if !python_path.exists() {
+            return false;
+        }
+
+        // 执行 python -m venv --help
+        if let Ok(output) = Command::new(python_path)
+            .args(&["-m", "venv", "--help"])
+            .output()
+        {
+            return output.status.success();
+        }
+        false
+    }
+
+    /// 获取 venvs 存储目录
+    pub fn get_venvs_dir(
+        &self,
+        environment_id: &str,
+        service_data: &ServiceData,
+    ) -> Result<PathBuf> {
+        let env_manager = EnvServDataManager::global();
+        let env_manager = env_manager.lock().unwrap();
+        let (_, _, _, _, service_data_folder, _) =
+            env_manager.build_service_paths(environment_id, service_data)?;
+        Ok(service_data_folder.join("venvs"))
+    }
+
+    /// 获取虚拟环境列表
+    pub fn list_venvs(
+        &self,
+        environment_id: &str,
+        service_data: &ServiceData,
+    ) -> Result<Vec<String>> {
+        let venvs_dir = self.get_venvs_dir(environment_id, service_data)?;
+        if !venvs_dir.exists() {
+            return Ok(vec![]);
+        }
+
+        let mut venvs = Vec::new();
+        for entry in std::fs::read_dir(venvs_dir)? {
+            let entry = entry?;
+            if entry.path().is_dir() {
+                if let Some(name) = entry.file_name().to_str() {
+                    venvs.push(name.to_string());
+                }
+            }
+        }
+        Ok(venvs)
+    }
+
+    /// 创建虚拟环境
+    pub fn create_venv(
+        &self,
+        environment_id: &str,
+        service_data: &ServiceData,
+        venv_name: &str,
+    ) -> Result<()> {
+        let python_path = self.get_executable_path(&service_data.version);
+        let venvs_dir = self.get_venvs_dir(environment_id, service_data)?;
+        if !venvs_dir.exists() {
+            std::fs::create_dir_all(&venvs_dir)?;
+        }
+        let venv_path = venvs_dir.join(venv_name);
+
+        let output = Command::new(python_path)
+            .args(&["-m", "venv", venv_path.to_str().unwrap()])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(anyhow::anyhow!(
+                "创建 venv 失败: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        Ok(())
+    }
+
+    /// 删除虚拟环境
+    pub fn remove_venv(
+        &self,
+        environment_id: &str,
+        service_data: &ServiceData,
+        venv_name: &str,
+    ) -> Result<()> {
+        let venvs_dir = self.get_venvs_dir(environment_id, service_data)?;
+        let venv_path = venvs_dir.join(venv_name);
+        if venv_path.exists() {
+            std::fs::remove_dir_all(venv_path)?;
+        }
+        Ok(())
     }
 
     /// 创建新的 Python 服务管理器（内部使用）

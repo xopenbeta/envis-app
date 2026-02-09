@@ -224,3 +224,69 @@ pub async fn set_python3_as_python(
         ))),
     }
 }
+
+/// 检查 Python 是否支持 venv
+#[tauri::command]
+pub async fn check_python_venv_support(version: String) -> Result<CommandResponse, String> {
+    let python_service = PythonService::global();
+    let supported = python_service.check_venv_support(&version);
+    let data = serde_json::json!({
+        "supported": supported
+    });
+    Ok(CommandResponse::success("检查成功".to_string(), Some(data)))
+}
+
+/// 获取 venv 列表
+#[tauri::command]
+pub async fn get_python_venvs(
+    environment_id: String,
+    service_data: ServiceData,
+) -> Result<CommandResponse, String> {
+    let python_service = PythonService::global();
+    match python_service.list_venvs(&environment_id, &service_data) {
+        Ok(venvs) => {
+            let venvs_dir = python_service
+                .get_venvs_dir(&environment_id, &service_data)
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            let data = serde_json::json!({
+                "venvs": venvs,
+                "venvsDir": venvs_dir
+            });
+            Ok(CommandResponse::success(
+                "获取 venvs 成功".to_string(),
+                Some(data),
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!("获取 venvs 失败: {}", e))),
+    }
+}
+
+/// 创建 venv
+#[tauri::command]
+pub async fn create_python_venv(
+    environment_id: String,
+    service_data: ServiceData,
+    venv_name: String,
+) -> Result<CommandResponse, String> {
+    let python_service = PythonService::global();
+    match python_service.create_venv(&environment_id, &service_data, &venv_name) {
+        Ok(_) => Ok(CommandResponse::success("创建 venv 成功".to_string(), None)),
+        Err(e) => Ok(CommandResponse::error(format!("创建 venv 失败: {}", e))),
+    }
+}
+
+/// 删除 venv
+#[tauri::command]
+pub async fn remove_python_venv(
+    environment_id: String,
+    service_data: ServiceData,
+    venv_name: String,
+) -> Result<CommandResponse, String> {
+    let python_service = PythonService::global();
+    match python_service.remove_venv(&environment_id, &service_data, &venv_name) {
+        Ok(_) => Ok(CommandResponse::success("删除 venv 成功".to_string(), None)),
+        Err(e) => Ok(CommandResponse::error(format!("删除 venv 失败: {}", e))),
+    }
+}

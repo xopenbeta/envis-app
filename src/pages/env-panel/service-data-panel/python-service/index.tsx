@@ -4,6 +4,7 @@ import {
     Settings
 } from 'lucide-react'
 import { PipConfigView } from './PipConfigView'
+import { VenvView } from './VenvView'
 
 interface PythonServiceProps {
     serviceData: ServiceData
@@ -13,11 +14,15 @@ interface PythonServiceProps {
 export function PythonService({ serviceData, selectedEnvironment }: PythonServiceProps) {
 
     return (
-        <>
-            {<PipConfigView
+        <div className="flex flex-col">
+            <PipConfigView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
-            />}
-        </>
+            />
+            <VenvView
+                selectedEnvironmentId={selectedEnvironment.id}
+                serviceData={serviceData}
+            />
+        </div>
     )
 }

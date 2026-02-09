@@ -415,7 +415,7 @@ impl EnvServDataManager {
     }
 
     /// 构建服务配置路径
-    fn build_service_paths(
+    pub fn build_service_paths(
         &self,
         environment_id: &str,
         service_data: &ServiceData,
