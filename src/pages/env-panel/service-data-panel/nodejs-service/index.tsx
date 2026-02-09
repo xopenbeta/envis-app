@@ -18,6 +18,8 @@ import { useNodejsService } from '@/hooks/services/nodejs'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { useTranslation } from 'react-i18next';
 
 interface NodeServiceProps {
     serviceData: ServiceData
@@ -36,6 +38,7 @@ interface NodeServiceCardProps {
 }
 
 function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCardProps) {
+    const { t } = useTranslation()
     const { setNpmRegistry, setConfigPrefix, getGlobalPackages, installGlobalPackage } = useNodejsService()
     const { updateServiceData } = useEnvironmentServiceData()
     const [registry, setRegistry] = useState('')
@@ -77,7 +80,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
 
     const handleInstallPackage = async () => {
         if (!packageToInstall.trim()) {
-            toast.error('请输入包名')
+            toast.error(t('node_service.enter_package_name'))
             return
         }
 
@@ -85,17 +88,17 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             setIsInstalling(true)
             const res = await installGlobalPackage(serviceData, packageToInstall.trim())
             if (res && (res as any).success) {
-                toast.success('安装成功')
+                toast.success(t('node_service.install_success'))
                 setIsInstallDialogOpen(false)
                 setPackageToInstall('')
                 // 重新加载全局包列表
                 await loadGlobalPackages()
             } else {
-                toast.error('安装失败: ' + ((res as any).message || '未知错误'))
+                toast.error(t('node_service.install_failed', { message: (res as any).message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('安装全局包异常:', error)
-            toast.error('安装失败')
+            toast.error(t('node_service.install_failed_generic'))
         } finally {
             setIsInstalling(false)
         }
@@ -112,9 +115,9 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     metadata: newMetadata
                 })
                 setRegistry(val)
-                toast.success('设置 Node.js 源成功')
+                toast.success(t('node_service.registry_set_success'))
             } else {
-                toast.error('设置 Node.js 源失败')
+                toast.error(t('node_service.registry_set_failed'))
             }
         } finally {
             setIsLoading(false)
@@ -132,9 +135,9 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     metadata: newMetadata
                 })
                 setPrefix(val)
-                toast.success('设置 Node.js 配置前缀成功')
+                toast.success(t('node_service.prefix_set_success'))
             } else {
-                toast.error('设置 Node.js 配置前缀失败')
+                toast.error(t('node_service.prefix_set_failed'))
             }
         } finally {
             setIsLoading(false)
@@ -150,17 +153,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20">
                     <AlertTitle className="text-yellow-800 dark:text-yellow-500 text-xs font-semibold flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-                        macOS Apple Silicon 兼容性提示
+                        {t('node_service.macos_silicon_warning_title')}
                     </AlertTitle>
                     <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">
                         <p>
-                            Node.js v14 版本没有官方的 macOS ARM64 (Apple Silicon) 构建版本，只有 x64 版本。
-                            针对 macOS 平台，当系统架构为 aarch64 (Apple Silicon) 且 Node.js 版本为 v14 及以下时，Envis 会自动回退使用 x64 架构的安装包。
+                            {t('node_service.macos_silicon_warning_desc_1')}
                         </p>
                         <p>
-                            在 Apple Silicon 设备上需要使用 Rosetta 2 运行 x64 版本。
-                            请依次点击 访达 -&gt; 应用程序 -&gt; 实用工具 -&gt; 终端 -&gt; 右键菜单 -&gt; 显示简介 -&gt; 使用 Rosetta 打开。
-                            之后再次打开终端，此时终端将以x64架构运行，以确保兼容性。
+                            {t('node_service.macos_silicon_warning_desc_2')}
                         </p>
                     </AlertDescription>
                 </Alert>
@@ -173,14 +173,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Registry URL
+                                    {t('node_service.registry_url')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
                             <TooltipContent>
                                 <div className="text-xs space-y-1">
-                                    <div>Current: <code>npm config get registry</code></div>
-                                    <div>Set: <code>npm config set registry &lt;url&gt;</code></div>
+                                    <div>{t('node_service.registry_current')}</div>
+                                    <div>{t('node_service.registry_set')}</div>
                                 </div>
                             </TooltipContent>
                         </Tooltip>
@@ -189,7 +189,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                         <Input
                             value={registry}
                             onChange={(e) => setRegistry(e.target.value)}
-                            placeholder="Registry URL"
+                            placeholder={t('node_service.registry_url')}
                             disabled={isLoading || !isServiceDataActive}
                             className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         />
@@ -200,13 +200,13 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             disabled={isLoading || !isServiceDataActive}
                             className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            Apply
+                            {t('node_service.apply')}
                         </Button>
                     </div>
 
                     {/* Quick Registry Options */}
                     <div className="flex flex-wrap gap-2 items-center mt-3">
-                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">Quick Set</Label>
+                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('node_service.quick_set')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
@@ -214,7 +214,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             disabled={isLoading || !isServiceDataActive}
                             className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            Official
+                            {t('node_service.official')}
                         </Button>
                         <Button
                             size="sm"
@@ -223,7 +223,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             disabled={isLoading || !isServiceDataActive}
                             className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            Taobao
+                            {t('node_service.taobao')}
                         </Button>
                     </div>
                 </div>
@@ -234,26 +234,26 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Config Prefix (NPM_CONFIG_PREFIX)
+                                    {t('node_service.config_prefix')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
                             <TooltipContent>
                                 <div className="text-xs space-y-1">
-                                    <div>Current: <code>npm config get prefix</code></div>
-                                    <div>Set: <code>npm config set prefix &lt;path&gt;</code></div>
+                                    <div>{t('node_service.prefix_current')}</div>
+                                    <div>{t('node_service.prefix_set')}</div>
                                 </div>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                        Sets the installation location for global packages
+                        {t('node_service.prefix_tooltip')}
                     </p>
                     <div className="flex items-center space-x-2">
                         <Input
                             value={prefix}
                             onChange={(e) => setPrefix(e.target.value)}
-                            placeholder="Prefix path"
+                            placeholder={t('node_service.prefix_placeholder')}
                             disabled={isLoading || !isServiceDataActive}
                             className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         />
@@ -264,7 +264,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             disabled={isLoading || !isServiceDataActive}
                             className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            Apply
+                            {t('node_service.apply')}
                         </Button>
                     </div>
                 </div>
@@ -277,7 +277,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                         <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                Global Packages
+                                {t('node_service.global_packages')}
                             </Label>
                             <span className="text-[10px] text-gray-500 dark:text-gray-400">
                                 ({globalPackages.length})
@@ -297,16 +297,16 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
                                     <DialogHeader>
-                                        <DialogTitle>安装全局包</DialogTitle>
+                                        <DialogTitle>{t('node_service.install_global_package')}</DialogTitle>
                                         <DialogDescription>
-                                            输入要安装的包名，例如 pnpm@7 或 typescript@latest
+                                            {t('node_service.install_global_package_desc')}
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="flex items-center space-x-2 py-4">
                                         <Input
                                             value={packageToInstall}
                                             onChange={(e) => setPackageToInstall(e.target.value)}
-                                            placeholder="例如: pnpm@7"
+                                            placeholder={t('node_service.package_placeholder')}
                                             disabled={isInstalling}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && !isInstalling) {
@@ -323,14 +323,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                             onClick={() => setIsInstallDialogOpen(false)}
                                             disabled={isInstalling}
                                         >
-                                            取消
+                                            {t('node_service.cancel')}
                                         </Button>
                                         <Button
                                             type="button"
                                             onClick={handleInstallPackage}
                                             disabled={isInstalling}
                                         >
-                                            {isInstalling ? '安装中...' : '安装'}
+                                            {isInstalling ? t('node_service.installing') : t('node_service.install')}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
@@ -349,27 +349,28 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
 
                     {isLoadingPackages ? (
                         <div className="flex items-center justify-center py-8 text-xs text-gray-500">
-                            Loading packages...
+                            {t('node_service.loading_packages')}
                         </div>
                     ) : globalPackages.length === 0 ? (
                         <div className="flex items-center justify-center py-8 text-xs text-gray-500">
-                            No global packages installed
+                            {t('node_service.no_packages')}
                         </div>
                     ) : (
                         <div className="max-h-60 overflow-y-auto">
-                            <div className="space-y-1">
+                            <div className="flex flex-wrap gap-2 p-1">
                                 {globalPackages.map((pkg, index) => (
-                                    <div
+                                    <Badge
                                         key={index}
-                                        className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                                        variant="outline"
+                                        className="font-mono font-normal cursor-pointer"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(pkg.name)
+                                            toast.success(t('common.copied', { defaultValue: '已复制到剪贴板' }))
+                                        }}
                                     >
-                                        <span className="text-xs font-mono text-gray-700 dark:text-gray-300">
-                                            {pkg.name}
-                                        </span>
-                                        <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
-                                            {pkg.version}
-                                        </span>
-                                    </div>
+                                        {pkg.name}
+                                        {/* <span className="ml-1 opacity-50">v{pkg.version}</span> */}
+                                    </Badge>
                                 ))}
                             </div>
                         </div>

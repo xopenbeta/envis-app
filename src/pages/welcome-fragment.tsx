@@ -23,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { environmentsAtom } from '@/store/environment'
 import { useEnvironment } from '@/hooks/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
+import { useSystemInfo } from '@/hooks/system-info'
 import { Environment, EnvironmentStatus } from '@/types/index'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ export function WelcomeFragment({ onOpen }: {
     const [environments] = useAtom(environmentsAtom)
     const { updateEnvironmentsOrder } = useEnvironment()
     const { switchEnvAndServDatasActive } = useEnvironmentServiceData()
+    const { openTerminal } = useSystemInfo()
     const systemInfo = useSystemMonitorData()
     const [showContactDialog, setShowContactDialog] = useState(false);
     const [selectedEnvId, setSelectedEnvId] = useState<string | null>(null);
@@ -145,6 +147,7 @@ export function WelcomeFragment({ onOpen }: {
                             icon={<Terminal className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />} 
                             title={t('welcome.open_terminal')}
                             desc={t('welcome.open_terminal_desc')}
+                            onClick={() => openTerminal()}
                         />
                         <ActionCard 
                             icon={<Zap className="w-5 h-5 text-purple-500 dark:text-purple-400" />} 
