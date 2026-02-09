@@ -72,6 +72,7 @@
     "react-i18next": "^16.4.0",
     "react-markdown": "^8.0.0",
     "react-resizable-panels": "^2.1.4",
+    "react-virtuoso": "^4.18.1",
     "rehype-highlight": "^4.1.0",
     "sonner": "^1.4.3",
     "tailwind-merge": "^2.2.1",

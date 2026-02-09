@@ -271,18 +271,20 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             </div>
 
             {/* Global npm Packages */}
-            {isServiceDataActive && (
-                <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                {t('node_service.global_packages')}
-                            </Label>
+            <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {t('node_service.global_packages')}
+                        </Label>
+                        {isServiceDataActive && (
                             <span className="text-[10px] text-gray-500 dark:text-gray-400">
                                 ({globalPackages.length})
                             </span>
-                        </div>
+                        )}
+                    </div>
+                    {isServiceDataActive && (
                         <div className="flex items-center gap-1">
                             <Dialog open={isInstallDialogOpen} onOpenChange={setIsInstallDialogOpen}>
                                 <DialogTrigger asChild>
@@ -345,9 +347,17 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                 <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
                             </Button>
                         </div>
-                    </div>
+                    )}
+                </div>
 
-                    {isLoadingPackages ? (
+                {!isServiceDataActive ? (
+                    <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                        <Package className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">{t('node_service.service_inactive', { defaultValue: '服务未激活' })}</p>
+                        <p className="text-xs">{t('node_service.activate_to_view_packages', { defaultValue: '请先激活服务以查看全局包' })}</p>
+                    </div>
+                ) : (
+                    isLoadingPackages ? (
                         <div className="flex items-center justify-center py-8 text-xs text-gray-500">
                             {t('node_service.loading_packages')}
                         </div>
@@ -374,9 +384,9 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                 ))}
                             </div>
                         </div>
-                    )}
-                </div>
-            )}
+                    )
+                )}
+            </div>
         </div>
     </>)
 }

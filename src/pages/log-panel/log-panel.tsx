@@ -6,6 +6,7 @@ import { cn, safeStringify } from '@/lib/utils'
 import { useAtom } from 'jotai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { autoScrollLogAtom, isLogPanelOpenAtom, logEntriesAtom, LogEntry } from '@/store/log'
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import { appSettingsAtom, isAppLoadingAtom, systemSettingsAtom } from '@/store/appSettings'
 import { environmentsAtom, selectedEnvironmentIdAtom } from '@/store/environment'
 import { selectedServiceDataIdAtom } from '@/store/service'
@@ -74,8 +75,7 @@ export default function LogPanel() {
   const [panelHeight, setPanelHeight] = useState<number>(224)
   const draggingRef = useRef<{ startY: number; startH: number } | null>(null)
   const [dragging, setDragging] = useState(false)
-  const topRef = useRef<HTMLDivElement>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
   // state atoms
   const [appSettings] = useAtom(appSettingsAtom)
   const [systemSettings] = useAtom(systemSettingsAtom)
@@ -89,15 +89,18 @@ export default function LogPanel() {
   const [chatMessages] = useAtom(chatMessagesAtom)
   const [isAIResponseLoading] = useAtom(isAIResponseLoadingAtom)
 
+  // Memoize display entries
+  const displayEntries = useMemo(() => ascending ? entries : [...entries].reverse(), [entries, ascending])
+
   useEffect(() => {
     if (autoScroll && open && activeTab === 'logs') {
-      if (ascending) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-      } else {
-        topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
+      if (!ascending) {
+        // For descending order (newest at top), scroll to top when new entries arrive
+        virtuosoRef.current?.scrollToIndex({ index: 0, align: 'start', behavior: 'smooth' })
+      } 
+      // For ascending order, Virtuoso's followOutput prop handles sticking to bottom
     }
-  }, [entries.length, autoScroll, open, ascending, panelHeight, activeTab])
+  }, [entries.length, autoScroll, open, ascending, activeTab])
 
   // Drag handlers for resizing by dragging the header
   useEffect(() => {
@@ -137,7 +140,6 @@ export default function LogPanel() {
   }
 
   const copyAll = async () => {
-    const displayEntries = ascending ? entries : [...entries].slice().reverse()
     const text = displayEntries.map(e => `[${formatTime(e.time)}] ${e.level.toUpperCase()} ${e.message}`).join('\n')
     await navigator.clipboard.writeText(text)
   }
@@ -189,7 +191,7 @@ export default function LogPanel() {
           <div
             className={cn(
               'flex items-center justify-between px-2 py-1 border-b select-none',
-              dragging ? 'cursor-ns-resize' : 'cursor-ns-resize'
+              'cursor-ns-resize'
             )}
             onMouseDown={onHeaderMouseDown}
             title={t('log_panel.drag_resize')}
@@ -241,18 +243,26 @@ export default function LogPanel() {
           {/* Content */}
           <TabsContent value="logs">
             <div style={{ height: panelHeight }}>
-              <ScrollArea className="h-full w-full">
-                <div className="px-3 py-2 space-y-1">
-                  <div ref={topRef} />
-                  {entries.length === 0 && (
-                    <div className="text-xs text-muted-foreground">{t('log_panel.no_logs')}</div>
+              {entries.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-muted-foreground">{t('log_panel.no_logs')}</div>
+              ) : (
+                <Virtuoso
+                  ref={virtuosoRef}
+                  style={{ height: '100%' }}
+                  data={displayEntries}
+                  followOutput={autoScroll && ascending ? 'auto' : false}
+                  atBottomStateChange={(atBottom) => {
+                    // Optional: If user manually scrolls up, we might want to pause autoScroll 
+                    // or just let them scroll. The current implementation has a manual toggle for autoScroll.
+                    // If we wanted to auto-pause: if (!atBottom) setAutoScroll(false)
+                  }}
+                  itemContent={(index, entry) => (
+                    <div className="px-3 py-0.5">
+                      <LogEntryItem entry={entry} />
+                    </div>
                   )}
-                  {(ascending ? entries : [...entries].slice().reverse()).map((e) => (
-                    <LogEntryItem key={e.id} entry={e} />
-                  ))}
-                  <div ref={bottomRef} />
-                </div>
-              </ScrollArea>
+                />
+              )}
             </div>
           </TabsContent>
 
