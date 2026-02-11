@@ -23,6 +23,7 @@ use tauri_command::services::mongodb_commands::*;
 use tauri_command::services::mysql_commands::*;
 use tauri_command::services::nginx_commands::*;
 use tauri_command::services::nodejs_commands::*;
+use tauri_command::services::java_commands::*;
 use tauri_command::services::postgresql_commands::*;
 use tauri_command::services::python_commands::*;
 use tauri_command::services::ssl_commands::*;
@@ -171,6 +172,17 @@ pub fn run() {
             set_npm_config_prefix,
             get_global_npm_packages,
             install_global_npm_package,
+            // Java 服务命令
+            check_java_installed,
+            get_java_versions,
+            download_java,
+            cancel_download_java,
+            get_java_download_progress,
+            get_java_info,
+            set_java_home,
+            set_java_opts,
+            set_maven_home,
+            set_gradle_home,
             // Nginx 服务命令
             check_nginx_installed,
             get_nginx_versions,

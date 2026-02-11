@@ -47,6 +47,10 @@ impl MetadataBuilder {
                 // 为 Python 服务创建默认配置
                 Self::build_python_default_metadata(environment_id, service_data, &mut metadata)?;
             }
+            ServiceType::Java => {
+                // 为 Java 服务创建默认配置
+                Self::build_java_default_metadata(environment_id, service_data, &mut metadata)?;
+            }
             ServiceType::Custom => {
                 // 为自定义服务创建默认配置
                 Self::build_custom_default_metadata(environment_id, service_data, &mut metadata)?;
@@ -282,6 +286,54 @@ http {
 
         log::debug!(
             "已为 Python 服务 {} {} (env: {}) 创建默认 metadata",
+            service_data.name,
+            service_data.version,
+            environment_id
+        );
+        Ok(())
+    }
+
+    /// 构建 Java 服务的默认 metadata
+    fn build_java_default_metadata(
+        environment_id: &str,
+        service_data: &ServiceData,
+        metadata: &mut HashMap<String, serde_json::Value>,
+    ) -> Result<()> {
+        // 获取 services 根目录
+        let app_config_manager = AppConfigManager::global();
+        let app_config_manager = app_config_manager.lock().unwrap();
+        let envs_folder = app_config_manager.get_envs_folder();
+        let service_data_folder = PathBuf::from(envs_folder)
+            .join(environment_id)
+            .join("java")
+            .join(&service_data.version);
+
+        // 设置 JAVA_HOME
+        metadata.insert(
+            "JAVA_HOME".to_string(),
+            serde_json::Value::String(service_data_folder.to_string_lossy().to_string()),
+        );
+
+        // 设置 JAVA_OPTS（默认为空）
+        metadata.insert(
+            "JAVA_OPTS".to_string(),
+            serde_json::Value::String(String::new()),
+        );
+
+        // 设置 MAVEN_HOME（默认为空）
+        metadata.insert(
+            "MAVEN_HOME".to_string(),
+            serde_json::Value::String(String::new()),
+        );
+
+        // 设置 GRADLE_HOME（默认为空）
+        metadata.insert(
+            "GRADLE_HOME".to_string(),
+            serde_json::Value::String(String::new()),
+        );
+
+        log::debug!(
+            "已为 Java 服务 {} {} (env: {}) 创建默认 metadata",
             service_data.name,
             service_data.version,
             environment_id

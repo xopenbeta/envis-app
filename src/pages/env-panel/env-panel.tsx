@@ -16,6 +16,7 @@ import { NginxService } from './service-data-panel/nginx-service'
 import { CustomService } from './service-data-panel/custom-service'
 import { HostService } from './service-data-panel/host-service'
 import { PythonService } from './service-data-panel/python-service'
+import { JavaService } from './service-data-panel/java-service'
 import { SSLService } from './service-data-panel/ssl-service'
 import { DnsmasqService } from './service-data-panel/dnsmasq-service'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
@@ -48,6 +49,8 @@ function ServiceDetailRouter() {
       return <PostgreSQLService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Python:
       return <PythonService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
+    case ServiceType.Java:
+      return <JavaService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Custom:
       return <CustomService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Host:
@@ -56,8 +59,6 @@ function ServiceDetailRouter() {
       return <SSLService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Dnsmasq:
       return <DnsmasqService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
-    // case 'java':
-    //   return <JavaService service={selectedService} />
     default:
       return <ServicesDashboard />
   }

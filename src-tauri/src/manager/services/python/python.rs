@@ -165,24 +165,16 @@ impl PythonService {
         Self {}
     }
 
-    /// 获取可用的 Python 版本列表
+    /// 获取可用的 Python 版本列表（仅包含已预编译的版本）
     pub fn get_available_versions(&self) -> Vec<PythonVersion> {
         vec![
             PythonVersion {
-                version: "3.14.2".to_string(),
-                date: "2025-12-09".to_string(),
+                version: "3.13.1".to_string(),
+                date: "2024-12-09".to_string(),
             },
             PythonVersion {
-                version: "3.13.11".to_string(),
-                date: "2025-12-09".to_string(),
-            },
-            PythonVersion {
-                version: "3.12.12".to_string(),
-                date: "2025-12-09".to_string(),
-            },
-            PythonVersion {
-                version: "3.10.19".to_string(),
-                date: "2025-12-09".to_string(),
+                version: "2.7.18".to_string(),
+                date: "2020-04-20".to_string(),
             },
         ]
     }
@@ -190,12 +182,13 @@ impl PythonService {
     /// 检查 Python 是否已安装
     pub fn is_installed(&self, version: &str) -> bool {
         let install_path = self.get_install_path(version);
-        let python_binary = if cfg!(target_os = "windows") {
-            install_path.join("python.exe")
+        if cfg!(target_os = "windows") {
+            install_path.join("python.exe").exists()
         } else {
-            install_path.join("bin").join("python3")
-        };
-        python_binary.exists()
+            install_path.join("bin").join("python3").exists() || 
+            install_path.join("bin").join("python").exists() ||
+            install_path.join("bin").join("python2").exists()
+        }
     }
 
     /// 获取 Python 安装路径
@@ -216,41 +209,79 @@ impl PythonService {
         }
     }
 
-    /// 构建预编译二进制下载 URL（from astral-sh/python-build-standalone）
+    /// 构建预编译二进制下载 URL（from xopenbeta/python-archive）
     fn build_prebuilt_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         // 确定操作系统和架构
         let (os, arch) = if cfg!(target_os = "macos") {
             if cfg!(target_arch = "aarch64") {
-                ("apple-darwin", "aarch64")
+                ("macOS", "ARM64")
             } else {
-                ("apple-darwin", "x86_64")
+                ("macOS", "X64")
             }
         } else if cfg!(target_os = "linux") {
             if cfg!(target_arch = "aarch64") {
-                ("unknown-linux-gnu", "aarch64")
+                ("Linux", "ARM64")
             } else {
-                ("unknown-linux-gnu", "x86_64")
+                ("Linux", "X64")
             }
         } else if cfg!(target_os = "windows") {
             if cfg!(target_arch = "aarch64") {
-                ("pc-windows-msvc-shared", "aarch64")
+                ("windows", "ARM64")
             } else {
-                ("pc-windows-msvc-shared", "x86_64")
+                ("windows", "X64")
             }
         } else {
             return Err(anyhow!("不支持的操作系统"));
         };
 
-        // 构建文件名: cpython-3.12.0+20231002-x86_64-apple-darwin-install_only.tar.gz
-        let filename = format!("cpython-{}+20231002-{}-{}-install_only.tar.gz", version, arch, os);
+        // 确定文件扩展名
+        let ext = if cfg!(target_os = "windows") {
+            "zip"
+        } else {
+            "tar.gz"
+        };
+
+        // 构建文件名: python-3.13.1-macOS-ARM64.tar.gz
+        let filename = format!("python-{}-{}-{}.{}", version, os, arch, ext);
         
-        // GitHub releases URL
+        // GitHub releases URL - 使用 latest 标签访问最新的 release
+        // 所有 Python 版本都打包在同一个 release 中
         let github_url = format!(
-            "https://github.com/astral-sh/python-build-standalone/releases/download/20231002/{}",
+            "https://github.com/xopenbeta/python-archive/releases/latest/download/{}",
             filename
         );
 
         Ok((vec![github_url], filename))
+    }
+
+    /// 构建 Python 2.7 官方预编译包下载信息
+    /// macOS: .pkg 安装包（可用 pkgutil 解包提取）
+    /// Windows: .msi 安装包（可用 msiexec 静默解压）
+    /// Linux: 无官方预编译包，自动回退到源码编译
+    fn build_python27_prebuilt_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
+        if cfg!(target_os = "macos") {
+            let filename = format!("python-{}-macosx10.9.pkg", version);
+            let url = format!(
+                "https://www.python.org/ftp/python/{}/{}",
+                version, filename
+            );
+            Ok((vec![url], filename))
+        } else if cfg!(target_os = "windows") {
+            let filename = if cfg!(target_arch = "x86_64") {
+                format!("python-{}.amd64.msi", version)
+            } else {
+                format!("python-{}.msi", version)
+            };
+            let url = format!(
+                "https://www.python.org/ftp/python/{}/{}",
+                version, filename
+            );
+            Ok((vec![url], filename))
+        } else {
+            // Linux 没有官方预编译包，回退到源码
+            log::warn!("Linux 平台无 Python 2.7 官方预编译包，将使用源码编译");
+            self.build_source_download_info(version)
+        }
     }
 
     /// 构建源码下载 URL（for python-build or local build）
@@ -271,6 +302,7 @@ impl PythonService {
 
     /// 下载并安装 Python（指定安装模式）
     pub async fn download_and_install_with_mode(&self, version: &str, mode: PythonInstallMode) -> Result<DownloadResult> {
+
         if self.is_installed(version) {
             return Ok(DownloadResult {
                 success: false,
@@ -397,29 +429,46 @@ impl PythonService {
 
         log::info!("正在解压预编译 Python 到: {:?}", install_dir);
         
-        // 使用系统 tar 命令解压 .tar.gz
-        let status = Command::new("tar")
-            .arg("-xzf")
-            .arg(archive_path)
-            .arg("-C")
-            .arg(&install_dir)
-            .arg("--strip-components=1")  // 移除顶层目录
-            .status()?;
+        // 根据文件类型选择解压方式
+        if archive_path.extension().and_then(|s| s.to_str()) == Some("zip") {
+            // Windows: 解压 zip
+            log::info!("检测到 zip 文件，使用 zip 解压...");
+            self.extract_zip(archive_path, &install_dir).await?;
+        } else {
+            // Linux/macOS: 解压 tar.gz
+            let status = Command::new("tar")
+                .arg("-xzf")
+                .arg(archive_path)
+                .arg("-C")
+                .arg(&install_dir)
+                .arg("--strip-components=1")  // 移除顶层目录
+                .status()?;
 
-        if !status.success() {
-            return Err(anyhow!("解压预编译 Python 失败"));
+            if !status.success() {
+                return Err(anyhow!("解压预编译 Python 失败"));
+            }
         }
 
         // 设置可执行权限（Unix 系统）
         #[cfg(not(target_os = "windows"))]
         {
-            let python_binary = install_dir.join("bin").join("python3");
-            if python_binary.exists() {
+            let bin_dir = install_dir.join("bin");
+            if bin_dir.exists() {
                 use std::os::unix::fs::PermissionsExt;
-                let mut perms = std::fs::metadata(&python_binary)?.permissions();
-                perms.set_mode(0o755);
-                std::fs::set_permissions(&python_binary, perms)?;
-                log::info!("已设置 python3 可执行权限");
+                for entry in std::fs::read_dir(&bin_dir)? {
+                    let entry = entry?;
+                    let bin_path = entry.path();
+                    if bin_path.is_file() {
+                        if let Ok(metadata) = std::fs::metadata(&bin_path) {
+                            let mut perms = metadata.permissions();
+                            perms.set_mode(0o755);
+                            if let Err(e) = std::fs::set_permissions(&bin_path, perms) {
+                                log::warn!("无法设置权限 {:?}: {}", bin_path, e);
+                            }
+                        }
+                    }
+                }
+                log::info!("已设置 bin/ 目录下所有文件的可执行权限");
             }
         }
 
@@ -429,6 +478,172 @@ impl PythonService {
 
         log::info!("Python {} 预编译版本安装完成", version);
 
+        Ok(())
+    }
+
+    /// 安装 Python 2.7 官方预编译包
+    /// macOS: 从 .pkg 中提取 Python framework
+    /// Windows: 从 .msi 中静默解压
+    async fn install_prebuilt_python27(&self, task: &DownloadTask, version: &str) -> Result<()> {
+        let archive_path = &task.target_path;
+        let install_dir = self.get_install_path(version);
+        
+        std::fs::create_dir_all(&install_dir)?;
+
+        if cfg!(target_os = "macos") {
+            self.install_python27_from_pkg(archive_path, &install_dir, version)?
+        } else if cfg!(target_os = "windows") {
+            self.install_python27_from_msi(archive_path, &install_dir, version)?
+        } else {
+            return Err(anyhow!("Linux 平台不支持 Python 2.7 预编译安装，请使用源码编译模式"));
+        }
+
+        // 清理安装包
+        log::info!("清理临时文件...");
+        if archive_path.exists() {
+            std::fs::remove_file(archive_path)?;
+        }
+
+        log::info!("Python {} 预编译版本安装完成", version);
+        Ok(())
+    }
+
+    /// 从 macOS .pkg 安装包中提取 Python 2.7
+    /// .pkg 是 xar 归档，内含 Payload (cpio 格式)，可以无需 root 权限提取
+    fn install_python27_from_pkg(&self, pkg_path: &PathBuf, install_dir: &PathBuf, version: &str) -> Result<()> {
+        log::info!("正在从 macOS .pkg 中提取 Python {} ...", version);
+        
+        // 创建临时解包目录
+        let tmp_dir = install_dir.parent().unwrap().join(format!("pkg-extract-{}", version));
+        if tmp_dir.exists() {
+            std::fs::remove_dir_all(&tmp_dir)?;
+        }
+        std::fs::create_dir_all(&tmp_dir)?;
+
+        // Step 1: 使用 pkgutil 展开 .pkg
+        log::info!("Step 1: pkgutil --expand-full ...");
+        let status = Command::new("pkgutil")
+            .arg("--expand-full")
+            .arg(pkg_path)
+            .arg(&tmp_dir.join("expanded"))
+            .status()?;
+
+        if !status.success() {
+            // 清理
+            let _ = std::fs::remove_dir_all(&tmp_dir);
+            return Err(anyhow!("pkgutil --expand-full 失败"));
+        }
+
+        // Step 2: 在展开的目录中查找 Python framework 文件
+        // 典型结构: expanded/Python_Framework.pkg/Payload/Library/Frameworks/Python.framework/Versions/2.7/
+        let expanded_dir = tmp_dir.join("expanded");
+        log::info!("Step 2: 在 {:?} 中搜索 Python framework...", expanded_dir);
+        
+        let python_framework_path = self.find_python27_in_expanded_pkg(&expanded_dir, version)?;
+        log::info!("找到 Python framework: {:?}", python_framework_path);
+
+        // Step 3: 将 Python framework 的内容复制到安装目录
+        // framework 结构: bin/, lib/, include/, share/ 等
+        log::info!("Step 3: 复制 Python 到安装目录 {:?}", install_dir);
+        self.copy_python27_framework(&python_framework_path, install_dir)?;
+
+        // Step 4: 修复 bin 目录中的可执行文件权限
+        #[cfg(not(target_os = "windows"))]
+        {
+            let bin_dir = install_dir.join("bin");
+            if bin_dir.exists() {
+                use std::os::unix::fs::PermissionsExt;
+                for entry in std::fs::read_dir(&bin_dir)? {
+                    let entry = entry?;
+                    if entry.path().is_file() {
+                        let mut perms = std::fs::metadata(entry.path())?.permissions();
+                        perms.set_mode(0o755);
+                        std::fs::set_permissions(entry.path(), perms)?;
+                    }
+                }
+                log::info!("已设置 bin/ 目录下所有文件的可执行权限");
+            }
+        }
+
+        // 清理临时目录
+        log::info!("清理临时解包目录...");
+        let _ = std::fs::remove_dir_all(&tmp_dir);
+
+        Ok(())
+    }
+
+    /// 在展开的 .pkg 目录中查找 Python 2.7 framework 路径
+    fn find_python27_in_expanded_pkg(&self, expanded_dir: &PathBuf, version: &str) -> Result<PathBuf> {
+        let major_minor = if let Some(pos) = version.rfind('.') {
+            &version[..pos]  // "2.7.18" -> "2.7"
+        } else {
+            version
+        };
+
+        // 搜索模式:
+        // 1. expanded/Python_Framework.pkg/Payload/Library/Frameworks/Python.framework/Versions/2.7
+        // 2. 递归搜索包含 Versions/2.7 的路径
+        for entry in walkdir_recursive(expanded_dir)? {
+            let path = entry;
+            if path.is_dir() {
+                let path_str = path.to_string_lossy();
+                if path_str.ends_with(&format!("Versions/{}", major_minor)) 
+                    && path_str.contains("Python.framework") {
+                    return Ok(path);
+                }
+            }
+        }
+
+        // 如果没找到 framework 格式, 尝试找 Payload 目录
+        for entry in walkdir_recursive(expanded_dir)? {
+            let path = entry;
+            if path.is_dir() && path.file_name().map_or(false, |n| n == "Payload") {
+                // 检查 Payload 下是否有 bin/python2.7 之类的
+                let bin_check = path.join("usr").join("local").join("bin").join("python2.7");
+                if bin_check.exists() {
+                    return Ok(path.join("usr").join("local"));
+                }
+            }
+        }
+
+        Err(anyhow!("在 .pkg 展开目录中未找到 Python {} framework", version))
+    }
+
+    /// 将 Python 2.7 framework 内容复制到安装目录
+    fn copy_python27_framework(&self, framework_path: &PathBuf, install_dir: &PathBuf) -> Result<()> {
+        // Python.framework/Versions/2.7/ 下通常有: bin/, lib/, include/, share/
+        for entry in std::fs::read_dir(framework_path)? {
+            let entry = entry?;
+            let src = entry.path();
+            let dest = install_dir.join(entry.file_name());
+            
+            if src.is_dir() {
+                copy_dir_recursive(&src, &dest)?;
+            } else {
+                std::fs::copy(&src, &dest)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// 从 Windows .msi 安装包中提取 Python 2.7
+    fn install_python27_from_msi(&self, msi_path: &PathBuf, install_dir: &PathBuf, version: &str) -> Result<()> {
+        log::info!("正在从 Windows .msi 中提取 Python {} ...", version);
+        
+        // 使用 msiexec 静默解压到指定目录
+        // msiexec /a <msi_path> /qn TARGETDIR=<install_dir>
+        let status = Command::new("msiexec")
+            .arg("/a")
+            .arg(msi_path)
+            .arg("/qn")
+            .arg(format!("TARGETDIR={}", install_dir.to_string_lossy()))
+            .status()?;
+
+        if !status.success() {
+            return Err(anyhow!("msiexec 解压失败"));
+        }
+
+        log::info!("Python {} 从 .msi 提取完成", version);
         Ok(())
     }
 
@@ -601,8 +816,7 @@ impl PythonService {
         Ok(())
     }
 
-    /// 解压 zip 格式文件 (不再使用，保留用于兼容性或未来需求)
-    #[allow(dead_code)]
+    /// 解压 zip 格式文件 (用于 Windows 预编译版本)
     async fn extract_zip(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
         use zip::ZipArchive;
 
@@ -758,4 +972,58 @@ impl PythonService {
 
         Ok(())
     }
+}
+
+/// 递归遍历目录，返回所有路径
+fn walkdir_recursive(dir: &PathBuf) -> Result<Vec<PathBuf>> {
+    let mut results = Vec::new();
+    if !dir.exists() {
+        return Ok(results);
+    }
+    
+    let mut stack = vec![dir.clone()];
+    while let Some(current) = stack.pop() {
+        if current.is_dir() {
+            results.push(current.clone());
+            for entry in std::fs::read_dir(&current)? {
+                let entry = entry?;
+                stack.push(entry.path());
+            }
+        } else {
+            results.push(current);
+        }
+    }
+    Ok(results)
+}
+
+/// 递归复制目录
+fn copy_dir_recursive(src: &PathBuf, dst: &PathBuf) -> Result<()> {
+    if !dst.exists() {
+        std::fs::create_dir_all(dst)?;
+    }
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+        
+        if src_path.is_dir() {
+            copy_dir_recursive(&src_path, &dst_path)?;
+        } else if src_path.is_symlink() {
+            // 保留符号链接
+            let link_target = std::fs::read_link(&src_path)?;
+            #[cfg(unix)]
+            std::os::unix::fs::symlink(&link_target, &dst_path)?;
+            #[cfg(windows)]
+            {
+                if link_target.is_dir() {
+                    std::os::windows::fs::symlink_dir(&link_target, &dst_path)?;
+                } else {
+                    std::os::windows::fs::symlink_file(&link_target, &dst_path)?;
+                }
+            }
+        } else {
+            std::fs::copy(&src_path, &dst_path)?;
+        }
+    }
+    Ok(())
 }

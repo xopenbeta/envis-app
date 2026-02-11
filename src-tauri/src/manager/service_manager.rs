@@ -240,6 +240,7 @@ impl ServiceManager {
             ServiceType::Nginx => "nginx".to_string(),
             ServiceType::Nodejs => "nodejs".to_string(),
             ServiceType::Python => "python".to_string(),
+            ServiceType::Java => "java".to_string(),
             ServiceType::Custom => "custom".to_string(),
             ServiceType::Host => "host".to_string(),
             ServiceType::SSL => "ssl".to_string(),

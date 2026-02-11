@@ -36,6 +36,7 @@ pub enum ServiceType {
     Nginx,
     Nodejs,
     Python,
+    Java,
     Custom,
     Host,
     SSL,
@@ -54,6 +55,7 @@ impl ServiceType {
             ServiceType::Nginx => "nginx",
             ServiceType::Nodejs => "nodejs",
             ServiceType::Python => "python",
+            ServiceType::Java => "java",
             ServiceType::Custom => "custom",
             ServiceType::Host => "host",
             ServiceType::SSL => "ssl",
@@ -79,6 +81,7 @@ impl ServiceType {
             ServiceType::Postgresql => &["bin"],    // PostgreSQL 可执行文件目录
             ServiceType::Nginx => &["sbin"],        // Nginx 可执行文件目录
             ServiceType::Python => &["bin"],        // Python 可执行文件目录
+            ServiceType::Java => &["bin"],          // Java 可执行文件目录
             ServiceType::Custom => &[],             // 自定义服务由用户配置
             ServiceType::Host => &[],               // Host 服务不需要 PATH
             ServiceType::SSL => &[],                // SSL 服务不需要 PATH
@@ -98,6 +101,7 @@ impl ServiceType {
             ServiceType::Postgresql => vec![],
             ServiceType::Nginx => vec![],
             ServiceType::Python => vec![],
+            ServiceType::Java => vec!["JAVA_HOME", "JAVA_OPTS", "MAVEN_HOME", "GRADLE_HOME"], // Java 环境变量
             ServiceType::Custom => vec![], // 自定义服务由用户配置
             ServiceType::Host => vec![],   // Host 服务不需要环境变量
             ServiceType::SSL => vec![],    // SSL 服务不需要环境变量
@@ -114,6 +118,7 @@ impl ServiceType {
             ServiceType::Nginx => "Nginx".to_string(),
             ServiceType::Nodejs => "Node.js".to_string(),
             ServiceType::Python => "Python".to_string(),
+            ServiceType::Java => "Java".to_string(),
             ServiceType::Custom => "Custom".to_string(),
             ServiceType::Host => "Host".to_string(),
             ServiceType::SSL => "SSL".to_string(),
@@ -130,6 +135,7 @@ impl ServiceType {
             ServiceType::Postgresql => vec![],
             ServiceType::Nginx => vec![],
             ServiceType::Python => vec![],
+            ServiceType::Java => vec!["JAVA_HOME", "JAVA_OPTS", "MAVEN_HOME", "GRADLE_HOME"],
             ServiceType::Custom => vec![
                 "paths",   // 自定义路径列表
                 "envVars", // 自定义环境变量

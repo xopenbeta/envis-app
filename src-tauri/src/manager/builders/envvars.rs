@@ -36,6 +36,9 @@ impl EnvVarBuilder {
             ServiceType::Python => {
                 Self::build_python_env_vars(&mut env_vars, service_folder)?;
             }
+            ServiceType::Java => {
+                // Java 服务由其自身的服务管理器负责环境变量
+            }
             ServiceType::Custom => {
                 // 自定义服务由用户配置，不需要默认环境变量
             }
