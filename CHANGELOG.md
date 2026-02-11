@@ -1,5 +1,25 @@
 # 更新日志 / Changelog
 
+## [0.3.0] - 2026-02-11
+
+### 新增 / Added
+- ✨ 新增 Java 服务完整支持（后端管理器、Tauri 命令、前端面板、IPC 通信、Hooks）
+- ✨ 新增 Java 服务版本管理，支持 JDK 8/11/17/21 的下载与安装
+- ✨ 新增 Java 服务面板 UI，支持版本切换、环境变量配置（JAVA_HOME、JAVA_OPTS、MAVEN_HOME、GRADLE_HOME）
+- ✨ 新增 Java 服务的默认 metadata 构建器
+- ✨ 新增 `ServiceType::Java` 类型定义及相关 PATH/环境变量配置
+
+### 修复 / Fixed
+- 无
+
+### 改进 / Improved
+- ♻️ 重构 Python 服务下载源，改用自定义预编译版本（xopenbeta/python-archive）
+- ♻️ 简化 Python 预编译安装流程，统一 tar.gz/zip 解压方式，移除 Python 2.7 特殊的 .pkg/.msi 处理
+- ♻️ 新增 macOS 平台 Python 安装后自动修复 dylib 动态链接库路径
+- ♻️ 更新 Python 可用版本列表（3.13.1、2.7.18）
+
+---
+
 ## [0.2.1] - 2026-02-09
 
 ### 新增 / Added

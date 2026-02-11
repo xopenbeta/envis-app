@@ -472,6 +472,17 @@ impl PythonService {
             }
         }
 
+        // macOS: 修复动态链接库路径
+        #[cfg(target_os = "macos")]
+        {
+            log::info!("正在修复 macOS 动态链接库路径...");
+            if let Err(e) = self.fix_macos_dylib_paths(&install_dir, version) {
+                log::warn!("修复动态链接库路径时出现警告: {}", e);
+            } else {
+                log::info!("动态链接库路径修复完成");
+            }
+        }
+
         // 清理压缩包
         log::info!("清理临时文件...");
         std::fs::remove_file(archive_path)?;
@@ -783,6 +794,161 @@ impl PythonService {
         std::fs::remove_file(archive_path)?;
 
         log::info!("Python {} 本地编译安装完成", version);
+
+        Ok(())
+    }
+
+    /// 修复 macOS 动态链接库路径
+    /// 使用 install_name_tool 将硬编码的编译时路径替换为实际安装路径
+    #[cfg(target_os = "macos")]
+    fn fix_macos_dylib_paths(&self, install_dir: &PathBuf, version: &str) -> Result<()> {
+        let lib_dir = install_dir.join("lib");
+        let bin_dir = install_dir.join("bin");
+
+        // 获取 Python 的主版本号 (例如 "2.7" 或 "3.13")
+        let major_minor = if let Some(pos) = version.rfind('.') {
+            &version[..pos]
+        } else {
+            version
+        };
+
+        // 1. 找到主 dylib 文件
+        let dylib_name = if version.starts_with("2.") {
+            format!("libpython{}.dylib", major_minor)
+        } else {
+            format!("libpython{}.dylib", major_minor)
+        };
+
+        let actual_dylib_path = lib_dir.join(&dylib_name);
+        
+        if !actual_dylib_path.exists() {
+            log::warn!("未找到主 dylib 文件: {:?}", actual_dylib_path);
+            return Ok(()); // 不是致命错误，可能是静态编译的
+        }
+
+        log::info!("找到主 dylib: {:?}", actual_dylib_path);
+
+        // 2. 修复所有可执行文件中的 dylib 引用
+        if bin_dir.exists() {
+            for entry in std::fs::read_dir(&bin_dir)? {
+                let entry = entry?;
+                let bin_path = entry.path();
+                
+                if bin_path.is_file() && !bin_path.is_symlink() {
+                    // 检查是否是可执行文件
+                    if let Ok(metadata) = std::fs::metadata(&bin_path) {
+                        use std::os::unix::fs::PermissionsExt;
+                        if metadata.permissions().mode() & 0o111 != 0 {
+                            self.fix_binary_dylib_path(&bin_path, &actual_dylib_path, version)?;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. 修复 lib 目录中所有 dylib 的 install_name
+        if lib_dir.exists() {
+            for entry in walkdir_recursive(&lib_dir)? {
+                if entry.is_file() {
+                    let path_str = entry.to_string_lossy();
+                    if path_str.ends_with(".dylib") || path_str.contains(".dylib.") {
+                        self.fix_dylib_install_name(&entry)?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 修复单个二进制文件的 dylib 引用
+    #[cfg(target_os = "macos")]
+    fn fix_binary_dylib_path(&self, bin_path: &PathBuf, actual_dylib_path: &PathBuf, version: &str) -> Result<()> {
+        // 检查当前的依赖路径
+        let output = Command::new("otool")
+            .arg("-L")
+            .arg(bin_path)
+            .output()?;
+
+        if !output.status.success() {
+            return Ok(()); // 不是 Mach-O 文件，跳过
+        }
+
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        
+        // 查找所有包含错误路径的 dylib 引用
+        for line in output_str.lines() {
+            let line = line.trim();
+            
+            // 匹配类似 "/Users/runner/work/python-archive/python-archive/dist/python-2.7.18/lib/libpython2.7.dylib"
+            if line.contains("/Users/runner/") || line.contains("/python-archive/") {
+                if let Some(dylib_path) = line.split_whitespace().next() {
+                    log::info!("修复 {:?} 中的路径: {}", bin_path.file_name().unwrap(), dylib_path);
+                    
+                    // 使用 install_name_tool 替换路径
+                    let status = Command::new("install_name_tool")
+                        .arg("-change")
+                        .arg(dylib_path)
+                        .arg(actual_dylib_path)
+                        .arg(bin_path)
+                        .status()?;
+
+                    if !status.success() {
+                        log::warn!("install_name_tool 执行失败，但继续...");
+                    }
+                }
+            }
+        }
+
+        // 添加 rpath 指向 lib 目录
+        let lib_dir = actual_dylib_path.parent().unwrap();
+        let _ = Command::new("install_name_tool")
+            .arg("-add_rpath")
+            .arg(lib_dir)
+            .arg(bin_path)
+            .status(); // 忽略错误（可能已存在）
+
+        Ok(())
+    }
+
+    /// 修复 dylib 的 install_name (自身ID)
+    #[cfg(target_os = "macos")]
+    fn fix_dylib_install_name(&self, dylib_path: &PathBuf) -> Result<()> {
+        // 检查当前的 install_name
+        let output = Command::new("otool")
+            .arg("-D")
+            .arg(dylib_path)
+            .output()?;
+
+        if !output.status.success() {
+            return Ok(());
+        }
+
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        
+        // 如果 install_name 包含错误路径，修复它
+        for line in output_str.lines().skip(1) { // 跳过第一行（文件名）
+            let line = line.trim();
+            if line.contains("/Users/runner/") || line.contains("/python-archive/") {
+                // 设置新的 install_name 为相对路径或 @rpath
+                let dylib_name = dylib_path.file_name().unwrap().to_string_lossy();
+                let new_install_name = format!("@rpath/{}", dylib_name);
+                
+                log::info!("修复 dylib install_name: {:?} -> {}", dylib_name, new_install_name);
+                
+                let status = Command::new("install_name_tool")
+                    .arg("-id")
+                    .arg(&new_install_name)
+                    .arg(dylib_path)
+                    .status()?;
+
+                if !status.success() {
+                    log::warn!("设置 install_name 失败: {:?}", dylib_path);
+                }
+                
+                break;
+            }
+        }
 
         Ok(())
     }

@@ -79,6 +79,7 @@ const SERVICE_TYPE_ICONS: Record<ServiceType, string> = {
   [ServiceType.Host]: 'windows11', // 使用 windows11 作为 host 图标
   [ServiceType.SSL]: 'cloudflare', // 使用 cloudflare 作为 SSL 图标
   [ServiceType.Dnsmasq]: 'linux', // 使用 linux 作为 Dnsmasq 图标
+  [ServiceType.Java]: 'java', // 使用 java 作为 Java 图标
 }
 
 export function SortableServiceItem({
