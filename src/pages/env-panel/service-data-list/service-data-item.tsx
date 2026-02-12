@@ -99,11 +99,12 @@ export function SortableServiceItem({
   const [showEnvironmentActivationDialog, setShowEnvironmentActivationDialog] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(DownloadStatus.Unknown);
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown);
+  const [activationStatus, setActivationStatus] = useState<ServiceDataStatus>(ServiceDataStatus.Unknown);
   const [downloadProgress, setDownloadProgress] = useState(0);
 
   const { selectedEnvironment, activeEnvironment } = useEnvironment();
-  const serviceDataStatus = (activeEnvironment?.id === selectedEnvironmentId) ? serviceData.status : ServiceDataStatus.Inactive;
-  const { } = useServiceData();
+  const serviceDataStatus = (activeEnvironment?.id === selectedEnvironmentId) ? activationStatus : ServiceDataStatus.Inactive;
+  const { getServiceData } = useServiceData();
   const { cancelServiceDownload, downloadService, checkServiceInstalled, getServiceDownloadProgress } = useService();
   const { switchEnvAndServDatasActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, getServiceStatus } = useEnvironmentServiceData();
   const [showRenameDialog, setShowRenameDialog] = useState(false)
@@ -179,6 +180,17 @@ export function SortableServiceItem({
     return () => clearInterval(timer);
   }, [serviceData.id, serviceData.type, serviceData.version]);
 
+  // 服务激活状态轮询（从文件读取）
+  useEffect(() => {
+    const timer = setImmediateInterval(async () => {
+      const res = await getServiceData(selectedEnvironmentId, serviceData.id);
+      if (res.success && res.data?.serviceData) {
+        setActivationStatus(res.data.serviceData.status);
+      }
+    }, 500);
+    return () => clearInterval(timer);
+  }, [serviceData.id, selectedEnvironmentId]);
+
   // 激活环境并启动所有服务
   const handleActivateEnvironmentAndStartServices = async () => {
     if (!selectedEnvironment) return
@@ -220,7 +232,7 @@ export function SortableServiceItem({
 
   // 删除服务
   const onDeleteBtnClick = async (serviceData: ServiceData) => {
-    if ([ServiceDataStatus.Active].includes(serviceData.status)) {
+    if ([ServiceDataStatus.Active].includes(activationStatus)) {
       toast.error(t('service_item.delete_active_error'))
       return
     }
@@ -239,12 +251,21 @@ export function SortableServiceItem({
       return
     }
 
+    // 乐观更新：先保存当前状态
+    const previousStatus = activationStatus;
+    const isCurrentlyActive = activationStatus === ServiceDataStatus.Active;
+
     try {
-      if (serviceData.status === ServiceDataStatus.Active) {
+      // 乐观更新：立即切换状态，让用户感觉响应快
+      setActivationStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
+
+      if (isCurrentlyActive) {
         // 停用服务
         const res = await deactivateServiceData(selectedEnvironment.id, serviceData)
         
         if (!res?.success) {
+          // 回滚状态
+          setActivationStatus(previousStatus);
           // 严格根据后端返回的错误信息判断是否是权限问题
           if (serviceData.type === ServiceType.Host && res?.message?.includes('needAdminPasswordToModifyHosts')) {
             setShowPasswordDialog(true)
@@ -259,6 +280,8 @@ export function SortableServiceItem({
         const res = await activateServiceData(selectedEnvironment.id, serviceData)
         
         if (!res?.success) {
+          // 回滚状态
+          setActivationStatus(previousStatus);
           // 严格根据后端返回的错误信息判断是否是权限问题
           if (serviceData.type === ServiceType.Host && res?.message?.includes('needAdminPasswordToModifyHosts')) {
             setShowPasswordDialog(true)
@@ -270,6 +293,8 @@ export function SortableServiceItem({
         }
       }
     } catch (err) {
+      // 回滚状态
+      setActivationStatus(previousStatus);
       console.error('切换服务状态失败:', err)
       toast.error(t('service_item.toggle_error'))
     }
@@ -278,16 +303,25 @@ export function SortableServiceItem({
   const handlePasswordConfirm = async () => {
     if (!password.trim() || !selectedEnvironment) return;
     
+    // 乐观更新：先保存当前状态
+    const previousStatus = activationStatus;
+    const isCurrentlyActive = activationStatus === ServiceDataStatus.Active;
+    
     setShowPasswordDialog(false);
+    
     try {
+      // 乐观更新：立即切换状态
+      setActivationStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
+      
       let res = await activateServiceData(selectedEnvironment.id, serviceData, password);
 
       if (res?.success) {
         sessionStorage.setItem('envis_sudo_password', password);
-        toast.success(serviceData.status === ServiceDataStatus.Active ? t('service_item.stop_success') : t('service_item.start_success'));
+        toast.success(isCurrentlyActive ? t('service_item.stop_success') : t('service_item.start_success'));
       } else {
-        const actionName = serviceData.status === ServiceDataStatus.Active ? '停止' : '启动';
-        toast.error(t(serviceData.status === ServiceDataStatus.Active ? 'service_item.stop_error' : 'service_item.start_error', { message: res?.message || t('common.unknown_error') }));
+        // 回滚状态
+        setActivationStatus(previousStatus);
+        toast.error(t(isCurrentlyActive ? 'service_item.stop_error' : 'service_item.start_error', { message: res?.message || t('common.unknown_error') }));
         // 如果是因为密码错误，可能需要再次弹窗，这里暂时只提示错误
         if (res?.message?.includes('密码')) {
              // 可以选择再次打开弹窗
@@ -295,6 +329,8 @@ export function SortableServiceItem({
         }
       }
     } catch (err) {
+      // 回滚状态
+      setActivationStatus(previousStatus);
       console.error('带密码操作服务失败:', err);
       toast.error(t('service_item.operation_error'));
     } finally {

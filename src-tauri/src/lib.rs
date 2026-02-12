@@ -145,6 +145,7 @@ pub fn run() {
             deactivate_environment_and_services,
             // 环境服务数据相关命令
             get_environment_all_service_datas,
+            get_service_data,
             create_service_data,
             update_service_data,
             delete_service_data,

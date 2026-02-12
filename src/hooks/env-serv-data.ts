@@ -1,7 +1,7 @@
 import { AppSettings, CanRunServices, CannotRunServices, Environment, EnvironmentStatus, NeedDownloadServices, ServiceData, ServiceDataStatus, ServiceStatus, ServiceType, SystemSettings, serviceTypeNames } from "@/types/index"
 import { useAtom } from "jotai"
 import { toast } from 'sonner'
-import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcRestartServiceData, ipcUpdateServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
+import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcGetServiceData, ipcRestartServiceData, ipcUpdateServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
 import { ipcGetAllEnvironments } from "../ipc/environment"
 import { isAppLoadingAtom } from "../store/appSettings"
 import { environmentsAtom, selectedEnvironmentIdAtom } from "../store/environment"
@@ -18,6 +18,11 @@ export function useServiceData() {
         return ipcRes;
     }
 
+    const getServiceData = async (environmentId: string, serviceId: string) => {
+        const ipcRes = await ipcGetServiceData(environmentId, serviceId);
+        return ipcRes;
+    }
+
     const isServiceDataHasStatus = (serviceDataType: ServiceType) => {
         if (CannotRunServices.includes(serviceDataType)) {
             return false;
@@ -30,6 +35,7 @@ export function useServiceData() {
 
     return {
         getAllServiceDatas,
+        getServiceData,
         isServiceDataHasStatus,
     }
 }

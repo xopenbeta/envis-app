@@ -169,6 +169,19 @@ impl EnvServDataManager {
         Ok(service_datas)
     }
 
+    /// 获取指定环境的单个服务数据（从文件读取）
+    pub fn get_service_data(
+        &self,
+        environment_id: &str,
+        service_id: &str,
+    ) -> Result<ServiceData> {
+        let service_datas = self.get_environment_all_service_datas(environment_id)?;
+        service_datas
+            .into_iter()
+            .find(|sd| sd.id == service_id)
+            .ok_or_else(|| anyhow::anyhow!("找不到指定的服务数据: {}", service_id))
+    }
+
     /// 创建服务数据
     pub fn create_service_data(
         &self,

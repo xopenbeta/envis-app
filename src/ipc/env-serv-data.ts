@@ -7,6 +7,10 @@ export const ipcGetEnvAllServDatas = ipcLogFunc('获取环境所有服务数据'
     return invokeCommand('get_environment_all_service_datas', { environmentId });
 })
 
+export const ipcGetServiceData = ipcLogFunc('获取单个服务数据', async (environmentId: string, serviceId: string): Promise<IPCResult<{ serviceData: ServiceData }>> => {
+    return invokeCommand('get_service_data', { environmentId, serviceId });
+})
+
 export const ipcCreateServiceData = ipcLogFunc('创建服务数据', async (
     environmentId: string,
     serviceType: ServiceType, 
