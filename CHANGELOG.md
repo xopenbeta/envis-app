@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## [0.3.1] - 2026-02-12
+
+### 新增 / Added
+- ✨ 新增 Java 23 版本支持（non-LTS, 2024-09-17）
+
+### 修复 / Fixed
+- 🐛 修复 Python 预编译下载文件命名格式，统一为小写格式以匹配实际文件名（macOS→macos, ARM64→arm64, X64→x86_64）
+
+### 改进 / Improved
+- ♻️ 切换 Java 下载源为 `xopenbeta/java-archive`，采用简化的 URL 和文件命名格式
+- ♻️ 简化 Java 架构映射逻辑，移除 Java 8 在 macOS ARM 上的特殊处理
+- ♻️ 统一 Java 平台标识符命名（mac→macos）
+- ♻️ 简化 Java 版本验证逻辑，移除特定 release 版本号映射
+
+---
+
 ## [0.3.0] - 2026-02-11
 
 ### 新增 / Added
