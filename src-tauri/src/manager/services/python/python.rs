@@ -211,24 +211,24 @@ impl PythonService {
 
     /// 构建预编译二进制下载 URL（from xopenbeta/python-archive）
     fn build_prebuilt_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
-        // 确定操作系统和架构
+        // 确定操作系统和架构 - 使用实际的文件命名格式
         let (os, arch) = if cfg!(target_os = "macos") {
             if cfg!(target_arch = "aarch64") {
-                ("macOS", "ARM64")
+                ("macos", "arm64")
             } else {
-                ("macOS", "X64")
+                ("macos", "x86_64")
             }
         } else if cfg!(target_os = "linux") {
             if cfg!(target_arch = "aarch64") {
-                ("Linux", "ARM64")
+                ("linux", "aarch64")
             } else {
-                ("Linux", "X64")
+                ("linux", "x86_64")
             }
         } else if cfg!(target_os = "windows") {
             if cfg!(target_arch = "aarch64") {
-                ("windows", "ARM64")
+                ("windows", "arm64")
             } else {
-                ("windows", "X64")
+                ("windows", "x86_64")
             }
         } else {
             return Err(anyhow!("不支持的操作系统"));
@@ -241,7 +241,7 @@ impl PythonService {
             "tar.gz"
         };
 
-        // 构建文件名: python-3.13.1-macOS-ARM64.tar.gz
+        // 构建文件名: python-3.13.1-macos-arm64.tar.gz
         let filename = format!("python-{}-{}-{}.{}", version, os, arch, ext);
         
         // GitHub releases URL - 使用 latest 标签访问最新的 release

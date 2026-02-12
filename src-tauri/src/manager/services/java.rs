@@ -58,6 +58,11 @@ impl JavaService {
                 lts: true,
                 date: "2023-09-19".to_string(),
             },
+            JavaVersion {
+                version: "23".to_string(),
+                lts: false,
+                date: "2024-09-17".to_string(),
+            },
         ]
     }
 
@@ -87,38 +92,38 @@ impl JavaService {
         let platform = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
 
-        // macOS aarch64 上 Java 8 没有原生 ARM 版本，使用 x64 版本（通过 Rosetta 2 运行）
-        let arch_name = match (arch, platform, version) {
-            ("aarch64", "macos", "8") => "x64", // Java 8 没有 macOS ARM 版本
-            ("x86_64", _, _) => "x64",
-            ("aarch64", _, _) => "aarch64",
+        // 架构映射
+        let arch_name = match arch {
+            "x86_64" => "x64",
+            "aarch64" => "aarch64",
             _ => return Err(anyhow!("不支持的架构: {}", arch)),
         };
 
+        // 平台和文件扩展名映射
         let (os_name, ext) = match platform {
-            "macos" => ("mac", "tar.gz"),
+            "macos" => ("macos", "tar.gz"),
             "linux" => ("linux", "tar.gz"),
             "windows" => ("windows", "zip"),
             _ => return Err(anyhow!("不支持的平台: {}", platform)),
         };
 
-        let release_version = match version {
-            "8" => "jdk8u432-b06",
-            "11" => "jdk-11.0.25+9",
-            "17" => "jdk-17.0.13+11",
-            "21" => "jdk-21.0.5+11",
+        // 验证 Java 版本是否支持
+        match version {
+            "8" | "11" | "17" | "21" | "23" => {},
             _ => return Err(anyhow!("不支持的 Java 版本: {}", version)),
         };
 
+        // 新的文件命名格式：jdk-{version}-{platform}-{arch}.{ext}
         let filename = format!(
-            "OpenJDK{}U-jdk_{}_{}_{}.{}",
-            version, arch_name, os_name, release_version.replace("+", "_"), ext
+            "jdk-{}-{}-{}.{}",
+            version, os_name, arch_name, ext
         );
 
+        // 新的下载地址
         let urls = vec![
             format!(
-                "https://github.com/adoptium/temurin{}-binaries/releases/download/{}/{}",
-                version, release_version, filename
+                "https://github.com/xopenbeta/java-archive/releases/latest/download/{}",
+                filename
             ),
         ];
 
