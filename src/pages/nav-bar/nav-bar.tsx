@@ -57,12 +57,12 @@ import { appSettingsAtom, isAppLoadingAtom, updateAvailableAtom } from '../../st
 import {
   environmentsAtom,
   selectedEnvironmentIdAtom,
+  selectedServiceDataIdAtom,
   isCreateEnvDialogOpenAtom
 } from '../../store/environment'
 import { sortEnvironments } from '@/utils/sort'
 import { SortableEnvironmentItem } from './nav-bar-item'
 import SettingsDialog from './settings-dialog'
-import { selectedServiceDataIdAtom } from '../../store/service'
 import { isLogPanelOpenAtom } from '../../store/log'
 import { useLogger } from '@/hooks/log'
 import { eventLogFunc } from '@/utils/logger'

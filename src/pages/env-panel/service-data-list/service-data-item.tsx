@@ -50,7 +50,7 @@ import { useEffect, useState } from 'react'
 import { useService } from '@/hooks/service'
 import { useServiceData } from '@/hooks/env-serv-data'
 import { toast } from 'sonner'
-import { selectedServiceDataIdAtom } from '@/store/service'
+import { selectedServiceDataIdAtom, envActivationEventAtom } from '@/store/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { Input } from '@/components/ui/input'
 import { useAppSettings } from '@/hooks/appSettings'
@@ -95,6 +95,7 @@ export function SortableServiceItem({
 }) {
   const { t } = useTranslation()
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
+  const [envActivationEvent] = useAtom(envActivationEventAtom)
 
   const [showEnvironmentActivationDialog, setShowEnvironmentActivationDialog] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(DownloadStatus.Unknown);
@@ -190,6 +191,19 @@ export function SortableServiceItem({
     }, 500);
     return () => clearInterval(timer);
   }, [serviceData.id, selectedEnvironmentId]);
+
+  // 监听环境激活事件，立即更新服务状态
+  useEffect(() => {
+    if (envActivationEvent === 0) return; // 初始值，不处理
+    
+    const updateStatus = async () => {
+      const res = await getServiceData(selectedEnvironmentId, serviceData.id);
+      if (res.success && res.data?.serviceData) {
+        setActivationStatus(res.data.serviceData.status);
+      }
+    };
+    updateStatus();
+  }, [envActivationEvent]);
 
   // 激活环境并启动所有服务
   const handleActivateEnvironmentAndStartServices = async () => {

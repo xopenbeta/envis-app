@@ -9,15 +9,36 @@ import { ImperativePanelHandle, ImperativePanelGroupHandle } from "react-resizab
 import { EnvironmentPanel } from "./env-panel/env-panel"
 import NavBar from "./nav-bar/nav-bar"
 import { WelcomeFragment } from "./welcome-fragment"
-import { selectedEnvironmentIdAtom } from '../store/environment'
+import { selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from '../store/environment'
 import LogPanel from './log-panel/log-panel'
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
 import { isNavPanelOpenAtom, isAIPanelOpenAtom, navPanelWidthRatioAtom, aiPanelWidthRatioAtom, isEnvPanelOpenAtom, envPanelWidthRatioAtom } from "@/store"
 import { AIPanel } from "./ai-panel/ai-panel"
+import { useServiceData } from "@/hooks/env-serv-data"
 
 export default function Envis() {
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom);
-  
+  const [selectedServiceDatas, setSelectedServiceDatas] = useAtom(selectedServiceDatasAtom)
+  const [selectedServiceDataId, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
+  const selectedServiceData = selectedServiceDatas.find(serviceData => serviceData.id === selectedServiceDataId)
+  const { getAllServiceDatas } = useServiceData();
+  // 当选中环境变化时，加载该环境的服务数据
+  useEffect(() => {
+    const loadServiceDatas = async () => {
+      if (!selectedEnvironmentId) {
+        setSelectedServiceDatas([])
+        return
+      }
+      const serviceDatasRes = await getAllServiceDatas(selectedEnvironmentId)
+      if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
+        setSelectedServiceDatas(serviceDatasRes.data.serviceDatas)
+      } else {
+        setSelectedServiceDatas([])
+      }
+    }
+    loadServiceDatas()
+  }, [selectedEnvironmentId])
+
   const [isNavPanelOpen, setIsNavPanelOpen] = useAtom(isNavPanelOpenAtom);
   const [navPanelWidthRatio, setNavPanelWidthRatio] = useAtom(navPanelWidthRatioAtom);
   const [isEnvPanelOpen, setIsEnvPanelOpen] = useAtom(isEnvPanelOpenAtom);
@@ -88,7 +109,7 @@ export default function Envis() {
 
   const resizableHandleClassName = "w-px bg-content2 hover:bg-default heroui-transition";
   return <div className="fixed w-screen h-screen overflow-hidden bg-content2">
-  <ResizablePanelGroup direction="horizontal" className="w-screen h-screen">
+    <ResizablePanelGroup direction="horizontal" className="w-screen h-screen">
 
       {/* 导航栏 */}
       <ResizablePanel

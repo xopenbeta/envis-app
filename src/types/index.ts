@@ -158,7 +158,6 @@ export type Environment = {
   status: EnvironmentStatus
   sort?: number
   metadata?: Record<string, any>
-  serviceDatas: ServiceData[]
   createdAt: string
   updatedAt: string
 }

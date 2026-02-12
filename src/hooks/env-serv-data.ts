@@ -4,12 +4,12 @@ import { toast } from 'sonner'
 import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcGetServiceData, ipcRestartServiceData, ipcUpdateServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
 import { ipcGetAllEnvironments } from "../ipc/environment"
 import { isAppLoadingAtom } from "../store/appSettings"
-import { environmentsAtom, selectedEnvironmentIdAtom } from "../store/environment"
-import { selectedServiceDataIdAtom } from "../store/service"
+import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDatasAtom, selectedServiceDataIdAtom, envActivationEventAtom } from "../store/environment"
 import { useAppSettings } from "./appSettings"
 import { useEnvironment } from "./environment"
 import { useService } from "./service"
 import { ipcGetServiceStatus } from "@/ipc/service"
+import { useEffect } from "react"
 
 export function useServiceData() {
 
@@ -44,13 +44,25 @@ export function useEnvironmentServiceData() {
     const [, setIsAppLoading] = useAtom(isAppLoadingAtom)
     const [environments, setEnvironments] = useAtom(environmentsAtom)
     const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
+    const [selectedServiceDatas, setSelectedServiceDatas] = useAtom(selectedServiceDatasAtom)
     const [selectedServiceDataId, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
+    const [, setEnvActivationEvent] = useAtom(envActivationEventAtom)
     const { activateEnvironmentAndServices, deactivateEnvironmentAndServices, selectEnvironment } = useEnvironment();
     const { getAllServiceDatas } = useServiceData();
     const { checkServiceInstalled } = useService();
     const { updateSystemSettings, systemSettings } = useAppSettings();
-    const selectedServiceDatas = environments.find(env => env.id === selectedEnvironmentId)?.serviceDatas || null;
-    const selectedServiceData = (selectedServiceDatas || []).find(serviceData => serviceData.id === selectedServiceDataId)
+    const selectedServiceData = selectedServiceDatas.find(serviceData => serviceData.id === selectedServiceDataId)
+
+    // 手动刷新服务数据
+    const refreshServiceDatas = async () => {
+        if (!selectedEnvironmentId) {
+            return
+        }
+        const serviceDatasRes = await getAllServiceDatas(selectedEnvironmentId)
+        if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
+            setSelectedServiceDatas(serviceDatasRes.data.serviceDatas)
+        }
+    }
 
     const deriveLastUsedEnvironmentIds = (settings?: SystemSettings | null): string[] => {
         if (!settings) {
@@ -100,13 +112,7 @@ export function useEnvironmentServiceData() {
         const result = await ipcCreateServiceData(selectedEnvironmentId, serviceType, version)
         if (result.success && result.data?.serviceData) {
             const newServiceData = result.data.serviceData
-            setEnvironments(prevEnvs =>
-                prevEnvs.map(env =>
-                    env.id === selectedEnvironmentId
-                        ? { ...env, serviceDatas: [...(env.serviceDatas || []), newServiceData] }
-                        : env
-                )
-            )
+            setSelectedServiceDatas([newServiceData, ...selectedServiceDatas])
             setSelectedServiceDataId(newServiceData.id) // 设置新添加的服务为选中状态
             return newServiceData
         } else {
@@ -127,31 +133,23 @@ export function useEnvironmentServiceData() {
             return
         }
 
-        const serviceDatas = selectedServiceDatas
-        const serviceIndex = serviceDatas.findIndex(service => service.id === serviceId)
+        const serviceIndex = selectedServiceDatas.findIndex(service => service.id === serviceId)
         if (serviceIndex === -1) {
             console.error('未找到要更新的服务')
             return
         }
 
         const updatedServiceData: ServiceData = {
-            ...serviceDatas[serviceIndex],
+            ...selectedServiceDatas[serviceIndex],
             ...updates,
             updatedAt: new Date().toISOString()
         }
 
         const result = await ipcUpdateServiceData(selectedEnvironmentId, { id: serviceId, ...updates })
         if (result.success) {
-            const updatedServiceDatas = [...serviceDatas]
+            const updatedServiceDatas = [...selectedServiceDatas]
             updatedServiceDatas[serviceIndex] = updatedServiceData
-            setEnvironments(prevEnvs =>
-                prevEnvs.map(env =>
-                    env.id === selectedEnvironmentId
-                        ? { ...env, serviceDatas: updatedServiceDatas }
-                        : env
-                )
-            )
-            // 这是干嘛的。。。
+            setSelectedServiceDatas(updatedServiceDatas)
             setSelectedServiceDataId(updatedServiceData.id)
         }
         return updatedServiceData;
@@ -168,8 +166,7 @@ export function useEnvironmentServiceData() {
             return
         }
 
-        const serviceDatas = selectedServiceDatas
-        const serviceIndex = serviceDatas.findIndex(service => service.id === serviceData.id)
+        const serviceIndex = selectedServiceDatas.findIndex(service => service.id === serviceData.id)
         if (serviceIndex === -1) {
             console.error('未找到要删除的服务')
             return
@@ -177,14 +174,8 @@ export function useEnvironmentServiceData() {
 
         const ipcRes = await ipcDeleteServiceData(selectedEnvironmentId, serviceData.id)
         if (ipcRes.success) {
-            const updatedServices = serviceDatas.filter(service => service.id !== serviceData.id)
-            setEnvironments(prevEnvs =>
-                prevEnvs.map(env =>
-                    env.id === selectedEnvironmentId
-                        ? { ...env, serviceDatas: updatedServices }
-                        : env
-                )
-            )
+            const updatedServices = selectedServiceDatas.filter(service => service.id !== serviceData.id)
+            setSelectedServiceDatas(updatedServices)
             // 如果删除的是当前选中的服务，清空选中状态
             if (selectedServiceDataId && selectedServiceDataId === serviceData.id) {
                 setSelectedServiceDataId('')
@@ -192,16 +183,10 @@ export function useEnvironmentServiceData() {
         }
     }
 
-    async function updateServicesOrder(serviceDatas: ServiceData[]) {
-        setEnvironments(prevEnvs =>
-            prevEnvs.map(env =>
-                env.id === selectedEnvironmentId
-                    ? { ...env, serviceDatas: serviceDatas }
-                    : env
-            )
-        )
+    async function updateServicesOrder(newServiceDatas: ServiceData[]) {
+        setSelectedServiceDatas(newServiceDatas)
         // 保存到文件系统
-        for (const serviceData of serviceDatas) {
+        for (const serviceData of newServiceDatas) {
             // 更新每个服务的排序
             await updateServiceData(serviceData.id, { sort: serviceData.sort ?? 0 });
         }
@@ -223,18 +208,7 @@ export function useEnvironmentServiceData() {
         const ipcRes = await ipcActivateServiceData(environmentId, serviceData, effectivePassword);
         if (ipcRes.success) {
             console.log('激活服务成功:', serviceData.type, serviceData.id);
-            // 更新 environment 里的 servData 的 status
-            setEnvironments(prevEnvs => prevEnvs.map(env => {
-                if (env.id !== environmentId) return env;
-                return {
-                    ...env,
-                    serviceDatas: env.serviceDatas?.map(sd =>
-                        sd.id === serviceData.id
-                            ? { ...sd, status: ServiceDataStatus.Active }
-                            : sd
-                    )
-                };
-            }));
+            // UI会通过轮询从文件中读取最新状态，不需要在这里更新
         }
         return ipcRes;
     }
@@ -245,18 +219,7 @@ export function useEnvironmentServiceData() {
         const ipcRes = await ipcDeactivateServiceData(environmentId, serviceData, effectivePassword);
         if (ipcRes.success) {
             console.log('停用服务成功:', serviceData.type, serviceData.id);
-            // 更新 environment 里的 servData 的 status
-            setEnvironments(prevEnvs => prevEnvs.map(env => {
-                if (env.id !== environmentId) return env;
-                return {
-                    ...env,
-                    serviceDatas: env.serviceDatas?.map(sd =>
-                        sd.id === serviceData.id
-                            ? { ...sd, status: ServiceDataStatus.Inactive }
-                            : sd
-                    )
-                };
-            }));
+            // UI会通过轮询从文件中读取最新状态，不需要在这里更新
         } else {
             console.error('停用服务失败:', ipcRes.message);
         }
@@ -286,21 +249,11 @@ export function useEnvironmentServiceData() {
         const loadedEnvironmentsRes = await ipcGetAllEnvironments()
         console.log('【init】获取环境:', loadedEnvironmentsRes);
         if (loadedEnvironmentsRes.success && loadedEnvironmentsRes.data?.environments) {
-            // 初始化环境
             const environments: Environment[] = loadedEnvironmentsRes.data.environments
-            // 初始化环境里的服务
-            for (const env of environments) {
-                const serviceDatasRes = await getAllServiceDatas(env.id);
-                if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
-                    env.serviceDatas = serviceDatasRes.data.serviceDatas;
-                } else {
-                    env.serviceDatas = [];
-                }
-            }
             setEnvironments(environments)
-            console.log('【init】初始化环境和服务数据，环境列表:', environments)
+            console.log('【init】初始化环境列表:', environments)
         }
-        console.log('【init】初始化环境和服务数据完成:', environments)
+        console.log('【init】初始化环境数据完成')
         return environments;
     }
 
@@ -310,6 +263,13 @@ export function useEnvironmentServiceData() {
         const activeEnvRes = await activateEnvironmentAndServices(environment, effectivePassword)
         if (!activeEnvRes.success) {
             console.error(`激活环境失败: ${activeEnvRes.message}`)
+        } else {
+            // 激活成功后，如果是当前选中的环境，刷新服务数据
+            if (selectedEnvironmentId === environment.id) {
+                await refreshServiceDatas()
+            }
+            // 触发事件通知所有 service-data-item 更新状态
+            setEnvActivationEvent(Date.now())
         }
         // 后端现在负责在激活环境时激活所有关联服务
         return activeEnvRes;
@@ -322,6 +282,13 @@ export function useEnvironmentServiceData() {
         if (!deactiveEnvRes.success) {
             console.error(`停用环境失败: ${deactiveEnvRes.message}`)
             return deactiveEnvRes;
+        } else {
+            // 停用成功后，如果是当前选中的环境，刷新服务数据
+            if (selectedEnvironmentId === environment.id) {
+                await refreshServiceDatas()
+            }
+            // 触发事件通知所有 service-data-item 更新状态
+            setEnvActivationEvent(Date.now())
         }
 
         // 后端现在负责在停用环境时停用所有关联服务
@@ -334,9 +301,10 @@ export function useEnvironmentServiceData() {
                 await deactivateEnvAndServDatas(environment)
             }
         }
+        // 更新UI中所有环境状态为停用
         const newEnvironments = environments.map(env => ({
             ...env,
-            status: EnvironmentStatus.Inactive // 停用所有环境
+            status: EnvironmentStatus.Inactive
         }))
         setEnvironments(newEnvironments)
     }
@@ -432,5 +400,6 @@ export function useEnvironmentServiceData() {
         stopServiceData,
         restartServiceData,
         getServiceStatus,
+        refreshServiceDatas,
     }
 }

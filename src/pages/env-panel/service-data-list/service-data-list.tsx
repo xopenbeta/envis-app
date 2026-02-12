@@ -30,8 +30,8 @@ import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data
 import {
   environmentsAtom,
   selectedEnvironmentIdAtom,
+  selectedServiceDataIdAtom,
 } from '../../../store/environment'
-import { selectedServiceDataIdAtom } from '../../../store/service'
 import { sortServices } from '@/utils/sort'
 import { AddServiceMenu } from './add-service-data-menu'
 import { useClickOutsideBlur } from '../../../hooks/useClickOutsideBlur'

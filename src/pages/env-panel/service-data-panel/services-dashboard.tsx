@@ -1,9 +1,8 @@
 import { useAtom } from 'jotai'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { environmentsAtom, selectedEnvironmentIdAtom } from '../../../store/environment'
+import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom } from '../../../store/environment'
 import { Bot } from 'lucide-react'
-import { selectedServiceDataIdAtom } from '../../../store/service'
 import { ServiceData } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { isAIPanelOpenAtom } from "@/store";
