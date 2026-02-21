@@ -41,7 +41,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const { t } = useTranslation()
     const { openFolderInFinder } = useFileOperations()
     const { getJavaInfo, setJavaHome, setJavaOpts, setMavenHome, setGradleHome } = useJavaService()
-    const { updateServiceData } = useEnvironmentServiceData()
+    const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     
     const [javaHome, setJavaHomeState] = useState('')
     const [javaOpts, setJavaOptsState] = useState('')
@@ -87,8 +87,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             if (res && (res as any).success) {
                 const newMetadata = { ...(serviceData.metadata || {}) }
                 newMetadata['JAVA_HOME'] = path
-                await updateServiceData(serviceData.id, {
-                    metadata: newMetadata
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setJavaHomeState(path)
                 toast.success('JAVA_HOME 设置成功')
@@ -110,8 +113,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             if (res && (res as any).success) {
                 const newMetadata = { ...(serviceData.metadata || {}) }
                 newMetadata['JAVA_OPTS'] = opts
-                await updateServiceData(serviceData.id, {
-                    metadata: newMetadata
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setJavaOptsState(opts)
                 toast.success('JAVA_OPTS 设置成功')
@@ -130,8 +136,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             if (res && (res as any).success) {
                 const newMetadata = { ...(serviceData.metadata || {}) }
                 newMetadata['MAVEN_HOME'] = path
-                await updateServiceData(serviceData.id, {
-                    metadata: newMetadata
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setMavenHomeState(path)
                 toast.success('MAVEN_HOME 设置成功')
@@ -150,8 +159,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             if (res && (res as any).success) {
                 const newMetadata = { ...(serviceData.metadata || {}) }
                 newMetadata['GRADLE_HOME'] = path
-                await updateServiceData(serviceData.id, {
-                    metadata: newMetadata
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setGradleHomeState(path)
                 toast.success('GRADLE_HOME 设置成功')

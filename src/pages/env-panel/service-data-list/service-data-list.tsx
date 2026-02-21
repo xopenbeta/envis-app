@@ -102,7 +102,10 @@ export function ServiceList({ onOpen }: {
         newServiceDatas[i] = { ...newServiceDatas[i], sort: i }; // 更新排序字段
       }
       // 更新服务排序并持久化保存
-      await updateServicesOrder(newServiceDatas);
+      await updateServicesOrder({
+        environmentId: selectedEnvironment.id,
+        newServiceDatas,
+      });
     }
   };
 

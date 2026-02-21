@@ -50,6 +50,7 @@ export function NginxConfigView({
     const { openFolderInFinder } = useFileOperations()
     const {
         updateServiceData,
+        selectedServiceDatas,
         startServiceData,
         stopServiceData,
         restartServiceData,
@@ -206,7 +207,12 @@ export function NginxConfigView({
             const newMetadata = { ...(serviceData.metadata || {}) }
             newMetadata['NGINX_CONF'] = editingConfigPath
 
-            const updated = await updateServiceData(serviceData.id, { metadata: newMetadata })
+            const updated = await updateServiceData({
+                environmentId: selectedEnvironmentId,
+                serviceId: serviceData.id,
+                updates: { metadata: newMetadata },
+                serviceDatasSnapshot: selectedServiceDatas,
+            })
             if (updated) {
                 toast.success('配置文件路径设置成功')
             } else {

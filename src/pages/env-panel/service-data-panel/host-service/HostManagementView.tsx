@@ -40,7 +40,7 @@ export function HostManagementView({
     serviceData,
 }: HostManagementViewProps) {
     const { addHost, updateHost, deleteHost, toggleHost, openHostsFile } = useHostService()
-    const { updateServiceData } = useEnvironmentServiceData()
+    const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const [hosts, setHosts] = useState<HostEntry[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [editingHost, setEditingHost] = useState<HostEntry | null>(null)
@@ -225,8 +225,11 @@ export function HostManagementView({
                     newHosts.push(entry)
                 }
 
-                await updateServiceData(serviceData.id, {
-                    metadata: { ...serviceData.metadata, hosts: newHosts }
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: { ...serviceData.metadata, hosts: newHosts } },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
 
                 setHosts(newHosts)
@@ -270,8 +273,11 @@ export function HostManagementView({
 
                 // 2. 更新 ServiceData
                 const newHosts = hosts.filter(h => h.id !== host.id)
-                await updateServiceData(serviceData.id, {
-                    metadata: { ...serviceData.metadata, hosts: newHosts }
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: { ...serviceData.metadata, hosts: newHosts } },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setHosts(newHosts)
 
@@ -314,8 +320,11 @@ export function HostManagementView({
                 const newHosts = hosts.map(h =>
                     h.id === host.id ? { ...h, enabled: !h.enabled } : h
                 )
-                await updateServiceData(serviceData.id, {
-                    metadata: { ...serviceData.metadata, hosts: newHosts }
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: { ...serviceData.metadata, hosts: newHosts } },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setHosts(newHosts)
 

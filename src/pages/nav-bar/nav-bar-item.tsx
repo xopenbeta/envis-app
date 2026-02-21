@@ -33,7 +33,7 @@ interface SortableEnvironmentItemProps {
   isSelected: boolean;
   isDragEnabled: boolean;
   onSelect: (environment: Environment) => void;
-  onToggle: (environment: Environment, e: React.MouseEvent) => void;
+  onToggle: (environment: Environment) => void;
   onEdit: (environment: Environment) => void;
   onDelete: (environment: Environment) => void;
 }
@@ -125,7 +125,7 @@ export function SortableEnvironmentItem({
           <Button
             size="sm"
             variant="ghost"
-            onClick={(e) => onToggle(environment, e)}
+            onClick={(e) => { e.stopPropagation(); onToggle(environment); }}
             className="h-7 w-7 p-0"
           >
             {environment.status === EnvironmentStatus.Active ? (
@@ -147,20 +147,20 @@ export function SortableEnvironmentItem({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(environment)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(environment) }}>
                 <Settings className="h-4 w-4 mr-2" />
                 {t('nav_bar_item.edit')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(environment)}
+                onClick={(e) => { e.stopPropagation(); onDelete(environment) }}
                 className="text-danger"
               >
                 <Trash className="h-4 w-4 mr-2" />
                 {t('nav_bar_item.delete')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleOpenFolder}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenFolder() }}>
                 <Folder className="mr-2 h-4 w-4" />
                 <span>{t('nav_bar_item.open_folder')}</span>
               </DropdownMenuItem>

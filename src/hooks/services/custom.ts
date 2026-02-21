@@ -3,7 +3,7 @@ import { ipcUpdateCustomServicePaths, ipcUpdateCustomServiceEnvVars, ipcUpdateCu
 import { useEnvironmentServiceData } from "../env-serv-data";
 
 export function useCustomService() {
-    const { updateServiceData } = useEnvironmentServiceData();
+    const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
 
     // 仅负责通过 IPC 更新后端（磁盘 / Shell），不直接修改前端 store
     async function updateCustomServicePaths(
@@ -42,9 +42,14 @@ export function useCustomService() {
     }
 
     // 单独函数：将 metadata 应用到前端 store（单一职责），组件在 IPC 成功后可调用此函数
-    async function applyServiceMetadata(serviceId: string, metadata: Record<string, any>) {
+    async function applyServiceMetadata(environmentId: string, serviceId: string, metadata: Record<string, any>) {
         try {
-            await updateServiceData(serviceId, { metadata });
+            await updateServiceData({
+                environmentId,
+                serviceId,
+                updates: { metadata },
+                serviceDatasSnapshot: selectedServiceDatas,
+            });
             return { success: true };
         } catch (err) {
             console.error('[hooks/custom] applyServiceMetadata 失败:', err);

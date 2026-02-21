@@ -43,7 +43,7 @@ export function WelcomeFragment({ onOpen }: {
     const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
     const [environments] = useAtom(environmentsAtom)
     const { updateEnvironmentsOrder } = useEnvironment()
-    const { switchEnvAndServDatasActive } = useEnvironmentServiceData()
+    const { switchEnvAndServDatasWithActive } = useEnvironmentServiceData()
     const { openTerminal } = useSystemInfo()
     const systemInfo = useSystemMonitorData()
     const [showContactDialog, setShowContactDialog] = useState(false);
@@ -68,7 +68,11 @@ export function WelcomeFragment({ onOpen }: {
 
     const handleToggleActive = async (env: Environment, e: React.MouseEvent) => {
         e.stopPropagation();
-        await switchEnvAndServDatasActive(env);
+        await switchEnvAndServDatasWithActive({
+            environment: env,
+            environmentsSnapshot: [...environments],
+            selectedEnvironmentIdSnapshot: env.id,
+        });
     }
 
     return (

@@ -50,7 +50,7 @@ import { useEffect, useState } from 'react'
 import { useService } from '@/hooks/service'
 import { useServiceData } from '@/hooks/env-serv-data'
 import { toast } from 'sonner'
-import { selectedServiceDataIdAtom, envActivationEventAtom } from '@/store/environment'
+import { selectedServiceDataIdAtom, envActivationEventAtom, environmentsAtom } from '@/store/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { Input } from '@/components/ui/input'
 import { useAppSettings } from '@/hooks/appSettings'
@@ -94,7 +94,8 @@ export function SortableServiceItem({
   isDragEnabled: boolean;
 }) {
   const { t } = useTranslation()
-  const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
+  const [selectedServiceDataId, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
+  const [environments] = useAtom(environmentsAtom)
   const [envActivationEvent] = useAtom(envActivationEventAtom)
 
   const [showEnvironmentActivationDialog, setShowEnvironmentActivationDialog] = useState(false)
@@ -107,7 +108,7 @@ export function SortableServiceItem({
   const serviceDataStatus = (activeEnvironment?.id === selectedEnvironmentId) ? activationStatus : ServiceDataStatus.Inactive;
   const { getServiceData } = useServiceData();
   const { cancelServiceDownload, downloadService, checkServiceInstalled, getServiceDownloadProgress } = useService();
-  const { switchEnvAndServDatasActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, getServiceStatus } = useEnvironmentServiceData();
+  const { switchEnvAndServDatasWithActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, getServiceStatus, selectedServiceDatas } = useEnvironmentServiceData();
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [renameValue, setRenameValue] = useState(serviceData.name || '')
   const [renameLoading, setRenameLoading] = useState(false)
@@ -209,7 +210,11 @@ export function SortableServiceItem({
   const handleActivateEnvironmentAndStartServices = async () => {
     if (!selectedEnvironment) return
     try {
-      await switchEnvAndServDatasActive(selectedEnvironment);
+      await switchEnvAndServDatasWithActive({
+        environment: selectedEnvironment,
+        environmentsSnapshot: [...environments],
+        selectedEnvironmentIdSnapshot: selectedEnvironmentId,
+      });
     } catch (error) {
       console.error('环境操作失败:', error)
       toast.error(t('service_item.env_op_error'))
@@ -251,7 +256,12 @@ export function SortableServiceItem({
       return
     }
 
-    await deleteServiceData(serviceData)
+    await deleteServiceData({
+      environmentId: selectedEnvironmentId,
+      serviceData,
+      serviceDatasSnapshot: selectedServiceDatas,
+      selectedServiceDataIdSnapshot: selectedServiceDataId,
+    })
   }
 
   // 切换服务状态
@@ -327,7 +337,7 @@ export function SortableServiceItem({
       // 乐观更新：立即切换状态
       setActivationStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
       
-      let res = await activateServiceData(selectedEnvironment.id, serviceData, password);
+      let res = await activateServiceData(selectedEnvironment.id, serviceData);
 
       if (res?.success) {
         sessionStorage.setItem('envis_sudo_password', password);
@@ -717,7 +727,12 @@ export function SortableServiceItem({
               }
               try {
                 setRenameLoading(true)
-                await updateServiceData(serviceData.id, { name: renameValue.trim() })
+                await updateServiceData({
+                  environmentId: selectedEnvironmentId,
+                  serviceId: serviceData.id,
+                  updates: { name: renameValue.trim() },
+                  serviceDatasSnapshot: selectedServiceDatas,
+                })
                 toast.success(t('service_item.rename_success'))
                 setShowRenameDialog(false)
               } catch (err) {

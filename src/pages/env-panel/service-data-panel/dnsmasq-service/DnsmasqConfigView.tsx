@@ -23,6 +23,7 @@ export function DnsmasqConfigView({
     const { openFolderInFinder } = useFileOperations()
     const {
         updateServiceData,
+        selectedServiceDatas,
         startServiceData,
         stopServiceData,
         restartServiceData,
@@ -116,7 +117,12 @@ export function DnsmasqConfigView({
             const newMetadata = { ...serviceData.metadata, DNSMASQ_CONF: editingConfigPath }
             const updatedServiceData = { ...serviceData, metadata: newMetadata }
             
-            await updateServiceData(serviceData.id, updatedServiceData)
+            await updateServiceData({
+                environmentId: selectedEnvironmentId,
+                serviceId: serviceData.id,
+                updates: updatedServiceData,
+                serviceDatasSnapshot: selectedServiceDatas,
+            })
             toast.success('配置文件路径已更新')
         } catch (error) {
             console.error('更新配置路径失败:', error)

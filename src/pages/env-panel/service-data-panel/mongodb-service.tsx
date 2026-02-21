@@ -158,6 +158,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     restartServiceData,
     getServiceStatus,
     updateServiceData,
+    selectedServiceDatas,
   } = useEnvironmentServiceData();
 
   // 检查初始化状态
@@ -643,8 +644,11 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         newMetadata['MONGODB_KEYFILE_PATH'] = data.keyfilePath
         newMetadata['MONGODB_ADMIN_USERNAME'] = data.adminUsername
         newMetadata['MONGODB_ADMIN_PASSWORD'] = data.adminPassword
-        const updatedServiceData = await updateServiceData(serviceData.id, {
-          metadata: newMetadata
+        const updatedServiceData = await updateServiceData({
+          environmentId: selectedEnvironmentId,
+          serviceId: serviceData.id,
+          updates: { metadata: newMetadata },
+          serviceDatasSnapshot: selectedServiceDatas,
         });
         if (updatedServiceData) {
           // 重新加载配置
@@ -682,8 +686,11 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     try {
       const newMetadata: MongoDBMetadata = { ...(serviceData.metadata || {}) }
       newMetadata['MONGODB_CONFIG'] = editingConfigPath
-      const updatedServiceData = await updateServiceData(serviceData.id, {
-        metadata: newMetadata
+      const updatedServiceData = await updateServiceData({
+        environmentId: selectedEnvironmentId,
+        serviceId: serviceData.id,
+        updates: { metadata: newMetadata },
+        serviceDatasSnapshot: selectedServiceDatas,
       })
       if (updatedServiceData) {
         toast.success('配置文件路径设置成功')

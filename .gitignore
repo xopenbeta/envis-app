@@ -27,3 +27,5 @@ src-tauri/github.action.key
 src-tauri/github.action.key.pub
 target
 .vscode
+
+prompts

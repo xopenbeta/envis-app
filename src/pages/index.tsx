@@ -18,27 +18,6 @@ import { useServiceData } from "@/hooks/env-serv-data"
 
 export default function Envis() {
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom);
-  const [selectedServiceDatas, setSelectedServiceDatas] = useAtom(selectedServiceDatasAtom)
-  const [selectedServiceDataId, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
-  const selectedServiceData = selectedServiceDatas.find(serviceData => serviceData.id === selectedServiceDataId)
-  const { getAllServiceDatas } = useServiceData();
-  // 当选中环境变化时，加载该环境的服务数据
-  useEffect(() => {
-    const loadServiceDatas = async () => {
-      if (!selectedEnvironmentId) {
-        setSelectedServiceDatas([])
-        return
-      }
-      const serviceDatasRes = await getAllServiceDatas(selectedEnvironmentId)
-      if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
-        setSelectedServiceDatas(serviceDatasRes.data.serviceDatas)
-      } else {
-        setSelectedServiceDatas([])
-      }
-    }
-    loadServiceDatas()
-  }, [selectedEnvironmentId])
-
   const [isNavPanelOpen, setIsNavPanelOpen] = useAtom(isNavPanelOpenAtom);
   const [navPanelWidthRatio, setNavPanelWidthRatio] = useAtom(navPanelWidthRatioAtom);
   const [isEnvPanelOpen, setIsEnvPanelOpen] = useAtom(isEnvPanelOpenAtom);

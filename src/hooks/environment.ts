@@ -2,7 +2,7 @@ import { Environment, EnvironmentStatus } from "@/types/index"
 import { useAtom } from "jotai"
 import { useMemo } from "react"
 import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeactivateEnvironmentAndServices, ipcDeleteEnvironment, ipcSaveEnvironment } from "../ipc/environment"
-import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom } from "../store/environment"
+import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from "../store/environment"
 import { sortEnvironments } from "../utils/sort"
 import { useAppSettings } from "./appSettings"
 
@@ -10,7 +10,6 @@ export function useEnvironment() {
   const [environments, setEnvironments] = useAtom(environmentsAtom)
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
-  const { updateSystemSettings, systemSettings } = useAppSettings()
 
   const activeEnvironment = useMemo(() => {
     return environments.find(env => env.status === EnvironmentStatus.Active) || null
@@ -71,11 +70,6 @@ export function useEnvironment() {
       }
     }
     return ipcRes;
-  }
-
-  const selectEnvironment = async (environment: Environment | null) => {
-    setSelectedEnvironmentId(environment ? environment.id : '')
-    setSelectedServiceDataId('') // 清空选中服务数据，这样就有机会显示环境面板
   }
 
   // 非常简单的激活环境，只有设置环境，没有激活服务数据
@@ -176,6 +170,5 @@ export function useEnvironment() {
     deactivateEnvironment,
     deactivateEnvironmentAndServices,
     updateEnvironmentsOrder,
-    selectEnvironment,
   }
 }

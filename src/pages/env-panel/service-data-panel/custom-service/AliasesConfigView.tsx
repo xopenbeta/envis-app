@@ -110,7 +110,7 @@ export function AliasesConfigView({
             if (res && res.success) {
                 // IPC 成功后，将 metadata 应用到前端 store
                 const newMetadata = { ...(serviceData.metadata || {}), aliases: validAliases }
-                const applyRes = await applyServiceMetadata(serviceData.id, newMetadata)
+                const applyRes = await applyServiceMetadata(selectedEnvironmentId, serviceData.id, newMetadata)
                 if (applyRes && applyRes.success) {
                     const vars = Object.entries(validAliases).map(([key, value]) => ({ key, value }))
                     setAliases(vars)

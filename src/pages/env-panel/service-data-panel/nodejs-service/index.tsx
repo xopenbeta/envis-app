@@ -40,7 +40,7 @@ interface NodeServiceCardProps {
 function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCardProps) {
     const { t } = useTranslation()
     const { setNpmRegistry, setConfigPrefix, getGlobalPackages, installGlobalPackage, checkVersionManagers } = useNodejsService()
-    const { updateServiceData } = useEnvironmentServiceData()
+    const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const [registry, setRegistry] = useState('')
     const [prefix, setPrefix] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -120,8 +120,11 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             if (res && (res as any).success) {
                 const newMetadata = { ...(serviceData.metadata || {}) }
                 newMetadata['NPM_CONFIG_REGISTRY'] = val
-                await updateServiceData(serviceData.id, {
-                    metadata: newMetadata
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setRegistry(val)
                 toast.success(t('node_service.registry_set_success'))
@@ -140,8 +143,11 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             if (res && (res as any).success) {
                 const newMetadata = { ...(serviceData.metadata || {}) }
                 newMetadata['NPM_CONFIG_PREFIX'] = val
-                await updateServiceData(serviceData.id, {
-                    metadata: newMetadata
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setPrefix(val)
                 toast.success(t('node_service.prefix_set_success'))

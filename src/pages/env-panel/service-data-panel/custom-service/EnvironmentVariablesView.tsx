@@ -78,7 +78,7 @@ export function EnvironmentVariablesView({
             if (res && res.success) {
                 // IPC 成功后，将 metadata 应用到前端 store
                 const newMetadata = { ...(serviceData.metadata || {}), envVars: validEnvVars }
-                const applyRes = await applyServiceMetadata(serviceData.id, newMetadata)
+                const applyRes = await applyServiceMetadata(selectedEnvironmentId, serviceData.id, newMetadata)
                 if (applyRes && applyRes.success) {
                     const vars = Object.entries(validEnvVars).map(([key, value]) => ({ key, value }))
                     setEnvVars(vars)

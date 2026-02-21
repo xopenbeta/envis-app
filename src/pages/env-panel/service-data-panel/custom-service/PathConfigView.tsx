@@ -56,7 +56,7 @@ export function PathConfigView({
             if (res && res.success) {
                 // IPC 成功后，单独应用 metadata 到前端 store
                 const newMetadata = { ...(serviceData.metadata || {}), paths: validPaths }
-                const applyRes = await applyServiceMetadata(serviceData.id, newMetadata)
+                const applyRes = await applyServiceMetadata(selectedEnvironmentId, serviceData.id, newMetadata)
                 if (applyRes && applyRes.success) {
                     setPaths(validPaths)
                     toast.success('路径配置已保存')

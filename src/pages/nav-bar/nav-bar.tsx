@@ -79,20 +79,22 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [environments] = useAtom(environmentsAtom)
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   const [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom)
-  const {
-    createEnvironment,
-    updateEnvironment,
-    deleteEnvironment,
-    updateEnvironmentsOrder,
-    selectEnvironment
-  } = useEnvironment()
   const [appSettings] = useAtom(appSettingsAtom)
   const [updateAvailable] = useAtom(updateAvailableAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
   const [, setIsLogOpen] = useAtom(isLogPanelOpenAtom)
   const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
   const { updateAppSettings } = useAppSettings()
-  const { switchEnvAndServDatasActive } = useEnvironmentServiceData()
+  const {
+    createEnvironment,
+    updateEnvironment,
+    deleteEnvironment,
+    updateEnvironmentsOrder,
+  } = useEnvironment()
+  const { 
+    switchEnvAndServDatasWithActive,
+    switchEnvAndServDatas
+  } = useEnvironmentServiceData()
   const { openTerminal: openTerminalFunc } = useSystemInfo()
   const currentTheme = appSettings?.theme as AppTheme
   const { logInfo, logError } = useLogger()
@@ -115,15 +117,18 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 处理环境选择
   const onEnvItemClick = async (environment: Environment) => {
-    setSelectedServiceDataId('') // 清除选中的服务
     if (selectedEnvironmentId === environment.id) return
-    await selectEnvironment(environment)
+    await switchEnvAndServDatas(environment)
   }
 
   // 激活/停用环境
-  const onActiveEnvBtnClick = async (environment: Environment, e: React.MouseEvent) => {
-    // 允许触发环境选择，这样会更方便
-    await switchEnvAndServDatasActive(environment);
+  const onActiveEnvBtnClick = async (environment: Environment) => {
+    if (selectedEnvironmentId === environment.id) return
+    await switchEnvAndServDatasWithActive({
+      environment,
+      environmentsSnapshot: [...environments],
+      selectedEnvironmentIdSnapshot: environment.id,
+    });
   }
 
   // 删除环境
@@ -198,7 +203,7 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 点击首页
   const onHomeClick = eventLogFunc(t('nav_bar.back_home'), () => {
-    selectEnvironment(null)
+    switchEnvAndServDatas(null)
   })
 
   // 打开设置对话框

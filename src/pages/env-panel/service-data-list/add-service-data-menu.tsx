@@ -39,7 +39,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
     const [shouldDownloadService, setShouldDownloadService] = useAtom(shouldDownloadServiceAtom)
     const { activeEnvironment } = useEnvironment()
-    const { createServiceData, activateServiceData } = useEnvironmentServiceData()
+    const { createServiceData, activateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const { getServiceVersions, checkServiceInstalled, downloadService } = useService()
 
     // 服务版本信息的统一状态管理
@@ -163,7 +163,12 @@ export function AddServiceMenu({ buttonType = "icon" }: {
 
     // 创建新服务
     const onCreateServiceDataBtnClick = async (serviceType: ServiceType, version: string) => {
-        const newServiceData = await createServiceData(serviceType, version)
+        const newServiceData = await createServiceData({
+            environmentId: selectedEnvironmentId,
+            serviceType,
+            version,
+            serviceDatasSnapshot: selectedServiceDatas,
+        })
         if (newServiceData) {
             // 自定义服务不需要下载，直接创建
             if (serviceType === ServiceType.Custom) {
@@ -193,23 +198,43 @@ export function AddServiceMenu({ buttonType = "icon" }: {
 
     // 创建自定义服务
     const onCreateCustomServiceBtnClick = async () => {
-        await createServiceData(ServiceType.Custom, '1.0.0')
+        await createServiceData({
+            environmentId: selectedEnvironmentId,
+            serviceType: ServiceType.Custom,
+            version: '1.0.0',
+            serviceDatasSnapshot: selectedServiceDatas,
+        })
     }
 
     // 创建 Host 服务
     const onCreateHostServiceBtnClick = async () => {
-        await createServiceData(ServiceType.Host, '1.0.0')
+        await createServiceData({
+            environmentId: selectedEnvironmentId,
+            serviceType: ServiceType.Host,
+            version: '1.0.0',
+            serviceDatasSnapshot: selectedServiceDatas,
+        })
     }
 
     // 创建 SSL 服务
     const onCreateSSLServiceBtnClick = async () => {
-        await createServiceData(ServiceType.SSL, '1.0.0')
+        await createServiceData({
+            environmentId: selectedEnvironmentId,
+            serviceType: ServiceType.SSL,
+            version: '1.0.0',
+            serviceDatasSnapshot: selectedServiceDatas,
+        })
     }
 
     // 创建 Nginx 服务（使用系统安装，无需选择版本）
     const onCreateNginxServiceBtnClick = async () => {
         // 以 system 作为占位版本标识
-        await createServiceData(ServiceType.Nginx, 'system')
+        await createServiceData({
+            environmentId: selectedEnvironmentId,
+            serviceType: ServiceType.Nginx,
+            version: 'system',
+            serviceDatasSnapshot: selectedServiceDatas,
+        })
     }
 
     // 处理下载确认
