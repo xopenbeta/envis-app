@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
-import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
+import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useDnsmasqService } from '@/hooks/services/dnsmasq'
 import { Button } from '@/components/ui/button'
@@ -22,11 +22,13 @@ export function DnsmasqConfigView({
 }: DnsmasqConfigViewProps) {
     const { openFolderInFinder } = useFileOperations()
     const {
-        updateServiceData,
-        selectedServiceDatas,
         startServiceData,
         stopServiceData,
         restartServiceData,
+    } = useServiceData()
+    const {
+        updateServiceData,
+        selectedServiceDatas,
         getServiceStatus,
     } = useEnvironmentServiceData()
     const { getDnsmasqConfig } = useDnsmasqService()

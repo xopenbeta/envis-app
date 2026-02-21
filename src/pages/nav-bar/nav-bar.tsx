@@ -123,7 +123,6 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 激活/停用环境
   const onActiveEnvBtnClick = async (environment: Environment) => {
-    if (selectedEnvironmentId === environment.id) return
     await switchEnvAndServDatasWithActive({
       environment,
       environmentsSnapshot: [...environments],

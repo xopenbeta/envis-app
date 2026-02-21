@@ -25,7 +25,7 @@ import {
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
 import { useState, useEffect, useMemo } from 'react'
-import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
+import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useNginxService } from '@/hooks/services/nginx'
 
@@ -49,11 +49,13 @@ export function NginxConfigView({
 }: NginxConfigViewProps) {
     const { openFolderInFinder } = useFileOperations()
     const {
-        updateServiceData,
-        selectedServiceDatas,
         startServiceData,
         stopServiceData,
         restartServiceData,
+    } = useServiceData()
+    const {
+        updateServiceData,
+        selectedServiceDatas,
         getServiceStatus,
     } = useEnvironmentServiceData()
     const { getNginxConfig } = useNginxService()

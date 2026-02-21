@@ -48,7 +48,7 @@ import { selectedEnvironmentIdAtom } from '../../../store/environment'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MongoDBConfig, MongoDBMetadata } from "@/types/service"
 import { useMongodb } from "@/hooks/services/mongodb"
-import { useEnvironmentServiceData } from "@/hooks/env-serv-data"
+import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
 import { useService } from "@/hooks/service"
 
 interface MongoDBServiceProps {
@@ -153,9 +153,11 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     deleteMongoDBUser,
   } = useMongodb();
   const {
-    startServiceData,
-    stopServiceData,
-    restartServiceData,
+      startServiceData,
+      stopServiceData,
+      restartServiceData,
+  } = useServiceData()
+  const {
     getServiceStatus,
     updateServiceData,
     selectedServiceDatas,
