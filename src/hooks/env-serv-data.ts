@@ -349,32 +349,34 @@ export function useEnvironmentServiceData() {
     }
 
     const switchEnvAndServDatas = async (environment: Environment | null) => {
-        setSelectedServiceDataId('') // 清空选中服务数据，这样就有机会显示环境面板
-        setSelectedServiceDatas([]) // 清空选中服务数据列表
         const newEnvId = environment ? environment.id : '';
         setSelectedEnvironmentId(newEnvId)
         if (newEnvId) {
             const serviceDatasRes = await getAllServiceDatas(newEnvId)
             if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
                 setSelectedServiceDatas(serviceDatasRes.data.serviceDatas)
+            } else {
+                setSelectedServiceDatas([])
             }
+        } else {
+            // 放在分支里，防止 无数据view 闪现
+            setSelectedServiceDataId('')
+            setSelectedServiceDatas([])
         }
     }
 
     async function switchEnvAndServDatasWithActive({
         environment,
         environmentsSnapshot,
-        selectedEnvironmentIdSnapshot,
         systemSettingsSnapshot,
     }: {
         environment: Environment
         environmentsSnapshot: Environment[]
-        selectedEnvironmentIdSnapshot: string
         systemSettingsSnapshot?: SystemSettings | null
     }) {
         let loadingTimer = null;
         let isActiveFinish = false;
-        const currentSelectedEnvironmentId = selectedEnvironmentIdSnapshot || environment.id;
+        const currentSelectedEnvironmentId = environment.id;
         // 300ms后才显示loading，防止loading闪烁
         loadingTimer = setTimeout(() => {
             if (!isActiveFinish) {

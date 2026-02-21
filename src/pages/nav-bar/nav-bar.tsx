@@ -126,7 +126,6 @@ export default function NavBar({ onClose }: NavBarProps) {
     await switchEnvAndServDatasWithActive({
       environment,
       environmentsSnapshot: [...environments],
-      selectedEnvironmentIdSnapshot: environment.id,
     });
   }
 

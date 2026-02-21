@@ -41,39 +41,9 @@ export function WelcomeFragment({ onOpen }: {
     const { t } = useTranslation();
     const [, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom);
     const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
-    const [environments] = useAtom(environmentsAtom)
-    const { updateEnvironmentsOrder } = useEnvironment()
-    const { switchEnvAndServDatasWithActive } = useEnvironmentServiceData()
     const { openTerminal } = useSystemInfo()
     const systemInfo = useSystemMonitorData()
     const [showContactDialog, setShowContactDialog] = useState(false);
-    const [selectedEnvId, setSelectedEnvId] = useState<string | null>(null);
-
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    const onDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (active.id !== over?.id) {
-            const oldIndex = environments.findIndex((item) => item.id === active.id);
-            const newIndex = environments.findIndex((item) => item.id === over?.id);
-            const newEnvironments = arrayMove(environments, oldIndex, newIndex);
-            await updateEnvironmentsOrder(newEnvironments);
-        }
-    };
-
-    const handleToggleActive = async (env: Environment, e: React.MouseEvent) => {
-        e.stopPropagation();
-        await switchEnvAndServDatasWithActive({
-            environment: env,
-            environmentsSnapshot: [...environments],
-            selectedEnvironmentIdSnapshot: env.id,
-        });
-    }
 
     return (
         <div className="relative w-full h-full bg-white dark:bg-[#030303] text-gray-900 dark:text-white overflow-hidden flex flex-col font-sans selection:bg-blue-500/20 dark:selection:bg-white/20">

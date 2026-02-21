@@ -213,7 +213,6 @@ export function SortableServiceItem({
       await switchEnvAndServDatasWithActive({
         environment: selectedEnvironment,
         environmentsSnapshot: [...environments],
-        selectedEnvironmentIdSnapshot: selectedEnvironmentId,
       });
     } catch (error) {
       console.error('环境操作失败:', error)
