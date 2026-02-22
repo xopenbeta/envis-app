@@ -111,7 +111,7 @@ export function ServicesDashboard() {
       </div>
 
       {/* Footer Status Bar */}
-      <AppFooter isShowConsoleBtn={true} onConsoleBtnClick={() => { /* Add your console button click handler here */ }} />
+      {/* <AppFooter isShowConsoleBtn={true} onConsoleBtnClick={() => { }} /> */}
     </div>
   )
 }

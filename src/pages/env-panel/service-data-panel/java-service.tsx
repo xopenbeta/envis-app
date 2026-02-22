@@ -177,18 +177,6 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
     return (
         <div className="w-full p-3 space-y-3">
-            {/* 激活提示 */}
-            {!isServiceDataActive && (
-                <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-500/10">
-                    <AlertTriangle className="h-4 w-4 text-orange-600" />
-                    <AlertTitle className="text-orange-700 dark:text-orange-400">
-                        服务未激活
-                    </AlertTitle>
-                    <AlertDescription className="text-orange-600 dark:text-orange-300">
-                        请在左侧服务列表中激活此 Java 版本，才能使用相关功能。
-                    </AlertDescription>
-                </Alert>
-            )}
 
             <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 {/* Java 版本信息 */}

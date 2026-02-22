@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { FolderOpen, Play, Square, RotateCw, Save, FileText } from 'lucide-react'
+import { FolderOpen, Play, Square, RotateCw, Save, FileText, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface DnsmasqConfigViewProps {
     selectedEnvironmentId: string
@@ -34,6 +35,7 @@ export function DnsmasqConfigView({
     const { getDnsmasqConfig } = useDnsmasqService()
 
     const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
+    const isMacOS = typeof navigator !== 'undefined' && navigator.platform.includes('Mac')
     const configPath = useMemo(() => {
         return serviceData.metadata?.['DNSMASQ_CONF'] || ''
     }, [serviceData.metadata])
@@ -177,6 +179,17 @@ export function DnsmasqConfigView({
 
     return (
         <div className="w-full p-3 space-y-4">
+            <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20 mb-4">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+                <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">
+                    {isMacOS && (
+                        <p>
+                            当前是 macOS：请先在 <span className="font-mono">/etc/resolver</span> 中准备对应域名的 resolver 配置，否则自定义域名可能无法通过 dnsmasq 正常解析。
+                        </p>
+                    )}
+                </AlertDescription>
+            </Alert>
+
             {/* 控制面板 */}
             <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-2">
