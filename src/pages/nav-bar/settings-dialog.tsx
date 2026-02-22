@@ -483,6 +483,27 @@ export default function SettingsDialog(props: {
                 </Select>
               </div>
 
+              {/* 语言设置 */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="language">{t('settings.interface_language')}</Label>
+                  <Select
+                    value={appSettings?.language}
+                    onValueChange={(value) =>
+                      updateAppSettings({ language: value })
+                    }
+                  >
+                    <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
+                      <SelectValue placeholder={t('settings.select_language')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="zh-CN">{t('settings.simplified_chinese')}</SelectItem>
+                      <SelectItem value="en-US">{t('settings.english')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">{t('settings.about')}</Label>
                 <Button
@@ -633,34 +654,6 @@ export default function SettingsDialog(props: {
                         }
                       }}
                     />
-                  </div>
-                </div>
-              </div>
-
-              {/* 语言设置 */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-medium">{t('settings.language_settings')}</h3>
-                </div>
-
-                <div className="space-y-3 pl-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="language">{t('settings.interface_language')}</Label>
-                    <Select
-                      value={appSettings?.language}
-                      onValueChange={(value) =>
-                        updateAppSettings({ language: value })
-                      }
-                    >
-                      <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
-                        <SelectValue placeholder={t('settings.select_language')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="zh-CN">{t('settings.simplified_chinese')}</SelectItem>
-                        <SelectItem value="en-US">{t('settings.english')}</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
               </div>

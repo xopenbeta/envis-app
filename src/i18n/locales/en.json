@@ -242,6 +242,7 @@
     "select_folder_failed": "Failed to select folder",
     "set_folder_first": "Please set folder path first",
     "open_folder_failed": "Failed to open folder",
+    "settings": "Settings",
     "general": "General",
     "system": "System",
     "services": "Services",

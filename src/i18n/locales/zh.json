@@ -245,6 +245,7 @@
     "select_folder_failed": "选择文件夹失败",
     "set_folder_first": "请先设置文件夹路径",
     "open_folder_failed": "打开文件夹失败",
+    "settings": "设置",
     "general": "通用",
     "system": "系统",
     "services": "服务",
