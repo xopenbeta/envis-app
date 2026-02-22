@@ -4,6 +4,7 @@ import { useAtom } from 'jotai'
 import { useTranslation } from 'react-i18next'
 import { isAIPanelOpenAtom } from "@/store"
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function EnvPanelHeader() {
   const { t } = useTranslation()
@@ -15,18 +16,24 @@ export function EnvPanelHeader() {
   }
 
   return (
-    <div className="p-1 border-b border-divider flex items-center justify-between">
+    <div className="p-2 border-b border-divider flex items-center justify-between">
       <div className="flex items-center ml-2">
         <div className="flex flex-col">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-            {selectedServiceData.name}{' '}
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {selectedServiceData.version}
-            </span>
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('base_service.serv_id')}{selectedServiceData.id}
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white cursor-default hover:underline underline-offset-4">
+                  {selectedServiceData.name}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    &nbsp;&nbsp;{selectedServiceData.version}
+                  </span>
+                </h2>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">{t('base_service.serv_id')}{selectedServiceData.id}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

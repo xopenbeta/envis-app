@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { isAIPanelOpenAtom } from "@/store";
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import pkg from '../../../../package.json';
 import { AppFooter } from '@/pages/app-footer'
 
@@ -83,11 +84,21 @@ export function ServicesDashboard() {
   return (
     <div className="flex flex-col h-full bg-gradient-to-br backdrop-blur-xl overflow-y-auto">
       {/* Header */}
-      <div className="p-1 border-b border-divider">
+      <div className="p-2 border-b border-divider">
         <div className="flex items-center justify-between ml-2">
           <div className="flex flex-col">
-            <h3 className="text-sm font-semibold text-foreground">{selectedEnvironment?.name ?? t('dashboard.unknown_env')}</h3>
-            <p className="text-xs text-muted-foreground">{t('dashboard.env_id')}{selectedEnvironment?.id}</p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="text-sm font-semibold text-foreground cursor-default hover:underline underline-offset-4">
+                    {selectedEnvironment?.name ?? t('dashboard.unknown_env')}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{t('dashboard.env_id')}{selectedEnvironment?.id ?? '--'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center space-x-2">
             <Button
