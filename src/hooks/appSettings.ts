@@ -5,9 +5,18 @@ import { setAppTheme } from "../utils/theme";
 import { ipcGetSystemSettings, ipcUpdateSystemSettings, ipcOpenAppConfigFolder } from "../ipc/systemSettings";
 import { toast } from "sonner";
 import { useLogger } from "./log";
+import i18n from '@/i18n/config'
 
 // appConfig的数据不重要，用不着放在文件里
 const APP_SETTINGS_STORAGE_KEY = 'envis-app-settings'
+
+const normalizeLanguage = (language?: string) => {
+  if (!language) return 'en'
+  const value = language.toLowerCase()
+  if (value.startsWith('zh')) return 'zh'
+  if (value.startsWith('en')) return 'en'
+  return 'en'
+}
 
 // 从localStorage读取应用设置数据
 export const loadAppSettingsFromStorage = (): AppSettings => {
@@ -35,6 +44,7 @@ export function useAppSettings() {
     let appSettings = loadAppSettingsFromStorage();
     setAppSettings(appSettings);
     setAppTheme(appSettings.theme);
+    void i18n.changeLanguage(normalizeLanguage(appSettings.language));
     logInfo('【init】初始化应用设置完成');
     return appSettings;
   }
@@ -45,6 +55,9 @@ export function useAppSettings() {
       saveAppSettingsToStorage(updatedSettings);
       if (updates.theme) { // 如果theme有改动
         setAppTheme(updates.theme);
+      }
+      if (updates.language) {
+        void i18n.changeLanguage(normalizeLanguage(updates.language));
       }
       return updatedSettings;
     });
