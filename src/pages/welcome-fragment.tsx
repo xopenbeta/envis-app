@@ -4,20 +4,20 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import { Github, Server, Code, Database, Settings, PanelLeft, Bot, Zap, Globe, Box, Layers, Terminal, Command, Cpu, Plus, FolderOpen, Book, Clock, ArrowRight, Search, GripVertical, Play, Square, Hexagon, Info, MemoryStick, HardDrive, Wifi, Users, MessageCircle, MessageSquare } from "lucide-react";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
 } from '@dnd-kit/core'
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { environmentsAtom } from '@/store/environment'
@@ -51,7 +51,7 @@ export function WelcomeFragment({ onOpen }: {
             <div className="absolute inset-0 z-0 pointer-events-none">
                 {/* Subtle gradient glow at the top */}
                 <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-black/[0.02] dark:bg-white/[0.03] blur-[120px] rounded-full"></div>
-                
+
                 {/* Grid pattern */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
             </div>
@@ -85,10 +85,23 @@ export function WelcomeFragment({ onOpen }: {
             {/* Main Content - App Welcome Screen */}
             <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
                 <div className="w-full max-w-2xl px-6 flex flex-col gap-8">
-                    
+
                     {/* Brand Header */}
                     <div className="text-center space-y-4 mt-12">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">Envis</h1>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t('welcome.subtitle')}</p>
+                        </div>
                         <div className="w-full flex justify-center">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowContactDialog(true)
+                                }}
+                                className="z-50 h-7 px-2.5 rounded-full mr-2 border border-blue-200 bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                            >
+                                QQ沟通群：1036572489
+                            </button>
                             <a
                                 href="https://github.com/xopenbeta/envis-app"
                                 target="_blank"
@@ -100,16 +113,12 @@ export function WelcomeFragment({ onOpen }: {
                                 <ArrowRight className="w-3.5 h-3.5 opacity-70" />
                             </a>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-medium tracking-tight text-gray-900 dark:text-white mb-2">Envis</h1>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t('welcome.subtitle')}</p>
-                        </div>
                     </div>
 
                     {/* Quick Actions */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <ActionCard 
-                            icon={<Plus className="w-5 h-5 text-blue-500 dark:text-blue-400" />} 
+                        <ActionCard
+                            icon={<Plus className="w-5 h-5 text-blue-500 dark:text-blue-400" />}
                             title={t('welcome.new_environment')}
                             desc={t('welcome.new_environment_desc')}
                             onClick={() => {
@@ -117,20 +126,20 @@ export function WelcomeFragment({ onOpen }: {
                                 setIsCreateEnvDialogOpen(true);
                             }}
                         />
-                        <ActionCard 
-                            icon={<Terminal className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />} 
+                        <ActionCard
+                            icon={<Terminal className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />}
                             title={t('welcome.open_terminal')}
                             desc={t('welcome.open_terminal_desc')}
                             onClick={() => openTerminal()}
                         />
-                        <ActionCard 
-                            icon={<Zap className="w-5 h-5 text-purple-500 dark:text-purple-400" />} 
+                        <ActionCard
+                            icon={<Zap className="w-5 h-5 text-purple-500 dark:text-purple-400" />}
                             title={t('welcome.ai_assistant')}
                             desc={t('welcome.ai_assistant_desc')}
                             onClick={() => setIsAIPanelOpen(true)}
                         />
-                        <ActionCard 
-                            icon={<Book className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />} 
+                        <ActionCard
+                            icon={<Book className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
                             title={t('welcome.documentation')}
                             desc={t('welcome.documentation_desc')}
                             onClick={() => window.open('https://github.com/xopenbeta/envis-app', '_blank')}
@@ -188,9 +197,9 @@ export function WelcomeFragment({ onOpen }: {
                     <div className="space-y-3 mb-6">
                         <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('welcome.feedback')}</h2>
                         <div className="flex flex-col rounded-lg border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] overflow-hidden">
-                            <a 
-                                href="https://github.com/xopenbeta/daji-app" 
-                                target="_blank" 
+                            <a
+                                href="https://github.com/xopenbeta/daji-app"
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
                             >
@@ -203,8 +212,8 @@ export function WelcomeFragment({ onOpen }: {
                                 </div>
                                 <ArrowRight className="w-3 h-3 text-gray-400" />
                             </a>
-                            
-                            <div 
+
+                            <div
                                 onClick={() => setShowContactDialog(true)}
                                 className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
                             >
@@ -218,7 +227,7 @@ export function WelcomeFragment({ onOpen }: {
                                 <ArrowRight className="w-3 h-3 text-gray-400" />
                             </div>
 
-                            <div 
+                            <div
                                 onClick={() => setShowContactDialog(true)}
                                 className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                             >
@@ -275,7 +284,7 @@ export function WelcomeFragment({ onOpen }: {
 
 function ActionCard({ icon, title, desc, onClick }: { icon: React.ReactNode, title: string, desc: string, onClick?: () => void }) {
     return (
-        <button 
+        <button
             onClick={onClick}
             className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:border-gray-300 dark:hover:border-white/10 transition-all text-left group"
         >
