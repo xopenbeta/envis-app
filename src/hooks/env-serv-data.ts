@@ -71,11 +71,16 @@ export function useEnvironmentServiceData() {
     const getSudoPassword = () => sessionStorage.getItem('envis_sudo_password') || undefined
 
     const getLastUsedEnvironmentIds = (settings?: SystemSettings | null): string[] => {
-        let lastUsedEnvironmentIds: string[] = [];
-        if (settings && settings.lastUsedEnvironmentIds && settings.lastUsedEnvironmentIds.length > 0) {
-            lastUsedEnvironmentIds = settings.lastUsedEnvironmentIds.filter(id => !!id);
+        if (!settings?.lastUsedEnvironmentIds || settings.lastUsedEnvironmentIds.length === 0) {
+            return [];
         }
-        return lastUsedEnvironmentIds;
+
+        const normalizedIds = settings.lastUsedEnvironmentIds
+            .filter((id): id is string => typeof id === 'string')
+            .map(id => id.trim())
+            .filter(id => id.length > 0);
+
+        return Array.from(new Set(normalizedIds));
     };
 
     const setLastUsedEnvironmentIds = async (ids: string[], settings?: SystemSettings | null) => {
@@ -252,11 +257,12 @@ export function useEnvironmentServiceData() {
     }
 
     const initEnvironments = async () => {
+        let environments: Environment[] = []
         console.log('【init】初始化环境和服务数据...')
         const loadedEnvironmentsRes = await ipcGetAllEnvironments()
         console.log('【init】获取环境:', loadedEnvironmentsRes);
         if (loadedEnvironmentsRes.success && loadedEnvironmentsRes.data?.environments) {
-            const environments: Environment[] = loadedEnvironmentsRes.data.environments
+            environments = loadedEnvironmentsRes.data.environments
             setEnvironments(environments)
             console.log('【init】初始化环境列表:', environments)
         }
@@ -328,8 +334,11 @@ export function useEnvironmentServiceData() {
     const autoStartEnvironment = async (systemSettings: SystemSettings, environments: Environment[]) => {
         // 检查是否启用了自动启动上次环境功能
         if (systemSettings.autoActivateLastUsedEnvironmentOnAppStart) {
-            console.log('【init】启用自动启动上次环境功能')
+            console.log('【init】启用自动启动上次环境功能', environments)
             const lastUsedEnvironmentIds = getLastUsedEnvironmentIds(systemSettings)
+            const availableEnvironmentIds = environments.map(env => env.id)
+            console.debug('【init-debug】历史环境IDs(规范化后):', lastUsedEnvironmentIds)
+            console.debug('【init-debug】当前可用环境IDs:', availableEnvironmentIds)
             if (lastUsedEnvironmentIds.length === 0) {
                 console.log('【init】未找到可自动启动的历史环境记录')
                 return
@@ -342,7 +351,7 @@ export function useEnvironmentServiceData() {
                     await activateEnvAndServDatas(targetEnvironment)
                     console.log(`【init】历史环境 ${targetEnvironment.name} 启动完成`)
                 } else {
-                    console.warn(`【init】历史环境 ${envId} 不存在，已跳过自动启动`)
+                    console.warn(`【init】历史环境 ${envId} 不存在，已跳过自动启动；当前可用环境IDs: ${availableEnvironmentIds.join(', ')}`)
                 }
             }
         }

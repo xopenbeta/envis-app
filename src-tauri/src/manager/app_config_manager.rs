@@ -18,7 +18,6 @@ pub struct AppConfig {
     pub envis_folder: String,
     pub auto_start_app_on_login: bool,
     pub auto_activate_last_used_environment_on_app_start: bool,
-    pub last_used_environment_id: Option<String>,
     #[serde(default)]
     pub last_used_environment_ids: Vec<String>,
     pub stop_all_services_on_exit: bool,
@@ -52,7 +51,6 @@ impl Default for AppConfig {
             envis_folder: envis_dir.to_string_lossy().to_string(),
             auto_start_app_on_login: false,
             auto_activate_last_used_environment_on_app_start: true,
-            last_used_environment_id: None,
             last_used_environment_ids: vec![],
             stop_all_services_on_exit: false,
             terminal_tool: default_terminal,
@@ -168,18 +166,6 @@ impl AppConfigManager {
             let mut seen = HashSet::new();
             app_config.last_used_environment_ids.retain(|id| seen.insert(id.clone()));
         }
-
-        if app_config.last_used_environment_ids.is_empty() {
-            if let Some(id) = &app_config.last_used_environment_id {
-                app_config.last_used_environment_ids.push(id.clone());
-            }
-        }
-
-        // 更新兼容字段为最后一个 ID（即最近激活的环境）
-        app_config.last_used_environment_id = app_config
-            .last_used_environment_ids
-            .last()
-            .cloned();
     }
 
     /// 迁移 .envis 文件夹数据

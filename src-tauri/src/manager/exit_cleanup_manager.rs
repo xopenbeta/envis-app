@@ -5,6 +5,19 @@ use crate::manager::environment_manager::EnvironmentManager;
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::EnvironmentStatus;
 
+fn persist_active_environment_ids(active_environment_ids: Vec<String>) -> Result<()> {
+    let manager = AppConfigManager::global();
+    let mut manager = manager
+        .lock()
+        .map_err(|_| anyhow!("AppConfigManager 锁获取失败"))?;
+
+    let mut app_config = manager.get_app_config();
+    app_config.last_used_environment_ids = active_environment_ids;
+    manager.set_app_config(app_config)?;
+
+    Ok(())
+}
+
 pub fn cleanup_on_app_close() -> Result<bool> {
     log::info!("cleanup_on_app_close 开始执行");
 
@@ -22,11 +35,6 @@ pub fn cleanup_on_app_close() -> Result<bool> {
         app_config.auto_activate_last_used_environment_on_app_start
     );
 
-    if !app_config.stop_all_services_on_exit {
-        log::info!("cleanup_on_app_close 跳过：stop_all_services_on_exit=false");
-        return Ok(false);
-    }
-
     let mut environments = {
         let manager = EnvironmentManager::global();
         let manager = manager
@@ -34,6 +42,25 @@ pub fn cleanup_on_app_close() -> Result<bool> {
             .map_err(|_| anyhow!("EnvironmentManager 锁获取失败"))?;
         manager.get_all_environments().context("读取环境列表失败")?
     };
+
+    let active_environment_ids = environments
+        .iter()
+        .filter(|env| env.status == EnvironmentStatus::Active)
+        .map(|env| env.id.clone())
+        .collect::<Vec<_>>();
+    if let Err(e) = persist_active_environment_ids(active_environment_ids.clone()) {
+        log::error!("记录退出前活跃环境失败: {}", e);
+    } else {
+        log::info!(
+            "已记录退出前活跃环境IDs(供下次启动恢复): {:?}",
+            active_environment_ids
+        );
+    }
+
+    if !app_config.stop_all_services_on_exit {
+        log::info!("cleanup_on_app_close 跳过：stop_all_services_on_exit=false");
+        return Ok(false);
+    }
 
     let env_manager = EnvironmentManager::global();
     let env_manager = env_manager

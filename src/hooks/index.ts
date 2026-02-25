@@ -31,6 +31,10 @@ export function useInitEnvis() {
         try {
             const { environments, systemSettings } = await refresh()
 
+            const lastUsedEnvironmentIds = systemSettings?.lastUsedEnvironmentIds?.filter(Boolean) ?? []
+            console.debug('【init-debug】记录的上次环境IDs:', lastUsedEnvironmentIds)
+            logInfo(`【init-debug】记录的上次环境IDs: ${JSON.stringify(lastUsedEnvironmentIds)}`)
+
             if (systemSettings?.autoActivateLastUsedEnvironmentOnAppStart) {
                 await autoStartEnvironment(systemSettings, environments)
                 console.log('【init】自动启动上次使用的环境完成')

@@ -13,7 +13,6 @@ export type SystemSettings = {
   autoStartAppOnLogin: boolean // 是否开机自启
   autoActivateLastUsedEnvironmentOnAppStart: boolean // 是否在APP启动时自动激活上次使用的环境
   deactivateOtherEnvironmentsOnActivate: boolean // 激活环境时是否自动停用其他环境
-  lastUsedEnvironmentId?: string // 兼容字段：最后使用的环境ID（单个）
   lastUsedEnvironmentIds?: string[] // 支持多个最后使用的环境ID，按激活先后排序
   stopAllServicesOnExit: boolean // 是否在退出时停止所有服务
   terminalTool?: string // 终端工具选择
