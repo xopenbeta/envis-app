@@ -98,6 +98,7 @@ export default function Envis() {
         collapsible={true}
         minSize={10}
         className="min-w-0"
+        animateCollapse={true}
         onResize={(size) => {
           if (isNavPanelOpen) setNavPanelWidthRatio(size);
         }}

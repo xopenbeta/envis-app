@@ -1,7 +1,9 @@
 'use client'
 
+import React, { forwardRef } from 'react'
 import { DragHandleDots2Icon } from '@radix-ui/react-icons'
 import * as ResizablePrimitive from 'react-resizable-panels'
+import type { ImperativePanelHandle } from 'react-resizable-panels'
 
 import { cn } from '@/lib/utils'
 
@@ -15,7 +17,20 @@ const ResizablePanelGroup = ({
   />
 )
 
-const ResizablePanel = ResizablePrimitive.Panel
+type PanelProps = React.ComponentProps<typeof ResizablePrimitive.Panel> & {
+  animateCollapse?: boolean
+}
+
+const ResizablePanel = forwardRef<
+  ImperativePanelHandle,
+  PanelProps
+>(({ className, animateCollapse, ...props }, ref) => (
+  <ResizablePrimitive.Panel
+    ref={ref as any}
+    className={cn(animateCollapse ? 'transition-all duration-200 ease-in-out' : '', className)}
+    {...props}
+  />
+))
 
 const ResizableHandle = ({
   withHandle,
