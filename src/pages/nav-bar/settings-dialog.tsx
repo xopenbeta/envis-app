@@ -795,7 +795,7 @@ export default function SettingsDialog(props: {
               </div>
 
               {/* 高级设置 */}
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Monitor className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-medium">{t('settings.advanced_settings')}</h3>
@@ -823,7 +823,7 @@ export default function SettingsDialog(props: {
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
           </TabsContent>
 
