@@ -37,23 +37,13 @@ impl Default for AppConfig {
         let home_dir = dirs::home_dir().expect("无法获取用户主目录");
         let envis_dir = home_dir.join(ENVIS_DIR);
 
-        // 根据操作系统设置默认终端
-        #[cfg(target_os = "windows")]
-        let default_terminal = Some("powershell".to_string());
-        
-        #[cfg(target_os = "macos")]
-        let default_terminal = Some("terminal".to_string());
-        
-        #[cfg(target_os = "linux")]
-        let default_terminal = Some("gnome-terminal".to_string());
-
         Self {
             envis_folder: envis_dir.to_string_lossy().to_string(),
             auto_start_app_on_login: false,
             auto_activate_last_used_environment_on_app_start: true,
             last_used_environment_ids: vec![],
             stop_all_services_on_exit: false,
-            terminal_tool: default_terminal,
+            terminal_tool: None,
             deactivate_other_environments_on_activate: true,
             show_environment_name_on_terminal_open: true,
             show_service_info_on_terminal_open: false,

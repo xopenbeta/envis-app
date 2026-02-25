@@ -669,22 +669,18 @@ export default function SettingsDialog(props: {
                 <div className="space-y-3 pl-6">
                   <div className="space-y-2">
                     <Label htmlFor="terminal">{t('settings.terminal_program')}</Label>
-                    <Select
-                      value={systemSettings?.terminalTool}
-                      onValueChange={(value) =>
-                        updateSystemSettings({ terminalTool: value })
+                    <Input
+                      id="terminal"
+                      value={systemSettings?.terminalTool || ''}
+                      onChange={(e) =>
+                        updateSystemSettings({ terminalTool: e.target.value })
                       }
-                    >
-                      <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
-                        <SelectValue placeholder={t('settings.select_terminal')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="system">{t('settings.system_default')}</SelectItem>
-                        <SelectItem value="iterm2">iTerm2</SelectItem>
-                        <SelectItem value="terminal">Terminal.app</SelectItem>
-                        <SelectItem value="warp">Warp</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder={t('settings.system_default')}
+                      className="shadow-none bg-content2 dark:bg-content3"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t('settings.terminal_program_desc')}
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-between">

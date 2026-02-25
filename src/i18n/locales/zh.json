@@ -292,6 +292,7 @@
     "terminal_program": "终端程序",
     "select_terminal": "选择终端程序",
     "system_default": "系统默认",
+    "terminal_program_desc": "留空时使用系统默认终端；填写程序名或应用路径时使用该终端。",
     "path_settings": "路径设置",
     "service_data_folder": "服务程序与环境数据所在文件夹",
     "select_folder": "选择文件夹",

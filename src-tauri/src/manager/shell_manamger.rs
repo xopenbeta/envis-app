@@ -1041,22 +1041,44 @@ alias mise=envis
         Ok(())
     }
 
-    /// 根据指定的终端类型打开终端窗口
+    /// 根据指定的终端配置打开终端窗口
+    /// - None 或空字符串：使用系统默认策略
+    /// - 非空字符串：视为终端程序名或可执行文件路径
     pub fn open_terminal_with_type(terminal_type: Option<String>) -> Result<()> {
+        let configured_terminal = terminal_type
+            .and_then(|value| {
+                let trimmed = value.trim().to_string();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed)
+                }
+            });
+
         #[cfg(target_os = "macos")]
         {
-            let terminal_app = match terminal_type.as_deref() {
-                Some("iterm2") => "iTerm",
-                Some("terminal") => "Terminal",
-                Some("warp") => "Warp",
-                _ => "Terminal", // 默认使用 Terminal.app
-            };
-
-            Command::new("open")
-                .arg("-a")
-                .arg(terminal_app)
-                .status()
-                .context(format!("打开终端 {} 失败", terminal_app))?;
+            match configured_terminal.as_deref() {
+                Some(custom) if custom.contains('/') => {
+                    Command::new("open")
+                        .arg(custom)
+                        .status()
+                        .context(format!("打开终端 {} 失败", custom))?;
+                }
+                Some(custom) => {
+                    Command::new("open")
+                        .arg("-a")
+                        .arg(custom)
+                        .status()
+                        .context(format!("打开终端 {} 失败", custom))?;
+                }
+                None => {
+                    Command::new("open")
+                        .arg("-a")
+                        .arg("Terminal")
+                        .status()
+                        .context("打开系统默认终端失败")?;
+                }
+            }
         }
 
         #[cfg(target_os = "windows")]
@@ -1064,37 +1086,13 @@ alias mise=envis
             // 获取用户主目录
             let home_dir = dirs::home_dir().context("无法获取用户主目录")?;
 
-            match terminal_type.as_deref() {
-                Some("powershell") => {
-                    // 使用 start 命令在新窗口中打开 PowerShell，并切换到用户目录
-                    let ps_command = format!(
-                        "start powershell -NoExit -Command \"Set-Location '{}'\"",
-                        home_dir.display()
-                    );
-                    Command::new("cmd")
-                        .args(["/C", &ps_command])
+            match configured_terminal.as_deref() {
+                Some(custom_terminal) => {
+                    Command::new(custom_terminal)
                         .spawn()
-                        .context("打开 PowerShell 失败")?;
+                        .context(format!("打开终端 {} 失败", custom_terminal))?;
                 }
-                Some("pwsh") => {
-                    // 使用 start 命令在新窗口中打开 PowerShell Core，并切换到用户目录
-                    let pwsh_command = format!(
-                        "start pwsh -NoExit -Command \"Set-Location '{}'\"",
-                        home_dir.display()
-                    );
-                    Command::new("cmd")
-                        .args(["/C", &pwsh_command])
-                        .spawn()
-                        .context("打开 PowerShell Core 失败")?;
-                }
-                Some("wt") => {
-                    // Windows Terminal 可以直接启动，并设置工作目录
-                    Command::new("wt")
-                        .args(["-d", home_dir.to_str().unwrap_or("%USERPROFILE%")])
-                        .spawn()
-                        .context("打开 Windows Terminal 失败")?;
-                }
-                _ => {
+                None => {
                     // 默认使用 cmd，在新窗口中打开，并切换到用户目录
                     let cmd_command = format!("start cmd /K \"cd /d {}\"", home_dir.display());
                     Command::new("cmd")
@@ -1107,15 +1105,9 @@ alias mise=envis
 
         #[cfg(target_os = "linux")]
         {
-            let terminal_cmd = match terminal_type.as_deref() {
-                Some("konsole") => "konsole",
-                Some("xterm") => "xterm",
-                Some("alacritty") => "alacritty",
-                Some("kitty") => "kitty",
-                _ => "gnome-terminal", // 默认使用 gnome-terminal
-            };
+            let terminal_cmd = configured_terminal.unwrap_or_else(|| "gnome-terminal".to_string());
 
-            Command::new(terminal_cmd)
+            Command::new(&terminal_cmd)
                 .status()
                 .context(format!("打开终端 {} 失败", terminal_cmd))?;
         }

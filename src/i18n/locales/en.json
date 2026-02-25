@@ -289,6 +289,7 @@
     "terminal_program": "Terminal Program",
     "select_terminal": "Select Terminal Program",
     "system_default": "System Default",
+    "terminal_program_desc": "Leave empty to use the system default terminal; enter an app name or executable path to use that terminal.",
     "path_settings": "Path Settings",
     "service_data_folder": "Service Program and Environment Data Folder",
     "select_folder": "Select Folder",
