@@ -621,24 +621,6 @@ export default function SettingsDialog(props: {
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="startLastEnv">{t('settings.start_last_env')}</Label>
-                      <p className="text-xs text-muted-foreground">{t('settings.start_last_env_desc')}</p>
-                    </div>
-                    <Switch
-                      id="startLastEnv"
-                      checked={systemSettings?.autoActivateLastUsedEnvironmentOnAppStart}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ autoActivateLastUsedEnvironmentOnAppStart: checked });
-                        } catch (e) {
-                          toast.error(t('settings.setting_failed'));
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
                       <Label htmlFor="stopOnExit">{t('settings.stop_on_exit')}</Label>
                       <p className="text-xs text-muted-foreground">{t('settings.stop_on_exit_desc')}</p>
                     </div>
@@ -655,6 +637,25 @@ export default function SettingsDialog(props: {
                       }}
                     />
                   </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="startLastEnv">{t('settings.start_last_env')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('settings.start_last_env_desc')}</p>
+                    </div>
+                    <Switch
+                      id="startLastEnv"
+                      checked={systemSettings?.autoActivateLastUsedEnvironmentOnAppStart}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          await updateSystemSettings({ autoActivateLastUsedEnvironmentOnAppStart: checked });
+                        } catch (e) {
+                          toast.error(t('settings.setting_failed'));
+                        }
+                      }}
+                    />
+                  </div>
+
                 </div>
               </div>
 
