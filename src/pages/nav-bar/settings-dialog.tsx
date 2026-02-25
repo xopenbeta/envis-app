@@ -48,7 +48,7 @@ function ServiceRow({ service, onDelete, getReferences }: {
       onDelete(service.type, service.version)
       setShowDeleteDialog(false)
     } catch (error) {
-      console.error('删除服务失败:', error)
+      console.error(t('settings.delete_service_error'), error)
     } finally {
       setLoading(false)
     }
@@ -631,7 +631,7 @@ export default function SettingsDialog(props: {
                         try {
                           await updateSystemSettings({ autoActivateLastUsedEnvironmentOnAppStart: checked });
                         } catch (e) {
-                          toast.error('设置失败');
+                          toast.error(t('settings.setting_failed'));
                         }
                       }}
                     />
@@ -688,8 +688,8 @@ export default function SettingsDialog(props: {
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="showEnvName">打开终端时显示环境名称</Label>
-                      <p className="text-xs text-muted-foreground">在打开的终端中显示当前激活的环境名称</p>
+                      <Label htmlFor="showEnvName">{t('settings.show_env_name')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('settings.show_env_name_desc')}</p>
                     </div>
                     <Switch
                       id="showEnvName"
@@ -706,8 +706,8 @@ export default function SettingsDialog(props: {
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label htmlFor="showServiceInfo">打开终端时显示服务信息</Label>
-                      <p className="text-xs text-muted-foreground">在打开的终端中显示当前环境所有服务的名称和版本</p>
+                      <Label htmlFor="showServiceInfo">{t('settings.show_service_info')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('settings.show_service_info_desc')}</p>
                     </div>
                     <Switch
                       id="showServiceInfo"

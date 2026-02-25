@@ -117,7 +117,10 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 处理环境选择
   const onEnvItemClick = async (environment: Environment) => {
-    if (selectedEnvironmentId === environment.id) return
+    if (selectedEnvironmentId === environment.id) {
+      setSelectedServiceDataId('') // 再次点击已选环境则取消选中服务，展示环境信息页
+      return
+    }
     await switchEnvAndServDatas(environment)
   }
 
