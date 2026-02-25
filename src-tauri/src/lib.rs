@@ -9,28 +9,29 @@ mod window;
 use manager::app_config_manager::initialize_config_manager;
 use manager::env_serv_data_manager::initialize_env_serv_data_manager;
 use manager::environment_manager::initialize_environment_manager;
+use manager::exit_cleanup_manager::cleanup_on_app_close;
 use manager::service_manager::initialize_service_manager;
 use manager::shell_manamger::initialize_shell_manager;
-use tauri_command::app_config_commands::{get_app_config, set_app_config, open_app_config_folder};
+use tauri::Manager;
+use tauri_command::app_config_commands::{get_app_config, open_app_config_folder, set_app_config};
 use tauri_command::env_serv_data_commands::*;
 use tauri_command::environment_commands::*;
 use tauri_command::file_commands::*;
 use tauri_command::service_commands::*;
 use tauri_command::services::custom_commands::*;
+use tauri_command::services::dnsmasq_commands::*;
 use tauri_command::services::host_commands::*;
+use tauri_command::services::java_commands::*;
 use tauri_command::services::mariadb_commands::*;
 use tauri_command::services::mongodb_commands::*;
 use tauri_command::services::mysql_commands::*;
 use tauri_command::services::nginx_commands::*;
 use tauri_command::services::nodejs_commands::*;
-use tauri_command::services::java_commands::*;
 use tauri_command::services::postgresql_commands::*;
 use tauri_command::services::python_commands::*;
 use tauri_command::services::ssl_commands::*;
-use tauri_command::services::dnsmasq_commands::*;
 use tauri_command::system_info_commands::*;
 use tauri_plugin_log::{Target, TargetKind};
-use tauri::Manager;
 
 // 在移动端构建时：相当于给 run 函数加上 #[tauri::mobile_entry_point]，让它成为移动端入口。
 // 在桌面端构建时：不会添加这个属性，run 只是普通函数，你通常会在 main() 里调用它。
@@ -38,28 +39,28 @@ use tauri::Manager;
 pub fn run() {
     // 检查是否是 CLI 模式（有命令行参数）
     let is_cli_mode = std::env::args().len() > 1;
-    
+
     let mut builder = tauri::Builder::default();
-    
+
     // 只在非 CLI 模式下启用单实例插件
     if !is_cli_mode {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             log::debug!("检测到尝试启动新实例");
             log::debug!("启动参数: {:?}", args);
             log::debug!("工作目录: {}", cwd);
-            
+
             // 获取主窗口并聚焦
             if let Some(window) = app.get_webview_window("main") {
                 // 显示窗口（如果被最小化）
                 if let Err(e) = window.show() {
                     log::error!("显示窗口失败: {}", e);
                 }
-                
+
                 // 取消最小化
                 if let Err(e) = window.unminimize() {
                     log::error!("取消最小化失败: {}", e);
                 }
-                
+
                 // 聚焦窗口
                 if let Err(e) = window.set_focus() {
                     log::error!("聚焦窗口失败: {}", e);
@@ -72,7 +73,7 @@ pub fn run() {
         }));
     }
 
-    builder
+    let app = builder
         .plugin(
             tauri_plugin_log::Builder::new()
                 .targets(if is_cli_mode {
@@ -99,8 +100,8 @@ pub fn run() {
             let _ = initialize_environment_manager(); // 初始化环境管理器
             let _ = initialize_env_serv_data_manager(); // 初始化环境服务数据管理器
             let _ = initialize_service_manager(); // 初始化服务管理器
-            // Host 管理器延迟初始化，在第一次调用时自动创建
-            // let _ = initialize_host_manager();
+                                                  // Host 管理器延迟初始化，在第一次调用时自动创建
+                                                  // let _ = initialize_host_manager();
 
             if !is_cli_mode {
                 log::info!("GUI 模式启动成功");
@@ -336,6 +337,16 @@ pub fn run() {
                 _ => {}
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    let mut has_cleaned = false;
+    app.run(move |_app_handle, event| {
+        if matches!(event, tauri::RunEvent::ExitRequested { .. }) && !is_cli_mode && !has_cleaned {
+            has_cleaned = true;
+            if let Err(e) = cleanup_on_app_close() {
+                log::error!("应用退出清理失败: {}", e);
+            }
+        }
+    });
 }

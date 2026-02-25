@@ -2,6 +2,7 @@ pub mod app_config_manager;
 pub mod builders;
 pub mod env_serv_data_manager;
 pub mod environment_manager;
+pub mod exit_cleanup_manager;
 pub mod file_manager;
 pub mod host_manager;
 pub mod service_manager;
