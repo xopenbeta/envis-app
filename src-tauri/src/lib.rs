@@ -342,11 +342,30 @@ pub fn run() {
 
     let mut has_cleaned = false;
     app.run(move |_app_handle, event| {
-        if matches!(event, tauri::RunEvent::ExitRequested { .. }) && !is_cli_mode && !has_cleaned {
-            has_cleaned = true;
-            if let Err(e) = cleanup_on_app_close() {
-                log::error!("应用退出清理失败: {}", e);
+        match event {
+            tauri::RunEvent::ExitRequested { .. } => {
+                log::info!("收到 RunEvent::ExitRequested，is_cli_mode={}, has_cleaned={}", is_cli_mode, has_cleaned);
+                if !is_cli_mode && !has_cleaned {
+                    has_cleaned = true;
+                    if let Err(e) = cleanup_on_app_close() {
+                        log::error!("应用退出清理失败(ExitRequested): {}", e);
+                    } else {
+                        log::info!("应用退出清理完成(ExitRequested)");
+                    }
+                }
             }
+            tauri::RunEvent::Exit => {
+                log::info!("收到 RunEvent::Exit，is_cli_mode={}, has_cleaned={}", is_cli_mode, has_cleaned);
+                if !is_cli_mode && !has_cleaned {
+                    has_cleaned = true;
+                    if let Err(e) = cleanup_on_app_close() {
+                        log::error!("应用退出清理失败(Exit): {}", e);
+                    } else {
+                        log::info!("应用退出清理完成(Exit)");
+                    }
+                }
+            }
+            _ => {}
         }
     });
 }
