@@ -8,7 +8,8 @@ import {
     ipcCheckPythonUvInstalled,
     ipcGetPythonVenvs,
     ipcCreatePythonVenv,
-    ipcRemovePythonVenv
+    ipcRemovePythonVenv,
+    ipcOpenPythonVenvTerminal
 } from "../../ipc/services/python";
 
 export function usePythonService() {
@@ -61,6 +62,11 @@ export function usePythonService() {
         return ipcRes;
     }
 
+    async function openVenvTerminal(environmentId: string, serviceData: ServiceData, venvName: string) {
+        const ipcRes = await ipcOpenPythonVenvTerminal(environmentId, serviceData, venvName);
+        return ipcRes;
+    }
+
     return {
         getPipConfig,
         setPipIndexUrl,
@@ -70,6 +76,7 @@ export function usePythonService() {
         checkUvInstalled,
         getVenvs,
         createVenv,
-        removeVenv
+        removeVenv,
+        openVenvTerminal
     }
 }

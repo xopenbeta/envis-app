@@ -41,3 +41,7 @@ export const ipcCreatePythonVenv = ipcLogFunc('创建 venv', async (environmentI
 export const ipcRemovePythonVenv = ipcLogFunc('删除 venv', async (environmentId: string, serviceData: ServiceData, venvName: string): Promise<IPCResult> => {
     return invokeCommand(`remove_python_venv`, { environmentId, serviceData, venvName })
 })
+
+export const ipcOpenPythonVenvTerminal = ipcLogFunc('打开终端并激活 venv', async (environmentId: string, serviceData: ServiceData, venvName: string): Promise<IPCResult> => {
+    return invokeCommand(`open_python_venv_terminal`, { environmentId, serviceData, venvName })
+})

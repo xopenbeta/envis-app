@@ -187,6 +187,81 @@ impl PythonService {
         Ok(())
     }
 
+    /// 打开终端并激活指定 venv
+    pub fn open_venv_terminal(
+        &self,
+        environment_id: &str,
+        service_data: &ServiceData,
+        venv_name: &str,
+    ) -> Result<()> {
+        let venvs_dir = self.get_venvs_dir(environment_id, service_data)?;
+        let venv_path = venvs_dir.join(venv_name);
+        if !venv_path.exists() {
+            return Err(anyhow!("venv 不存在: {}", venv_path.display()));
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            let activate_bat = venv_path.join("Scripts").join("activate.bat");
+            if !activate_bat.exists() {
+                return Err(anyhow!("激活脚本不存在: {}", activate_bat.display()));
+            }
+
+            Command::new("cmd")
+                .args([
+                    "/C",
+                    &format!("start cmd /K \"{}\"", activate_bat.display()),
+                ])
+                .spawn()?;
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            let activate_script = venv_path.join("bin").join("activate");
+            if !activate_script.exists() {
+                return Err(anyhow!("激活脚本不存在: {}", activate_script.display()));
+            }
+
+            let escaped_activate = activate_script
+                .to_string_lossy()
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"");
+            let shell_command = format!("source \"{}\"", escaped_activate);
+            let applescript = format!(
+                "tell application \"Terminal\"\nactivate\ndo script \"{}\"\nend tell",
+                shell_command.replace('"', "\\\"")
+            );
+
+            Command::new("osascript")
+                .arg("-e")
+                .arg(applescript)
+                .spawn()?;
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            let activate_script = venv_path.join("bin").join("activate");
+            if !activate_script.exists() {
+                return Err(anyhow!("激活脚本不存在: {}", activate_script.display()));
+            }
+
+            let escaped_activate = activate_script.to_string_lossy().replace('"', "\\\"");
+            let command = format!("source \"{}\" && exec bash", escaped_activate);
+
+            let try_gnome = Command::new("gnome-terminal")
+                .args(["--", "bash", "-lc", &command])
+                .spawn();
+
+            if try_gnome.is_err() {
+                Command::new("x-terminal-emulator")
+                    .args(["-e", &format!("bash -lc '{}'; exec bash", command.replace('"', "\\\""))])
+                    .spawn()?;
+            }
+        }
+
+        Ok(())
+    }
+
     /// 创建新的 Python 服务管理器（内部使用）
     fn new() -> Self {
         Self {}

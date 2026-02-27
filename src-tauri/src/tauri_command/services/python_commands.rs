@@ -301,3 +301,17 @@ pub async fn remove_python_venv(
         Err(e) => Ok(CommandResponse::error(format!("删除 venv 失败: {}", e))),
     }
 }
+
+/// 打开终端并激活 venv
+#[tauri::command]
+pub async fn open_python_venv_terminal(
+    environment_id: String,
+    service_data: ServiceData,
+    venv_name: String,
+) -> Result<CommandResponse, String> {
+    let python_service = PythonService::global();
+    match python_service.open_venv_terminal(&environment_id, &service_data, &venv_name) {
+        Ok(_) => Ok(CommandResponse::success("已打开终端并激活 venv".to_string(), None)),
+        Err(e) => Ok(CommandResponse::error(format!("打开终端失败: {}", e))),
+    }
+}

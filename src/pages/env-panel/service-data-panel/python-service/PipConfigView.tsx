@@ -66,18 +66,21 @@ export function PipConfigView({
             const res = await setPython3AsPython(selectedEnvironmentId, serviceData, enable)
             if (res && (res as any).success) {
                 setPython3AsPythonState(enable)
+                toast.success(t(enable ? 'python_service.alias_set_success_enable' : 'python_service.alias_set_success_disable'))
             } else {
                 console.error('设置 python3 别名失败:', res)
+                toast.error(t('python_service.alias_set_failed'))
             }
         } catch (error) {
             console.error('设置 python3 别名异常:', error)
+            toast.error(t('python_service.alias_set_failed'))
         } finally {
             setIsLoading(false)
         }
     }
 
     return (
-        <div className="w-full p-3 space-y-6">
+        <div className="w-full p-3 pb-0">
             <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 {/* Index URL Configuration */}
                 <div>
@@ -85,14 +88,14 @@ export function PipConfigView({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    pip下载源 (index-url)
+                                    {t('python_service.pip_index_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
                             <TooltipContent>
                                 <div className="text-xs space-y-1">
-                                    <div>作用: 记录 <code>PIP_INDEX_URL</code> 并写入终端配置</div>
-                                    <div>查看当前源: <code>echo $PIP_INDEX_URL</code></div>
+                                    <div>{t('python_service.pip_index_tooltip_desc')} <code>PIP_INDEX_URL</code> {t('python_service.pip_index_tooltip_desc_suffix')}</div>
+                                    <div>{t('python_service.pip_index_tooltip_view')} <code>echo $PIP_INDEX_URL</code></div>
                                 </div>
                             </TooltipContent>
                         </Tooltip>
@@ -101,7 +104,7 @@ export function PipConfigView({
                         <Input
                             value={config?.indexUrl || ''}
                             onChange={(e) => setConfig(prev => prev ? { ...prev, indexUrl: e.target.value } : { indexUrl: e.target.value, trustedHost: '' })}
-                            placeholder="镜像源地址"
+                            placeholder={t('python_service.pip_index_placeholder')}
                             disabled={isLoading || !isServiceDataActive}
                             className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         />
@@ -112,13 +115,13 @@ export function PipConfigView({
                             disabled={isLoading || !isServiceDataActive}
                             className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            应用
+                            {t('python_service.apply')}
                         </Button>
                     </div>
 
                     {/* Quick Index URL Options */}
                     <div className="flex flex-wrap gap-2 items-center mt-3">
-                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">快速设置</Label>
+                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('python_service.quick_set')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
@@ -126,7 +129,7 @@ export function PipConfigView({
                             disabled={isLoading || !isServiceDataActive}
                             className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            官方源
+                            {t('python_service.official')}
                         </Button>
                         <Button
                             size="sm"
@@ -135,7 +138,7 @@ export function PipConfigView({
                             disabled={isLoading || !isServiceDataActive}
                             className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            清华源
+                            {t('python_service.tuna')}
                         </Button>
                         <Button
                             size="sm"
@@ -144,7 +147,7 @@ export function PipConfigView({
                             disabled={isLoading || !isServiceDataActive}
                             className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            阿里源
+                            {t('python_service.aliyun')}
                         </Button>
                         <Button
                             size="sm"
@@ -153,7 +156,7 @@ export function PipConfigView({
                             disabled={isLoading || !isServiceDataActive}
                             className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
-                            恢复默认
+                            {t('python_service.reset_default')}
                         </Button>
                     </div>
                 </div>
@@ -165,17 +168,17 @@ export function PipConfigView({
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div className="flex items-center gap-1.5 cursor-help w-fit">
-                                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">python/pip 别名设置</Label>
+                                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('python_service.alias_label')}</Label>
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>为 python3 和 pip3 创建 python 和 pip 别名</p>
+                                    <p>{t('python_service.alias_tooltip')}</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                            启用后，在终端中使用 python/pip 命令将分别执行 python3/pip3
+                            {t('python_service.alias_desc')}
                         </p>
                     </div>
                     <div className="flex items-center space-x-2">

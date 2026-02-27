@@ -306,6 +306,7 @@ pub fn run() {
             get_python_venvs,
             create_python_venv,
             remove_python_venv,
+            open_python_venv_terminal,
             // SSL 证书服务命令
             check_ca_initialized,
             initialize_ca,
