@@ -236,6 +236,17 @@ pub async fn check_python_venv_support(version: String) -> Result<CommandRespons
     Ok(CommandResponse::success("检查成功".to_string(), Some(data)))
 }
 
+/// 检查系统中是否安装 uv
+#[tauri::command]
+pub async fn check_python_uv_installed() -> Result<CommandResponse, String> {
+    let python_service = PythonService::global();
+    let installed = python_service.check_uv_installed();
+    let data = serde_json::json!({
+        "installed": installed
+    });
+    Ok(CommandResponse::success("检查成功".to_string(), Some(data)))
+}
+
 /// 获取 venv 列表
 #[tauri::command]
 pub async fn get_python_venvs(

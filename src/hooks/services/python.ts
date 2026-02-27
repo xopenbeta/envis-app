@@ -5,6 +5,7 @@ import {
     ipcSetPipTrustedHost, 
     ipcSetPython3AsPython,
     ipcCheckPythonVenvSupport,
+    ipcCheckPythonUvInstalled,
     ipcGetPythonVenvs,
     ipcCreatePythonVenv,
     ipcRemovePythonVenv
@@ -40,6 +41,11 @@ export function usePythonService() {
         return ipcRes;
     }
 
+    async function checkUvInstalled() {
+        const ipcRes = await ipcCheckPythonUvInstalled();
+        return ipcRes;
+    }
+
     async function getVenvs(environmentId: string, serviceData: ServiceData) {
         const ipcRes = await ipcGetPythonVenvs(environmentId, serviceData);
         return ipcRes;
@@ -61,6 +67,7 @@ export function usePythonService() {
         setPipTrustedHost,
         setPython3AsPython,
         checkVenvSupport,
+        checkUvInstalled,
         getVenvs,
         createVenv,
         removeVenv

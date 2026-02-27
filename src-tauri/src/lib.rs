@@ -302,6 +302,7 @@ pub fn run() {
             set_python3_as_python,
             // venv 命令
             check_python_venv_support,
+            check_python_uv_installed,
             get_python_venvs,
             create_python_venv,
             remove_python_venv,

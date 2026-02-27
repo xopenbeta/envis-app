@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useTranslation } from "react-i18next"
 
 interface VenvViewProps {
     selectedEnvironmentId: string
@@ -32,6 +33,7 @@ interface VenvViewProps {
 }
 
 export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) {
+    const { t } = useTranslation()
     const { checkVenvSupport, getVenvs, createVenv, removeVenv } = usePythonService()
     
     // null: checking, true: supported, false: not supported
@@ -83,28 +85,27 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
             }
         } catch (e) {
             console.error(e)
-            toast.error("加载虚拟环境列表失败")
         }
     }
 
     const handleCreate = async () => {
         if (!newVenvName.trim()) {
-             toast.error("请输入环境名称")
+             toast.error(t('python_service.enter_venv_name'))
              return
         }
         setIsCreating(true)
         try {
             const res = await createVenv(selectedEnvironmentId, serviceData, newVenvName)
             if (res.success) {
-                toast.success("创建虚拟环境成功")
+                toast.success(t('python_service.create_venv_success'))
                 setShowCreateDialog(false)
                 setNewVenvName("")
                 loadVenvs()
             } else {
-                toast.error("创建失败: " + res.message)
+                toast.error(t('python_service.create_venv_failed', { message: res.message }))
             }
         } catch (e) {
-            toast.error("创建失败: " + String(e))
+            toast.error(t('python_service.create_venv_failed', { message: String(e) }))
         } finally {
             setIsCreating(false)
         }
@@ -116,13 +117,12 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
         try {
             const res = await removeVenv(selectedEnvironmentId, serviceData, name)
             if (res.success) {
-                 toast.success("删除成功")
                  loadVenvs()
             } else {
-                 toast.error("删除失败: " + res.message)
+                 toast.error(t('python_service.remove_venv_failed', { message: res.message }))
             }
         } catch (e) {
-            toast.error("删除失败: " + String(e))
+            toast.error(t('python_service.remove_venv_failed', { message: String(e) }))
         }
     }
 

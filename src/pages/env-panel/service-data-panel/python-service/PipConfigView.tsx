@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { usePythonService } from '@/hooks/services/python'
+import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 interface PipConfigViewProps {
     selectedEnvironmentId: string
@@ -19,6 +21,7 @@ export function PipConfigView({
     selectedEnvironmentId,
     serviceData,
 }: PipConfigViewProps) {
+    const { t } = useTranslation()
     const { setPipIndexUrl, setPython3AsPython } = usePythonService()
     const [config, setConfig] = useState<{ indexUrl: string; trustedHost: string } | null>(null)
     const [python3AsPython, setPython3AsPythonState] = useState(false)
@@ -40,10 +43,16 @@ export function PipConfigView({
             const res = await setPipIndexUrl(selectedEnvironmentId, serviceData, indexUrl)
             if (res && (res as any).success) {
                 setConfig(prev => prev ? { ...prev, indexUrl } : { indexUrl, trustedHost: '' })
+                toast.success(t('python_service.pip_index_set_success'))
             } else {
                 console.error('设置 index-url 失败:', res)
+                toast.error(t('python_service.pip_index_set_failed'))
             }
             return res
+        } catch (error) {
+            console.error('设置 index-url 异常:', error)
+            toast.error(t('python_service.pip_index_set_failed'))
+            throw error
         } finally {
             setIsLoading(false)
         }
@@ -60,6 +69,8 @@ export function PipConfigView({
             } else {
                 console.error('设置 python3 别名失败:', res)
             }
+        } catch (error) {
+            console.error('设置 python3 别名异常:', error)
         } finally {
             setIsLoading(false)
         }

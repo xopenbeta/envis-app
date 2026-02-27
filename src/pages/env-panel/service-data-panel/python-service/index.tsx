@@ -1,8 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Environment, ServiceData } from '@/types/index'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
-    Settings
+    AlertTriangle
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { usePythonService } from '@/hooks/services/python'
 import { PipConfigView } from './PipConfigView'
 import { VenvView } from './VenvView'
 
@@ -12,9 +14,36 @@ interface PythonServiceProps {
 }
 
 export function PythonService({ serviceData, selectedEnvironment }: PythonServiceProps) {
+    const { checkUvInstalled } = usePythonService()
+    const [uvInstalled, setUvInstalled] = useState(false)
+
+    useEffect(() => {
+        checkUvInstalled().then((res) => {
+            if (res && (res as any).success && (res as any).data) {
+                setUvInstalled((res as any).data.installed === true)
+                return
+            }
+            setUvInstalled(false)
+        }).catch(() => {
+            setUvInstalled(false)
+        })
+    }, [serviceData.id, serviceData.version])
 
     return (
         <div className="flex flex-col">
+            {uvInstalled && (
+                <div className="w-full p-3 pb-0">
+                    <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/20">
+                        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                        <AlertTitle className="text-red-800 dark:text-red-500 text-xs font-semibold flex items-center gap-2">
+                            检测到 uv 可能冲突
+                        </AlertTitle>
+                        <AlertDescription className="text-red-700 dark:text-red-600/90 text-xs mt-1.5">
+                            检测到系统中已安装 uv。当前 Python 服务与 uv 不兼容，可能导致环境变量、包安装或命令行为异常，请禁用或卸载 uv。
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            )}
             <PipConfigView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}

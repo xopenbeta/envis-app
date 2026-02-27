@@ -82,6 +82,33 @@ impl PythonService {
         false
     }
 
+    /// 检查系统中是否存在 uv
+    pub fn check_uv_installed(&self) -> bool {
+        if std::env::var("UV_INSTALL_DIR").is_ok() {
+            log::info!("检测到 UV_INSTALL_DIR 环境变量，判定 uv 已安装");
+            return true;
+        }
+
+        let exists = if cfg!(target_os = "windows") {
+            Command::new("where")
+                .arg("uv")
+                .output()
+                .map(|output| output.status.success())
+                .unwrap_or(false)
+        } else {
+            let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+            Command::new(&shell)
+                .arg("-lc")
+                .arg("command -v uv >/dev/null 2>&1")
+                .output()
+                .map(|output| output.status.success())
+                .unwrap_or(false)
+        };
+
+        log::info!("uv 检测结果: {}", exists);
+        exists
+    }
+
     /// 获取 venvs 存储目录
     pub fn get_venvs_dir(
         &self,

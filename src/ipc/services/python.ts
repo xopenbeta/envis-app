@@ -26,6 +26,10 @@ export const ipcCheckPythonVenvSupport = ipcLogFunc('检查 venv 支持', async 
     return invokeCommand(`check_python_venv_support`, { version })
 })
 
+export const ipcCheckPythonUvInstalled = ipcLogFunc('检查 uv 是否安装', async (): Promise<IPCResult<{ installed: boolean }>> => {
+    return invokeCommand(`check_python_uv_installed`)
+})
+
 export const ipcGetPythonVenvs = ipcLogFunc('获取 venv 列表', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{ venvs: string[], venvsDir: string }>> => {
     return invokeCommand(`get_python_venvs`, { environmentId, serviceData })
 })

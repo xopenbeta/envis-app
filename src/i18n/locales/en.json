@@ -488,5 +488,18 @@
     "no_packages": "No global packages installed",
     "conflict_manager_title": "Version Manager Conflict Detected",
     "conflict_manager_desc": "The following Node.js version managers were detected: {{managers}}. These tools may conflict with this application. It is recommended to uninstall or disable them before using this application."
+  },
+  "python_service": {
+    "pip_index_set_success": "pip index URL set successfully",
+    "pip_index_set_failed": "Failed to set pip index URL",
+    "alias_set_success_enable": "python/pip alias enabled",
+    "alias_set_success_disable": "python/pip alias disabled",
+    "alias_set_failed": "Failed to set python/pip alias",
+    "load_venvs_failed": "Failed to load virtual environments",
+    "enter_venv_name": "Please enter environment name",
+    "create_venv_success": "Virtual environment created successfully",
+    "create_venv_failed": "Create failed: {{message}}",
+    "remove_venv_success": "Removed successfully",
+    "remove_venv_failed": "Remove failed: {{message}}"
   }
 }

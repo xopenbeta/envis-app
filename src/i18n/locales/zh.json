@@ -454,5 +454,18 @@
     "no_packages": "未安装全局包",
     "conflict_manager_title": "检测到版本管理器冲突",
     "conflict_manager_desc": "检测到系统中存在以下 Node.js 版本管理器: {{managers}}。这些工具可能会与当前应用冲突，建议在使用本应用前卸载或禁用它们。"
+  },
+  "python_service": {
+    "pip_index_set_success": "pip 下载源设置成功",
+    "pip_index_set_failed": "pip 下载源设置失败",
+    "alias_set_success_enable": "python/pip 别名已启用",
+    "alias_set_success_disable": "python/pip 别名已关闭",
+    "alias_set_failed": "python/pip 别名设置失败",
+    "load_venvs_failed": "加载虚拟环境列表失败",
+    "enter_venv_name": "请输入环境名称",
+    "create_venv_success": "创建虚拟环境成功",
+    "create_venv_failed": "创建失败: {{message}}",
+    "remove_venv_success": "删除成功",
+    "remove_venv_failed": "删除失败: {{message}}"
   }
 }
