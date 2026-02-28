@@ -18,6 +18,24 @@ pub async fn check_java_installed(version: String) -> Result<CommandResponse, St
     Ok(CommandResponse::success(message.to_string(), Some(data)))
 }
 
+/// 检查 Maven 是否已安装的 Tauri 命令
+#[tauri::command]
+pub async fn check_maven_installed(version: String) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+    let is_installed = java_service.is_maven_installed(&version);
+    let maven_home = java_service.get_maven_home(&version);
+    let message = if is_installed {
+        "Maven 已安装"
+    } else {
+        "Maven 未安装"
+    };
+    let data = serde_json::json!({
+        "installed": is_installed,
+        "home": maven_home,
+    });
+    Ok(CommandResponse::success(message.to_string(), Some(data)))
+}
+
 /// 获取可用的 Java 版本列表的 Tauri 命令
 #[tauri::command]
 pub async fn get_java_versions() -> Result<CommandResponse, String> {
@@ -111,6 +129,15 @@ pub async fn initialize_maven(
     match java_service.download_and_install_maven(&service_data.version).await {
         Ok(result) => {
             let maven_home = java_service.get_maven_home(&service_data.version);
+
+            if maven_home.is_some() {
+                if let Err(e) = java_service.ensure_maven_settings_use_env_repo(&service_data.version) {
+                    return Ok(CommandResponse::error(format!(
+                        "初始化 Maven 失败: 更新 settings.xml 失败: {}",
+                        e
+                    )));
+                }
+            }
 
             if let Some(maven_home) = maven_home.clone() {
                 let env_serv_data_manager = EnvServDataManager::global();

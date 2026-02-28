@@ -7,6 +7,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
+use xmltree::{Element, EmitterConfig, XMLNode};
 
 /// Java 版本信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,6 +27,9 @@ impl JavaService {
     const MAVEN_VERSION_FOR_JAVA_8: &'static str = "3.8.8";
     const MAVEN_VERSION_FOR_JAVA_11: &'static str = "3.9.6";
     const MAVEN_VERSION_FOR_JAVA_MODERN: &'static str = "3.9.9";
+    const ENVIS_MAVEN_MIRROR_ID: &'static str = "envis-mirror";
+    pub const DEFAULT_MAVEN_REPO_URL: &'static str = "https://repo.maven.apache.org/maven2";
+    const MAVEN_REPO_ENV_PLACEHOLDER: &'static str = "${env.MAVEN_REPO_URL}";
 
     /// 获取全局 Java 服务管理器单例
     pub fn global() -> Arc<JavaService> {
@@ -151,6 +155,186 @@ impl JavaService {
         } else {
             None
         }
+    }
+
+    fn get_maven_settings_path(&self, java_version: &str) -> Option<PathBuf> {
+        self.get_maven_home(java_version)
+            .map(PathBuf::from)
+            .map(|p| p.join("conf").join("settings.xml"))
+    }
+
+    fn find_child<'a>(parent: &'a Element, name: &str) -> Option<&'a Element> {
+        parent.children.iter().find_map(|node| match node {
+            XMLNode::Element(element) if element.name == name => Some(element),
+            _ => None,
+        })
+    }
+
+    fn find_child_mut<'a>(parent: &'a mut Element, name: &str) -> Option<&'a mut Element> {
+        parent.children.iter_mut().find_map(|node| match node {
+            XMLNode::Element(element) if element.name == name => Some(element),
+            _ => None,
+        })
+    }
+
+    fn get_or_insert_child_mut<'a>(parent: &'a mut Element, name: &str) -> &'a mut Element {
+        if let Some(index) = parent
+            .children
+            .iter()
+            .position(|node| matches!(node, XMLNode::Element(element) if element.name == name))
+        {
+            match parent.children.get_mut(index) {
+                Some(XMLNode::Element(element)) => return element,
+                _ => unreachable!(),
+            }
+        }
+
+        parent.children.push(XMLNode::Element(Element::new(name)));
+        match parent.children.last_mut() {
+            Some(XMLNode::Element(element)) => element,
+            _ => unreachable!(),
+        }
+    }
+
+    fn child_text(parent: &Element, child_name: &str) -> Option<String> {
+        Self::find_child(parent, child_name)
+            .and_then(|child| child.get_text())
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+    }
+
+    fn set_child_text(parent: &mut Element, child_name: &str, value: &str) {
+        let child = Self::get_or_insert_child_mut(parent, child_name);
+        child
+            .children
+            .retain(|node| !matches!(node, XMLNode::Text(_) | XMLNode::CData(_)));
+        child.children.push(XMLNode::Text(value.to_string()));
+    }
+
+    fn parse_settings_xml(content: &str) -> Result<Element> {
+        Element::parse(content.as_bytes()).map_err(|e| anyhow!("解析 settings.xml 失败: {}", e))
+    }
+
+    fn write_settings_xml(settings_path: &PathBuf, root: &Element) -> Result<()> {
+        let mut output = Vec::new();
+        let emitter = EmitterConfig::new().perform_indent(true);
+        root.write_with_config(&mut output, emitter)
+            .map_err(|e| anyhow!("序列化 settings.xml 失败: {}", e))?;
+        std::fs::write(settings_path, output)
+            .map_err(|e| anyhow!("写入 settings.xml 失败: {}", e))
+    }
+
+    pub fn ensure_maven_settings_use_env_repo(&self, java_version: &str) -> Result<PathBuf> {
+        self.set_maven_repository_to_settings(java_version, Self::MAVEN_REPO_ENV_PLACEHOLDER)
+    }
+
+    pub fn get_maven_repository_from_settings(&self, java_version: &str) -> Result<Option<String>> {
+        let settings_path = self
+            .get_maven_settings_path(java_version)
+            .ok_or_else(|| anyhow!("Maven 未初始化，无法读取 settings.xml"))?;
+
+        if !settings_path.exists() {
+            return Ok(None);
+        }
+
+        let content = std::fs::read_to_string(&settings_path)
+            .map_err(|e| anyhow!("读取 settings.xml 失败: {}", e))?;
+        let root = Self::parse_settings_xml(&content)?;
+
+        let mirrors = match Self::find_child(&root, "mirrors") {
+            Some(mirrors) => mirrors,
+            None => return Ok(None),
+        };
+
+        for node in &mirrors.children {
+            if let XMLNode::Element(mirror) = node {
+                if mirror.name != "mirror" {
+                    continue;
+                }
+                let mirror_id = Self::child_text(mirror, "id");
+                let url = Self::child_text(mirror, "url");
+                if mirror_id.as_deref() == Some(Self::ENVIS_MAVEN_MIRROR_ID) {
+                    return Ok(url);
+                }
+            }
+        }
+
+        for node in &mirrors.children {
+            if let XMLNode::Element(mirror) = node {
+                if mirror.name != "mirror" {
+                    continue;
+                }
+                if let Some(url) = Self::child_text(mirror, "url") {
+                    return Ok(Some(url));
+                }
+            }
+        }
+
+        Ok(None)
+    }
+
+    pub fn set_maven_repository_to_settings(
+        &self,
+        java_version: &str,
+        repository_url: &str,
+    ) -> Result<PathBuf> {
+        let repository_url = repository_url.trim();
+        if repository_url.is_empty() {
+            return Err(anyhow!("Maven 仓库地址不能为空"));
+        }
+
+        let settings_path = self
+            .get_maven_settings_path(java_version)
+            .ok_or_else(|| anyhow!("Maven 未初始化，无法写入 settings.xml"))?;
+
+        if let Some(parent) = settings_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| anyhow!("创建 Maven 配置目录失败: {}", e))?;
+        }
+
+        let mut root = if settings_path.exists() {
+            let content = std::fs::read_to_string(&settings_path)
+                .map_err(|e| anyhow!("读取 settings.xml 失败: {}", e))?;
+            Self::parse_settings_xml(&content)?
+        } else {
+            Element::new("settings")
+        };
+
+        if root.name != "settings" {
+            return Err(anyhow!("settings.xml 根节点不是 <settings>"));
+        }
+
+        let mirrors = Self::get_or_insert_child_mut(&mut root, "mirrors");
+
+        let mut found = false;
+        for node in mirrors.children.iter_mut() {
+            if let XMLNode::Element(mirror) = node {
+                if mirror.name != "mirror" {
+                    continue;
+                }
+                let mirror_id = Self::child_text(mirror, "id");
+                if mirror_id.as_deref() == Some(Self::ENVIS_MAVEN_MIRROR_ID) {
+                    Self::set_child_text(mirror, "id", Self::ENVIS_MAVEN_MIRROR_ID);
+                    Self::set_child_text(mirror, "name", "Envis Maven Mirror");
+                    Self::set_child_text(mirror, "url", repository_url);
+                    Self::set_child_text(mirror, "mirrorOf", "*");
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if !found {
+            let mut mirror = Element::new("mirror");
+            Self::set_child_text(&mut mirror, "id", Self::ENVIS_MAVEN_MIRROR_ID);
+            Self::set_child_text(&mut mirror, "name", "Envis Maven Mirror");
+            Self::set_child_text(&mut mirror, "url", repository_url);
+            Self::set_child_text(&mut mirror, "mirrorOf", "*");
+            mirrors.children.push(XMLNode::Element(mirror));
+        }
+
+        Self::write_settings_xml(&settings_path, &root)?;
+
+        Ok(settings_path)
     }
 
     /// 构建 Maven 下载 URL 和文件名
@@ -431,6 +615,8 @@ impl JavaService {
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_dir)?;
 
+        self.ensure_maven_settings_use_env_repo(java_version)?;
+
         let _ = std::fs::remove_file(archive_path);
 
         log::info!("Maven 解压和安装完成");
@@ -612,6 +798,16 @@ impl JavaService {
             shell_manager.add_path(&maven_bin)?;
         }
 
+        let metadata_maven_repo_url = service_data
+            .metadata
+            .as_ref()
+            .and_then(|metadata| metadata.get("MAVEN_REPO_URL"))
+            .and_then(|value| value.as_str())
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .unwrap_or(Self::DEFAULT_MAVEN_REPO_URL);
+        shell_manager.add_export("MAVEN_REPO_URL", metadata_maven_repo_url)?;
+
         if let Some(metadata) = &service_data.metadata {
             if let Some(java_opts) = metadata.get("JAVA_OPTS").and_then(|v| v.as_str()) {
                 shell_manager.add_export("JAVA_OPTS", java_opts)?;
@@ -672,6 +868,7 @@ impl JavaService {
         shell_manager.delete_export("JAVA_HOME")?;
         shell_manager.delete_export("JAVA_OPTS")?;
         shell_manager.delete_export("MAVEN_HOME")?;
+        shell_manager.delete_export("MAVEN_REPO_URL")?;
         shell_manager.delete_export("GRADLE_HOME")?;
 
         log::info!("Java {} 服务已取消激活", service_data.version);

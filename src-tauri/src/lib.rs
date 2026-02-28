@@ -176,6 +176,7 @@ pub fn run() {
             install_global_npm_package,
             // Java 服务命令
             check_java_installed,
+            check_maven_installed,
             get_java_versions,
             download_java,
             cancel_download_java,

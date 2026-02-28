@@ -1,6 +1,7 @@
 import { ServiceData } from "@/types/index";
 import { 
     ipcCheckJavaInstalled,
+    ipcCheckMavenInstalled,
     ipcGetJavaVersions,
     ipcDownloadJava,
     ipcCancelDownloadJava,
@@ -18,6 +19,12 @@ export function useJavaService() {
     async function checkJavaInstalled(version: string) {
         const ipcRes = await ipcCheckJavaInstalled(version);
         console.log(`[hooks/java] checkJavaInstalled IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
+    async function checkMavenInstalled(version: string) {
+        const ipcRes = await ipcCheckMavenInstalled(version);
+        console.log(`[hooks/java] checkMavenInstalled IPC 响应:`, ipcRes);
         return ipcRes;
     }
 
@@ -89,6 +96,7 @@ export function useJavaService() {
 
     return {
         checkJavaInstalled,
+        checkMavenInstalled,
         getJavaVersions,
         downloadJava,
         cancelDownloadJava,

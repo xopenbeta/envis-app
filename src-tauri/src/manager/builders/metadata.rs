@@ -333,6 +333,11 @@ http {
             serde_json::Value::String(maven_home),
         );
 
+        metadata.insert(
+            "MAVEN_REPO_URL".to_string(),
+            serde_json::Value::String(JavaService::DEFAULT_MAVEN_REPO_URL.to_string()),
+        );
+
         // 设置 GRADLE_HOME（默认为空）
         metadata.insert(
             "GRADLE_HOME".to_string(),

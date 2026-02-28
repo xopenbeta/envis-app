@@ -7,6 +7,10 @@ export const ipcCheckJavaInstalled = ipcLogFunc('检查 Java 是否已安装', a
     return invokeCommand('check_java_installed', { version })
 })
 
+export const ipcCheckMavenInstalled = ipcLogFunc('检查 Maven 是否已安装', async (version: string): Promise<IPCResult<{ installed: boolean, home?: string }>> => {
+    return invokeCommand('check_maven_installed', { version })
+})
+
 export const ipcGetJavaVersions = ipcLogFunc('获取 Java 版本列表', async (): Promise<IPCResult<{ 
     versions: Array<{
         version: string
