@@ -1,4 +1,4 @@
-import { ipcDeleteService, ipcGetAllInstalledServices, ipcGetServiceDownloadProgress, ipcGetServiceSize, ipcGetServiceVersions } from "../ipc/service";
+import { ipcDeleteService, ipcGetAllInstalledServices, ipcGetServiceDownloadProgress, ipcGetServiceSize, ipcGetServiceVersions, ServiceDownloadOptions } from "../ipc/service";
 import { ServiceType } from "@/types/index";
 import { ipcCheckServiceInstalled, ipcDownloadService, ipcCancelServiceDownload } from "../ipc/service";
 import { toast } from "sonner";
@@ -29,8 +29,13 @@ export function useService() {
         return ipcRes;
     }
 
-    async function downloadService(serviceType: string, version: string, buildMethod: 'prebuilt' | 'from_source' = 'prebuilt') {
-        const res = await ipcDownloadService(serviceType, version, buildMethod);
+    async function downloadService(
+        serviceType: string,
+        version: string,
+        buildMethod: 'prebuilt' | 'from_source' = 'prebuilt',
+        options: ServiceDownloadOptions = {}
+    ) {
+        const res = await ipcDownloadService(serviceType, version, buildMethod, options);
         return res;
     }
 

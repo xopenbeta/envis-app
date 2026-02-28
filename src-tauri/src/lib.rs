@@ -180,6 +180,8 @@ pub fn run() {
             download_java,
             cancel_download_java,
             get_java_download_progress,
+            initialize_maven,
+            get_maven_download_progress,
             get_java_info,
             set_java_home,
             set_java_opts,

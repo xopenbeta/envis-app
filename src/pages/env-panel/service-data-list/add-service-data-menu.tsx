@@ -13,6 +13,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ChevronDown } from 'lucide-react'
 
 import { serviceCategories, ServiceData, ServiceType, serviceTypeNames } from '@/types/index'
@@ -110,6 +111,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
 
     // 编译方式选择：prebuilt(预编译包) 或 from_source(从源码编译)
     const [buildMethod, setBuildMethod] = useState<'prebuilt' | 'from_source'>('prebuilt')
+    const [installMavenWithJava, setInstallMavenWithJava] = useState(false)
     // 高级选项展开状态
     const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false)
 
@@ -240,13 +242,23 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     // 处理下载确认
     const handleDownloadConfirm = async () => {
         if (!downloadingServiceDialogData) return
-        downloadService(downloadingServiceDialogData.serviceType, downloadingServiceDialogData.version, buildMethod)
+        const downloadOptions = downloadingServiceDialogData.serviceType === ServiceType.Java
+            ? { installMaven: installMavenWithJava }
+            : {}
+
+        downloadService(
+            downloadingServiceDialogData.serviceType,
+            downloadingServiceDialogData.version,
+            buildMethod,
+            downloadOptions
+        )
         setTimeout(() => {
             setShouldDownloadService({ ...downloadingServiceDialogData.serviceData })
         }, 300); // 确保状态更新后再设置
         setDownloadingServiceDialogData(null)
         // 重置高级选项
         setBuildMethod('prebuilt')
+        setInstallMavenWithJava(false)
         setAdvancedOptionsOpen(false)
     }
 
@@ -256,6 +268,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
         setDownloadingServiceDialogData(null)
         // 重置高级选项
         setBuildMethod('prebuilt')
+        setInstallMavenWithJava(false)
         setAdvancedOptionsOpen(false)
     }
 
@@ -377,6 +390,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                     if (!open) {
                         setDownloadingServiceDialogData(null)
                         setBuildMethod('prebuilt')
+                        setInstallMavenWithJava(false)
                         setAdvancedOptionsOpen(false)
                     }
                 }}
@@ -417,6 +431,24 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                                         </Label>
                                     </div>
                                 </RadioGroup>
+
+                                {downloadingServiceDialogData?.serviceType === ServiceType.Java && (
+                                    <div className="flex items-start space-x-2 pt-2 border-t border-border">
+                                        <Checkbox
+                                            id="install_maven_with_java"
+                                            checked={installMavenWithJava}
+                                            onCheckedChange={(checked) => setInstallMavenWithJava(checked === true)}
+                                        />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="install_maven_with_java" className="cursor-pointer font-normal">
+                                                同时下载 Maven（默认关闭）
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                启用后会在下载 Java 时并行下载当前版本推荐的 Maven
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </CollapsibleContent>
                         </Collapsible>
                     </div>

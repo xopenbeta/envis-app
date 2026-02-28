@@ -10,6 +10,10 @@ export interface DownloadTask {
     downloaded_size: number
 } 
 
+export interface ServiceDownloadOptions {
+    installMaven?: boolean
+}
+
 export const ipcGetAllInstalledServices = ipcLogFunc('获取所有已安装服务', async (): Promise<IPCResult<{services: Service[]}>> => {
     return invokeCommand('get_all_installed_services')
 })
@@ -29,8 +33,13 @@ export const ipcGetServiceSize = ipcLogFunc('获取服务大小', async (service
     return invokeCommand('get_service_size', { serviceType, version })
 })
 
-export const ipcDownloadService = ipcLogFunc('下载服务', async (serviceType: string, version: string, buildMethod: 'prebuilt' | 'from_source' = 'prebuilt'): Promise<IPCResult<{task: DownloadTask}>> => {
-    return invokeCommand(`download_${serviceType}`, { version, buildMethod })
+export const ipcDownloadService = ipcLogFunc('下载服务', async (
+    serviceType: string,
+    version: string,
+    buildMethod: 'prebuilt' | 'from_source' = 'prebuilt',
+    options: ServiceDownloadOptions = {}
+): Promise<IPCResult<{task: DownloadTask}>> => {
+    return invokeCommand(`download_${serviceType}`, { version, buildMethod, ...options })
 })
 
 export const ipcCancelServiceDownload = ipcLogFunc('取消服务下载', async (serviceType: string, version: string): Promise<IPCResult<undefined>> => {

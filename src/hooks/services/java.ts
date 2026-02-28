@@ -5,6 +5,8 @@ import {
     ipcDownloadJava,
     ipcCancelDownloadJava,
     ipcGetJavaDownloadProgress,
+    ipcInitializeMaven,
+    ipcGetMavenDownloadProgress,
     ipcGetJavaInfo,
     ipcSetJavaHome,
     ipcSetJavaOpts,
@@ -25,8 +27,8 @@ export function useJavaService() {
         return ipcRes;
     }
 
-    async function downloadJava(version: string) {
-        const ipcRes = await ipcDownloadJava(version);
+    async function downloadJava(version: string, installMaven: boolean = false) {
+        const ipcRes = await ipcDownloadJava(version, installMaven);
         console.log(`[hooks/java] downloadJava IPC 响应:`, ipcRes);
         return ipcRes;
     }
@@ -40,6 +42,18 @@ export function useJavaService() {
     async function getJavaDownloadProgress(version: string) {
         const ipcRes = await ipcGetJavaDownloadProgress(version);
         console.log(`[hooks/java] getJavaDownloadProgress IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
+    async function initializeMaven(environmentId: string, serviceData: ServiceData) {
+        const ipcRes = await ipcInitializeMaven(environmentId, serviceData);
+        console.log(`[hooks/java] initializeMaven IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
+    async function getMavenDownloadProgress(version: string) {
+        const ipcRes = await ipcGetMavenDownloadProgress(version);
+        console.log(`[hooks/java] getMavenDownloadProgress IPC 响应:`, ipcRes);
         return ipcRes;
     }
 
@@ -79,6 +93,8 @@ export function useJavaService() {
         downloadJava,
         cancelDownloadJava,
         getJavaDownloadProgress,
+        initializeMaven,
+        getMavenDownloadProgress,
         getJavaInfo,
         setJavaHome,
         setJavaOpts,

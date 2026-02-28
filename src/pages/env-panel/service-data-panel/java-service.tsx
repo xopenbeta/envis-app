@@ -14,6 +14,16 @@ import { Label } from "@/components/ui/label"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useTranslation } from 'react-i18next'
@@ -40,7 +50,15 @@ interface JavaServiceCardProps {
 function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCardProps) {
     const { t } = useTranslation()
     const { openFolderInFinder } = useFileOperations()
-    const { getJavaInfo, setJavaHome, setJavaOpts, setMavenHome, setGradleHome } = useJavaService()
+    const {
+        getJavaInfo,
+        setJavaHome,
+        setJavaOpts,
+        setMavenHome,
+        setGradleHome,
+        initializeMaven,
+        getMavenDownloadProgress,
+    } = useJavaService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     
     const [javaHome, setJavaHomeState] = useState('')
@@ -48,6 +66,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const [mavenHome, setMavenHomeState] = useState('')
     const [gradleHome, setGradleHomeState] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [isMavenInitialized, setIsMavenInitialized] = useState<boolean | null>(null)
+    const [isMavenInitializing, setIsMavenInitializing] = useState(false)
+    const [mavenInitStatus, setMavenInitStatus] = useState('')
+    const [showMavenDownloadDialog, setShowMavenDownloadDialog] = useState(false)
     const [javaInfo, setJavaInfo] = useState<{
         version: string
         vendor: string
@@ -59,15 +81,66 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
 
     useEffect(() => {
+        const metadataMavenHome = (serviceData.metadata?.MAVEN_HOME || '').trim()
+
         setJavaHomeState(serviceData.metadata?.JAVA_HOME || '')
         setJavaOptsState(serviceData.metadata?.JAVA_OPTS || '')
-        setMavenHomeState(serviceData.metadata?.MAVEN_HOME || '')
+        setMavenHomeState(metadataMavenHome)
         setGradleHomeState(serviceData.metadata?.GRADLE_HOME || '')
+        setIsMavenInitialized(metadataMavenHome.length > 0)
         
         if (isServiceDataActive) {
             loadJavaInfo()
+        } else {
+            setJavaInfo(null)
+            setIsMavenInitializing(false)
+            setMavenInitStatus('')
         }
     }, [serviceData, isServiceDataActive])
+
+    useEffect(() => {
+        if (!isMavenInitializing) {
+            return
+        }
+
+        const timer = setInterval(async () => {
+            try {
+                const res = await getMavenDownloadProgress(serviceData.version)
+                const task = (res as any)?.data?.task
+                const status = task?.status
+
+                if (!status) {
+                    return
+                }
+
+                setMavenInitStatus(status)
+
+                if (status === 'installed') {
+                    setIsMavenInitializing(false)
+                    const finalizeRes = await initializeMaven(selectedEnvironmentId, serviceData)
+                    if (finalizeRes && (finalizeRes as any).success) {
+                        const mavenHomePath = (finalizeRes as any)?.data?.home as string | undefined
+                        setIsMavenInitialized(Boolean(mavenHomePath))
+                        if (mavenHomePath) {
+                            await applyMavenHome(mavenHomePath, false)
+                        }
+                        toast.success('Maven 初始化成功')
+                    } else {
+                        setIsMavenInitialized(false)
+                        toast.error((finalizeRes as any)?.message || 'Maven 初始化失败')
+                    }
+                } else if (status === 'failed' || status === 'cancelled') {
+                    setIsMavenInitializing(false)
+                    setIsMavenInitialized(false)
+                    toast.error(task?.error_message || 'Maven 初始化失败')
+                }
+            } catch (error) {
+                console.error('获取 Maven 初始化进度失败:', error)
+            }
+        }, 1200)
+
+        return () => clearInterval(timer)
+    }, [isMavenInitializing])
 
     const loadJavaInfo = async () => {
         try {
@@ -77,6 +150,41 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             }
         } catch (error) {
             console.error('获取 Java 信息失败:', error)
+        }
+    }
+
+    const applyMavenHome = async (path: string, showToastMessage = true) => {
+        setIsLoading(true)
+        try {
+            const res = await setMavenHome(selectedEnvironmentId, serviceData, path)
+            if (res && (res as any).success) {
+                const newMetadata = { ...(serviceData.metadata || {}) }
+                newMetadata['MAVEN_HOME'] = path
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
+                })
+                setMavenHomeState(path)
+                if (showToastMessage) {
+                    toast.success('MAVEN_HOME 设置成功')
+                }
+                return true
+            }
+
+            if (showToastMessage) {
+                toast.error('MAVEN_HOME 设置失败')
+            }
+            return false
+        } catch (error) {
+            console.error('设置 MAVEN_HOME 异常:', error)
+            if (showToastMessage) {
+                toast.error('设置 MAVEN_HOME 失败')
+            }
+            return false
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -130,26 +238,60 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     }
 
     const handleSetMavenHome = async (path: string) => {
-        try {
-            setIsLoading(true)
-            const res = await setMavenHome(selectedEnvironmentId, serviceData, path)
-            if (res && (res as any).success) {
-                const newMetadata = { ...(serviceData.metadata || {}) }
-                newMetadata['MAVEN_HOME'] = path
-                await updateServiceData({
-                    environmentId: selectedEnvironmentId,
-                    serviceId: serviceData.id,
-                    updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
-                })
-                setMavenHomeState(path)
-                toast.success('MAVEN_HOME 设置成功')
-            } else {
-                toast.error('MAVEN_HOME 设置失败')
-            }
-        } finally {
-            setIsLoading(false)
+        await applyMavenHome(path)
+    }
+
+    const startMavenInitialize = async () => {
+        if (!isServiceDataActive || isMavenInitializing) {
+            return
         }
+
+        try {
+            setIsMavenInitializing(true)
+            setMavenInitStatus('pending')
+
+            const res = await initializeMaven(selectedEnvironmentId, serviceData)
+            if (!res || !(res as any).success) {
+                setIsMavenInitializing(false)
+                setMavenInitStatus('failed')
+                toast.error((res as any)?.message || 'Maven 初始化失败')
+                return
+            }
+
+            const task = (res as any)?.data?.task
+            const mavenHomePath = (res as any)?.data?.home as string | undefined
+
+            if (!task) {
+                setIsMavenInitializing(false)
+                setMavenInitStatus('installed')
+                setIsMavenInitialized(true)
+                if (mavenHomePath) {
+                    await applyMavenHome(mavenHomePath, false)
+                }
+                toast.success('Maven 初始化成功')
+                return
+            }
+
+            toast.success('Maven 初始化已开始')
+        } catch (error) {
+            setIsMavenInitializing(false)
+            setMavenInitStatus('failed')
+            console.error('初始化 Maven 异常:', error)
+            toast.error('初始化 Maven 失败')
+        }
+    }
+
+    const handleInitializeMaven = async () => {
+        if (!isServiceDataActive || isMavenInitializing) {
+            return
+        }
+
+        if (isMavenInitialized === false) {
+            setShowMavenDownloadDialog(true)
+            return
+        }
+
+        await startMavenInitialize()
     }
 
     const handleSetGradleHome = async (path: string) => {
@@ -176,6 +318,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     }
 
     return (
+        <>
         <div className="w-full p-3 space-y-3">
 
             <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
@@ -300,9 +443,62 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     <div className="flex items-center justify-between mb-2">
                         <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                             <Package className="h-3.5 w-3.5" />
-                            MAVEN_HOME (可选)
+                            Maven 模块
                         </Label>
                     </div>
+                    <div className="p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 mb-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">安装状态</span>
+                            <span className={`text-xs font-medium ${
+                                isMavenInitialized
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : isMavenInitializing
+                                        ? 'text-blue-600 dark:text-blue-400'
+                                        : 'text-amber-600 dark:text-amber-400'
+                            }`}>
+                                {isMavenInitialized ? '已初始化' : isMavenInitializing ? '初始化中' : '未初始化'}
+                            </span>
+                        </div>
+
+                        {!isMavenInitialized && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleInitializeMaven}
+                                disabled={!isServiceDataActive || isMavenInitializing || isLoading}
+                                className="h-7 text-xs shadow-none mt-3"
+                            >
+                                {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                {isMavenInitializing ? '初始化中...' : '初始化 Maven'}
+                            </Button>
+                        )}
+
+                        {isMavenInitializing && mavenInitStatus && (
+                            <p className="text-[11px] text-muted-foreground mt-2">
+                                当前状态: {mavenInitStatus}
+                            </p>
+                        )}
+
+                        {isMavenInitialized && mavenHome && (
+                            <div className="mt-2 flex items-center gap-2">
+                                <code className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded truncate max-w-[220px]">
+                                    {mavenHome}
+                                </code>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => openFolderInFinder(mavenHome)}
+                                    className="h-6 w-6 p-0"
+                                >
+                                    <FolderOpen className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">
+                        MAVEN_HOME (自动填充，可手动覆盖)
+                    </Label>
                     <Input
                         value={mavenHome}
                         onChange={(e) => setMavenHomeState(e.target.value)}
@@ -444,5 +640,28 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 </div>
             )}
         </div>
+
+        <AlertDialog open={showMavenDownloadDialog} onOpenChange={setShowMavenDownloadDialog}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>下载并初始化 Maven</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        当前未检测到 Maven。是否现在下载 Maven 并初始化到该 Java 服务？
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel className="shadow-none">取消</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={async () => {
+                            setShowMavenDownloadDialog(false)
+                            await startMavenInitialize()
+                        }}
+                    >
+                        下载并初始化
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }

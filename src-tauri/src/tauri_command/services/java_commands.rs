@@ -34,9 +34,23 @@ pub async fn get_java_versions() -> Result<CommandResponse, String> {
 
 /// 下载 Java 的 Tauri 命令
 #[tauri::command]
-pub async fn download_java(version: String) -> Result<CommandResponse, String> {
+pub async fn download_java(version: String, install_maven: Option<bool>) -> Result<CommandResponse, String> {
     log::info!("tauri::command 开始下载 Java {}...", version);
     let java_service = JavaService::global();
+
+    if install_maven.unwrap_or(false) {
+        let java_service_for_maven = JavaService::global();
+        let java_version_for_maven = version.clone();
+        tokio::spawn(async move {
+            if let Err(e) = java_service_for_maven
+                .download_and_install_maven(&java_version_for_maven)
+                .await
+            {
+                log::error!("并行下载 Maven 失败: {}", e);
+            }
+        });
+    }
+
     match java_service.download_and_install(&version).await {
         Ok(result) => {
             let data = serde_json::json!({
@@ -83,6 +97,58 @@ pub async fn get_java_download_progress(version: String) -> Result<CommandRespon
     });
     Ok(CommandResponse::success(
         "获取 Java 下载进度成功".to_string(),
+        Some(data),
+    ))
+}
+
+/// 初始化 Maven（下载并安装到 service 文件夹）
+#[tauri::command]
+pub async fn initialize_maven(
+    environment_id: String,
+    mut service_data: ServiceData,
+) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+    match java_service.download_and_install_maven(&service_data.version).await {
+        Ok(result) => {
+            let maven_home = java_service.get_maven_home(&service_data.version);
+
+            if let Some(maven_home) = maven_home.clone() {
+                let env_serv_data_manager = EnvServDataManager::global();
+                let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+                let _ = env_serv_data_manager.set_metadata(
+                    &environment_id,
+                    &mut service_data,
+                    "MAVEN_HOME",
+                    serde_json::Value::String(maven_home),
+                );
+            }
+
+            let data = serde_json::json!({
+                "task": result.task,
+                "message": result.message,
+                "home": maven_home,
+            });
+
+            if result.success {
+                Ok(CommandResponse::success("Maven 初始化任务已开始".to_string(), Some(data)))
+            } else {
+                Ok(CommandResponse::error(result.message))
+            }
+        }
+        Err(e) => Ok(CommandResponse::error(format!("初始化 Maven 失败: {}", e))),
+    }
+}
+
+/// 获取 Maven 初始化下载进度
+#[tauri::command]
+pub async fn get_maven_download_progress(version: String) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+    let task = java_service.get_maven_download_progress(&version);
+    let data = serde_json::json!({
+        "task": task
+    });
+    Ok(CommandResponse::success(
+        "获取 Maven 下载进度成功".to_string(),
         Some(data),
     ))
 }

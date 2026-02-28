@@ -17,8 +17,8 @@ export const ipcGetJavaVersions = ipcLogFunc('获取 Java 版本列表', async (
     return invokeCommand('get_java_versions')
 })
 
-export const ipcDownloadJava = ipcLogFunc('下载 Java', async (version: string): Promise<IPCResult<{ task: any }>> => {
-    return invokeCommand('download_java', { version })
+export const ipcDownloadJava = ipcLogFunc('下载 Java', async (version: string, installMaven: boolean = false): Promise<IPCResult<{ task: any }>> => {
+    return invokeCommand('download_java', { version, installMaven })
 })
 
 export const ipcCancelDownloadJava = ipcLogFunc('取消下载 Java', async (version: string): Promise<IPCResult<{ cancelled: boolean }>> => {
@@ -27,6 +27,14 @@ export const ipcCancelDownloadJava = ipcLogFunc('取消下载 Java', async (vers
 
 export const ipcGetJavaDownloadProgress = ipcLogFunc('获取 Java 下载进度', async (version: string): Promise<IPCResult<{ task: any }>> => {
     return invokeCommand('get_java_download_progress', { version })
+})
+
+export const ipcInitializeMaven = ipcLogFunc('初始化 Maven', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{ task: any }>> => {
+    return invokeCommand('initialize_maven', { environmentId, serviceData })
+})
+
+export const ipcGetMavenDownloadProgress = ipcLogFunc('获取 Maven 下载进度', async (version: string): Promise<IPCResult<{ task: any }>> => {
+    return invokeCommand('get_maven_download_progress', { version })
 })
 
 export const ipcGetJavaInfo = ipcLogFunc('获取 Java 信息', async (serviceData: ServiceData): Promise<IPCResult<{

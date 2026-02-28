@@ -1,8 +1,9 @@
 use crate::types::{ServiceData, ServiceType};
 use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::services::JavaService;
 use anyhow::Result;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs;
 
 /// 元数据构建器
@@ -320,10 +321,14 @@ http {
             serde_json::Value::String(String::new()),
         );
 
-        // 设置 MAVEN_HOME（默认为空）
+        // 设置 MAVEN_HOME（若当前 Java 版本对应 Maven 已存在则自动写入）
+        let java_service = JavaService::global();
+        let maven_home = java_service
+            .get_maven_home(&service_data.version)
+            .unwrap_or_default();
         metadata.insert(
             "MAVEN_HOME".to_string(),
-            serde_json::Value::String(String::new()),
+            serde_json::Value::String(maven_home),
         );
 
         // 设置 GRADLE_HOME（默认为空）
