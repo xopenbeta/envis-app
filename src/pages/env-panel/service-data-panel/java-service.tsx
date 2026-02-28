@@ -458,46 +458,45 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 </div>
 
                 {/* Maven 配置卡片 */}
-                <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                    <div>
-
-                        {!isMavenChecking && !isMavenInstalled && (
-                            <Alert variant="destructive" className="mb-3">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="text-xs">Maven 未安装</AlertTitle>
-                                <AlertDescription>
-                                    <div className="mt-2 space-y-2">
-                                        <p className="text-xs">当前版本尚未下载 Maven，请先下载后再初始化。</p>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={handleDownloadMaven}
-                                                disabled={!isServiceDataActive || isMavenDownloading || isLoading}
-                                                className="h-7 text-xs shadow-none"
-                                            >
-                                                {isMavenDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                                {isMavenDownloading ? '下载中...' : '下载 Maven'}
-                                            </Button>
-                                            {!!mavenDownloadStatus && (
-                                                <span className="text-[11px] text-muted-foreground">
-                                                    状态: {mavenDownloadStatus}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {isMavenDownloading && (
-                                            <div className="space-y-1">
-                                                <Progress value={mavenDownloadProgress} className="h-2" />
-                                                <div className="text-[11px] text-muted-foreground text-right">
-                                                    {Math.round(mavenDownloadProgress)}%
-                                                </div>
-                                            </div>
+                <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    {!isMavenChecking && !isMavenInstalled && (
+                        <Alert variant="destructive" className="mb-3">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle className="text-xs">Maven 未安装</AlertTitle>
+                            <AlertDescription>
+                                <div className="mt-2 space-y-2">
+                                    <p className="text-xs">当前版本尚未下载 Maven，请先下载后再初始化。</p>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={handleDownloadMaven}
+                                            disabled={!isServiceDataActive || isMavenDownloading || isLoading}
+                                            className="h-7 text-xs shadow-none"
+                                        >
+                                            {isMavenDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                            {isMavenDownloading ? '下载中...' : '下载 Maven'}
+                                        </Button>
+                                        {!!mavenDownloadStatus && (
+                                            <span className="text-[11px] text-muted-foreground">
+                                                状态: {mavenDownloadStatus}
+                                            </span>
                                         )}
                                     </div>
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                                    {isMavenDownloading && (
+                                        <div className="space-y-1">
+                                            <Progress value={mavenDownloadProgress} className="h-2" />
+                                            <div className="text-[11px] text-muted-foreground text-right">
+                                                {Math.round(mavenDownloadProgress)}%
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
+                    <div>
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                 MAVEN_HOME
@@ -526,7 +525,9 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 </Button>
                             </div>
                         )}
+                    </div>
 
+                    <div>
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                 Maven 仓库
@@ -584,10 +585,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             </Button>
                         </div>
                     </div>
+
                 </div>
 
                 {/* Gradle 配置卡片 */}
-                <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
