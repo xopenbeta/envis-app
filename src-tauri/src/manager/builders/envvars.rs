@@ -132,16 +132,9 @@ impl EnvVarBuilder {
 
     /// 构建 Python 服务的环境变量
     fn build_python_env_vars(
-        env_vars: &mut HashMap<String, String>,
-        service_folder: &std::path::Path,
+        _env_vars: &mut HashMap<String, String>,
+        _service_folder: &std::path::Path,
     ) -> Result<()> {
-        // 设置 PYTHONPATH
-        let lib_path = service_folder.join("lib");
-        env_vars.insert(
-            "PYTHONPATH".to_string(),
-            lib_path.to_string_lossy().to_string(),
-        );
-
         Ok(())
     }
 }

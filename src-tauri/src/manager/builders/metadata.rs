@@ -267,12 +267,6 @@ http {
         service_data: &ServiceData,
         metadata: &mut HashMap<String, serde_json::Value>,
     ) -> Result<()> {
-        // 设置 Python 相关环境变量
-        metadata.insert(
-            "PYTHONPATH".to_string(),
-            serde_json::Value::String(String::new()),
-        );
-
         // 设置 pip 镜像源
         metadata.insert(
             "PIP_INDEX_URL".to_string(),

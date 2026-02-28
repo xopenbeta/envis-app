@@ -1,7 +1,6 @@
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
 import {
     Coffee,
-    Info,
     AlertTriangle,
     Package,
     RefreshCw,
@@ -14,7 +13,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from 'sonner'
@@ -344,20 +342,8 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     {/* JAVA_HOME 配置 */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
                                 JAVA_HOME
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Info className="h-3 w-3 text-muted-foreground" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p className="max-w-xs text-xs">
-                                                Java 安装目录的路径
-                                            </p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
                             </Label>
                         </div>
                         <Input
@@ -371,23 +357,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                     {/* JAVA_OPTS 配置 */}
                     <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                JAVA_OPTS
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Info className="h-3 w-3 text-muted-foreground" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p className="max-w-xs text-xs">
-                                                JVM 运行参数，例如: -Xmx1024m -Xms512m
-                                            </p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </Label>
-                        </div>
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">JAVA_OPTS</Label>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            JVM 运行参数，例如: -Xmx1024m -Xms512m
+                        </p>
                         <div className="flex items-center gap-2">
                             <Input
                                 value={javaOpts}
