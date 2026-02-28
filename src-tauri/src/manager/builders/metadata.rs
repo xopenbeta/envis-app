@@ -301,9 +301,11 @@ http {
         metadata: &mut HashMap<String, serde_json::Value>,
     ) -> Result<()> {
         // 获取 services 根目录
-        let app_config_manager = AppConfigManager::global();
-        let app_config_manager = app_config_manager.lock().unwrap();
-        let envs_folder = app_config_manager.get_envs_folder();
+        let envs_folder = {
+            let app_config_manager = AppConfigManager::global();
+            let app_config_manager = app_config_manager.lock().unwrap();
+            app_config_manager.get_envs_folder()
+        };
         let service_data_folder = PathBuf::from(envs_folder)
             .join(environment_id)
             .join("java")

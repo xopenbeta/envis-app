@@ -617,7 +617,12 @@ impl JavaService {
                 shell_manager.add_export("JAVA_OPTS", java_opts)?;
             }
 
-            if let Some(gradle_home) = metadata.get("GRADLE_HOME").and_then(|v| v.as_str()) {
+            if let Some(gradle_home) = metadata
+                .get("GRADLE_HOME")
+                .and_then(|v| v.as_str())
+                .map(|v| v.trim())
+                .filter(|v| !v.is_empty())
+            {
                 shell_manager.add_export("GRADLE_HOME", gradle_home)?;
                 let gradle_bin = format!("{}/bin", gradle_home);
                 shell_manager.add_path(&gradle_bin)?;
@@ -647,6 +652,20 @@ impl JavaService {
         if let Some(maven_home) = metadata_maven_home {
             let maven_bin = format!("{}/bin", maven_home);
             shell_manager.delete_path(&maven_bin)?;
+        }
+
+        let metadata_gradle_home = service_data
+            .metadata
+            .as_ref()
+            .and_then(|metadata| metadata.get("GRADLE_HOME"))
+            .and_then(|value| value.as_str())
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_string());
+
+        if let Some(gradle_home) = metadata_gradle_home {
+            let gradle_bin = format!("{}/bin", gradle_home);
+            shell_manager.delete_path(&gradle_bin)?;
         }
 
         shell_manager.delete_path(&bin_path)?;

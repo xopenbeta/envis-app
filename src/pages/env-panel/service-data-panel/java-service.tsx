@@ -438,7 +438,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     </Button>
                 </div>
 
-                {/* Maven 配置 */}
+            </div>
+
+            {/* Maven 配置卡片 */}
+            <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
@@ -517,8 +520,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                         应用配置
                     </Button>
                 </div>
+            </div>
 
-                {/* Gradle 配置 */}
+            {/* Gradle 配置卡片 */}
+            <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
