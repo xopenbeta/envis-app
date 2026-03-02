@@ -587,6 +587,12 @@
     "java_opts_set_success": "JAVA_OPTS set successfully",
     "java_opts_set_failed": "Failed to set JAVA_OPTS",
     "gradle_home_set_success": "GRADLE_HOME set successfully",
-    "gradle_home_set_failed": "Failed to set GRADLE_HOME"
+    "gradle_home_set_failed": "Failed to set GRADLE_HOME",
+    "maven_local_repo_label": "Maven Local Repository (Optional)",
+    "maven_local_repo_desc": "Local cache directory for Maven dependencies, leave blank to use default path ~/.m2/repository",
+    "maven_local_repo_placeholder": "/path/to/.m2/repository",
+    "maven_local_repo_empty_error": "Maven local repository path cannot be empty",
+    "maven_local_repo_applied": "Maven local repository path applied",
+    "maven_local_repo_apply_failed": "Failed to set Maven local repository path"
   }
 }

@@ -188,6 +188,7 @@ pub fn run() {
             set_java_opts,
             set_maven_home,
             set_gradle_home,
+            set_maven_local_repository,
             // Nginx 服务命令
             check_nginx_installed,
             get_nginx_versions,

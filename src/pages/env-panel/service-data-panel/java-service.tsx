@@ -49,6 +49,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         setGradleHome,
         initializeMaven,
         getMavenDownloadProgress,
+        setMavenLocalRepository,
     } = useJavaService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
 
@@ -64,6 +65,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const [isMavenInitializing, setIsMavenInitializing] = useState(false)
     const [mavenDownloadProgress, setMavenDownloadProgress] = useState(0)
     const [mavenDownloadStatus, setMavenDownloadStatus] = useState('')
+    const [mavenLocalRepo, setMavenLocalRepoState] = useState('')
     const [isJavaInfoExpanded, setIsJavaInfoExpanded] = useState(false)
     const [javaInfo, setJavaInfo] = useState<{
         version: string
@@ -83,6 +85,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         setMavenHomeState(metadataMavenHome)
         setMavenRepositoryState((serviceData.metadata?.MAVEN_REPO_URL || 'https://repo.maven.apache.org/maven2').trim())
         setGradleHomeState(serviceData.metadata?.GRADLE_HOME || '')
+        setMavenLocalRepoState((serviceData.metadata?.MAVEN_LOCAL_REPO || '').trim())
         checkMavenInstallState()
 
         if (isServiceDataActive) {
@@ -334,6 +337,38 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         }
     }
 
+    const handleSetMavenLocalRepository = async (localRepo: string) => {
+        const value = localRepo.trim()
+        if (!value) {
+            toast.error(t('java_service.maven_local_repo_empty_error'))
+            return
+        }
+
+        try {
+            setIsLoading(true)
+            const res = await setMavenLocalRepository(selectedEnvironmentId, serviceData, value)
+            if (res && (res as any).success) {
+                const newMetadata = { ...(serviceData.metadata || {}) }
+                newMetadata['MAVEN_LOCAL_REPO'] = value
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
+                })
+                setMavenLocalRepoState(value)
+                toast.success(t('java_service.maven_local_repo_applied'))
+            } else {
+                toast.error(t('java_service.maven_local_repo_apply_failed'))
+            }
+        } catch (error) {
+            console.error('设置 Maven 本地仓库路径失败:', error)
+            toast.error(t('java_service.maven_local_repo_apply_failed'))
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     return (
         <>
             <div className="w-full p-3 space-y-3">
@@ -341,7 +376,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                     {/* JAVA_HOME 配置 */}
                     <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
                                 {t('java_service.java_home_label')}
                             </Label>
@@ -473,7 +508,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     )}
 
                     <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                 {t('java_service.maven_home_label')}
                             </Label>
@@ -507,7 +542,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     </div>
 
                     <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                 {t('java_service.maven_repo_label')}
                             </Label>
@@ -568,12 +603,43 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                         </div>
                     </div>
 
+                    {/* Maven 本地仓库 */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1">
+                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                {t('java_service.maven_local_repo_label')}
+                            </Label>
+                        </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            {t('java_service.maven_local_repo_desc')}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                value={mavenLocalRepo}
+                                onChange={(e) => setMavenLocalRepoState(e.target.value)}
+                                placeholder={t('java_service.maven_local_repo_placeholder')}
+                                disabled={!isServiceDataActive || !isMavenInstalled}
+                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            />
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSetMavenLocalRepository(mavenLocalRepo)}
+                                disabled={!mavenLocalRepo || isLoading || !isServiceDataActive || !isMavenInstalled}
+                                className="h-8 text-xs shadow-none shrink-0"
+                            >
+                                {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                {t('java_service.apply')}
+                            </Button>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Gradle 配置卡片 */}
                 <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                     <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                 <Package className="h-3.5 w-3.5" />
                                 {t('java_service.gradle_home_label')}

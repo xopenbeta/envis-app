@@ -534,8 +534,8 @@
     "maven_init_success": "Maven 初始化成功",
     "maven_init_failed": "Maven 初始化失败",
     "maven_init_failed_no_home": "Maven 初始化失败：未获取到 MAVEN_HOME",
-    "maven_repo_label": "Maven 仓库",
-    "maven_repo_desc": "Maven 依赖包的下载源，配置后将加速依赖下载",
+    "maven_repo_label": "Maven 远程仓库",
+    "maven_repo_desc": "Maven 依赖包的下载源，建议配置国内源加速下载",
     "maven_repo_placeholder": "https://maven.aliyun.com/repository/public",
     "maven_repo_empty_error": "Maven 仓库地址不能为空",
     "maven_repo_applied": "Maven 仓库配置已应用",
@@ -553,6 +553,12 @@
     "java_opts_set_success": "JAVA_OPTS 设置成功",
     "java_opts_set_failed": "JAVA_OPTS 设置失败",
     "gradle_home_set_success": "GRADLE_HOME 设置成功",
-    "gradle_home_set_failed": "GRADLE_HOME 设置失败"
+    "gradle_home_set_failed": "GRADLE_HOME 设置失败",
+    "maven_local_repo_label": "Maven 本地仓库",
+    "maven_local_repo_desc": "Maven 依赖包的本地缓存目录，留空则使用默认路径 ~/.m2/repository",
+    "maven_local_repo_placeholder": "/path/to/.m2/repository",
+    "maven_local_repo_empty_error": "Maven 本地仓库路径不能为空",
+    "maven_local_repo_applied": "Maven 本地仓库路径已应用",
+    "maven_local_repo_apply_failed": "设置 Maven 本地仓库路径失败"
   }
 }

@@ -12,7 +12,8 @@ import {
     ipcSetJavaHome,
     ipcSetJavaOpts,
     ipcSetMavenHome,
-    ipcSetGradleHome
+    ipcSetGradleHome,
+    ipcSetMavenLocalRepository
 } from "../../ipc/services/java";
 
 export function useJavaService() {
@@ -94,6 +95,12 @@ export function useJavaService() {
         return ipcRes;
     }
 
+    async function setMavenLocalRepository(environmentId: string, serviceData: ServiceData, localRepo: string) {
+        const ipcRes = await ipcSetMavenLocalRepository(environmentId, serviceData, localRepo);
+        console.log(`[hooks/java] setMavenLocalRepository IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
     return {
         checkJavaInstalled,
         checkMavenInstalled,
@@ -107,6 +114,7 @@ export function useJavaService() {
         setJavaHome,
         setJavaOpts,
         setMavenHome,
-        setGradleHome
+        setGradleHome,
+        setMavenLocalRepository
     }
 }

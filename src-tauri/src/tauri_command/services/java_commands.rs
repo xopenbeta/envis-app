@@ -296,3 +296,41 @@ pub async fn set_gradle_home(
         Some(data),
     ))
 }
+
+/// 设置 Maven 本地仓库路径
+#[tauri::command]
+pub async fn set_maven_local_repository(
+    environment_id: String,
+    mut service_data: ServiceData,
+    local_repo: String,
+) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+
+    // 写入 settings.xml
+    if let Err(e) =
+        java_service.set_maven_local_repository_to_settings(&service_data.version, &local_repo)
+    {
+        return Ok(CommandResponse::error(format!(
+            "写入 settings.xml 失败: {}",
+            e
+        )));
+    }
+
+    // 写入 metadata
+    let env_serv_data_manager = EnvServDataManager::global();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let _ = env_serv_data_manager.set_metadata(
+        &environment_id,
+        &mut service_data,
+        "MAVEN_LOCAL_REPO",
+        serde_json::Value::String(local_repo.clone()),
+    );
+
+    let data = serde_json::json!({
+        "localRepo": local_repo,
+    });
+    Ok(CommandResponse::success(
+        "Maven 本地仓库路径设置成功".to_string(),
+        Some(data),
+    ))
+}

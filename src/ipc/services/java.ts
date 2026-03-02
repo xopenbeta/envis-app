@@ -66,3 +66,7 @@ export const ipcSetMavenHome = ipcLogFunc('设置 MAVEN_HOME', async (environmen
 export const ipcSetGradleHome = ipcLogFunc('设置 GRADLE_HOME', async (environmentId: string, serviceData: ServiceData, gradleHome: string): Promise<IPCResult> => {
     return invokeCommand('set_gradle_home', { environmentId, serviceData, gradleHome })
 })
+
+export const ipcSetMavenLocalRepository = ipcLogFunc('设置 Maven 本地仓库', async (environmentId: string, serviceData: ServiceData, localRepo: string): Promise<IPCResult> => {
+    return invokeCommand('set_maven_local_repository', { environmentId, serviceData, localRepo })
+})

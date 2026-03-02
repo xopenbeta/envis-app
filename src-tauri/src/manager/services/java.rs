@@ -337,6 +337,64 @@ impl JavaService {
         Ok(settings_path)
     }
 
+    /// 获取 Maven 本地仓库路径（从 settings.xml 中 <localRepository>）
+    pub fn get_maven_local_repository_from_settings(
+        &self,
+        java_version: &str,
+    ) -> Result<Option<String>> {
+        let settings_path = self
+            .get_maven_settings_path(java_version)
+            .ok_or_else(|| anyhow!("Maven 未初始化，无法读取 settings.xml"))?;
+
+        if !settings_path.exists() {
+            return Ok(None);
+        }
+
+        let content = std::fs::read_to_string(&settings_path)
+            .map_err(|e| anyhow!("读取 settings.xml 失败: {}", e))?;
+        let root = Self::parse_settings_xml(&content)?;
+
+        Ok(Self::child_text(&root, "localRepository"))
+    }
+
+    /// 设置 Maven 本地仓库路径（写入 settings.xml 的 <localRepository>）
+    pub fn set_maven_local_repository_to_settings(
+        &self,
+        java_version: &str,
+        local_repo: &str,
+    ) -> Result<()> {
+        let local_repo = local_repo.trim();
+        if local_repo.is_empty() {
+            return Err(anyhow!("Maven 本地仓库路径不能为空"));
+        }
+
+        let settings_path = self
+            .get_maven_settings_path(java_version)
+            .ok_or_else(|| anyhow!("Maven 未初始化，无法写入 settings.xml"))?;
+
+        if let Some(parent) = settings_path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| anyhow!("创建 Maven 配置目录失败: {}", e))?;
+        }
+
+        let mut root = if settings_path.exists() {
+            let content = std::fs::read_to_string(&settings_path)
+                .map_err(|e| anyhow!("读取 settings.xml 失败: {}", e))?;
+            Self::parse_settings_xml(&content)?
+        } else {
+            Element::new("settings")
+        };
+
+        if root.name != "settings" {
+            return Err(anyhow!("settings.xml 根节点不是 <settings>"));
+        }
+
+        Self::set_child_text(&mut root, "localRepository", local_repo);
+        Self::write_settings_xml(&settings_path, &root)?;
+
+        Ok(())
+    }
+
     /// 构建 Maven 下载 URL 和文件名
     fn build_maven_download_info(&self, java_version: &str) -> Result<(Vec<String>, String)> {
         let maven_version = self.get_maven_version_for_java(java_version);
@@ -822,6 +880,19 @@ impl JavaService {
                 shell_manager.add_export("GRADLE_HOME", gradle_home)?;
                 let gradle_bin = format!("{}/bin", gradle_home);
                 shell_manager.add_path(&gradle_bin)?;
+            }
+
+            if let Some(local_repo) = metadata
+                .get("MAVEN_LOCAL_REPO")
+                .and_then(|v| v.as_str())
+                .map(|v| v.trim())
+                .filter(|v| !v.is_empty())
+            {
+                if let Err(e) =
+                    self.set_maven_local_repository_to_settings(&service_data.version, local_repo)
+                {
+                    log::warn!("激活时写入 Maven 本地仓库路径失败: {}", e);
+                }
             }
         }
 
