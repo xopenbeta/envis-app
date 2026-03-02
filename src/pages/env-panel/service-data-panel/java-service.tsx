@@ -115,11 +115,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     setIsMavenDownloading(false)
                     setIsMavenInstalled(true)
                     setMavenDownloadProgress(100)
-                    toast.success('Maven 下载完成')
+                    toast.success(t('java_service.maven_download_complete'))
                 } else if (status === 'failed' || status === 'cancelled') {
                     setIsMavenDownloading(false)
                     setIsMavenInstalled(false)
-                    toast.error(task?.error_message || 'Maven 下载失败')
+                    toast.error(task?.error_message || t('java_service.maven_download_failed'))
                 }
             } catch (error) {
                 console.error('获取 Maven 下载进度失败:', error)
@@ -172,19 +172,19 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 })
                 setMavenHomeState(path)
                 if (showToastMessage) {
-                    toast.success('MAVEN_HOME 设置成功')
+                    toast.success(t('java_service.maven_home_set_success'))
                 }
                 return true
             }
 
             if (showToastMessage) {
-                toast.error('MAVEN_HOME 设置失败')
+                toast.error(t('java_service.maven_home_set_failed'))
             }
             return false
         } catch (error) {
             console.error('设置 MAVEN_HOME 异常:', error)
             if (showToastMessage) {
-                toast.error('设置 MAVEN_HOME 失败')
+                toast.error(t('java_service.maven_home_set_failed'))
             }
             return false
         } finally {
@@ -206,9 +206,9 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setJavaOptsState(opts)
-                toast.success('JAVA_OPTS 设置成功')
+                toast.success(t('java_service.java_opts_set_success'))
             } else {
-                toast.error('JAVA_OPTS 设置失败')
+                toast.error(t('java_service.java_opts_set_failed'))
             }
         } finally {
             setIsLoading(false)
@@ -222,7 +222,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const handleSetMavenRepository = async (repository: string) => {
         const value = repository.trim()
         if (!value) {
-            toast.error('Maven 仓库地址不能为空')
+            toast.error(t('java_service.maven_repo_empty_error'))
             return
         }
 
@@ -237,10 +237,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 serviceDatasSnapshot: selectedServiceDatas,
             })
             setMavenRepositoryState(value)
-            toast.success('Maven 仓库配置已应用')
+            toast.success(t('java_service.maven_repo_applied'))
         } catch (error) {
             console.error('设置 Maven 仓库配置失败:', error)
-            toast.error('设置 Maven 仓库配置失败')
+            toast.error(t('java_service.maven_repo_apply_failed'))
         } finally {
             setIsLoading(false)
         }
@@ -260,7 +260,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             if (!res || !(res as any).success) {
                 setIsMavenDownloading(false)
                 setMavenDownloadStatus('failed')
-                toast.error((res as any)?.message || 'Maven 下载失败')
+                toast.error((res as any)?.message || t('java_service.maven_download_failed'))
                 return
             }
 
@@ -273,14 +273,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 if (mavenHomePath) {
                     setIsMavenInstalled(true)
                     setMavenDownloadProgress(100)
-                    toast.success('Maven 已安装')
+                    toast.success(t('java_service.maven_download_complete'))
                 }
             }
         } catch (error) {
             setIsMavenDownloading(false)
             setMavenDownloadStatus('failed')
             console.error('下载 Maven 异常:', error)
-            toast.error('下载 Maven 失败')
+            toast.error(t('java_service.maven_download_failed'))
         }
     }
 
@@ -296,16 +296,16 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 const mavenHomePath = (res as any)?.data?.home as string | undefined
                 if (mavenHomePath) {
                     await applyMavenHome(mavenHomePath, false)
-                    toast.success('Maven 初始化成功')
+                    toast.success(t('java_service.maven_init_success'))
                 } else {
-                    toast.error('Maven 初始化失败：未获取到 MAVEN_HOME')
+                    toast.error(t('java_service.maven_init_failed_no_home'))
                 }
             } else {
-                toast.error((res as any)?.message || 'Maven 初始化失败')
+                toast.error((res as any)?.message || t('java_service.maven_init_failed'))
             }
         } catch (error) {
             console.error('初始化 Maven 异常:', error)
-            toast.error('Maven 初始化失败')
+            toast.error(t('java_service.maven_init_failed'))
         } finally {
             setIsMavenInitializing(false)
         }
@@ -325,9 +325,9 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     serviceDatasSnapshot: selectedServiceDatas,
                 })
                 setGradleHomeState(path)
-                toast.success('GRADLE_HOME 设置成功')
+                toast.success(t('java_service.gradle_home_set_success'))
             } else {
-                toast.error('GRADLE_HOME 设置失败')
+                toast.error(t('java_service.gradle_home_set_failed'))
             }
         } finally {
             setIsLoading(false)
@@ -343,9 +343,12 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                JAVA_HOME
+                                {t('java_service.java_home_label')}
                             </Label>
                         </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            {t('java_service.java_home_desc')}
+                        </p>
                         <Input
                             value={javaHome}
                             readOnly
@@ -357,15 +360,15 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                     {/* JAVA_OPTS 配置 */}
                     <div>
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">JAVA_OPTS</Label>
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('java_service.java_opts_label')}</Label>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                            JVM 运行参数，例如: -Xmx1024m -Xms512m
+                            {t('java_service.java_opts_desc')}
                         </p>
                         <div className="flex items-center gap-2">
                             <Input
                                 value={javaOpts}
                                 onChange={(e) => setJavaOptsState(e.target.value)}
-                                placeholder="-Xmx1024m -Xms512m"
+                                placeholder={t('java_service.java_opts_placeholder')}
                                 disabled={!isServiceDataActive}
                                 className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                             />
@@ -377,7 +380,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 className="h-8 text-xs shadow-none shrink-0"
                             >
                                 {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                应用
+                                {t('java_service.apply')}
                             </Button>
                         </div>
                     </div>
@@ -388,7 +391,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between mb-2 cursor-pointer">
                                     <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                        Java 版本信息
+                                        {t('java_service.java_version_info')}
                                     </Label>
                                     <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isJavaInfoExpanded ? 'rotate-180' : ''}`} />
                                 </div>
@@ -396,19 +399,19 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             <CollapsibleContent>
                                 <div className="space-y-2 text-xs p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Java 版本:</span>
+                                        <span className="text-muted-foreground">{t('java_service.java_version')}:</span>
                                         <span className="font-medium">{javaInfo.version}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">供应商:</span>
+                                        <span className="text-muted-foreground">{t('java_service.java_vendor')}:</span>
                                         <span className="font-medium">{javaInfo.vendor}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">运行时:</span>
+                                        <span className="text-muted-foreground">{t('java_service.java_runtime')}:</span>
                                         <span className="font-medium text-xs break-all">{javaInfo.runtime}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">安装路径:</span>
+                                        <span className="text-muted-foreground">{t('java_service.java_install_path')}:</span>
                                         <div className="flex items-center gap-1">
                                             <span className="font-medium text-xs truncate max-w-[200px]" title={javaInfo.home}>
                                                 {javaInfo.home}
@@ -435,10 +438,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     {!isMavenChecking && !isMavenInstalled && (
                         <Alert variant="destructive" className="mb-3">
                             <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle className="text-xs">Maven 未安装</AlertTitle>
+                            <AlertTitle className="text-xs">{t('java_service.maven_not_installed_title')}</AlertTitle>
                             <AlertDescription>
                                 <div className="mt-2 space-y-2">
-                                    <p className="text-xs">当前版本尚未下载 Maven，请先下载后再初始化。</p>
+                                    <p className="text-xs">{t('java_service.maven_not_installed_desc')}</p>
                                     <div className="flex items-center gap-2">
                                         <Button
                                             size="sm"
@@ -448,11 +451,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                             className="h-7 text-xs shadow-none"
                                         >
                                             {isMavenDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                            {isMavenDownloading ? '下载中...' : '下载 Maven'}
+                                            {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
                                         </Button>
                                         {!!mavenDownloadStatus && (
                                             <span className="text-[11px] text-muted-foreground">
-                                                状态: {mavenDownloadStatus}
+                                                {t('java_service.maven_download_status')}: {mavenDownloadStatus}
                                             </span>
                                         )}
                                     </div>
@@ -472,14 +475,17 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                MAVEN_HOME
+                                {t('java_service.maven_home_label')}
                             </Label>
                         </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            {t('java_service.maven_home_desc')}
+                        </p>
 
                         <Input
                             value={mavenHome}
                             readOnly
-                            placeholder="/path/to/maven"
+                            placeholder={t('java_service.maven_home_placeholder')}
                             disabled
                             className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         />
@@ -494,7 +500,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     className="h-7 text-xs shadow-none"
                                 >
                                     {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                    {isMavenInitializing ? '初始化中...' : '初始化 Maven'}
+                                    {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
                                 </Button>
                             </div>
                         )}
@@ -503,15 +509,18 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                Maven 仓库
+                                {t('java_service.maven_repo_label')}
                             </Label>
                         </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            {t('java_service.maven_repo_desc')}
+                        </p>
 
                         <div className="flex items-center gap-2">
                             <Input
                                 value={mavenRepository}
                                 onChange={(e) => setMavenRepositoryState(e.target.value)}
-                                placeholder="https://maven.aliyun.com/repository/public"
+                                placeholder={t('java_service.maven_repo_placeholder')}
                                 disabled={!isServiceDataActive}
                                 className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                             />
@@ -523,12 +532,12 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 className="h-8 text-xs shadow-none shrink-0"
                             >
                                 {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                应用
+                                {t('java_service.apply')}
                             </Button>
                         </div>
 
                         <div className="flex flex-wrap gap-2 items-center mt-3">
-                            <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">快捷设置</Label>
+                            <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('java_service.maven_repo_quick_set')}</Label>
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -536,7 +545,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 disabled={isLoading || !isServiceDataActive}
                                 className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                             >
-                                官方仓库
+                                {t('java_service.maven_repo_official')}
                             </Button>
                             <Button
                                 size="sm"
@@ -545,7 +554,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 disabled={isLoading || !isServiceDataActive}
                                 className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                             >
-                                阿里云
+                                {t('java_service.maven_repo_aliyun')}
                             </Button>
                             <Button
                                 size="sm"
@@ -554,7 +563,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 disabled={isLoading || !isServiceDataActive}
                                 className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                             >
-                                清华源
+                                {t('java_service.maven_repo_tsinghua')}
                             </Button>
                         </div>
                     </div>
@@ -567,14 +576,17 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                         <div className="flex items-center justify-between mb-2">
                             <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                 <Package className="h-3.5 w-3.5" />
-                                GRADLE_HOME (可选)
+                                {t('java_service.gradle_home_label')}
                             </Label>
                         </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            {t('java_service.gradle_home_desc')}
+                        </p>
                         <div className="flex items-center gap-2">
                             <Input
                                 value={gradleHome}
                                 onChange={(e) => setGradleHomeState(e.target.value)}
-                                placeholder="/path/to/gradle"
+                                placeholder={t('java_service.gradle_home_placeholder')}
                                 disabled={!isServiceDataActive}
                                 className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                             />
@@ -586,7 +598,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 className="h-8 text-xs shadow-none shrink-0"
                             >
                                 {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                应用
+                                {t('java_service.apply')}
                             </Button>
                         </div>
                     </div>
