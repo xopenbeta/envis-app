@@ -563,7 +563,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         <>
             <div className="w-full p-3 space-y-3">
 
-                <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="w-full p-3 space-y-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                     {/* JAVA_HOME 配置 */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
@@ -585,7 +585,9 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                     {/* JAVA_OPTS 配置 */}
                     <div>
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('java_service.java_opts_label')}</Label>
+                        <div className="flex items-center justify-between mb-1">
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('java_service.java_opts_label')}</Label>
+                        </div>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2">
                             {t('java_service.java_opts_desc')}
                         </p>
@@ -710,7 +712,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
@@ -785,7 +787,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     </Button>
                                 </div>
 
-                                <div className="flex flex-wrap gap-2 items-center mt-3">
+                                <div className="flex flex-wrap gap-2 items-center mt-2">
                                     <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('java_service.maven_repo_quick_set')}</Label>
                                     <Button
                                         size="sm"
