@@ -559,6 +559,8 @@
     "maven_checking": "Checking Maven installation...",
     "maven_not_installed_title": "Maven Not Installed",
     "maven_not_installed_desc": "Maven is not downloaded for this version yet. Please download it first before initialization.",
+    "maven_not_initialized_title": "Maven Not Initialized",
+    "maven_not_initialized_desc": "Maven is downloaded but not yet initialized. Click initialize to configure the MAVEN_HOME environment variable.",
     "maven_download": "Download Maven",
     "maven_downloading": "Downloading...",
     "maven_download_status": "Status",

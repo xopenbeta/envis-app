@@ -168,6 +168,15 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     setIsGradleDownloading(false)
                     setIsGradleInstalled(true)
                     setGradleDownloadProgress(100)
+                    try {
+                        const checkRes = await checkGradleInstalled(serviceData.version)
+                        const gradleHomePath = (checkRes as any)?.data?.home as string | undefined
+                        if (gradleHomePath) {
+                            await applyGradleHome(gradleHomePath, false)
+                        }
+                    } catch (e) {
+                        console.error('获取 Gradle home 失败:', e)
+                    }
                     toast.success(t('java_service.gradle_download_complete'))
                 } else if (status === 'failed' || status === 'cancelled') {
                     setIsGradleDownloading(false)
@@ -521,6 +530,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 if (gradleHomePath) {
                     setIsGradleInstalled(true)
                     setGradleDownloadProgress(100)
+                    await applyGradleHome(gradleHomePath, false)
                     toast.success(t('java_service.gradle_download_complete'))
                 }
             }
@@ -712,6 +722,34 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             </div>
                         </div>
                     </div>
+                ) : !mavenHome.trim() ? (
+                    <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                        <div className="flex items-start gap-4">
+                            <div className="p-2 bg-gray-100 dark:bg-white/5 rounded-lg shrink-0">
+                                <Package className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                            </div>
+                            <div className="flex-1 space-y-3">
+                                <div>
+                                    <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+                                        {t('java_service.maven_not_initialized_title')}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {t('java_service.maven_not_initialized_desc')}
+                                    </p>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleInitializeMaven}
+                                    disabled={!isServiceDataActive || isMavenInitializing || isLoading}
+                                    className="h-8 text-xs shadow-none"
+                                >
+                                    {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
+                                    {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
                 ) : (
                     <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                         <div className="space-y-4">
@@ -742,21 +780,6 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     disabled
                                     className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                                 />
-
-                                {!mavenHome.trim() && (
-                                    <div className="mt-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={handleInitializeMaven}
-                                            disabled={!isServiceDataActive || !isMavenInstalled || isMavenInitializing || isLoading}
-                                            className="h-7 text-xs shadow-none"
-                                        >
-                                            {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                            {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
-                                        </Button>
-                                    </div>
-                                )}
                             </div>
 
                             <div>
@@ -928,10 +951,6 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 ) : (
                     <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                         <div className="space-y-4">
-                            {/* 远程仓库提示 */}
-                            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 px-3 py-2.5 text-[11px] text-yellow-800 dark:text-yellow-400 leading-relaxed">
-                                {t('java_service.gradle_repo_tip')}
-                            </div>
 
                             {/* GRADLE_HOME */}
                             <div>
@@ -940,7 +959,6 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                                    <Package className="h-3.5 w-3.5" />
                                                     {t('java_service.gradle_home_label')}
                                                     <Info className="h-3 w-3 text-muted-foreground" />
                                                 </Label>
@@ -973,6 +991,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         {t('java_service.apply')}
                                     </Button>
                                 </div>
+                            </div>
+
+                            {/* 远程仓库提示 */}
+                            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 px-3 py-2.5 text-[11px] text-yellow-800 dark:text-yellow-400 leading-relaxed">
+                                {t('java_service.gradle_repo_tip')}
                             </div>
 
                             {/* GRADLE_USER_HOME */}
