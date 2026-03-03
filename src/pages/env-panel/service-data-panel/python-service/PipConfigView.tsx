@@ -81,7 +81,7 @@ export function PipConfigView({
 
     return (
         <div className="w-full p-3 pb-0">
-            <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 space-y-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 {/* Index URL Configuration */}
                 <div>
                     <TooltipProvider>
@@ -120,7 +120,7 @@ export function PipConfigView({
                     </div>
 
                     {/* Quick Index URL Options */}
-                    <div className="flex flex-wrap gap-2 items-center mt-3">
+                    <div className="flex flex-wrap gap-2 items-center mt-2">
                         <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('python_service.quick_set')}</Label>
                         <Button
                             size="sm"

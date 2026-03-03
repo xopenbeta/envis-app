@@ -198,7 +198,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 </Alert>
             )}
 
-            <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 {/* Registry Configuration */}
                 <div>
                     <TooltipProvider>
@@ -240,7 +240,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     </div>
 
                     {/* Quick Registry Options */}
-                    <div className="flex flex-wrap gap-2 items-center mt-3">
+                    <div className="flex flex-wrap gap-2 items-center mt-2">
                         <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('node_service.quick_set')}</Label>
                         <Button
                             size="sm"
@@ -335,6 +335,58 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             >
                                 <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
                             </Button>
+
+                            <Dialog open={isInstallDialogOpen} onOpenChange={setIsInstallDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={isLoadingPackages}
+                                        className="h-6 px-2 text-[10px]"
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>{t('node_service.install_global_package')}</DialogTitle>
+                                        <DialogDescription>
+                                            {t('node_service.install_global_package_desc')}
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="flex items-center space-x-2 py-4">
+                                        <Input
+                                            value={packageToInstall}
+                                            onChange={(e) => setPackageToInstall(e.target.value)}
+                                            placeholder={t('node_service.package_placeholder')}
+                                            disabled={isInstalling}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !isInstalling) {
+                                                    handleInstallPackage()
+                                                }
+                                            }}
+                                            className="flex-1"
+                                        />
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setIsInstallDialogOpen(false)}
+                                            disabled={isInstalling}
+                                        >
+                                            {t('node_service.cancel')}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={handleInstallPackage}
+                                            disabled={isInstalling}
+                                        >
+                                            {isInstalling ? t('node_service.installing') : t('node_service.install')}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                     )}
                 </div>
@@ -377,57 +429,6 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 )}
             </div>
 
-            <Dialog open={isInstallDialogOpen} onOpenChange={setIsInstallDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={isLoadingPackages}
-                        className="h-6 px-2 text-[10px]"
-                    >
-                        <Plus className="h-3 w-3" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{t('node_service.install_global_package')}</DialogTitle>
-                        <DialogDescription>
-                            {t('node_service.install_global_package_desc')}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex items-center space-x-2 py-4">
-                        <Input
-                            value={packageToInstall}
-                            onChange={(e) => setPackageToInstall(e.target.value)}
-                            placeholder={t('node_service.package_placeholder')}
-                            disabled={isInstalling}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !isInstalling) {
-                                    handleInstallPackage()
-                                }
-                            }}
-                            className="flex-1"
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsInstallDialogOpen(false)}
-                            disabled={isInstalling}
-                        >
-                            {t('node_service.cancel')}
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleInstallPackage}
-                            disabled={isInstalling}
-                        >
-                            {isInstalling ? t('node_service.installing') : t('node_service.install')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     </>)
 }
