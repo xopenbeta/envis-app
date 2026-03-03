@@ -1630,8 +1630,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           ) : (
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <Key className="h-6 w-6 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">服务未运行，无法管理用户</p>
-              <p className="text-xs">请先启动 MongoDB 服务</p>
+              <p className="text-sm">服务未运行</p>
+              <p className="text-xs">请先启动服务</p>
             </div>
           )}
         </div>
