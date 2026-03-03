@@ -1,7 +1,6 @@
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
 import {
     Coffee,
-    AlertTriangle,
     Package,
     RefreshCw,
     FolderOpen,
@@ -17,7 +16,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from 'sonner'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useTranslation } from 'react-i18next'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useFileOperations } from "@/hooks/file-operations"
@@ -565,7 +563,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         <>
             <div className="w-full p-3 space-y-3">
 
-                <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                     {/* JAVA_HOME 配置 */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
@@ -573,7 +571,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 {t('java_service.java_home_label')}
                             </Label>
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        <p className="text-[10px] text-gray-500 dark:text-gray-40 mb-2">
                             {t('java_service.java_home_desc')}
                         </p>
                         <Input
@@ -587,8 +585,8 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                     {/* JAVA_OPTS 配置 */}
                     <div>
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('java_service.java_opts_label')}</Label>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('java_service.java_opts_label')}</Label>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2">
                             {t('java_service.java_opts_desc')}
                         </p>
                         <div className="flex items-center gap-2">
@@ -613,383 +611,411 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     </div>
 
                     {/* Java 版本信息（折叠） */}
-                    {javaInfo && isServiceDataActive && (
-                        <Collapsible open={isJavaInfoExpanded} onOpenChange={setIsJavaInfoExpanded}>
-                            <CollapsibleTrigger asChild>
-                                <div className="flex items-center justify-between mb-2 cursor-pointer">
-                                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                        {t('java_service.java_version_info')}
-                                    </Label>
-                                    <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isJavaInfoExpanded ? 'rotate-180' : ''}`} />
-                                </div>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                                <div className="space-y-2 text-xs p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">{t('java_service.java_version')}:</span>
-                                        <span className="font-medium">{javaInfo.version}</span>
+                    <div>
+                        {javaInfo && isServiceDataActive && (
+                            <Collapsible open={isJavaInfoExpanded} onOpenChange={setIsJavaInfoExpanded}>
+                                <CollapsibleTrigger asChild>
+                                    <div className="flex items-center justify-between mb-2 cursor-pointer">
+                                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                            {t('java_service.java_version_info')}
+                                        </Label>
+                                        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isJavaInfoExpanded ? 'rotate-180' : ''}`} />
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">{t('java_service.java_vendor')}:</span>
-                                        <span className="font-medium">{javaInfo.vendor}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">{t('java_service.java_runtime')}:</span>
-                                        <span className="font-medium text-xs break-all">{javaInfo.runtime}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">{t('java_service.java_install_path')}:</span>
-                                        <div className="flex items-center gap-1">
-                                            <span className="font-medium text-xs truncate max-w-[200px]" title={javaInfo.home}>
-                                                {javaInfo.home}
-                                            </span>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => openFolderInFinder(javaInfo.home)}
-                                                className="h-5 w-5 p-0"
-                                            >
-                                                <FolderOpen className="h-3 w-3" />
-                                            </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div className="space-y-2 text-xs p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('java_service.java_version')}:</span>
+                                            <span className="font-medium">{javaInfo.version}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('java_service.java_vendor')}:</span>
+                                            <span className="font-medium">{javaInfo.vendor}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('java_service.java_runtime')}:</span>
+                                            <span className="font-medium text-xs break-all">{javaInfo.runtime}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('java_service.java_install_path')}:</span>
+                                            <div className="flex items-center gap-1">
+                                                <span className="font-medium text-xs truncate max-w-[200px]" title={javaInfo.home}>
+                                                    {javaInfo.home}
+                                                </span>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => openFolderInFinder(javaInfo.home)}
+                                                    className="h-5 w-5 p-0"
+                                                >
+                                                    <FolderOpen className="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CollapsibleContent>
-                        </Collapsible>
-                    )}
+                                </CollapsibleContent>
+                            </Collapsible>
+                        )}
+                    </div>
 
                 </div>
 
                 {/* Maven 配置卡片 */}
-                <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                    {!isMavenChecking && !isMavenInstalled && (
-                        <Alert variant="destructive" className="mb-3">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle className="text-xs">{t('java_service.maven_not_installed_title')}</AlertTitle>
-                            <AlertDescription>
-                                <div className="mt-2 space-y-2">
-                                    <p className="text-xs">{t('java_service.maven_not_installed_desc')}</p>
-                                    <div className="flex items-center gap-2">
+                <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    {isMavenChecking ? (
+                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            {t('java_service.maven_checking')}
+                        </div>
+                    ) : !isMavenInstalled ? (
+                        <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg shrink-0">
+                                    <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <div className="flex-1 space-y-3">
+                                    <div>
+                                        <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
+                                            {t('java_service.maven_not_installed_title')}
+                                        </h3>
+                                        <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                                            {t('java_service.maven_not_installed_desc')}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-2">
                                         <Button
                                             size="sm"
-                                            variant="outline"
                                             onClick={handleDownloadMaven}
                                             disabled={!isServiceDataActive || isMavenDownloading || isLoading}
-                                            className="h-7 text-xs shadow-none"
+                                            className="h-8 text-xs shadow-none bg-orange-600 hover:bg-orange-700 text-white"
                                         >
-                                            {isMavenDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                            {isMavenDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
                                             {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
                                         </Button>
                                         {!!mavenDownloadStatus && (
-                                            <span className="text-[11px] text-muted-foreground">
+                                            <p className="text-[11px] text-orange-600 dark:text-orange-400">
                                                 {t('java_service.maven_download_status')}: {mavenDownloadStatus}
-                                            </span>
+                                            </p>
+                                        )}
+                                        {isMavenDownloading && (
+                                            <div className="space-y-1">
+                                                <Progress value={mavenDownloadProgress} className="h-1.5" />
+                                                <div className="text-[11px] text-orange-600 dark:text-orange-400 text-right">
+                                                    {Math.round(mavenDownloadProgress)}%
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    {isMavenDownloading && (
-                                        <div className="space-y-1">
-                                            <Progress value={mavenDownloadProgress} className="h-2" />
-                                            <div className="text-[11px] text-muted-foreground text-right">
-                                                {Math.round(mavenDownloadProgress)}%
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                {t('java_service.maven_home_label')}
-                            </Label>
-                        </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                            {t('java_service.maven_home_desc')}
-                        </p>
-
-                        <Input
-                            value={mavenHome}
-                            readOnly
-                            placeholder={t('java_service.maven_home_placeholder')}
-                            disabled
-                            className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        />
-
-                        {!mavenHome.trim() && (
-                            <div className="mt-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleInitializeMaven}
-                                    disabled={!isServiceDataActive || !isMavenInstalled || isMavenInitializing || isLoading}
-                                    className="h-7 text-xs shadow-none"
-                                >
-                                    {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                    {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
-                                </Button>
                             </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                            {t('java_service.maven_repo_label')}
-                                            <Info className="h-3 w-3 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <div className="text-xs font-mono">MAVEN_REPO_URL</div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                            {t('java_service.maven_repo_desc')}
-                        </p>
+                    ) : (
+                        <div className="space-y-6">
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                        {t('java_service.maven_home_label')}
+                                    </Label>
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                    {t('java_service.maven_home_desc')}
+                                </p>
 
-                        <div className="flex items-center gap-2">
-                            <Input
-                                value={mavenRepository}
-                                onChange={(e) => setMavenRepositoryState(e.target.value)}
-                                placeholder={t('java_service.maven_repo_placeholder')}
-                                disabled={!isServiceDataActive}
-                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            />
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetMavenRepository(mavenRepository)}
-                                disabled={!mavenRepository || isLoading || !isServiceDataActive}
-                                className="h-8 text-xs shadow-none shrink-0"
-                            >
-                                {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                {t('java_service.apply')}
-                            </Button>
-                        </div>
+                                <Input
+                                    value={mavenHome}
+                                    readOnly
+                                    placeholder={t('java_service.maven_home_placeholder')}
+                                    disabled
+                                    className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                />
 
-                        <div className="flex flex-wrap gap-2 items-center mt-3">
-                            <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('java_service.maven_repo_quick_set')}</Label>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetMavenRepository('https://repo.maven.apache.org/maven2')}
-                                disabled={isLoading || !isServiceDataActive}
-                                className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            >
-                                {t('java_service.maven_repo_official')}
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetMavenRepository('https://maven.aliyun.com/repository/public')}
-                                disabled={isLoading || !isServiceDataActive}
-                                className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            >
-                                {t('java_service.maven_repo_aliyun')}
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetMavenRepository('https://mirrors.tuna.tsinghua.edu.cn/maven/')}
-                                disabled={isLoading || !isServiceDataActive}
-                                className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            >
-                                {t('java_service.maven_repo_tsinghua')}
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Maven 本地仓库 */}
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                            {t('java_service.maven_local_repo_label')}
-                                            <Info className="h-3 w-3 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <div className="text-xs font-mono">MAVEN_LOCAL_REPO</div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                            {t('java_service.maven_local_repo_desc')}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <Input
-                                value={mavenLocalRepo}
-                                onChange={(e) => setMavenLocalRepoState(e.target.value)}
-                                placeholder={t('java_service.maven_local_repo_placeholder')}
-                                disabled={!isServiceDataActive || !isMavenInstalled}
-                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            />
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetMavenLocalRepository(mavenLocalRepo)}
-                                disabled={!mavenLocalRepo || isLoading || !isServiceDataActive || !isMavenInstalled}
-                                className="h-8 text-xs shadow-none shrink-0"
-                            >
-                                {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                {t('java_service.apply')}
-                            </Button>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Gradle 配置卡片 */}
-                <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                    {/* Gradle 未安装提示 */}
-                    {!isGradleChecking && !isGradleInstalled && (
-                        <Alert variant="destructive" className="mb-3">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle className="text-xs">{t('java_service.gradle_not_installed_title')}</AlertTitle>
-                            <AlertDescription>
-                                <div className="mt-2 space-y-2">
-                                    <p className="text-xs">{t('java_service.gradle_not_installed_desc')}</p>
-                                    <div className="flex items-center gap-2">
+                                {!mavenHome.trim() && (
+                                    <div className="mt-2">
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={handleDownloadGradle}
-                                            disabled={!isServiceDataActive || isGradleDownloading || isLoading}
+                                            onClick={handleInitializeMaven}
+                                            disabled={!isServiceDataActive || !isMavenInstalled || isMavenInitializing || isLoading}
                                             className="h-7 text-xs shadow-none"
                                         >
-                                            {isGradleDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                            {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                            {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    {t('java_service.maven_repo_label')}
+                                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                                </Label>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <div className="text-xs font-mono">MAVEN_REPO_URL</div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                    {t('java_service.maven_repo_desc')}
+                                </p>
+
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={mavenRepository}
+                                        onChange={(e) => setMavenRepositoryState(e.target.value)}
+                                        placeholder={t('java_service.maven_repo_placeholder')}
+                                        disabled={!isServiceDataActive}
+                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    />
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetMavenRepository(mavenRepository)}
+                                        disabled={!mavenRepository || isLoading || !isServiceDataActive}
+                                        className="h-8 text-xs shadow-none shrink-0"
+                                    >
+                                        {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                        {t('java_service.apply')}
+                                    </Button>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 items-center mt-3">
+                                    <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('java_service.maven_repo_quick_set')}</Label>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetMavenRepository('https://repo.maven.apache.org/maven2')}
+                                        disabled={isLoading || !isServiceDataActive}
+                                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    >
+                                        {t('java_service.maven_repo_official')}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetMavenRepository('https://maven.aliyun.com/repository/public')}
+                                        disabled={isLoading || !isServiceDataActive}
+                                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    >
+                                        {t('java_service.maven_repo_aliyun')}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetMavenRepository('https://mirrors.tuna.tsinghua.edu.cn/maven/')}
+                                        disabled={isLoading || !isServiceDataActive}
+                                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    >
+                                        {t('java_service.maven_repo_tsinghua')}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Maven 本地仓库 */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    {t('java_service.maven_local_repo_label')}
+                                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                                </Label>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <div className="text-xs font-mono">MAVEN_LOCAL_REPO</div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                    {t('java_service.maven_local_repo_desc')}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={mavenLocalRepo}
+                                        onChange={(e) => setMavenLocalRepoState(e.target.value)}
+                                        placeholder={t('java_service.maven_local_repo_placeholder')}
+                                        disabled={!isServiceDataActive}
+                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    />
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetMavenLocalRepository(mavenLocalRepo)}
+                                        disabled={!mavenLocalRepo || isLoading || !isServiceDataActive}
+                                        className="h-8 text-xs shadow-none shrink-0"
+                                    >
+                                        {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                        {t('java_service.apply')}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Gradle 配置卡片 */}
+                <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    {isGradleChecking ? (
+                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            {t('java_service.gradle_checking')}
+                        </div>
+                    ) : !isGradleInstalled ? (
+                        <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg shrink-0">
+                                    <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <div className="flex-1 space-y-3">
+                                    <div>
+                                        <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
+                                            {t('java_service.gradle_not_installed_title')}
+                                        </h3>
+                                        <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                                            {t('java_service.gradle_not_installed_desc')}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Button
+                                            size="sm"
+                                            onClick={handleDownloadGradle}
+                                            disabled={!isServiceDataActive || isGradleDownloading || isLoading}
+                                            className="h-8 text-xs shadow-none bg-orange-600 hover:bg-orange-700 text-white"
+                                        >
+                                            {isGradleDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
                                             {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
                                         </Button>
                                         {!!gradleDownloadStatus && (
-                                            <span className="text-[11px] text-muted-foreground">
+                                            <p className="text-[11px] text-orange-600 dark:text-orange-400">
                                                 {t('java_service.gradle_download_status')}: {gradleDownloadStatus}
-                                            </span>
+                                            </p>
+                                        )}
+                                        {isGradleDownloading && (
+                                            <div className="space-y-1">
+                                                <Progress value={gradleDownloadProgress} className="h-1.5" />
+                                                <div className="text-[11px] text-orange-600 dark:text-orange-400 text-right">
+                                                    {Math.round(gradleDownloadProgress)}%
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    {isGradleDownloading && (
-                                        <div className="space-y-1">
-                                            <Progress value={gradleDownloadProgress} className="h-2" />
-                                            <div className="text-[11px] text-muted-foreground text-right">
-                                                {Math.round(gradleDownloadProgress)}%
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* 远程仓库提示 */}
-                    <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 px-3 py-2.5 text-[11px] text-yellow-800 dark:text-yellow-400 leading-relaxed">
-                        {t('java_service.gradle_repo_tip')}
-                    </div>
-
-                    {/* GRADLE_HOME */}
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                            <Package className="h-3.5 w-3.5" />
-                                            {t('java_service.gradle_home_label')}
-                                            <Info className="h-3 w-3 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <div className="text-xs font-mono">GRADLE_HOME</div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                            {t('java_service.gradle_home_desc')}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <Input
-                                value={gradleHome}
-                                onChange={(e) => setGradleHomeState(e.target.value)}
-                                placeholder={t('java_service.gradle_home_placeholder')}
-                                disabled={!isServiceDataActive}
-                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            />
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetGradleHome(gradleHome)}
-                                disabled={!gradleHome || isLoading || !isServiceDataActive}
-                                className="h-8 text-xs shadow-none shrink-0"
-                            >
-                                {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                {t('java_service.apply')}
-                            </Button>
-                        </div>
-
-                        {!gradleHome.trim() && (
-                            <div className="mt-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleInitializeGradle}
-                                    disabled={!isServiceDataActive || !isGradleInstalled || isGradleInitializing || isLoading}
-                                    className="h-7 text-xs shadow-none"
-                                >
-                                    {isGradleInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                    {isGradleInitializing ? t('java_service.gradle_initializing') : t('java_service.gradle_initialize')}
-                                </Button>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* 远程仓库提示 */}
+                            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 px-3 py-2.5 text-[11px] text-yellow-800 dark:text-yellow-400 leading-relaxed">
+                                {t('java_service.gradle_repo_tip')}
+                            </div>
 
-                    {/* GRADLE_USER_HOME */}
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                                            {t('java_service.gradle_user_home_label')}
-                                            <Info className="h-3 w-3 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <div className="text-xs font-mono">GRADLE_USER_HOME</div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            {/* GRADLE_HOME */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    <Package className="h-3.5 w-3.5" />
+                                                    {t('java_service.gradle_home_label')}
+                                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                                </Label>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <div className="text-xs font-mono">GRADLE_HOME</div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                    {t('java_service.gradle_home_desc')}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={gradleHome}
+                                        onChange={(e) => setGradleHomeState(e.target.value)}
+                                        placeholder={t('java_service.gradle_home_placeholder')}
+                                        disabled={!isServiceDataActive}
+                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    />
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetGradleHome(gradleHome)}
+                                        disabled={!gradleHome || isLoading || !isServiceDataActive}
+                                        className="h-8 text-xs shadow-none shrink-0"
+                                    >
+                                        {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                        {t('java_service.apply')}
+                                    </Button>
+                                </div>
+
+                                {!gradleHome.trim() && (
+                                    <div className="mt-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={handleInitializeGradle}
+                                            disabled={!isServiceDataActive || !isGradleInstalled || isGradleInitializing || isLoading}
+                                            className="h-7 text-xs shadow-none"
+                                        >
+                                            {isGradleInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                            {isGradleInitializing ? t('java_service.gradle_initializing') : t('java_service.gradle_initialize')}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* GRADLE_USER_HOME */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                    {t('java_service.gradle_user_home_label')}
+                                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                                </Label>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <div className="text-xs font-mono">GRADLE_USER_HOME</div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                    {t('java_service.gradle_user_home_desc')}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        value={gradleUserHome}
+                                        onChange={(e) => setGradleUserHomeState(e.target.value)}
+                                        placeholder={t('java_service.gradle_user_home_placeholder')}
+                                        disabled={!isServiceDataActive}
+                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    />
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleSetGradleUserHome(gradleUserHome)}
+                                        disabled={!gradleUserHome || isLoading || !isServiceDataActive}
+                                        className="h-8 text-xs shadow-none shrink-0"
+                                    >
+                                        {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                        {t('java_service.apply')}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                            {t('java_service.gradle_user_home_desc')}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <Input
-                                value={gradleUserHome}
-                                onChange={(e) => setGradleUserHomeState(e.target.value)}
-                                placeholder={t('java_service.gradle_user_home_placeholder')}
-                                disabled={!isServiceDataActive}
-                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                            />
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSetGradleUserHome(gradleUserHome)}
-                                disabled={!gradleUserHome || isLoading || !isServiceDataActive}
-                                className="h-8 text-xs shadow-none shrink-0"
-                            >
-                                {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
-                                {t('java_service.apply')}
-                            </Button>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
             </div>
