@@ -51,6 +51,9 @@ impl EnvVarBuilder {
             ServiceType::Dnsmasq => {
                 // Dnsmasq 服务不需要环境变量
             }
+            ServiceType::Nasm => {
+                // NASM 服务不需要额外环境变量
+            }
         }
 
         Ok(env_vars)

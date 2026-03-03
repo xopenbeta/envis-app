@@ -19,6 +19,7 @@ import { PythonService } from './service-data-panel/python-service'
 import { JavaService } from './service-data-panel/java-service'
 import { SSLService } from './service-data-panel/ssl-service'
 import { DnsmasqService } from './service-data-panel/dnsmasq-service'
+import { NasmService } from './service-data-panel/nasm-service'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { ServiceType } from '@/types'
 import { useAtom } from 'jotai'
@@ -51,6 +52,8 @@ function ServiceDetailRouter() {
       return <PythonService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Java:
       return <JavaService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
+    case ServiceType.Nasm:
+      return <NasmService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Custom:
       return <CustomService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Host:

@@ -75,6 +75,7 @@ const SERVICE_TYPE_ICONS: Record<ServiceType, string> = {
   [ServiceType.Mysql]: 'mysql',
   [ServiceType.Postgresql]: 'postgresql',
   [ServiceType.Python]: 'python',
+  [ServiceType.Nasm]: 'devicon',
   [ServiceType.Custom]: 'devicon', // 使用 devicon logo
   [ServiceType.Host]: 'windows11', // 使用 windows11 作为 host 图标
   [ServiceType.SSL]: 'cloudflare', // 使用 cloudflare 作为 SSL 图标

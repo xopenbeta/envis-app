@@ -616,5 +616,10 @@
     "maven_local_repo_empty_error": "Maven local repository path cannot be empty",
     "maven_local_repo_applied": "Maven local repository path applied",
     "maven_local_repo_apply_failed": "Failed to set Maven local repository path"
+  },
+  "nasm_service": {
+    "title": "NASM Assembler Tool",
+    "description": "NASM is an assembler toolchain. Choose and install a NASM version in Add Service, then activate it to append binary paths into the current environment.",
+    "current_version": "Current version: {{version}}"
   }
 }

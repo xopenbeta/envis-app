@@ -10,4 +10,5 @@ pub mod postgresql_commands;
 pub mod python_commands;
 pub mod ssl_commands;
 pub mod dnsmasq_commands;
+pub mod nasm_commands;
 

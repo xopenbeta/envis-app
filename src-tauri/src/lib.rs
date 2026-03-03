@@ -25,6 +25,7 @@ use tauri_command::services::java_commands::*;
 use tauri_command::services::mariadb_commands::*;
 use tauri_command::services::mongodb_commands::*;
 use tauri_command::services::mysql_commands::*;
+use tauri_command::services::nasm_commands::*;
 use tauri_command::services::nginx_commands::*;
 use tauri_command::services::nodejs_commands::*;
 use tauri_command::services::postgresql_commands::*;
@@ -330,6 +331,12 @@ pub fn run() {
             download_dnsmasq,
             cancel_download_dnsmasq,
             get_dnsmasq_download_progress,
+            // NASM 服务命令
+            check_nasm_installed,
+            get_nasm_versions,
+            download_nasm,
+            cancel_download_nasm,
+            get_nasm_download_progress,
             // Dnsmasq 配置命令
             get_dnsmasq_config,
             // Dnsmasq 控制命令

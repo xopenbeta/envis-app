@@ -41,6 +41,7 @@ pub enum ServiceType {
     Host,
     SSL,
     Dnsmasq,
+    Nasm,
     // 可以根据需要添加更多服务类型
 }
 
@@ -60,6 +61,7 @@ impl ServiceType {
             ServiceType::Host => "host",
             ServiceType::SSL => "ssl",
             ServiceType::Dnsmasq => "dnsmasq",
+            ServiceType::Nasm => "nasm",
         }
     }
 
@@ -86,6 +88,7 @@ impl ServiceType {
             ServiceType::Host => &[],               // Host 服务不需要 PATH
             ServiceType::SSL => &[],                // SSL 服务不需要 PATH
             ServiceType::Dnsmasq => &["sbin"],      // Dnsmasq 可执行文件目录
+            ServiceType::Nasm => &[""],             // Nasm 解压后执行文件在根目录或自身路径
         }
     }
 
@@ -106,6 +109,7 @@ impl ServiceType {
             ServiceType::Host => vec![],   // Host 服务不需要环境变量
             ServiceType::SSL => vec![],    // SSL 服务不需要环境变量
             ServiceType::Dnsmasq => vec![], // Dnsmasq 服务不需要环境变量
+            ServiceType::Nasm => vec![],
         }
     }
 
@@ -123,6 +127,7 @@ impl ServiceType {
             ServiceType::Host => "Host".to_string(),
             ServiceType::SSL => "SSL".to_string(),
             ServiceType::Dnsmasq => "Dnsmasq".to_string(),
+            ServiceType::Nasm => "Nasm".to_string(),
         }
     }
 
@@ -153,6 +158,7 @@ impl ServiceType {
                 "SSL_CERTIFICATES",      // 已签发的证书列表
             ],
             ServiceType::Dnsmasq => vec!["DNSMASQ_CONF"],
+            ServiceType::Nasm => vec![],
         }
     }
 }

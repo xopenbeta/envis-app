@@ -68,6 +68,9 @@ impl MetadataBuilder {
                 // 为 Dnsmasq 服务创建默认配置
                 Self::build_dnsmasq_default_metadata(environment_id, service_data, &mut metadata)?;
             }
+            ServiceType::Nasm => {
+                // NASM 暂无默认 metadata
+            }
         }
 
         Ok(metadata)

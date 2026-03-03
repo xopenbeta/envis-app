@@ -60,6 +60,7 @@ export enum ServiceType {
   Nodejs = "nodejs",
   Python = "python",
   Java = "java",
+  Nasm = "nasm",
   Custom = "custom",
   Host = "host",
   SSL = "ssl",
@@ -76,6 +77,7 @@ export const serviceTypeNames: Record<ServiceType, string> = {
   [ServiceType.Postgresql]: 'PostgreSQL',
   [ServiceType.Python]: 'Python',
   [ServiceType.Java]: 'Java',
+  [ServiceType.Nasm]: 'NASM',
   [ServiceType.Custom]: '自定义服务',
   [ServiceType.Host]: 'Hosts 管理',
   [ServiceType.SSL]: 'SSL 证书',
@@ -93,6 +95,7 @@ export const serviceCategories = {
     nodejs: 'Node.js',
     python: 'Python',
     java: 'Java',
+    nasm: 'NASM',
     // go: 'Go',
     // php: 'PHP'
   },
@@ -118,6 +121,7 @@ export const NeedDownloadServices: ServiceType[] = [
   ServiceType.Postgresql,
   ServiceType.Python,
   ServiceType.Java,
+  ServiceType.Nasm,
   ServiceType.Dnsmasq,
 ];
 
@@ -140,6 +144,7 @@ export const CannotRunServices: ServiceType[] = [
   ServiceType.Nodejs,
   ServiceType.Python,
   ServiceType.Java,
+  ServiceType.Nasm,
   ServiceType.Custom,
   ServiceType.Host,
   ServiceType.SSL,

@@ -99,6 +99,10 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             isLoading: false,
             availableVersions: [],
         },
+        [ServiceType.Nasm]: {
+            isLoading: false,
+            availableVersions: [],
+        },
     })
 
     // 用于下载时的服务数据缓存，包含对话框状态

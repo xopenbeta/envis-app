@@ -245,6 +245,7 @@ impl ServiceManager {
             ServiceType::Host => "host".to_string(),
             ServiceType::SSL => "ssl".to_string(),
             ServiceType::Dnsmasq => "dnsmasq".to_string(),
+            ServiceType::Nasm => "nasm".to_string(),
         }
     }
 
@@ -262,6 +263,7 @@ impl ServiceManager {
             "host" => Some(ServiceType::Host),
             "ssl" => Some(ServiceType::SSL),
             "dnsmasq" => Some(ServiceType::Dnsmasq),
+            "nasm" => Some(ServiceType::Nasm),
             _ => None,
         }
     }

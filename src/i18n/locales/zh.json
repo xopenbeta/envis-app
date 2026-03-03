@@ -582,5 +582,10 @@
     "maven_local_repo_empty_error": "Maven 本地仓库路径不能为空",
     "maven_local_repo_applied": "Maven 本地仓库路径已应用",
     "maven_local_repo_apply_failed": "设置 Maven 本地仓库路径失败"
+  },
+  "nasm_service": {
+    "title": "NASM 汇编工具",
+    "description": "NASM 是汇编语言工具链，版本下载请在添加服务时选择对应版本并安装，激活后会把可执行路径加入当前环境。",
+    "current_version": "当前版本：{{version}}"
   }
 }
