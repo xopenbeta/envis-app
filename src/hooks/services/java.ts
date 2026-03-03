@@ -13,6 +13,10 @@ import {
     ipcSetJavaOpts,
     ipcSetMavenHome,
     ipcSetGradleHome,
+    ipcSetGradleUserHome,
+    ipcCheckGradleInstalled,
+    ipcInitializeGradle,
+    ipcGetGradleDownloadProgress,
     ipcSetMavenLocalRepository
 } from "../../ipc/services/java";
 
@@ -95,9 +99,33 @@ export function useJavaService() {
         return ipcRes;
     }
 
+    async function setGradleUserHome(environmentId: string, serviceData: ServiceData, gradleUserHome: string) {
+        const ipcRes = await ipcSetGradleUserHome(environmentId, serviceData, gradleUserHome);
+        console.log(`[hooks/java] setGradleUserHome IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
     async function setMavenLocalRepository(environmentId: string, serviceData: ServiceData, localRepo: string) {
         const ipcRes = await ipcSetMavenLocalRepository(environmentId, serviceData, localRepo);
         console.log(`[hooks/java] setMavenLocalRepository IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
+    async function checkGradleInstalled(version: string) {
+        const ipcRes = await ipcCheckGradleInstalled(version);
+        console.log(`[hooks/java] checkGradleInstalled IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
+    async function initializeGradle(environmentId: string, serviceData: ServiceData) {
+        const ipcRes = await ipcInitializeGradle(environmentId, serviceData);
+        console.log(`[hooks/java] initializeGradle IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
+    async function getGradleDownloadProgress(version: string) {
+        const ipcRes = await ipcGetGradleDownloadProgress(version);
+        console.log(`[hooks/java] getGradleDownloadProgress IPC 响应:`, ipcRes);
         return ipcRes;
     }
 
@@ -115,6 +143,10 @@ export function useJavaService() {
         setJavaOpts,
         setMavenHome,
         setGradleHome,
-        setMavenLocalRepository
+        setGradleUserHome,
+        setMavenLocalRepository,
+        checkGradleInstalled,
+        initializeGradle,
+        getGradleDownloadProgress,
     }
 }

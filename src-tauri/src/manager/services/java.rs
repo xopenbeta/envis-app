@@ -31,6 +31,11 @@ impl JavaService {
     pub const DEFAULT_MAVEN_REPO_URL: &'static str = "https://repo.maven.apache.org/maven2";
     const MAVEN_REPO_ENV_PLACEHOLDER: &'static str = "${env.MAVEN_REPO_URL}";
 
+    // Gradle 版本：针对不同 Java 版本选择合适的 Gradle
+    const GRADLE_VERSION_FOR_JAVA_8: &'static str = "7.6.4";
+    const GRADLE_VERSION_FOR_JAVA_11: &'static str = "8.5";
+    const GRADLE_VERSION_FOR_JAVA_MODERN: &'static str = "8.12";
+
     /// 获取全局 Java 服务管理器单例
     pub fn global() -> Arc<JavaService> {
         GLOBAL_JAVA_SERVICE
@@ -118,7 +123,204 @@ impl JavaService {
         format!("java-{}-maven", java_version)
     }
 
-    /// 获取 Maven 安装路径
+    // ─── Gradle 相关 ───────────────────────────────────────────────────────────
+
+    fn get_gradle_version_for_java(&self, java_version: &str) -> &'static str {
+        let major = self.parse_java_major_version(java_version);
+        if major <= 8 {
+            Self::GRADLE_VERSION_FOR_JAVA_8
+        } else if major <= 11 {
+            Self::GRADLE_VERSION_FOR_JAVA_11
+        } else {
+            Self::GRADLE_VERSION_FOR_JAVA_MODERN
+        }
+    }
+
+    fn get_gradle_task_id(&self, java_version: &str) -> String {
+        format!("java-{}-gradle", java_version)
+    }
+
+    /// 获取 Gradle 安装路径
+    fn get_gradle_install_path(&self, java_version: &str) -> PathBuf {
+        let services_folder = {
+            let app_config_manager = AppConfigManager::global();
+            let app_config_manager = app_config_manager.lock().unwrap();
+            std::path::PathBuf::from(app_config_manager.get_services_folder())
+        };
+        let gradle_version = self.get_gradle_version_for_java(java_version);
+        services_folder
+            .join("java")
+            .join(java_version)
+            .join("gradle")
+            .join(gradle_version)
+    }
+
+    /// 检查 Gradle 是否已安装
+    pub fn is_gradle_installed(&self, java_version: &str) -> bool {
+        let install_path = self.get_gradle_install_path(java_version);
+        let gradle_binary = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("gradle.bat")
+        } else {
+            install_path.join("bin").join("gradle")
+        };
+        gradle_binary.exists()
+    }
+
+    /// 获取 Gradle 安装目录（已安装时返回路径）
+    pub fn get_gradle_home(&self, java_version: &str) -> Option<String> {
+        if self.is_gradle_installed(java_version) {
+            Some(
+                self.get_gradle_install_path(java_version)
+                    .to_string_lossy()
+                    .to_string(),
+            )
+        } else {
+            None
+        }
+    }
+
+    /// 构建 Gradle 下载 URL 和文件名
+    fn build_gradle_download_info(&self, java_version: &str) -> Result<(Vec<String>, String)> {
+        let gradle_version = self.get_gradle_version_for_java(java_version);
+        let ext = if cfg!(target_os = "windows") {
+            "zip"
+        } else {
+            "zip" // Gradle 统一使用 zip
+        };
+
+        let filename = format!("gradle-{}-bin.{}", gradle_version, ext);
+        let urls = vec![
+            format!(
+                "https://mirrors.huaweicloud.com/gradle/{}/{}",
+                gradle_version, filename
+            ),
+            format!(
+                "https://mirrors.aliyun.com/gradle/distributions/{}",
+                filename
+            ),
+            format!(
+                "https://services.gradle.org/distributions/{}",
+                filename
+            ),
+        ];
+
+        Ok((urls, filename))
+    }
+
+    /// 下载并安装 Gradle
+    pub async fn download_and_install_gradle(&self, java_version: &str) -> Result<DownloadResult> {
+        if self.is_gradle_installed(java_version) {
+            return Ok(DownloadResult::success(
+                "Gradle 已经安装".to_string(),
+                None,
+            ));
+        }
+
+        let (urls, filename) = self.build_gradle_download_info(java_version)?;
+        let install_path = self.get_gradle_install_path(java_version);
+        let task_id = self.get_gradle_task_id(java_version);
+        let download_manager = DownloadManager::global();
+        let java_version_for_callback = java_version.to_string();
+
+        let success_callback = Arc::new(move |task: &DownloadTask| {
+            log::info!("Gradle 下载完成: {}", task.filename);
+
+            let task_for_spawn = task.clone();
+            let service_for_spawn = JavaService::global();
+            let java_version_for_spawn = java_version_for_callback.clone();
+
+            tokio::spawn(async move {
+                let download_manager = DownloadManager::global();
+                if let Err(e) = download_manager.update_task_status(
+                    &task_for_spawn.id,
+                    DownloadStatus::Installing,
+                    None,
+                ) {
+                    log::error!("更新任务状态失败: {}", e);
+                }
+
+                match service_for_spawn
+                    .extract_and_install_gradle(&task_for_spawn, &java_version_for_spawn)
+                    .await
+                {
+                    Ok(_) => {
+                        if let Err(e) = download_manager.update_task_status(
+                            &task_for_spawn.id,
+                            DownloadStatus::Installed,
+                            None,
+                        ) {
+                            log::error!("更新任务状态失败: {}", e);
+                        } else {
+                            log::info!("Gradle 安装成功");
+                        }
+                    }
+                    Err(e) => {
+                        if let Err(update_err) = download_manager.update_task_status(
+                            &task_for_spawn.id,
+                            DownloadStatus::Failed,
+                            Some(format!("安装失败: {}", e)),
+                        ) {
+                            log::error!("更新任务状态失败: {}", update_err);
+                        }
+                        log::error!("Gradle 安装失败: {}", e);
+                    }
+                }
+            });
+        });
+
+        match download_manager
+            .start_download(
+                task_id.clone(),
+                urls,
+                install_path,
+                filename,
+                true,
+                Some(success_callback),
+            )
+            .await
+        {
+            Ok(_) => {
+                if let Some(task) = download_manager.get_task_status(&task_id) {
+                    Ok(DownloadResult::success(
+                        "Gradle 下载任务已开始".to_string(),
+                        Some(task),
+                    ))
+                } else {
+                    Ok(DownloadResult::error("无法获取 Gradle 下载任务状态".to_string()))
+                }
+            }
+            Err(e) => Ok(DownloadResult::error(format!("Gradle 下载失败: {}", e))),
+        }
+    }
+
+    /// 解压和安装 Gradle
+    pub async fn extract_and_install_gradle(
+        &self,
+        task: &DownloadTask,
+        java_version: &str,
+    ) -> Result<()> {
+        let archive_path = &task.target_path;
+        let install_dir = self.get_gradle_install_path(java_version);
+
+        std::fs::create_dir_all(&install_dir)?;
+
+        // Gradle 统一使用 zip 格式
+        self.extract_zip(archive_path, &install_dir).await?;
+
+        #[cfg(not(target_os = "windows"))]
+        self.set_executable_permissions(&install_dir)?;
+
+        let _ = std::fs::remove_file(archive_path);
+
+        log::info!("Gradle 解压和安装完成");
+        Ok(())
+    }
+
+    /// 获取 Gradle 下载进度
+    pub fn get_gradle_download_progress(&self, java_version: &str) -> Option<DownloadTask> {
+        let task_id = self.get_gradle_task_id(java_version);
+        DownloadManager::global().get_task_status(&task_id)
+    }
     fn get_maven_install_path(&self, java_version: &str) -> PathBuf {
         let services_folder = {
             let app_config_manager = AppConfigManager::global();
@@ -852,6 +1054,7 @@ impl JavaService {
 
         if let Some(maven_home) = metadata_maven_home {
             shell_manager.add_export("MAVEN_HOME", &maven_home)?;
+            shell_manager.add_export("M2_HOME", &maven_home)?;
             let maven_bin = format!("{}/bin", maven_home);
             shell_manager.add_path(&maven_bin)?;
         }
@@ -880,6 +1083,15 @@ impl JavaService {
                 shell_manager.add_export("GRADLE_HOME", gradle_home)?;
                 let gradle_bin = format!("{}/bin", gradle_home);
                 shell_manager.add_path(&gradle_bin)?;
+            }
+
+            if let Some(gradle_user_home) = metadata
+                .get("GRADLE_USER_HOME")
+                .and_then(|v| v.as_str())
+                .map(|v| v.trim())
+                .filter(|v| !v.is_empty())
+            {
+                shell_manager.add_export("GRADLE_USER_HOME", gradle_user_home)?;
             }
 
             if let Some(local_repo) = metadata
@@ -939,8 +1151,10 @@ impl JavaService {
         shell_manager.delete_export("JAVA_HOME")?;
         shell_manager.delete_export("JAVA_OPTS")?;
         shell_manager.delete_export("MAVEN_HOME")?;
+        shell_manager.delete_export("M2_HOME")?;
         shell_manager.delete_export("MAVEN_REPO_URL")?;
         shell_manager.delete_export("GRADLE_HOME")?;
+        shell_manager.delete_export("GRADLE_USER_HOME")?;
 
         log::info!("Java {} 服务已取消激活", service_data.version);
         Ok(())

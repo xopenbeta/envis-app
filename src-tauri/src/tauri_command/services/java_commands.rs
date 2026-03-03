@@ -297,6 +297,101 @@ pub async fn set_gradle_home(
     ))
 }
 
+/// 设置 GRADLE_USER_HOME
+#[tauri::command]
+pub async fn set_gradle_user_home(
+    environment_id: String,
+    mut service_data: ServiceData,
+    gradle_user_home: String,
+) -> Result<CommandResponse, String> {
+    let env_serv_data_manager = EnvServDataManager::global();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let _ = env_serv_data_manager.set_metadata(
+        &environment_id,
+        &mut service_data,
+        "GRADLE_USER_HOME",
+        serde_json::Value::String(gradle_user_home.clone()),
+    );
+
+    let data = serde_json::json!({
+        "gradleUserHome": gradle_user_home,
+    });
+    Ok(CommandResponse::success(
+        "GRADLE_USER_HOME 设置成功".to_string(),
+        Some(data),
+    ))
+}
+
+/// 检查 Gradle 是否已安装的 Tauri 命令
+#[tauri::command]
+pub async fn check_gradle_installed(version: String) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+    let is_installed = java_service.is_gradle_installed(&version);
+    let gradle_home = java_service.get_gradle_home(&version);
+    let message = if is_installed {
+        "Gradle 已安装"
+    } else {
+        "Gradle 未安装"
+    };
+    let data = serde_json::json!({
+        "installed": is_installed,
+        "home": gradle_home,
+    });
+    Ok(CommandResponse::success(message.to_string(), Some(data)))
+}
+
+/// 初始化 Gradle（下载并安装到 service 文件夹）
+#[tauri::command]
+pub async fn initialize_gradle(
+    environment_id: String,
+    mut service_data: ServiceData,
+) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+    match java_service.download_and_install_gradle(&service_data.version).await {
+        Ok(result) => {
+            let gradle_home = java_service.get_gradle_home(&service_data.version);
+
+            if let Some(gradle_home_path) = gradle_home.clone() {
+                let env_serv_data_manager = EnvServDataManager::global();
+                let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+                let _ = env_serv_data_manager.set_metadata(
+                    &environment_id,
+                    &mut service_data,
+                    "GRADLE_HOME",
+                    serde_json::Value::String(gradle_home_path),
+                );
+            }
+
+            let data = serde_json::json!({
+                "task": result.task,
+                "message": result.message,
+                "home": gradle_home,
+            });
+
+            if result.success {
+                Ok(CommandResponse::success("Gradle 初始化任务已开始".to_string(), Some(data)))
+            } else {
+                Ok(CommandResponse::error(result.message))
+            }
+        }
+        Err(e) => Ok(CommandResponse::error(format!("初始化 Gradle 失败: {}", e))),
+    }
+}
+
+/// 获取 Gradle 初始化下载进度
+#[tauri::command]
+pub async fn get_gradle_download_progress(version: String) -> Result<CommandResponse, String> {
+    let java_service = JavaService::global();
+    let task = java_service.get_gradle_download_progress(&version);
+    let data = serde_json::json!({
+        "task": task
+    });
+    Ok(CommandResponse::success(
+        "获取 Gradle 下载进度成功".to_string(),
+        Some(data),
+    ))
+}
+
 /// 设置 Maven 本地仓库路径
 #[tauri::command]
 pub async fn set_maven_local_repository(

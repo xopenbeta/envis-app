@@ -7,7 +7,8 @@ import {
     FolderOpen,
     ExternalLink,
     CheckCircle2,
-    ChevronDown
+    ChevronDown,
+    Info
 } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useTranslation } from 'react-i18next'
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useFileOperations } from "@/hooks/file-operations"
 import { useJavaService } from "@/hooks/services/java"
 import { useEnvironmentServiceData } from "@/hooks/env-serv-data"
@@ -47,9 +49,13 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         setJavaOpts,
         setMavenHome,
         setGradleHome,
+        setGradleUserHome,
         initializeMaven,
         getMavenDownloadProgress,
         setMavenLocalRepository,
+        checkGradleInstalled,
+        initializeGradle,
+        getGradleDownloadProgress,
     } = useJavaService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
 
@@ -58,6 +64,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const [mavenHome, setMavenHomeState] = useState('')
     const [mavenRepository, setMavenRepositoryState] = useState('')
     const [gradleHome, setGradleHomeState] = useState('')
+    const [gradleUserHome, setGradleUserHomeState] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [isMavenChecking, setIsMavenChecking] = useState(false)
     const [isMavenInstalled, setIsMavenInstalled] = useState(false)
@@ -66,6 +73,12 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
     const [mavenDownloadProgress, setMavenDownloadProgress] = useState(0)
     const [mavenDownloadStatus, setMavenDownloadStatus] = useState('')
     const [mavenLocalRepo, setMavenLocalRepoState] = useState('')
+    const [isGradleChecking, setIsGradleChecking] = useState(false)
+    const [isGradleInstalled, setIsGradleInstalled] = useState(false)
+    const [isGradleDownloading, setIsGradleDownloading] = useState(false)
+    const [isGradleInitializing, setIsGradleInitializing] = useState(false)
+    const [gradleDownloadProgress, setGradleDownloadProgress] = useState(0)
+    const [gradleDownloadStatus, setGradleDownloadStatus] = useState('')
     const [isJavaInfoExpanded, setIsJavaInfoExpanded] = useState(false)
     const [javaInfo, setJavaInfo] = useState<{
         version: string
@@ -85,8 +98,10 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         setMavenHomeState(metadataMavenHome)
         setMavenRepositoryState((serviceData.metadata?.MAVEN_REPO_URL || 'https://repo.maven.apache.org/maven2').trim())
         setGradleHomeState(serviceData.metadata?.GRADLE_HOME || '')
+        setGradleUserHomeState((serviceData.metadata?.GRADLE_USER_HOME || '').trim())
         setMavenLocalRepoState((serviceData.metadata?.MAVEN_LOCAL_REPO || '').trim())
         checkMavenInstallState()
+        checkGradleInstallState()
 
         if (isServiceDataActive) {
             loadJavaInfo()
@@ -131,6 +146,43 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
         return () => clearInterval(timer)
     }, [isMavenDownloading, serviceData.version])
+
+    useEffect(() => {
+        if (!isGradleDownloading) {
+            return
+        }
+
+        const timer = setInterval(async () => {
+            try {
+                const res = await getGradleDownloadProgress(serviceData.version)
+                const task = (res as any)?.data?.task
+                const status = String(task?.status || '')
+                const progress = Number(task?.progress || 0)
+
+                if (!task) {
+                    return
+                }
+
+                setGradleDownloadStatus(status)
+                setGradleDownloadProgress(Number.isNaN(progress) ? 0 : Math.max(0, Math.min(100, progress)))
+
+                if (status === 'installed') {
+                    setIsGradleDownloading(false)
+                    setIsGradleInstalled(true)
+                    setGradleDownloadProgress(100)
+                    toast.success(t('java_service.gradle_download_complete'))
+                } else if (status === 'failed' || status === 'cancelled') {
+                    setIsGradleDownloading(false)
+                    setIsGradleInstalled(false)
+                    toast.error(task?.error_message || t('java_service.gradle_download_failed'))
+                }
+            } catch (error) {
+                console.error('获取 Gradle 下载进度失败:', error)
+            }
+        }, 1200)
+
+        return () => clearInterval(timer)
+    }, [isGradleDownloading, serviceData.version])
 
     const loadJavaInfo = async () => {
         try {
@@ -337,6 +389,29 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         }
     }
 
+    const handleSetGradleUserHome = async (path: string) => {
+        try {
+            setIsLoading(true)
+            const res = await setGradleUserHome(selectedEnvironmentId, serviceData, path)
+            if (res && (res as any).success) {
+                const newMetadata = { ...(serviceData.metadata || {}) }
+                newMetadata['GRADLE_USER_HOME'] = path
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
+                })
+                setGradleUserHomeState(path)
+                toast.success(t('java_service.gradle_user_home_set_success'))
+            } else {
+                toast.error(t('java_service.gradle_user_home_set_failed'))
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     const handleSetMavenLocalRepository = async (localRepo: string) => {
         const value = localRepo.trim()
         if (!value) {
@@ -366,6 +441,123 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
             toast.error(t('java_service.maven_local_repo_apply_failed'))
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const checkGradleInstallState = async () => {
+        try {
+            setIsGradleChecking(true)
+            const res = await checkGradleInstalled(serviceData.version)
+            if (res && (res as any).success) {
+                setIsGradleInstalled(Boolean((res as any)?.data?.installed))
+            } else {
+                setIsGradleInstalled(false)
+            }
+        } catch (error) {
+            console.error('检查 Gradle 安装状态失败:', error)
+            setIsGradleInstalled(false)
+        } finally {
+            setIsGradleChecking(false)
+        }
+    }
+
+    const applyGradleHome = async (path: string, showToastMessage = true) => {
+        setIsLoading(true)
+        try {
+            const res = await setGradleHome(selectedEnvironmentId, serviceData, path)
+            if (res && (res as any).success) {
+                const newMetadata = { ...(serviceData.metadata || {}) }
+                newMetadata['GRADLE_HOME'] = path
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
+                })
+                setGradleHomeState(path)
+                if (showToastMessage) {
+                    toast.success(t('java_service.gradle_home_set_success'))
+                }
+                return true
+            }
+
+            if (showToastMessage) {
+                toast.error(t('java_service.gradle_home_set_failed'))
+            }
+            return false
+        } catch (error) {
+            console.error('设置 GRADLE_HOME 异常:', error)
+            if (showToastMessage) {
+                toast.error(t('java_service.gradle_home_set_failed'))
+            }
+            return false
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleDownloadGradle = async () => {
+        if (!isServiceDataActive || isGradleDownloading) {
+            return
+        }
+
+        try {
+            setIsGradleDownloading(true)
+            setGradleDownloadProgress(0)
+            setGradleDownloadStatus('pending')
+
+            const res = await initializeGradle(selectedEnvironmentId, serviceData)
+            if (!res || !(res as any).success) {
+                setIsGradleDownloading(false)
+                setGradleDownloadStatus('failed')
+                toast.error((res as any)?.message || t('java_service.gradle_download_failed'))
+                return
+            }
+
+            const task = (res as any)?.data?.task
+            const gradleHomePath = ((res as any)?.data?.home || '') as string
+
+            if (!task) {
+                setIsGradleDownloading(false)
+                setGradleDownloadStatus('installed')
+                if (gradleHomePath) {
+                    setIsGradleInstalled(true)
+                    setGradleDownloadProgress(100)
+                    toast.success(t('java_service.gradle_download_complete'))
+                }
+            }
+        } catch (error) {
+            setIsGradleDownloading(false)
+            setGradleDownloadStatus('failed')
+            console.error('下载 Gradle 异常:', error)
+            toast.error(t('java_service.gradle_download_failed'))
+        }
+    }
+
+    const handleInitializeGradle = async () => {
+        if (!isServiceDataActive || !isGradleInstalled || isGradleInitializing) {
+            return
+        }
+
+        try {
+            setIsGradleInitializing(true)
+            const res = await initializeGradle(selectedEnvironmentId, serviceData)
+            if (res && (res as any).success) {
+                const gradleHomePath = (res as any)?.data?.home as string | undefined
+                if (gradleHomePath) {
+                    await applyGradleHome(gradleHomePath, false)
+                    toast.success(t('java_service.gradle_init_success'))
+                } else {
+                    toast.error(t('java_service.gradle_init_failed_no_home'))
+                }
+            } else {
+                toast.error((res as any)?.message || t('java_service.gradle_init_failed'))
+            }
+        } catch (error) {
+            console.error('初始化 Gradle 异常:', error)
+            toast.error(t('java_service.gradle_init_failed'))
+        } finally {
+            setIsGradleInitializing(false)
         }
     }
 
@@ -543,9 +735,19 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                {t('java_service.maven_repo_label')}
-                            </Label>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                            {t('java_service.maven_repo_label')}
+                                            <Info className="h-3 w-3 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-xs font-mono">MAVEN_REPO_URL</div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
                             {t('java_service.maven_repo_desc')}
@@ -606,9 +808,19 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     {/* Maven 本地仓库 */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                {t('java_service.maven_local_repo_label')}
-                            </Label>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                            {t('java_service.maven_local_repo_label')}
+                                            <Info className="h-3 w-3 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-xs font-mono">MAVEN_LOCAL_REPO</div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
                             {t('java_service.maven_local_repo_desc')}
@@ -638,12 +850,66 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                 {/* Gradle 配置卡片 */}
                 <div className="w-full p-3 space-y-6 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    {/* Gradle 未安装提示 */}
+                    {!isGradleChecking && !isGradleInstalled && (
+                        <Alert variant="destructive" className="mb-3">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle className="text-xs">{t('java_service.gradle_not_installed_title')}</AlertTitle>
+                            <AlertDescription>
+                                <div className="mt-2 space-y-2">
+                                    <p className="text-xs">{t('java_service.gradle_not_installed_desc')}</p>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={handleDownloadGradle}
+                                            disabled={!isServiceDataActive || isGradleDownloading || isLoading}
+                                            className="h-7 text-xs shadow-none"
+                                        >
+                                            {isGradleDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                            {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
+                                        </Button>
+                                        {!!gradleDownloadStatus && (
+                                            <span className="text-[11px] text-muted-foreground">
+                                                {t('java_service.gradle_download_status')}: {gradleDownloadStatus}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {isGradleDownloading && (
+                                        <div className="space-y-1">
+                                            <Progress value={gradleDownloadProgress} className="h-2" />
+                                            <div className="text-[11px] text-muted-foreground text-right">
+                                                {Math.round(gradleDownloadProgress)}%
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    {/* 远程仓库提示 */}
+                    <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 px-3 py-2.5 text-[11px] text-yellow-800 dark:text-yellow-400 leading-relaxed">
+                        {t('java_service.gradle_repo_tip')}
+                    </div>
+
+                    {/* GRADLE_HOME */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                <Package className="h-3.5 w-3.5" />
-                                {t('java_service.gradle_home_label')}
-                            </Label>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                            <Package className="h-3.5 w-3.5" />
+                                            {t('java_service.gradle_home_label')}
+                                            <Info className="h-3 w-3 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-xs font-mono">GRADLE_HOME</div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
                             {t('java_service.gradle_home_desc')}
@@ -661,6 +927,62 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 variant="outline"
                                 onClick={() => handleSetGradleHome(gradleHome)}
                                 disabled={!gradleHome || isLoading || !isServiceDataActive}
+                                className="h-8 text-xs shadow-none shrink-0"
+                            >
+                                {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                {t('java_service.apply')}
+                            </Button>
+                        </div>
+
+                        {!gradleHome.trim() && (
+                            <div className="mt-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleInitializeGradle}
+                                    disabled={!isServiceDataActive || !isGradleInstalled || isGradleInitializing || isLoading}
+                                    className="h-7 text-xs shadow-none"
+                                >
+                                    {isGradleInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
+                                    {isGradleInitializing ? t('java_service.gradle_initializing') : t('java_service.gradle_initialize')}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* GRADLE_USER_HOME */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                            {t('java_service.gradle_user_home_label')}
+                                            <Info className="h-3 w-3 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-xs font-mono">GRADLE_USER_HOME</div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                            {t('java_service.gradle_user_home_desc')}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                value={gradleUserHome}
+                                onChange={(e) => setGradleUserHomeState(e.target.value)}
+                                placeholder={t('java_service.gradle_user_home_placeholder')}
+                                disabled={!isServiceDataActive}
+                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            />
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSetGradleUserHome(gradleUserHome)}
+                                disabled={!gradleUserHome || isLoading || !isServiceDataActive}
                                 className="h-8 text-xs shadow-none shrink-0"
                             >
                                 {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}

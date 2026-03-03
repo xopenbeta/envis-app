@@ -67,6 +67,22 @@ export const ipcSetGradleHome = ipcLogFunc('设置 GRADLE_HOME', async (environm
     return invokeCommand('set_gradle_home', { environmentId, serviceData, gradleHome })
 })
 
+export const ipcSetGradleUserHome = ipcLogFunc('设置 GRADLE_USER_HOME', async (environmentId: string, serviceData: ServiceData, gradleUserHome: string): Promise<IPCResult> => {
+    return invokeCommand('set_gradle_user_home', { environmentId, serviceData, gradleUserHome })
+})
+
+export const ipcCheckGradleInstalled = ipcLogFunc('检查 Gradle 是否已安装', async (version: string): Promise<IPCResult<{ installed: boolean, home?: string }>> => {
+    return invokeCommand('check_gradle_installed', { version })
+})
+
+export const ipcInitializeGradle = ipcLogFunc('初始化 Gradle', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{ task: any, home?: string }>> => {
+    return invokeCommand('initialize_gradle', { environmentId, serviceData })
+})
+
+export const ipcGetGradleDownloadProgress = ipcLogFunc('获取 Gradle 下载进度', async (version: string): Promise<IPCResult<{ task: any }>> => {
+    return invokeCommand('get_gradle_download_progress', { version })
+})
+
 export const ipcSetMavenLocalRepository = ipcLogFunc('设置 Maven 本地仓库', async (environmentId: string, serviceData: ServiceData, localRepo: string): Promise<IPCResult> => {
     return invokeCommand('set_maven_local_repository', { environmentId, serviceData, localRepo })
 })
