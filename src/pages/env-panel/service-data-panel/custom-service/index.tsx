@@ -8,6 +8,7 @@ import {
 import { PathConfigView } from './PathConfigView'
 import { EnvironmentVariablesView } from './EnvironmentVariablesView'
 import { AliasesConfigView } from './AliasesConfigView'
+import { AutoChdirView } from './AutoChdirView'
 
 interface CustomServiceProps {
     serviceData: ServiceData
@@ -33,6 +34,12 @@ export function CustomService({ serviceData, selectedEnvironment }: CustomServic
 
             {/* Environment Variables Configuration */}
             <EnvironmentVariablesView
+                selectedEnvironmentId={selectedEnvironment.id}
+                serviceData={serviceData}
+            />
+
+            {/* Auto Chdir Configuration */}
+            <AutoChdirView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
             />

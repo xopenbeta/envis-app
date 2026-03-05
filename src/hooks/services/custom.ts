@@ -1,5 +1,5 @@
 import { ServiceData } from "@/types/index";
-import { ipcUpdateCustomServicePaths, ipcUpdateCustomServiceEnvVars, ipcUpdateCustomServiceAliases } from "../../ipc/services/custom";
+import { ipcUpdateCustomServicePaths, ipcUpdateCustomServiceEnvVars, ipcUpdateCustomServiceAliases, ipcUpdateCustomServiceChdir } from "../../ipc/services/custom";
 import { useEnvironmentServiceData } from "../env-serv-data";
 
 export function useCustomService() {
@@ -41,6 +41,18 @@ export function useCustomService() {
         return ipcRes;
     }
 
+    // 仅负责通过 IPC 更新后端（磁盘 / Shell），不直接修改前端 store
+    async function updateCustomServiceChdir(
+        environmentId: string,
+        serviceData: ServiceData,
+        oldChdir: string | null,
+        chdir: string | null
+    ) {
+        const ipcRes = await ipcUpdateCustomServiceChdir(environmentId, serviceData, oldChdir, chdir);
+        console.log(`[hooks/custom] updateCustomServiceChdir IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
     // 单独函数：将 metadata 应用到前端 store（单一职责），组件在 IPC 成功后可调用此函数
     async function applyServiceMetadata(environmentId: string, serviceId: string, metadata: Record<string, any>) {
         try {
@@ -61,6 +73,7 @@ export function useCustomService() {
         updateCustomServicePaths,
         updateCustomServiceEnvVars,
         updateCustomServiceAliases,
+        updateCustomServiceChdir,
         applyServiceMetadata,
     }
 }

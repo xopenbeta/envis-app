@@ -211,6 +211,7 @@ pub fn run() {
             update_custom_service_paths,
             update_custom_service_env_vars,
             update_custom_service_aliases,
+            update_custom_service_chdir,
             execute_custom_service_alias,
             // Host 服务命令
             get_hosts,

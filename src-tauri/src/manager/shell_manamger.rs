@@ -1264,6 +1264,67 @@ alias mise=envis
         Ok(())
     }
 
+    /// 添加终端自动跳转目录（cd）
+    pub fn add_chdir(&self, path: &str) -> Result<()> {
+        for config_file_path in &self.config_file_paths {
+            let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+
+            let (prefix, chdir_line) = if is_cmd {
+                (
+                    "cd /d \"".to_string(),
+                    format!("cd /d \"{}\"", path),
+                )
+            } else if is_ps {
+                (
+                    "Set-Location -Path \"".to_string(),
+                    format!("Set-Location -Path \"{}\"", path),
+                )
+            } else {
+                (
+                    "cd \"".to_string(),
+                    format!("cd \"{}\"", path),
+                )
+            };
+
+            // 先删除旧的跳转行，再写入新行
+            let _ = self.remove_line_from_file(config_file_path, &prefix);
+            if let Err(e) = self.add_line_to_file(config_file_path, &chdir_line) {
+                log::error!(
+                    "Failed to add chdir to {}: {}",
+                    config_file_path.display(),
+                    e
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// 删除终端自动跳转目录（cd）
+    pub fn delete_chdir(&self) -> Result<()> {
+        for config_file_path in &self.config_file_paths {
+            let is_cmd = config_file_path.extension().and_then(|s| s.to_str()) == Some("cmd");
+            let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
+
+            let prefix = if is_cmd {
+                "cd /d \""
+            } else if is_ps {
+                "Set-Location -Path \""
+            } else {
+                "cd \""
+            };
+
+            if let Err(e) = self.remove_line_from_file(config_file_path, prefix) {
+                log::error!(
+                    "Failed to remove chdir from {}: {}",
+                    config_file_path.display(),
+                    e
+                );
+            }
+        }
+        Ok(())
+    }
+
     /// 在加载了 shell 配置文件的环境中执行命令
     /// 返回 (stdout, stderr, exit_code)
     pub fn execute_command_with_env(&self, command: &str) -> Result<(String, String, i32)> {

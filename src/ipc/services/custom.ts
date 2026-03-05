@@ -30,6 +30,15 @@ export const ipcUpdateCustomServiceAliases = ipcLogFunc('更新自定义服务 A
     return invokeCommand(`update_custom_service_aliases`, { environmentId, serviceData, oldAliases, aliases })
 })
 
+export const ipcUpdateCustomServiceChdir = ipcLogFunc('更新自定义服务自动跳转目录配置', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    oldChdir: string | null,
+    chdir: string | null
+): Promise<IPCResult> => {
+    return invokeCommand(`update_custom_service_chdir`, { environmentId, serviceData, oldChdir, chdir })
+})
+
 export const ipcExecuteCustomServiceAlias = ipcLogFunc('执行自定义服务 Alias 命令', async (
     aliasName: string,
     command: string

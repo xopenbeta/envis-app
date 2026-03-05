@@ -91,6 +91,38 @@ pub async fn update_custom_service_aliases(
     ))
 }
 
+/// 更新自定义服务的终端自动跳转目录配置
+#[tauri::command]
+pub async fn update_custom_service_chdir(
+    _environment_id: String,
+    _service_data: ServiceData,
+    old_chdir: Option<String>,
+    chdir: Option<String>,
+) -> Result<CommandResponse, String> {
+    if let Ok(shell_manager_lock) = ShellManager::global().lock() {
+        // 先删除旧的 cd 行
+        if old_chdir.as_deref().map(|s| !s.is_empty()).unwrap_or(false) {
+            let _ = shell_manager_lock.delete_chdir();
+            log::debug!("已移除自动跳转目录（更新 - 先删除旧）");
+        }
+
+        // 再添加新的 cd 行
+        if let Some(path) = &chdir {
+            if !path.is_empty() {
+                let _ = shell_manager_lock.add_chdir(path);
+                log::debug!("已设置自动跳转目录（更新 - 添加新）: {}", path);
+            }
+        }
+    } else {
+        log::error!("获取 Shell 管理器锁失败，无法同步自动跳转目录到终端配置");
+    }
+
+    Ok(CommandResponse::success(
+        "自定义服务自动跳转目录配置更新成功".to_string(),
+        None,
+    ))
+}
+
 /// 执行自定义服务的 Alias 命令
 #[tauri::command]
 pub async fn execute_custom_service_alias(
