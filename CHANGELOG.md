@@ -1,5 +1,22 @@
 # 更新日志 / Changelog
 
+## [0.7.0] - 2026-03-05
+
+### 新增 / Added
+- ✨ 新增自定义服务「终端自动跳转目录」功能，允许用户为每个自定义服务配置终端启动时自动 `cd` 进入指定目录，支持启用/禁用开关与路径持久化
+- ✨ 新增 Windows 欢迎页 CMD 环境提示横幅，告知用户 CMD 配置与 PowerShell/Bash 的差异及示例，支持一键关闭并记住状态
+
+### 修复 / Fixed
+- 🐛 修复 Windows PowerShell profile 中 PATH 写入方式，由 `"...;$env:Path"` 改为 `"...;" + $env:PATH`，避免 profile 加载时 PATH 被静态展开导致后续变更失效
+- 🐛 修复 CMD AutoRun 注册表写入方式，从依赖 PowerShell 改为原生 `reg.exe`，降低权限要求并避免 PowerShell 策略限制
+- 🐛 修复 CMD AutoRun 初始化逻辑，优先复用注册表中已有的脚本路径，避免重复覆盖
+- 🐛 修复 PowerShell 别名（Alias）写入逻辑，无参数别名改用 `Set-Alias`，含参数别名回退为 `function { @args }` 包装，并兼容旧格式清理
+- 🐛 修复旧版 `$env:Path =` 格式的清理逻辑，添加向后兼容处理，避免升级后旧 profile 中残留重复 PATH 行
+- 🐛 修复 `envis` Shell 函数：`refresh` 子命令与 `use` 一样触发环境刷新，确保手动刷新时也能同步 Shell 变量
+- 🐛 修复 Windows 平台执行 `reg` 相关注册表命令时弹出黑色 CMD 窗口的问题，统一添加 `CREATE_NO_WINDOW` 标志
+
+---
+
 ## [0.6.1] - 2026-03-05
 
 ### 修复 / Fixed
