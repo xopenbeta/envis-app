@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ServiceData, ServiceDataStatus } from '@/types/index'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2, X, Info } from 'lucide-react'
 import { FolderOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useCustomService } from '@/hooks/services/custom'
@@ -21,6 +22,7 @@ export function PathConfigView({
     const [paths, setPaths] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isWindows = typeof navigator !== 'undefined' && navigator.platform.includes('Win')
 
     // 从服务数据加载路径配置
     useEffect(() => {
@@ -78,10 +80,32 @@ export function PathConfigView({
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
             <div className="flex items-center justify-between mb-2">
                 <div>
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {/* <FolderOpen className="h-3.5 w-3.5" /> */}
-                        路径配置
-                    </Label>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    {/* <FolderOpen className="h-3.5 w-3.5" /> */}
+                                    路径配置
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    {isWindows ? (
+                                        <>
+                                            <div>查看：<code>echo %PATH%</code>（CMD）或 <code>$env:PATH</code>（PowerShell）</div>
+                                            <div>设置：Envis 自动写入，或手动 <code>setx PATH "%PATH%;C:\path"</code></div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>查看：<code>echo $PATH</code></div>
+                                            <div>设置：Envis 自动写入 shell 配置，或手动 <code>export PATH="/path:$PATH"</code></div>
+                                        </>
+                                    )}
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                         配置需要添加到 PATH 环境变量的路径
                     </p>

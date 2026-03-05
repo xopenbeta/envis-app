@@ -5,7 +5,8 @@ import { ipcExecuteCustomServiceAlias } from '@/ipc/services/custom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Play } from 'lucide-react'
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Plus, Trash2, Play, Info } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface AliasItem {
@@ -26,6 +27,7 @@ export function AliasesConfigView({
     const [aliases, setAliases] = useState<AliasItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isWindows = typeof navigator !== 'undefined' && navigator.platform.includes('Win')
 
     // 从服务数据加载 Alias 配置
     useEffect(() => {
@@ -133,10 +135,32 @@ export function AliasesConfigView({
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
             <div className="flex items-center justify-between mb-2">
                 <div>
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {/* <Command className="h-3.5 w-3.5" /> */}
-                        Alias 配置
-                    </Label>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    {/* <Command className="h-3.5 w-3.5" /> */}
+                                    Alias 配置
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    {isWindows ? (
+                                        <>
+                                            <div>查看：<code>Get-Alias ll</code>（PowerShell）</div>
+                                            <div>设置：<code>Set-Alias -Name ll -Value Get-ChildItem</code>（PowerShell）</div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>查看：<code>alias ll</code></div>
+                                            <div>设置：<code>alias ll='ls -l'</code></div>
+                                        </>
+                                    )}
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                         配置 Shell 别名 (Alias)
                     </p>
