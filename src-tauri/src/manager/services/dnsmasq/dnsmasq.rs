@@ -1,11 +1,11 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadStatus, DownloadTask};
 use crate::types::{ServiceData, ServiceStatus};
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
 /// Dnsmasq 版本信息
@@ -160,11 +160,11 @@ impl DnsmasqService {
         {
             // 1. make
             // 检查 make 是否存在
-            if Command::new("make").arg("--version").output().is_err() {
+            if create_command("make").arg("--version").output().is_err() {
                 return Err(anyhow!("未找到 make 命令，请先安装构建工具 (如 xcode-select --install)"));
             }
 
-            let make_output = Command::new("make")
+            let make_output = create_command("make")
                 .current_dir(&install_path)
                 .output()?;
             
@@ -175,7 +175,7 @@ impl DnsmasqService {
 
             // 2. make install PREFIX=...
             // 这会将二进制文件安装到 install_path/sbin/dnsmasq
-            let install_output = Command::new("make")
+            let install_output = create_command("make")
                 .arg("install")
                 .arg(format!("PREFIX={}", install_path.display()))
                 .current_dir(&install_path)
@@ -216,7 +216,7 @@ impl DnsmasqService {
     /// 解压 tar.gz 到目标目录
     async fn extract_tar_to(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
         std::fs::create_dir_all(target_dir)?;
-        let output = Command::new("tar")
+        let output = create_command("tar")
             .arg("-xzf")
             .arg(archive_path)
             .arg("-C")
@@ -300,7 +300,7 @@ impl DnsmasqService {
         let pid_file = install_path.join("dnsmasq.pid");
 
         // 构建命令
-        let mut cmd = Command::new(&dnsmasq_bin);
+        let mut cmd = create_command(&dnsmasq_bin);
         cmd.arg("-C").arg(conf_path);
         cmd.arg("--pid-file").arg(&pid_file);
         // 不使用 -k，让它后台运行（daemonize），这样它会自己 fork 并写入 pid 文件
@@ -335,7 +335,7 @@ impl DnsmasqService {
         #[cfg(not(target_os = "windows"))]
         {
             // 发送 SIGTERM
-            let output = Command::new("kill")
+            let output = create_command("kill")
                 .arg(pid.to_string())
                 .output()?;
             
@@ -346,7 +346,7 @@ impl DnsmasqService {
 
         #[cfg(target_os = "windows")]
         {
-            let output = Command::new("taskkill")
+            let output = create_command("taskkill")
                 .arg("/PID")
                 .arg(pid.to_string())
                 .arg("/F")
@@ -387,7 +387,7 @@ impl DnsmasqService {
         // 检查进程是否存在
         #[cfg(not(target_os = "windows"))]
         {
-            let output = Command::new("ps")
+            let output = create_command("ps")
                 .arg("-p")
                 .arg(pid)
                 .output()?;
@@ -398,7 +398,7 @@ impl DnsmasqService {
 
         #[cfg(target_os = "windows")]
         {
-             let output = Command::new("tasklist")
+             let output = create_command("tasklist")
                 .arg("/FI")
                 .arg(format!("PID eq {}", pid))
                 .output()?;

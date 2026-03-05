@@ -1,6 +1,5 @@
 use crate::manager::services::dnsmasq::DnsmasqService;
 use crate::types::{CommandResponse, ServiceData};
-use std::process::Command;
 
 /// 按版本检查 Dnsmasq 是否已安装
 #[tauri::command]

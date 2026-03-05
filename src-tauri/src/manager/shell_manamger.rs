@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use crate::utils::create_command;
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
@@ -123,12 +124,8 @@ impl ShellManager {
 
         #[cfg(target_os = "windows")]
         {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-        let output = Command::new("reg")
+        let output = create_command("reg")
             .args(["query", "HKCU\\Software\\Microsoft\\Command Processor", "/v", "AutoRun"])
-            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .ok()?;
 
@@ -177,9 +174,7 @@ impl ShellManager {
         // 使用 reg add 设置 AutoRun（仅指向批处理脚本，不写入任何环境变量到注册表）
         let autorun_value = cmd_config_path.to_string_lossy();
 
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        let output = Command::new("reg")
+        let output = create_command("reg")
             .args([
                 "add",
                 "HKCU\\Software\\Microsoft\\Command Processor",
@@ -188,7 +183,6 @@ impl ShellManager {
                 "/d", &autorun_value,
                 "/f",
             ])
-            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .context("执行 reg add 命令失败")?;
 
@@ -1349,11 +1343,8 @@ alias mise=envis
                 command.to_string()
             };
 
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            Command::new("powershell")
+            create_command("powershell")
                 .args(["-NoLogo", "-Command", &ps_command])
-                .creation_flags(CREATE_NO_WINDOW)
                 .output()
         };
 
@@ -1375,7 +1366,7 @@ alias mise=envis
             // 使用 -l (login shell) 和 -c 选项来执行命令
             // login shell 会自动加载 .zshrc (zsh) 或 .bash_profile (bash)
             // 这样可以获取到完整的 PATH，包括 VS Code 的 code 命令等
-            Command::new(shell_cmd).args(["-l", "-c", command]).output()
+            create_command(shell_cmd).args(["-l", "-c", command]).output()
         };
 
         match output {

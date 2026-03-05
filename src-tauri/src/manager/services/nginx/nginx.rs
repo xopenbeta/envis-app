@@ -1,11 +1,11 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask, nginx};
 use crate::types::{ServiceData, ServiceStatus};
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
 /// Nginx 版本信息
@@ -230,7 +230,7 @@ impl NginxService {
             }
 
             // 执行 ./configure
-            let mut configure_cmd = Command::new("sh");
+            let mut configure_cmd = create_command("sh");
             #[cfg(target_os = "macos")]
             configure_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
             let output = configure_cmd
@@ -250,7 +250,7 @@ impl NginxService {
             }
 
             // make
-            let mut make_cmd = Command::new("sh");
+            let mut make_cmd = create_command("sh");
             #[cfg(target_os = "macos")]
             make_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
             let output = make_cmd
@@ -266,7 +266,7 @@ impl NginxService {
             }
 
             // make install
-            let mut install_cmd = Command::new("sh");
+            let mut install_cmd = create_command("sh");
             #[cfg(target_os = "macos")]
             install_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
             let output = install_cmd
@@ -295,7 +295,7 @@ impl NginxService {
     /// 解压 tar.gz 到目标目录（strip 根目录）
     async fn extract_tar_to(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
         std::fs::create_dir_all(target_dir)?;
-        let output = Command::new("tar")
+        let output = create_command("tar")
             .arg("-xzf")
             .arg(archive_path)
             .arg("-C")
@@ -315,7 +315,7 @@ impl NginxService {
     async fn extract_zip(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
         std::fs::create_dir_all(target_dir)?;
         let output = if cfg!(target_os = "windows") {
-            Command::new("powershell")
+            create_command("powershell")
                 .arg("-Command")
                 .arg(format!(
                     "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
@@ -324,7 +324,7 @@ impl NginxService {
                 ))
                 .output()?
         } else {
-            Command::new("unzip")
+            create_command("unzip")
                 .arg("-o")
                 .arg(archive_path)
                 .arg("-d")
@@ -449,7 +449,7 @@ impl NginxService {
         }
 
         // 执行 {nginx_bin} -c {config_path} 启动服务
-        let output = Command::new(&nginx_bin)
+        let output = create_command(&nginx_bin)
             .arg("-c")
             .arg(&conf_path)
             .output()
@@ -499,7 +499,7 @@ impl NginxService {
         }
 
         // 使用安装路径下的 nginx 执行优雅停止
-        let output = Command::new(&nginx_bin)
+        let output = create_command(&nginx_bin)
             .arg("-c")
             .arg(&conf_path)
             .arg("-s")
@@ -544,7 +544,7 @@ impl NginxService {
         }
 
         // 使用安装路径下的 nginx 执行优雅重载
-        let output = Command::new(&nginx_bin)
+        let output = create_command(&nginx_bin)
             .arg("-c")
             .arg(&conf_path)
             .arg("-s")
@@ -580,12 +580,12 @@ impl NginxService {
 
         // 使用 ps 命令检查 nginx 进程
         let output = if cfg!(target_os = "windows") {
-            Command::new("tasklist")
+            create_command("tasklist")
                 .arg("/FI")
                 .arg("IMAGENAME eq nginx.exe")
                 .output()
         } else {
-            Command::new("sh")
+            create_command("sh")
                 .arg("-c")
                 .arg(format!("ps aux | grep '[n]ginx: master process' | grep '{}'", conf_path))
                 .output()

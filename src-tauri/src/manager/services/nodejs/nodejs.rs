@@ -107,7 +107,7 @@ impl NodejsService {
 
         for cmd in check_list {
             let exists = if cfg!(target_os = "windows") {
-                std::process::Command::new("where")
+                crate::utils::create_command("where")
                     .arg(cmd)
                     .output()
                     .map(|output| output.status.success())
@@ -118,7 +118,7 @@ impl NodejsService {
                 // 使用 command -v 检查，它比 which 更通用，既能查 alias/func 也能查 path
                 let check_cmd = format!("command -v {}", cmd);
                 
-                std::process::Command::new(&shell)
+                crate::utils::create_command(&shell)
                     .arg("-l") // Login shell, reads login profiles
                     .arg("-c")
                     .arg(&check_cmd)
@@ -377,10 +377,8 @@ impl NodejsService {
 
     /// 解压 tar 格式文件
     async fn extract_tar(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
-        use std::process::Command;
-
         let output = if archive_path.extension().unwrap() == "gz" {
-            Command::new("tar")
+            crate::utils::create_command("tar")
                 .args(&[
                     "-xzf",
                     &archive_path.to_string_lossy(),
@@ -390,7 +388,7 @@ impl NodejsService {
                 ])
                 .output()?
         } else {
-            Command::new("tar")
+            crate::utils::create_command("tar")
                 .args(&[
                     "-xJf",
                     &archive_path.to_string_lossy(),

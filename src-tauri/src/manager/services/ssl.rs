@@ -1,10 +1,10 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::types::ServiceData;
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
 /// CA 配置信息
@@ -110,7 +110,7 @@ impl SslService {
 
         // 生成 CA 私钥
         let ca_key_path = ca_folder.join("ca.key");
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "genrsa",
                 "-out",
@@ -165,7 +165,7 @@ keyUsage               = critical, digitalSignature, cRLSign, keyCertSign
             ca_config.common_name
         );
 
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "req",
                 "-new",
@@ -240,7 +240,7 @@ keyUsage               = critical, digitalSignature, cRLSign, keyCertSign
 
         // 生成证书私钥
         let key_path = cert_folder.join("private.key");
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&["genrsa", "-out", key_path.to_str().unwrap(), "2048"])
             .output()?;
 
@@ -253,7 +253,7 @@ keyUsage               = critical, digitalSignature, cRLSign, keyCertSign
 
         // 创建证书签名请求 (CSR)
         let csr_path = cert_folder.join("request.csr");
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "req",
                 "-new",
@@ -305,7 +305,7 @@ subjectAltName = @alt_names
         let ca_cert_path = ca_folder.join("ca.crt");
         let ca_key_path = ca_folder.join("ca.key");
 
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "x509",
                 "-req",
@@ -348,7 +348,7 @@ subjectAltName = @alt_names
 
         // PFX 格式（PKCS#12）
         let pfx_path = cert_folder.join("certificate.pfx");
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "pkcs12",
                 "-export",
@@ -402,7 +402,7 @@ subjectAltName = @alt_names
 
     /// 获取证书详细信息
     fn get_certificate_info(&self, cert_path: &PathBuf) -> Result<CertInfo> {
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "x509",
                 "-in",
@@ -646,7 +646,7 @@ subjectAltName = @alt_names
     /// 检查 CA 在 macOS 系统中是否已安装
     fn check_ca_installed_macos(&self, ca_cert_path: &PathBuf) -> Result<bool> {
         // 获取证书的 SHA-1 指纹
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "x509",
                 "-noout",
@@ -671,7 +671,7 @@ subjectAltName = @alt_names
             .replace(":", "");
 
         // 使用 security 命令查找证书
-        let output = Command::new("security")
+        let output = create_command("security")
             .args(&[
                 "find-certificate",
                 "-a",
@@ -692,7 +692,7 @@ subjectAltName = @alt_names
     /// 检查 CA 在 Windows 系统中是否已安装
     fn check_ca_installed_windows(&self, ca_cert_path: &PathBuf) -> Result<bool> {
         // 获取证书的 subject
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "x509",
                 "-noout",
@@ -715,7 +715,7 @@ subjectAltName = @alt_names
             subject
         );
 
-        let output = Command::new("powershell")
+        let output = create_command("powershell")
             .args(&["-Command", &ps_script])
             .output()?;
 
@@ -732,7 +732,7 @@ subjectAltName = @alt_names
         ];
 
         // 获取证书的 SHA-256 指纹
-        let output = Command::new("openssl")
+        let output = create_command("openssl")
             .args(&[
                 "x509",
                 "-noout",
@@ -767,7 +767,7 @@ subjectAltName = @alt_names
                     let entry_path = entry.path();
                     if let Some(ext) = entry_path.extension() {
                         if ext == "crt" || ext == "pem" {
-                            if let Ok(output) = Command::new("openssl")
+                            if let Ok(output) = create_command("openssl")
                                 .args(&[
                                     "x509",
                                     "-noout",

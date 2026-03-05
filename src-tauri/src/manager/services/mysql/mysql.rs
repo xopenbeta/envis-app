@@ -1,11 +1,11 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::types::ServiceData;
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -225,7 +225,7 @@ impl MysqlService {
         std::fs::create_dir_all(&install_dir)?;
 
         if task.filename.ends_with(".tar.gz") || task.filename.ends_with(".tgz") {
-            let output = Command::new("tar")
+            let output = create_command("tar")
                 .args(&[
                     "-xzf",
                     &archive_path.to_string_lossy(),
@@ -241,7 +241,7 @@ impl MysqlService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = Command::new("unzip")
+            let output = create_command("unzip")
                 .args(&[
                     "-q",
                     &archive_path.to_string_lossy(),
@@ -318,7 +318,7 @@ impl MysqlService {
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let running = if cfg!(target_os = "windows") {
-            let output = Command::new("tasklist")
+            let output = create_command("tasklist")
                 .arg("/FI")
                 .arg("IMAGENAME eq mysqld.exe")
                 .output();
@@ -327,7 +327,7 @@ impl MysqlService {
                 Err(_) => false,
             }
         } else {
-            let output = Command::new("pgrep").arg("-f").arg("mysqld").output();
+            let output = create_command("pgrep").arg("-f").arg("mysqld").output();
             match output {
                 Ok(o) => o.status.success(),
                 Err(_) => false,
@@ -367,7 +367,7 @@ impl MysqlService {
         let data_dir = install_path.join("data");
         std::fs::create_dir_all(&data_dir).ok();
 
-        let child_res = Command::new(mysqld)
+        let child_res = create_command(&mysqld)
             .arg(format!("--datadir={}", data_dir.to_string_lossy()))
             .spawn();
 
@@ -391,11 +391,11 @@ impl MysqlService {
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let res = if cfg!(target_os = "windows") {
-            Command::new("taskkill")
+            create_command("taskkill")
                 .args(&["/IM", "mysqld.exe", "/F"])
                 .output()
         } else {
-            Command::new("pkill").arg("mysqld").output()
+            create_command("pkill").arg("mysqld").output()
         };
 
         match res {
@@ -651,7 +651,7 @@ impl MysqlService {
 
         // 初始化数据目录
         log::info!("初始化数据目录...");
-        let init_output = Command::new(&mysqld)
+        let init_output = create_command(&mysqld)
             .arg("--initialize-insecure")
             .arg(format!("--datadir={}", data_dir.display()))
             .arg(format!("--basedir={}", install_path.display()))
@@ -665,7 +665,7 @@ impl MysqlService {
         // 启动临时服务器设置 root 密码
         log::info!("启动临时服务器设置 root 密码...");
         let temp_port = "3307";
-        let mut mysqld_process = Command::new(&mysqld)
+        let mut mysqld_process = create_command(&mysqld)
             .arg(format!("--defaults-file={}", config_path.display()))
             .arg(format!("--port={}", temp_port))
             .arg("--skip-grant-tables")
@@ -686,7 +686,7 @@ impl MysqlService {
             root_password
         );
 
-        let password_output = Command::new(&mysql_client)
+        let password_output = create_command(mysql_client)
             .arg(format!("--port={}", temp_port))
             .arg("--host=127.0.0.1")
             .arg("-e")
@@ -829,7 +829,7 @@ default-character-set = utf8mb4
         }
 
         // 执行 SQL 查询列出数据库
-        let output = Command::new(&mysql_client)
+        let output = create_command(mysql_client)
             .arg(format!("--port={}", port))
             .arg("--host=127.0.0.1")
             .arg(format!("--password={}", root_password))
@@ -902,7 +902,7 @@ default-character-set = utf8mb4
         // 执行 SQL 创建数据库
         let create_cmd = format!("CREATE DATABASE IF NOT EXISTS `{}`", database_name);
 
-        let output = Command::new(&mysql_client)
+        let output = create_command(mysql_client)
             .arg(format!("--port={}", port))
             .arg("--host=127.0.0.1")
             .arg(format!("--password={}", root_password))
@@ -959,7 +959,7 @@ default-character-set = utf8mb4
         }
 
         // 执行 SQL 查询列出表
-        let output = Command::new(&mysql_client)
+        let output = create_command(mysql_client)
             .arg(format!("--port={}", port))
             .arg("--host=127.0.0.1")
             .arg(format!("--password={}", root_password))

@@ -1,4 +1,5 @@
-use anyhow::Result;
+﻿use anyhow::Result;
+use crate::utils::create_command;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -185,13 +186,12 @@ impl SystemInfoManager {
 
     /// 获取磁盘信息
     fn get_disk_info(&self) -> Result<Vec<DiskInfo>> {
-        use std::process::Command;
         let mut disks = Vec::new();
 
         #[cfg(target_os = "macos")]
         {
             // 使用 df 命令获取磁盘信息
-            if let Ok(output) = Command::new("df").args(&["-h"]).output() {
+            if let Ok(output) = create_command("df").args(&["-h"]).output() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for (i, line) in output_str.lines().enumerate() {
                     if i == 0 {
@@ -246,7 +246,7 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "linux")]
         {
-            if let Ok(output) = Command::new("df")
+            if let Ok(output) = create_command("df")
                 .args(&["-h", "--output=source,fstype,size,used,avail,pcent,target"])
                 .output()
             {
@@ -291,16 +291,13 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            if let Ok(output) = Command::new("wmic")
+            if let Ok(output) = create_command("wmic")
                 .args(&[
                     "logicaldisk",
                     "get",
                     "size,freespace,caption,filesystem",
                     "/format:csv",
                 ])
-                .creation_flags(CREATE_NO_WINDOW)
                 .output()
             {
                 let output_str = String::from_utf8_lossy(&output.stdout);
@@ -342,12 +339,11 @@ impl SystemInfoManager {
 
     /// 获取网络接口信息
     fn get_network_interfaces(&self) -> Result<Vec<NetworkInterface>> {
-        use std::process::Command;
         let mut interfaces = Vec::new();
 
         #[cfg(target_os = "macos")]
         {
-            if let Ok(output) = Command::new("netstat").args(&["-i", "-b"]).output() {
+            if let Ok(output) = create_command("netstat").args(&["-i", "-b"]).output() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for (i, line) in output_str.lines().enumerate() {
                     if i == 0 {
@@ -422,12 +418,9 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
             // Windows 可以使用 WMI 查询网络接口统计信息
-            if let Ok(output) = Command::new("wmic")
+            if let Ok(output) = create_command("wmic")
                 .args(&["path", "Win32_PerfRawData_Tcpip_NetworkInterface", "get", "Name,BytesReceivedPerSec,BytesSentPerSec,PacketsReceivedPerSec,PacketsSentPerSec", "/format:csv"])
-                .creation_flags(CREATE_NO_WINDOW)
                 .output()
             {
                 let output_str = String::from_utf8_lossy(&output.stdout);
@@ -496,14 +489,12 @@ impl SystemInfoManager {
 
     /// 获取 IP 地址列表
     fn get_ip_addresses(&self) -> Result<Vec<String>> {
-        use std::process::Command;
-
         let mut ip_addresses = Vec::new();
 
         // 使用系统命令获取 IP 地址
         #[cfg(target_os = "macos")]
         {
-            if let Ok(output) = Command::new("ifconfig").output() {
+            if let Ok(output) = create_command("ifconfig").output() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for line in output_str.lines() {
                     let line = line.trim();
@@ -533,7 +524,7 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "linux")]
         {
-            if let Ok(output) = Command::new("ip").args(&["addr", "show"]).output() {
+            if let Ok(output) = create_command("ip").args(&["addr", "show"]).output() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for line in output_str.lines() {
                     let line = line.trim();
@@ -563,10 +554,7 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            if let Ok(output) = Command::new("ipconfig")
-                .creation_flags(CREATE_NO_WINDOW)
+            if let Ok(output) = create_command("ipconfig")
                 .output()
             {
                 let output_str = String::from_utf8_lossy(&output.stdout);
