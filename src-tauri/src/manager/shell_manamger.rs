@@ -70,9 +70,11 @@ impl ShellManager {
 
             let mut paths = Vec::new();
 
-            // CMD 配置文件（开发和线上都需要）
-            let cmd_dir = documents_dir.join("envis");
-            let cmd_profile = cmd_dir.join("envis_autorun.cmd");
+            // CMD 配置文件：优先复用已有 AutoRun 脚本，否则使用默认路径
+            let default_cmd_dir = documents_dir.join("envis");
+            let default_cmd_profile = default_cmd_dir.join("envis_autorun.cmd");
+            let cmd_profile = Self::get_existing_cmd_autorun_path()
+                .unwrap_or(default_cmd_profile);
             paths.push(cmd_profile);
 
             if !is_development {
@@ -113,7 +115,48 @@ impl ShellManager {
         Ok(manager)
     }
 
-    /// 设置 CMD 的 AutoRun 注册表项
+    /// 查询注册表中 CMD AutoRun 当前指向的脚本路径
+    /// Windows 下读取注册表，其他平台直接返回 None
+    fn get_existing_cmd_autorun_path() -> Option<PathBuf> {
+        #[cfg(not(target_os = "windows"))]
+        return None;
+
+        #[cfg(target_os = "windows")]
+        {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let output = Command::new("reg")
+            .args(["query", "HKCU\\Software\\Microsoft\\Command Processor", "/v", "AutoRun"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return None;
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        // reg query 输出示例：
+        //     AutoRun    REG_SZ    "C:\path\to\script.cmd"
+        for line in stdout.lines() {
+            let trimmed = line.trim();
+            let lower = trimmed.to_lowercase();
+            if lower.starts_with("autorun") {
+                // 取 REG_SZ 后面的值部分
+                if let Some(pos) = lower.find("reg_sz") {
+                    let path_str = trimmed[pos + 6..].trim().trim_matches('"');
+                    if !path_str.is_empty() {
+                        return Some(PathBuf::from(path_str));
+                    }
+                }
+            }
+        }
+        None
+        } // end #[cfg(target_os = "windows")]
+    }
+
+    /// 设置 CMD 的 AutoRun 注册表项（使用原生 reg.exe，不依赖 PowerShell）
     #[cfg(target_os = "windows")]
     fn setup_cmd_autorun(&self) -> Result<()> {
         // 获取 CMD 配置文件路径
@@ -123,26 +166,36 @@ impl ShellManager {
             .find(|p| p.extension().and_then(|s| s.to_str()) == Some("cmd"))
             .context("无法找到 CMD 配置文件路径")?;
 
-        // 使用 PowerShell 命令设置注册表
-        // 先创建注册表路径（如果不存在），然后设置 AutoRun 值
-        let autorun_value = format!("\"{}\"", cmd_config_path.display());
-        let ps_command = format!(
-            "if (!(Test-Path 'HKCU:\\Software\\Microsoft\\Command Processor')) {{ New-Item -Path 'HKCU:\\Software\\Microsoft\\Command Processor' -Force | Out-Null }}; Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Command Processor' -Name 'AutoRun' -Value '{}' -Force",
-            autorun_value.replace("'", "''") // 转义单引号
-        );
+        // 若注册表已指向同一文件，无需重复写入
+        if let Some(existing) = Self::get_existing_cmd_autorun_path() {
+            if existing == *cmd_config_path {
+                log::info!("CMD AutoRun 已正确指向: {}", cmd_config_path.display());
+                return Ok(());
+            }
+        }
+
+        // 使用 reg add 设置 AutoRun（仅指向批处理脚本，不写入任何环境变量到注册表）
+        let autorun_value = cmd_config_path.to_string_lossy();
 
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
-        let output = Command::new("powershell")
-            .args(&["-NoProfile", "-Command", &ps_command])
+        let output = Command::new("reg")
+            .args([
+                "add",
+                "HKCU\\Software\\Microsoft\\Command Processor",
+                "/v", "AutoRun",
+                "/t", "REG_SZ",
+                "/d", &autorun_value,
+                "/f",
+            ])
             .creation_flags(CREATE_NO_WINDOW)
             .output()
-            .context("执行 PowerShell 命令失败")?;
+            .context("执行 reg add 命令失败")?;
 
         if !output.status.success() {
             let error_msg = String::from_utf8_lossy(&output.stderr);
             log::warn!(
-                "设置 CMD AutoRun 失败: {}，但这不会影响 PowerShell 使用",
+                "设置 CMD AutoRun 失败: {}，CMD 环境变量功能将不可用",
                 error_msg
             );
             // 不返回错误，允许继续初始化（CMD AutoRun 是可选功能）
@@ -543,10 +596,10 @@ alias mise=envis
                     "set PATH=",
                 )
             } else if is_ps {
-                // PowerShell 语法 - 使用分号分隔
+                // PowerShell 语法 - 使用字符串拼接（避免 profile 加载时 $env:PATH 被静态展开）
                 (
-                    format!("$env:Path = \"{};$env:Path\"", all_paths.join(";")),
-                    "$env:Path =",
+                    format!("$env:PATH = \"{};\" + $env:PATH", all_paths.join(";")),
+                    "$env:PATH =",
                 )
             } else {
                 // Unix Shell 语法 - 使用冒号分隔
@@ -558,6 +611,10 @@ alias mise=envis
 
             // 先删除所有现有的 PATH 设置
             self.remove_line_from_file(config_file_path, remove_prefix)?;
+            // 兼容旧格式 ($env:Path =)
+            if is_ps {
+                let _ = self.remove_line_from_file(config_file_path, "$env:Path =");
+            }
 
             // 添加新的 PATH 设置
             self.add_line_to_file(config_file_path, &path_line)?;
@@ -578,13 +635,17 @@ alias mise=envis
             let remove_prefix = if is_cmd {
                 "set PATH="
             } else if is_ps {
-                "$env:Path ="
+                "$env:PATH ="
             } else {
                 "export PATH="
             };
 
             // 先删除所有现有的 PATH 设置
             self.remove_line_from_file(config_file_path, remove_prefix)?;
+            // 兼容旧格式 ($env:Path =)
+            if is_ps {
+                let _ = self.remove_line_from_file(config_file_path, "$env:Path =");
+            }
 
             if !current_paths.is_empty() {
                 // 重新构建 PATH
@@ -592,7 +653,7 @@ alias mise=envis
                 let path_line = if is_cmd {
                     format!("set PATH={};%PATH%", all_paths.join(";"))
                 } else if is_ps {
-                    format!("$env:Path = \"{};$env:Path\"", all_paths.join(";"))
+                    format!("$env:PATH = \"{};\" + $env:PATH", all_paths.join(";"))
                 } else {
                     format!("export PATH=\"{}:$PATH\"", all_paths.join(":"))
                 };
@@ -627,14 +688,16 @@ alias mise=envis
         let (path_prefix, separator) = if is_cmd {
             ("set PATH=", ';')
         } else if is_ps {
-            ("$env:Path =", ';')
+            ("$env:path", ';') // 统一小写匹配，兼容 $env:PATH = 和 $env:Path = 等变体
         } else {
             ("export PATH=", ':')
         };
 
         for line in block_content.lines() {
             let line = line.trim();
-            if line.starts_with(path_prefix) {
+            // PS 路径行特殊处理：大小写不敏感匹配，兼容 $env:PATH = / $env:Path = 等格式
+            let ps_path_match = is_ps && line.to_lowercase().starts_with(path_prefix);
+            if (!is_ps && line.starts_with(path_prefix)) || ps_path_match {
                 // 解析 PATH 的 RHS，支持多种形式：有无引号、$PATH/$env:Path/%PATH% 在左或右
                 if let Some(rhs) = line.splitn(2, '=').nth(1) {
                     let mut rhs = rhs.trim();
@@ -651,9 +714,16 @@ alias mise=envis
                             .replace(";%PATH%", "")
                             .replace("%PATH%", "")
                     } else if is_ps {
-                        rhs.replace("$env:Path;", "")
-                            .replace(";$env:Path", "")
-                            .replace("$env:Path", "")
+                        // 清除 $env:PATH / $env:Path / + $env:PATH 等各种形式
+                        let lower = rhs.to_lowercase();
+                        let cleaned_str = lower
+                            .replace("$env:path;", "")
+                            .replace(";$env:path", "")
+                            .replace("+ $env:path", "")
+                            .replace("$env:path", "");
+                        // 去掉字符串连接产生的多余符号
+                        let cleaned_str = cleaned_str.replace("+", "").replace('"', "").trim().to_string();
+                        cleaned_str
                     } else {
                         rhs.replace("$PATH:", "")
                             .replace(":$PATH", "")
@@ -1131,12 +1201,19 @@ alias mise=envis
                     format!("doskey {}={} $*", key, value),
                 )
             } else if is_ps {
-                // PowerShell 语法: function key { value $args }
-                // 注意：这里假设 value 是一个合法的命令字符串
-                (
-                    format!("function {} {{", key),
-                    format!("function {} {{ {} $args }}", key, value),
-                )
+                // PowerShell 语法: Set-Alias key value
+                // 若 value 含空格（带参数），回退为 function 包装
+                if value.contains(' ') {
+                    (
+                        format!("function {} {{", key),
+                        format!("function {} {{ {} @args }}", key, value),
+                    )
+                } else {
+                    (
+                        format!("Set-Alias {}", key),
+                        format!("Set-Alias {} {}", key, value),
+                    )
+                }
             } else {
                 // Unix Shell 语法: alias key="value"
                 (
@@ -1168,6 +1245,8 @@ alias mise=envis
             let prefix = if is_cmd {
                 format!("doskey {}=", key)
             } else if is_ps {
+                // 兼容两种写法：Set-Alias 和 function 包装
+                if self.remove_line_from_file(config_file_path, &format!("Set-Alias {}", key)).is_ok() {}
                 format!("function {} {{", key)
             } else {
                 format!("alias {}=", key)

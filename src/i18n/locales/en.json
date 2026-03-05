@@ -366,6 +366,10 @@
     "step_2_desc": "Service Configuration",
     "step_3_title": "Run",
     "step_3_desc": "One-Click Start",
+    "cmd_warning_title": "Important Notice for Windows CMD Users",
+    "cmd_warning_desc": "Envis will set an AutoRun registry key pointing to a batch script, which loads environment variables when CMD starts.\n\nAll environment variables are session-only (set KEY=VALUE) and do NOT modify registry environment variables. We strongly recommend switching to PowerShell or WSL instead of CMD for a better experience.",
+    "cmd_warning_example": "CMD script example (session-only)",
+    "cmd_warning_dismiss": "Got it, don't show again",
     "feedback": "Feedback & Suggestions",
     "feedback_desc": "Submit bug reports or feature requests",
     "join_qq": "Join QQ Group",
@@ -376,7 +380,7 @@
     "qq_group": "QQ Group",
     "qq_group_id": "Group ID: {{id}}",
     "wechat_group": "WeChat Group",
-    "wechat_group_desc": "Add on WeChat：zhang-4696，attach with “Envis” to join group"
+    "wechat_group_desc": "Add on WeChat：zhang-4696，attach with \"Envis\" to join group"
   },
   "log_panel": {
     "expand_params": "Expand params",

@@ -379,7 +379,11 @@
     "step_2_title": "添加服务",
     "step_2_desc": "配置数据库、缓存等服务。",
     "step_3_title": "启动和监控",
-    "step_3_desc": "启动服务并实时监控其状态。"
+    "step_3_desc": "启动服务并实时监控其状态。",
+    "cmd_warning_title": "关于 Windows CMD 支持的重要说明",
+    "cmd_warning_desc": "Envis 会将 AutoRun 注册表项指向一个批处理脚本，在 CMD 启动时加载环境变量。\n\n所有环境变量均仅导入到当前会话（set KEY=VALUE），\u4e0d修改注册表环境。强烈建议不要使用 CMD，改用 PowerShell 或 WSL，以获得更好的体验。",
+    "cmd_warning_example": "CMD 脚本示例（仅会话有效）",
+    "cmd_warning_dismiss": "我已了解，不再显示"
   },
   "log_panel": {
     "expand_params": "展开参数",

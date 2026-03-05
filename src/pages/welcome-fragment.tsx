@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { isAIPanelOpenAtom } from "@/store";
 import { useAtom } from "jotai";
 import { useState } from "react";
-import { Github, Server, Code, Database, Settings, PanelLeft, Bot, Zap, Globe, Box, Layers, Terminal, Command, Cpu, Plus, FolderOpen, Book, Clock, ArrowRight, Search, GripVertical, Play, Square, Hexagon, Info, MemoryStick, HardDrive, Wifi, Users, MessageCircle, MessageSquare } from "lucide-react";
+import { Github, Server, Code, Database, Settings, PanelLeft, Bot, Zap, Globe, Box, Layers, Terminal, Command, Cpu, Plus, FolderOpen, Book, Clock, ArrowRight, Search, GripVertical, Play, Square, Hexagon, Info, MemoryStick, HardDrive, Wifi, Users, MessageCircle, MessageSquare, AlertTriangle, X } from "lucide-react";
 import {
     DndContext,
     closestCenter,
@@ -114,6 +114,9 @@ export function WelcomeFragment({ onOpen }: {
                             </a>
                         </div>
                     </div>
+
+                    {/* CMD Warning (Windows only) */}
+                    <CmdWarningBanner />
 
                     {/* Quick Actions */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -307,6 +310,68 @@ function Step({ number, title, desc }: { number: string, title: string, desc: st
             </div>
             <div className="text-xs font-medium text-gray-900 dark:text-white">{title}</div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">{desc}</div>
+        </div>
+    )
+}
+
+const DISMISS_KEY = 'envis_cmd_warning_dismissed'
+
+function CmdWarningBanner() {
+    const { t } = useTranslation();
+    const isWindows = navigator.userAgent.toLowerCase().includes('windows')
+    const [dismissed, setDismissed] = useState(() => {
+        try { return localStorage.getItem(DISMISS_KEY) === '1' } catch { return false }
+    })
+
+    if (!isWindows || dismissed) return null
+
+    const handleDismiss = () => {
+        try { localStorage.setItem(DISMISS_KEY, '1') } catch {}
+        setDismissed(true)
+    }
+
+    const cmdExample = `@echo off
+echo Welcome! Loading Envis environment...
+
+:: 设置路径（仅当前会话有效）
+set PATH=%PATH%;C:\\my\\custom\\bin
+
+:: 设置变量（仅当前会话有效）
+set MY_VAR=my_value
+
+:: 设置别名
+doskey ll=dir /b $*`
+
+    return (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-1">
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{t('welcome.cmd_warning_title')}</p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed whitespace-pre-line">{t('welcome.cmd_warning_desc')}</p>
+                </div>
+                <button
+                    onClick={handleDismiss}
+                    className="shrink-0 text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-200 transition-colors"
+                    aria-label="dismiss"
+                >
+                    <X className="w-3.5 h-3.5" />
+                </button>
+            </div>
+            <details className="text-[11px] text-amber-700 dark:text-amber-400">
+                <summary className="cursor-pointer select-none font-medium hover:text-amber-900 dark:hover:text-amber-200 transition-colors">
+                    {t('welcome.cmd_warning_example')}
+                </summary>
+                <pre className="mt-2 p-3 rounded-lg bg-amber-100/60 dark:bg-black/30 text-amber-900 dark:text-amber-200 font-mono text-[10px] overflow-x-auto leading-relaxed whitespace-pre">
+{cmdExample}
+                </pre>
+            </details>
+            <button
+                onClick={handleDismiss}
+                className="text-[10px] text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
+            >
+                {t('welcome.cmd_warning_dismiss')}
+            </button>
         </div>
     )
 }
