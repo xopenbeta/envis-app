@@ -35,6 +35,9 @@
               "takesValue": true
             }
           ]
+        },
+        "refresh": {
+          "description": "Reload shell configuration (source ~/.zshrc or ~/.bash_profile)"
         }
       }
     }

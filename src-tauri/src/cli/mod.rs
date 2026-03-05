@@ -23,6 +23,7 @@ pub fn handle_cli(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
                     "use" => handlers::handle_use(&subcommand.matches),
                     "list" => handlers::handle_list(),
                     "ls" => handlers::handle_list(),
+                    "refresh" => handlers::handle_refresh(),
                     _ => {
                         eprintln!("未知命令: {}", subcommand.name);
                         std::process::exit(1);
@@ -58,6 +59,7 @@ SUBCOMMANDS:
     list             List all environments
     ls               List all environments
     use              Activate an environment
+    refresh          Reload shell configuration (source ~/.zshrc or ~/.bash_profile)
 
 EXAMPLES:
     # List all environments

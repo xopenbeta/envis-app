@@ -94,6 +94,12 @@ pub fn handle_list() {
     }
 }
 
+/// 处理 `refresh` 命令: 不执行任何操作，由 shell wrapper 负责 source 配置文件
+pub fn handle_refresh() {
+    // 什么都不做，直接成功退出
+    // shell wrapper 中检测到 refresh 命令且退出码为 0 时，会自动执行 source
+}
+
 // 辅助函数
 fn get_string_arg(matches: &tauri_plugin_cli::Matches, name: &str) -> Option<String> {
     matches.args.get(name).and_then(|arg| match &arg.value {

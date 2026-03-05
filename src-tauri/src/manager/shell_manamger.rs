@@ -307,8 +307,10 @@ impl ShellManager {
 envis() {{
     command envis "$@"
     local exit_code=$?
-    if [ "$1" = "use" ] && [ $exit_code -eq 0 ]; then
-        {}
+    if [ "$1" = "use" ] || [ "$1" = "refresh" ]; then
+        if [ $exit_code -eq 0 ]; then
+            {}
+        fi
     fi
     return $exit_code
 }}
