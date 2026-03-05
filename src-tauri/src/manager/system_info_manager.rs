@@ -291,6 +291,8 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
             if let Ok(output) = Command::new("wmic")
                 .args(&[
                     "logicaldisk",
@@ -298,6 +300,7 @@ impl SystemInfoManager {
                     "size,freespace,caption,filesystem",
                     "/format:csv",
                 ])
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()
             {
                 let output_str = String::from_utf8_lossy(&output.stdout);
@@ -419,9 +422,12 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
             // Windows 可以使用 WMI 查询网络接口统计信息
             if let Ok(output) = Command::new("wmic")
                 .args(&["path", "Win32_PerfRawData_Tcpip_NetworkInterface", "get", "Name,BytesReceivedPerSec,BytesSentPerSec,PacketsReceivedPerSec,PacketsSentPerSec", "/format:csv"])
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()
             {
                 let output_str = String::from_utf8_lossy(&output.stdout);
@@ -557,7 +563,12 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
-            if let Ok(output) = Command::new("ipconfig").output() {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            if let Ok(output) = Command::new("ipconfig")
+                .creation_flags(CREATE_NO_WINDOW)
+                .output()
+            {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for line in output_str.lines() {
                     let line = line.trim();

@@ -564,8 +564,11 @@ impl PostgresqlService {
 
         #[cfg(target_os = "windows")]
         {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
             Command::new("taskkill")
                 .args(&["/IM", "postgres.exe", "/F"])
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()?;
         }
 

@@ -131,8 +131,11 @@ impl ShellManager {
             autorun_value.replace("'", "''") // 转义单引号
         );
 
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
         let output = Command::new("powershell")
             .args(&["-NoProfile", "-Command", &ps_command])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .context("执行 PowerShell 命令失败")?;
 
@@ -1185,7 +1188,8 @@ alias mise=envis
     /// 在加载了 shell 配置文件的环境中执行命令
     /// 返回 (stdout, stderr, exit_code)
     pub fn execute_command_with_env(&self, command: &str) -> Result<(String, String, i32)> {
-        let output = if cfg!(target_os = "windows") {
+        #[cfg(target_os = "windows")]
+        let output = {
             // Windows: 尝试使用 PowerShell
             let documents_dir = dirs::document_dir().context("无法获取文档目录")?;
             let ps_profile = documents_dir
@@ -1203,10 +1207,16 @@ alias mise=envis
                 command.to_string()
             };
 
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
             Command::new("powershell")
                 .args(["-NoLogo", "-Command", &ps_command])
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()
-        } else {
+        };
+
+        #[cfg(not(target_os = "windows"))]
+        let output = {
             // macOS/Linux: 使用 login shell 以获取完整的环境变量
             let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
 
