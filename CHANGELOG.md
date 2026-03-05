@@ -1,5 +1,14 @@
 # 更新日志 / Changelog
 
+## [0.6.1] - 2026-03-05
+
+### 修复 / Fixed
+- 🐛 修复 Windows 平台执行 PostgreSQL 停止命令（`taskkill`）时弹出黑色 CMD 窗口的问题，添加 `CREATE_NO_WINDOW` 标志隐藏控制台窗口
+- 🐛 修复 Windows 平台执行 PowerShell 命令（Shell 自动运行配置、环境变量注入）时弹出黑色 CMD 窗口的问题
+- 🐛 修复 Windows 平台执行 `wmic`、`ipconfig` 等系统信息采集命令时弹出黑色 CMD 窗口的问题
+
+---
+
 ## [0.6.0] - 2026-03-03
 
 ### 新增 / Added
