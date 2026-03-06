@@ -1,5 +1,15 @@
 # 更新日志 / Changelog
 
+## [0.7.1] - 2026-03-06
+
+### 修复 / Fixed
+- 🐛 修复 Windows 平台下所有服务（Dnsmasq、Java、MariaDB、MongoDB、MySQL、Nginx、Node.js、PostgreSQL、Python、SSL、Shell Manager、System Info）在执行外部命令时弹出黑色 CMD 窗口的问题
+
+### 改进 / Improved
+- ♻️ 提取 `create_command` 统一工具函数，集中管理 Windows `CREATE_NO_WINDOW` 标志，消除各服务模块中重复的平台判断代码
+
+---
+
 ## [0.7.0] - 2026-03-05
 
 ### 新增 / Added
