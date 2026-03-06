@@ -1,11 +1,11 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::types::ServiceData;
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
 /// PostgreSQL 版本信息
@@ -226,7 +226,7 @@ impl PostgresqlService {
         std::fs::create_dir_all(&install_dir)?;
 
         if task.filename.ends_with(".tar.gz") || task.filename.ends_with(".tgz") {
-            let output = Command::new("tar")
+            let output = create_command("tar")
                 .args(&[
                     "-xzf",
                     &archive_path.to_string_lossy(),
@@ -242,7 +242,7 @@ impl PostgresqlService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = Command::new("unzip")
+            let output = create_command("unzip")
                 .args(&[
                     "-q",
                     &archive_path.to_string_lossy(),
@@ -435,7 +435,7 @@ impl PostgresqlService {
         }
 
         let running = if cfg!(target_os = "windows") {
-            let output = Command::new("tasklist")
+            let output = create_command("tasklist")
                 .arg("/FI")
                 .arg("IMAGENAME eq postgres.exe")
                 .output();
@@ -444,7 +444,7 @@ impl PostgresqlService {
                 Err(_) => false,
             }
         } else {
-            let output = Command::new("pgrep").arg("-f").arg("postgres").output();
+            let output = create_command("pgrep").arg("-f").arg("postgres").output();
             match output {
                 Ok(o) => o.status.success(),
                 Err(_) => false,
@@ -504,7 +504,7 @@ impl PostgresqlService {
             };
 
             if initdb.exists() {
-                let output = Command::new(&initdb)
+                let output = create_command(&initdb)
                     .args(&["-D", &data_dir.to_string_lossy()])
                     .output()?;
 
@@ -522,7 +522,7 @@ impl PostgresqlService {
         }
 
         // 启动服务
-        let mut cmd = Command::new(&postgres);
+        let mut cmd = create_command(&postgres);
         cmd.arg("-D").arg(&data_dir);
 
         if let Some(metadata) = &service_data.metadata {
@@ -531,17 +531,7 @@ impl PostgresqlService {
             }
         }
 
-        #[cfg(not(target_os = "windows"))]
-        {
-            cmd.spawn()?;
-        }
-
-        #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            cmd.creation_flags(CREATE_NO_WINDOW).spawn()?;
-        }
+        cmd.spawn()?;
 
         // 等待服务启动
         std::thread::sleep(std::time::Duration::from_secs(2));
@@ -564,17 +554,14 @@ impl PostgresqlService {
 
         #[cfg(target_os = "windows")]
         {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            Command::new("taskkill")
+            create_command("taskkill")
                 .args(&["/IM", "postgres.exe", "/F"])
-                .creation_flags(CREATE_NO_WINDOW)
                 .output()?;
         }
 
         #[cfg(not(target_os = "windows"))]
         {
-            Command::new("pkill").arg("-f").arg("postgres").output()?;
+            create_command("pkill").arg("-f").arg("postgres").output()?;
         }
 
         std::thread::sleep(std::time::Duration::from_secs(1));

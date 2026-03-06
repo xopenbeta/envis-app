@@ -1,11 +1,11 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::types::{ServiceData, ServiceStatus};
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
@@ -486,7 +486,7 @@ impl MongodbService {
         // 解压文件
         if filename.ends_with(".zip") {
             log::info!("使用 unzip 解压 mongosh...");
-            let output = Command::new("unzip")
+            let output = create_command("unzip")
                 .args(&[
                     "-q",
                     "-o", // 覆盖已存在的文件
@@ -504,7 +504,7 @@ impl MongodbService {
             log::info!("mongosh 解压成功");
         } else if filename.ends_with(".tgz") || filename.ends_with(".tar.gz") {
             log::info!("使用 tar 解压 mongosh...");
-            let output = Command::new("tar")
+            let output = create_command("tar")
                 .args(&[
                     "-xzf",
                     &archive_path.to_string_lossy(),
@@ -578,11 +578,10 @@ impl MongodbService {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);
         std::fs::create_dir_all(&install_dir)?;
-        use std::process::Command;
 
         if task.filename.ends_with(".tgz") || task.filename.ends_with(".tar.gz") {
             // 支持 .tgz/.tar.gz 的解压，注意 strip-components 可能需要根据包内目录结构调整
-            let output = Command::new("tar")
+            let output = create_command("tar")
                 .args(&[
                     "-xzf",
                     &archive_path.to_string_lossy(),
@@ -598,7 +597,7 @@ impl MongodbService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = Command::new("unzip")
+            let output = create_command("unzip")
                 .args(&[
                     "-q",
                     &archive_path.to_string_lossy(),
@@ -736,7 +735,7 @@ impl MongodbService {
         // 检查是否有 mongod 进程在指定端口运行（优先使用端口检测）
         let running = if cfg!(target_os = "windows") {
             // Windows: 继续使用 tasklist 判断 mongod.exe 是否存在（更可靠且避免复杂的 netstat->pid->映射）
-            let output = Command::new("tasklist")
+            let output = create_command("tasklist")
                 .arg("/FI")
                 .arg("IMAGENAME eq mongod.exe")
                 .output();
@@ -748,7 +747,7 @@ impl MongodbService {
             // Unix-like: 首先尝试用 lsof 检查端口占用并判断是否由 mongod 占用
             // log::info!("Unix-like: 使用 lsof 检查端口 {}", port);
             let port_arg = format!(":{}", port);
-            let output = Command::new("lsof")
+            let output = create_command("lsof")
                 .arg("-iTCP")
                 .arg(&port_arg)
                 .arg("-sTCP:LISTEN")
@@ -777,7 +776,7 @@ impl MongodbService {
                         false
                     } else {
                         // log::info!("lsof 未返回监听信息，回退到 pgrep 检查 mongod 进程");
-                        let output = Command::new("pgrep").arg("-x").arg("mongod").output();
+                        let output = create_command("pgrep").arg("-x").arg("mongod").output();
                         match output {
                             Ok(o2) => {
                                 let stdout2 = String::from_utf8_lossy(&o2.stdout);
@@ -800,7 +799,7 @@ impl MongodbService {
                 Err(e) => {
                     // 如果 lsof 不可用，回退到 pgrep 检查进程名（不基于端口）
                     // log::warn!("执行 lsof 失败: {}，回退到 pgrep 检查 mongod 进程", e);
-                    let output = Command::new("pgrep").arg("-x").arg("mongod").output();
+                    let output = create_command("pgrep").arg("-x").arg("mongod").output();
                     match output {
                         Ok(o) => {
                             let stdout = String::from_utf8_lossy(&o.stdout);
@@ -915,7 +914,7 @@ impl MongodbService {
             // Windows: 直接启动，不使用 --fork
             log::info!("使用 Windows 启动模式（不使用 --fork）");
             log::info!("启动命令: {:?} --config {:?}", mongod, config_path);
-            Command::new(&mongod)
+            create_command(&mongod)
                 .arg("--config")
                 .arg(&config_path)
                 .spawn()
@@ -923,7 +922,7 @@ impl MongodbService {
             // macOS: 不支持 --fork，使用后台进程方式
             log::info!("使用 macOS 启动模式（后台进程，重定向输入输出）");
             log::info!("启动命令: {:?} --config {:?}", mongod, config_path);
-            Command::new(&mongod)
+            create_command(&mongod)
                 .arg("--config")
                 .arg(&config_path)
                 .stdin(std::process::Stdio::null())
@@ -934,7 +933,7 @@ impl MongodbService {
             // Linux: 可以在配置文件中指定 fork: true
             log::info!("使用 Linux 启动模式");
             log::info!("启动命令: {:?} --config {:?}", mongod, config_path);
-            Command::new(&mongod)
+            create_command(&mongod)
                 .arg("--config")
                 .arg(&config_path)
                 .spawn()
@@ -1035,7 +1034,7 @@ impl MongodbService {
             log::info!("使用 Windows taskkill 命令停止 MongoDB");
             log::info!("执行命令: taskkill /IM mongod.exe /F");
 
-            let output = Command::new("taskkill")
+            let output = create_command("taskkill")
                 .args(&["/IM", "mongod.exe", "/F"])
                 .output();
 
@@ -1056,7 +1055,7 @@ impl MongodbService {
             log::info!("执行命令: pkill -x mongod");
             log::info!("说明: -x 参数确保只终止名称完全匹配 'mongod' 的进程");
 
-            let output = Command::new("pkill").args(&["-x", "mongod"]).output();
+            let output = create_command("pkill").args(&["-x", "mongod"]).output();
 
             if let Ok(ref o) = output {
                 let stdout = String::from_utf8_lossy(&o.stdout);
@@ -1230,7 +1229,7 @@ impl MongodbService {
         // 根据操作系统打开 MongoDB Compass
         let result = if cfg!(target_os = "macos") {
             // macOS: 使用 open 命令打开 Compass，并传递连接字符串
-            Command::new("open")
+            create_command("open")
                 .arg("-a")
                 .arg("MongoDB Compass")
                 .arg("--args")
@@ -1238,12 +1237,12 @@ impl MongodbService {
                 .spawn()
         } else if cfg!(target_os = "windows") {
             // Windows: 尝试直接启动 MongoDBCompass.exe
-            Command::new("cmd")
+            create_command("cmd")
                 .args(&["/C", "start", "mongodb-compass://", &connection_string])
                 .spawn()
         } else {
             // Linux: 尝试使用 mongodb-compass 命令
-            Command::new("mongodb-compass")
+            create_command("mongodb-compass")
                 .arg(&connection_string)
                 .spawn()
         };
@@ -1334,7 +1333,7 @@ impl MongodbService {
                 format!("mongosh {}", connection_string)
             };
 
-            Command::new("osascript")
+            create_command("osascript")
                 .arg("-e")
                 .arg(format!(
                     "tell application \"Terminal\" to do script \"{}\"",
@@ -1353,7 +1352,7 @@ impl MongodbService {
                 "mongosh".to_string()
             };
 
-            Command::new("cmd")
+            create_command("cmd")
                 .args(&["/C", "start", "cmd", "/K", &shell_cmd, &connection_string])
                 .spawn()
         } else {
@@ -1366,13 +1365,13 @@ impl MongodbService {
                 "mongosh".to_string()
             };
 
-            Command::new("gnome-terminal")
+            create_command("gnome-terminal")
                 .arg("--")
                 .arg(&shell_cmd)
                 .arg(&connection_string)
                 .spawn()
                 .or_else(|_| {
-                    Command::new("xterm")
+                    create_command("xterm")
                         .arg("-e")
                         .arg(format!("{} {}", shell_cmd, connection_string))
                         .spawn()
@@ -1762,7 +1761,7 @@ security:
         log::info!("启动临时 MongoDB 实例...");
         log::info!("启动命令: {} {}", mongod.display(), mongod_args.join(" "));
 
-        let mut child = Command::new(mongod)
+        let mut child = create_command(mongod)
             .args(&mongod_args)
             .spawn()
             .map_err(|e| anyhow!("启动临时 MongoDB 实例失败: {}", e))?;
@@ -1809,7 +1808,7 @@ security:
             create_user_script.replace('\n', " ").trim()
         );
 
-        let result = Command::new(&mongosh)
+        let result = create_command(&mongosh)
             .args(&["--port", port, "--eval", &create_user_script])
             .output();
 
@@ -1895,7 +1894,7 @@ security:
         ];
         log::info!("启动命令: {} {}", mongod.display(), mongod_args.join(" "));
 
-        let mut child = Command::new(mongod)
+        let mut child = create_command(mongod)
             .args(&mongod_args)
             .spawn()
             .map_err(|e| {
@@ -1941,7 +1940,7 @@ security:
         );
 
         log::info!("执行副本集初始化命令...");
-        let result = Command::new(&mongosh).args(&mongosh_args).output();
+        let result = create_command(&mongosh).args(&mongosh_args).output();
 
         // 等待副本集初始化完成
         log::info!("等待副本集初始化完成 (2秒)...");
@@ -2048,7 +2047,7 @@ security:
         );
 
         // 执行 mongosh 命令列出数据库
-        let output = Command::new(&mongosh_bin)
+        let output = create_command(&mongosh_bin)
             .arg(&connection_string)
             .arg("--quiet")
             .arg("--eval")
@@ -2147,7 +2146,7 @@ security:
         );
 
         // 创建数据库（通过在数据库中创建一个集合来实现）
-        let create_command = format!(
+        let create_db_command = format!(
             "\"db = db.getSiblingDB('{}'); db.createCollection('_init'); JSON.stringify({{ ok: 1, database: '{}' }});\"",
             database_name, database_name
         );
@@ -2158,13 +2157,13 @@ security:
             "执行命令: {} {} --quiet --eval {}",
             mongosh_bin.display(),
             &connection_string,
-            create_command.replace('\n', " ")
+            create_db_command.replace('\n', " ")
         );
-        let output = Command::new(&mongosh_bin)
+        let output = create_command(&mongosh_bin)
             .arg(&connection_string)
             .arg("--quiet")
             .arg("--eval")
-            .arg(&create_command)
+            .arg(&create_db_command)
             .output()?;
 
         if !output.status.success() {
@@ -2251,7 +2250,7 @@ security:
             database_name
         );
 
-        let output = Command::new(&mongosh_bin)
+        let output = create_command(&mongosh_bin)
             .arg(&connection_string)
             .arg("--quiet")
             .arg("--eval")
@@ -2348,7 +2347,7 @@ security:
 
         log::debug!("创建用户脚本: {}", create_user_script);
 
-        let output = Command::new(&mongosh_path)
+        let output = create_command(&mongosh_path)
             .arg("--port")
             .arg(&port)
             .arg("--quiet")
@@ -2429,7 +2428,7 @@ security:
             admin_username, admin_password
         );
 
-        let output = Command::new(&mongosh_path)
+        let output = create_command(&mongosh_path)
             .arg("--port")
             .arg(&port)
             .arg("--quiet")
@@ -2530,7 +2529,7 @@ security:
 
         log::debug!("更新用户权限脚本: {}", update_script);
 
-        let output = Command::new(&mongosh_path)
+        let output = create_command(&mongosh_path)
             .arg("--port")
             .arg(&port)
             .arg("--quiet")
@@ -2616,7 +2615,7 @@ security:
             admin_username, admin_password, username
         );
 
-        let output = Command::new(&mongosh_path)
+        let output = create_command(&mongosh_path)
             .arg("--port")
             .arg(&port)
             .arg("--quiet")

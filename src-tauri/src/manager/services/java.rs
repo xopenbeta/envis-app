@@ -915,16 +915,21 @@ impl JavaService {
 
     /// 解压 tar 格式文件
     async fn extract_tar(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
-        use tokio::process::Command;
-
-        let output = Command::new("tar")
-            .arg("-xzf")
+        let mut cmd = tokio::process::Command::new("tar");
+        cmd.arg("-xzf")
             .arg(archive_path)
             .arg("-C")
             .arg(target_dir)
-            .arg("--strip-components=1")
-            .output()
-            .await?;
+            .arg("--strip-components=1");
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        let output = cmd.output().await?;
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
@@ -1174,7 +1179,7 @@ impl JavaService {
             install_path.join("bin").join("java")
         };
 
-        let output = std::process::Command::new(&java_binary)
+        let output = crate::utils::create_command(java_binary.to_str().unwrap_or("java"))
             .arg("-version")
             .output()?;
 

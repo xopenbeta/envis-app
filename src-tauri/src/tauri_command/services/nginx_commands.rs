@@ -1,6 +1,5 @@
 use crate::manager::services::nginx::NginxService;
 use crate::types::{CommandResponse, ServiceData};
-use std::process::Command;
 
 /// 按版本检查 Nginx 是否已安装
 #[tauri::command]

@@ -1,14 +1,13 @@
-use crate::manager::app_config_manager::AppConfigManager;
+﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::EnvServDataManager;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::manager::shell_manamger::ShellManager;
 use crate::types::ServiceData;
+use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
-
-use std::process::Command;
 
 /// Python 安装模式
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -73,7 +72,7 @@ impl PythonService {
         }
 
         // 执行 python -m venv --help
-        if let Ok(output) = Command::new(python_path)
+        if let Ok(output) = create_command(python_path)
             .args(&["-m", "venv", "--help"])
             .output()
         {
@@ -90,14 +89,14 @@ impl PythonService {
         }
 
         let exists = if cfg!(target_os = "windows") {
-            Command::new("where")
+            create_command("where")
                 .arg("uv")
                 .output()
                 .map(|output| output.status.success())
                 .unwrap_or(false)
         } else {
             let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
-            Command::new(&shell)
+            create_command(&shell)
                 .arg("-lc")
                 .arg("command -v uv >/dev/null 2>&1")
                 .output()
@@ -159,7 +158,7 @@ impl PythonService {
         }
         let venv_path = venvs_dir.join(venv_name);
 
-        let output = Command::new(python_path)
+        let output = create_command(python_path)
             .args(&["-m", "venv", venv_path.to_str().unwrap()])
             .output()?;
 
@@ -207,7 +206,7 @@ impl PythonService {
                 return Err(anyhow!("激活脚本不存在: {}", activate_bat.display()));
             }
 
-            Command::new("cmd")
+            create_command("cmd")
                 .args([
                     "/C",
                     &format!("start cmd /K \"{}\"", activate_bat.display()),
@@ -232,7 +231,7 @@ impl PythonService {
                 shell_command.replace('"', "\\\"")
             );
 
-            Command::new("osascript")
+            create_command("osascript")
                 .arg("-e")
                 .arg(applescript)
                 .spawn()?;
@@ -248,12 +247,12 @@ impl PythonService {
             let escaped_activate = activate_script.to_string_lossy().replace('"', "\\\"");
             let command = format!("source \"{}\" && exec bash", escaped_activate);
 
-            let try_gnome = Command::new("gnome-terminal")
+            let try_gnome = create_command("gnome-terminal")
                 .args(["--", "bash", "-lc", &command])
                 .spawn();
 
             if try_gnome.is_err() {
-                Command::new("x-terminal-emulator")
+                create_command("x-terminal-emulator")
                     .args(["-e", &format!("bash -lc '{}'; exec bash", command.replace('"', "\\\""))])
                     .spawn()?;
             }
@@ -538,7 +537,7 @@ impl PythonService {
             self.extract_zip(archive_path, &install_dir).await?;
         } else {
             // Linux/macOS: 解压 tar.gz
-            let status = Command::new("tar")
+            let status = create_command("tar")
                 .arg("-xzf")
                 .arg(archive_path)
                 .arg("-C")
@@ -635,7 +634,7 @@ impl PythonService {
 
         // Step 1: 使用 pkgutil 展开 .pkg
         log::info!("Step 1: pkgutil --expand-full ...");
-        let status = Command::new("pkgutil")
+        let status = create_command("pkgutil")
             .arg("--expand-full")
             .arg(pkg_path)
             .arg(&tmp_dir.join("expanded"))
@@ -745,7 +744,7 @@ impl PythonService {
         
         // 使用 msiexec 静默解压到指定目录
         // msiexec /a <msi_path> /qn TARGETDIR=<install_dir>
-        let status = Command::new("msiexec")
+        let status = create_command("msiexec")
             .arg("/a")
             .arg(msi_path)
             .arg("/qn")
@@ -770,7 +769,7 @@ impl PythonService {
         log::info!("使用 python-build 编译安装 Python {}...", version);
 
         // 检查是否安装了 python-build（来自 pyenv）
-        let python_build_check = Command::new("python-build")
+        let python_build_check = create_command("python-build")
             .arg("--version")
             .output();
 
@@ -788,7 +787,7 @@ impl PythonService {
 
         // 使用 python-build 编译安装
         // python-build <version> <install_path>
-        let status = Command::new("python-build")
+        let status = create_command("python-build")
             .arg(version)
             .arg(&install_dir)
             .env("PYTHON_BUILD_CACHE_PATH", task.target_path.parent().unwrap())
@@ -827,7 +826,7 @@ impl PythonService {
         log::info!("正在解压源码到: {:?}", build_dir);
         
         // 使用系统 tar 命令解压，支持 .tar.xz
-        let status = Command::new("tar")
+        let status = create_command("tar")
             .arg("-xf")
             .arg(archive_path)
             .arg("-C")
@@ -849,7 +848,7 @@ impl PythonService {
         log::info!("开始配置编译选项...");
 
         // ./configure --prefix={install_dir} --enable-optimizations
-        let status = Command::new("./configure")
+        let status = create_command("./configure")
             .current_dir(&source_dir)
             .arg(format!("--prefix={}", install_dir.to_string_lossy()))
             .arg("--enable-optimizations")
@@ -868,7 +867,7 @@ impl PythonService {
             .to_string();
 
         // make -jN
-        let status = Command::new("make")
+        let status = create_command("make")
             .current_dir(&source_dir)
             .arg("-j")
             .arg(&cpu_count)
@@ -881,7 +880,7 @@ impl PythonService {
         log::info!("开始安装 (make install)...");
 
         // make install
-        let status = Command::new("make")
+        let status = create_command("make")
             .current_dir(&source_dir)
             .arg("install")
             .status()?;
@@ -967,7 +966,7 @@ impl PythonService {
     #[cfg(target_os = "macos")]
     fn fix_binary_dylib_path(&self, bin_path: &PathBuf, actual_dylib_path: &PathBuf, version: &str) -> Result<()> {
         // 检查当前的依赖路径
-        let output = Command::new("otool")
+        let output = create_command("otool")
             .arg("-L")
             .arg(bin_path)
             .output()?;
@@ -988,7 +987,7 @@ impl PythonService {
                     log::info!("修复 {:?} 中的路径: {}", bin_path.file_name().unwrap(), dylib_path);
                     
                     // 使用 install_name_tool 替换路径
-                    let status = Command::new("install_name_tool")
+                    let status = create_command("install_name_tool")
                         .arg("-change")
                         .arg(dylib_path)
                         .arg(actual_dylib_path)
@@ -1004,7 +1003,7 @@ impl PythonService {
 
         // 添加 rpath 指向 lib 目录
         let lib_dir = actual_dylib_path.parent().unwrap();
-        let _ = Command::new("install_name_tool")
+        let _ = create_command("install_name_tool")
             .arg("-add_rpath")
             .arg(lib_dir)
             .arg(bin_path)
@@ -1017,7 +1016,7 @@ impl PythonService {
     #[cfg(target_os = "macos")]
     fn fix_dylib_install_name(&self, dylib_path: &PathBuf) -> Result<()> {
         // 检查当前的 install_name
-        let output = Command::new("otool")
+        let output = create_command("otool")
             .arg("-D")
             .arg(dylib_path)
             .output()?;
@@ -1038,7 +1037,7 @@ impl PythonService {
                 
                 log::info!("修复 dylib install_name: {:?} -> {}", dylib_name, new_install_name);
                 
-                let status = Command::new("install_name_tool")
+                let status = create_command("install_name_tool")
                     .arg("-id")
                     .arg(&new_install_name)
                     .arg(dylib_path)

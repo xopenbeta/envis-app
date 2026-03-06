@@ -235,10 +235,8 @@ impl NasmService {
 
     /// 解压 tar 文件
     async fn extract_tar(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
-        use std::process::Command;
-
         let output = if archive_path.extension().map(|v| v == "gz").unwrap_or(false) {
-            Command::new("tar")
+            crate::utils::create_command("tar")
                 .args(&[
                     "-xzf",
                     &archive_path.to_string_lossy(),
@@ -248,7 +246,7 @@ impl NasmService {
                 ])
                 .output()?
         } else {
-            Command::new("tar")
+            crate::utils::create_command("tar")
                 .args(&[
                     "-xJf",
                     &archive_path.to_string_lossy(),
