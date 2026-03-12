@@ -78,19 +78,13 @@ impl ShellManager {
                 .unwrap_or(default_cmd_profile);
             paths.push(cmd_profile);
 
-            if !is_development {
-                // 线上环境才添加 PowerShell 配置文件
+            let ps5_dir = documents_dir.join("WindowsPowerShell");
+            let ps5_profile = ps5_dir.join("Microsoft.PowerShell_profile.ps1");
+            paths.push(ps5_profile);
 
-                // PowerShell 5.x 配置文件
-                let ps5_dir = documents_dir.join("WindowsPowerShell");
-                let ps5_profile = ps5_dir.join("Microsoft.PowerShell_profile.ps1");
-                paths.push(ps5_profile);
-
-                // PowerShell 7+ 配置文件
-                let ps7_dir = documents_dir.join("PowerShell");
-                let ps7_profile = ps7_dir.join("Microsoft.PowerShell_profile.ps1");
-                paths.push(ps7_profile);
-            }
+            let ps7_dir = documents_dir.join("PowerShell");
+            let ps7_profile = ps7_dir.join("Microsoft.PowerShell_profile.ps1");
+            paths.push(ps7_profile);
 
             paths
         } else {
