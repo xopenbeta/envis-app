@@ -72,52 +72,99 @@ impl MariadbService {
         services_folder.join("mariadb").join(version)
     }
 
+    /// 获取 macOS 主版本号（如 14、15）
+    #[cfg(target_os = "macos")]
+    fn get_macos_major_version() -> u32 {
+        let output = std::process::Command::new("sw_vers")
+            .arg("-productVersion")
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .unwrap_or_default();
+        output
+            .trim()
+            .split('.')
+            .next()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(14)
+    }
+
     /// 构建下载文件名和 URL 列表
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
-
-        // MariaDB 下载路径通常为 mariadb-<version>-<os>-<arch>.<ext>
-        let filename = match platform {
-            "macos" => {
-                // macOS 通常使用 tar.gz
-                let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
-                format!("mariadb-{}-macos-{}.tar.gz", version, arch_str)
-            }
-            "linux" => {
-                let arch_str = if arch == "aarch64" {
-                    "aarch64"
-                } else {
-                    "x86_64"
-                };
-                format!("mariadb-{}-linux-{}.tar.gz", version, arch_str)
-            }
-            "windows" => {
-                format!("mariadb-{}-winx64.zip", version)
-            }
-            _ => return Err(anyhow!("不支持的操作系统: {}", platform)),
-        };
-
-        // MariaDB 官方下载镜像
         let mut urls: Vec<String> = Vec::new();
 
-        // 官方镜像
-        urls.push(format!(
-            "https://downloads.mariadb.org/interstitial/mariadb-{}/{}",
-            version, filename
-        ));
+        match platform {
+            // macOS 包不在镜像站，只能从官方下载
+            "macos" => {
+                let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
 
-        // 备用镜像
-        urls.push(format!(
-            "https://mirrors.aliyun.com/mariadb/mariadb-{}/{}",
-            version, filename
-        ));
-        urls.push(format!(
-            "https://mirrors.tuna.tsinghua.edu.cn/mariadb/mariadb-{}/{}",
-            version, filename
-        ));
+                #[cfg(target_os = "macos")]
+                let current_ver = Self::get_macos_major_version();
+                #[cfg(not(target_os = "macos"))]
+                let current_ver: u32 = 14;
 
-        Ok((urls, filename))
+                // 从当前版本往下尝试，官方 /f/ 链接直接下载（不经过 interstitial 重定向）
+                let macos_versions: Vec<u32> = (13u32..=current_ver).rev().collect();
+                let primary_filename = format!(
+                    "mariadb-{}-macos{}-{}.tar.gz",
+                    version, current_ver, arch_str
+                );
+
+                for &macos_ver in &macos_versions {
+                    let filename = format!(
+                        "mariadb-{}-macos{}-{}.tar.gz",
+                        version, macos_ver, arch_str
+                    );
+                    let subdir = format!("bintar-macos{}-{}", macos_ver, arch_str);
+                    urls.push(format!(
+                        "https://downloads.mariadb.org/f/mariadb-{}/{}/{}",
+                        version, subdir, filename
+                    ));
+                }
+
+                Ok((urls, primary_filename))
+            }
+            // Linux/Windows 镜像站有完整包，优先走国内镜像
+            "linux" => {
+                let arch_str = if arch == "aarch64" { "aarch64" } else { "x86_64" };
+                let filename =
+                    format!("mariadb-{}-linux-systemd-{}.tar.gz", version, arch_str);
+                let subdir = format!("bintar-linux-systemd-{}", arch_str);
+                urls.push(format!(
+                    "https://mirrors.tuna.tsinghua.edu.cn/mariadb/mariadb-{}/{}/{}",
+                    version, subdir, filename
+                ));
+                urls.push(format!(
+                    "https://mirrors.aliyun.com/mariadb/mariadb-{}/{}/{}",
+                    version, subdir, filename
+                ));
+                urls.push(format!(
+                    "https://downloads.mariadb.org/f/mariadb-{}/{}/{}",
+                    version, subdir, filename
+                ));
+                Ok((urls, filename))
+            }
+            "windows" => {
+                let filename = format!("mariadb-{}-winx64.zip", version);
+                let subdir = "winx64-packages";
+                urls.push(format!(
+                    "https://mirrors.tuna.tsinghua.edu.cn/mariadb/mariadb-{}/{}/{}",
+                    version, subdir, filename
+                ));
+                urls.push(format!(
+                    "https://mirrors.aliyun.com/mariadb/mariadb-{}/{}/{}",
+                    version, subdir, filename
+                ));
+                urls.push(format!(
+                    "https://downloads.mariadb.org/f/mariadb-{}/{}/{}",
+                    version, subdir, filename
+                ));
+                Ok((urls, filename))
+            }
+            _ => Err(anyhow!("不支持的操作系统: {}", platform)),
+        }
     }
 
     /// 下载并安装 MariaDB
