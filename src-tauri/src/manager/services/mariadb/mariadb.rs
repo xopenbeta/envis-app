@@ -1,7 +1,7 @@
 ﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
-use crate::types::ServiceData;
+use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,8 @@ use std::time::Duration;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MariadbVersion {
     pub version: String,
-    pub date: String,
+    pub series: String,
+    pub release_type: String,
 }
 
 /// 全局 MariaDB 服务管理器单例
@@ -38,16 +39,34 @@ impl MariadbService {
     pub fn get_available_versions(&self) -> Vec<MariadbVersion> {
         vec![
             MariadbVersion {
-                version: "11.2.2".to_string(),
-                date: "2023-12-15".to_string(),
+                version: "10.6.25".to_string(),
+                series: "10.6".to_string(),
+                release_type: "Long-Term Support".to_string(),
             },
             MariadbVersion {
-                version: "11.1.3".to_string(),
-                date: "2023-10-10".to_string(),
+                version: "10.11.16".to_string(),
+                series: "10.11".to_string(),
+                release_type: "Long-Term Support".to_string(),
             },
             MariadbVersion {
-                version: "10.11.6".to_string(),
-                date: "2023-11-15".to_string(),
+                version: "11.4.10".to_string(),
+                series: "11.4".to_string(),
+                release_type: "Long-Term Support".to_string(),
+            },
+            MariadbVersion {
+                version: "11.8.6".to_string(),
+                series: "11.8".to_string(),
+                release_type: "Current Stable".to_string(),
+            },
+            MariadbVersion {
+                version: "12.2.2".to_string(),
+                series: "12.2".to_string(),
+                release_type: "Development".to_string(),
+            },
+            MariadbVersion {
+                version: "12.3.1".to_string(),
+                series: "12.3".to_string(),
+                release_type: "Development".to_string(),
             },
         ]
     }
@@ -72,23 +91,6 @@ impl MariadbService {
         services_folder.join("mariadb").join(version)
     }
 
-    /// 获取 macOS 主版本号（如 14、15）
-    #[cfg(target_os = "macos")]
-    fn get_macos_major_version() -> u32 {
-        let output = std::process::Command::new("sw_vers")
-            .arg("-productVersion")
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .unwrap_or_default();
-        output
-            .trim()
-            .split('.')
-            .next()
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(14)
-    }
-
     /// 构建下载文件名和 URL 列表
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
@@ -96,35 +98,29 @@ impl MariadbService {
         let mut urls: Vec<String> = Vec::new();
 
         match platform {
-            // macOS 包不在镜像站，只能从官方下载
+            // macOS 包从 GitHub Release 下载（文件名格式：mariadb-{version}-macos-{arch}.tar.gz）
+            // GitHub Release URL → 302 重定向到签名 CDN 链接（~1小时有效），reqwest 默认自动跟随重定向
             "macos" => {
                 let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
+                let filename = format!("mariadb-{}-macos-{}.tar.gz", version, arch_str);
 
-                #[cfg(target_os = "macos")]
-                let current_ver = Self::get_macos_major_version();
-                #[cfg(not(target_os = "macos"))]
-                let current_ver: u32 = 14;
+                // 主要来源：xopenbeta/mariadb-archive（含各平台 macOS 包）
+                urls.push(format!(
+                    "https://github.com/xopenbeta/mariadb-archive/releases/latest/download/{}",
+                    filename
+                ));
+                // 备用来源：mariadb-corporation 官方 GitHub Release
+                urls.push(format!(
+                    "https://github.com/mariadb-corporation/mariadb-community-server-release/releases/download/mariadb-{}/{}",
+                    version, filename
+                ));
+                // 备用来源：MariaDB 官方下载站
+                urls.push(format!(
+                    "https://downloads.mariadb.org/f/mariadb-{}/bintar-macos-{}/{}",
+                    version, arch_str, filename
+                ));
 
-                // 从当前版本往下尝试，官方 /f/ 链接直接下载（不经过 interstitial 重定向）
-                let macos_versions: Vec<u32> = (13u32..=current_ver).rev().collect();
-                let primary_filename = format!(
-                    "mariadb-{}-macos{}-{}.tar.gz",
-                    version, current_ver, arch_str
-                );
-
-                for &macos_ver in &macos_versions {
-                    let filename = format!(
-                        "mariadb-{}-macos{}-{}.tar.gz",
-                        version, macos_ver, arch_str
-                    );
-                    let subdir = format!("bintar-macos{}-{}", macos_ver, arch_str);
-                    urls.push(format!(
-                        "https://downloads.mariadb.org/f/mariadb-{}/{}/{}",
-                        version, subdir, filename
-                    ));
-                }
-
-                Ok((urls, primary_filename))
+                Ok((urls, filename))
             }
             // Linux/Windows 镜像站有完整包，优先走国内镜像
             "linux" => {
@@ -358,6 +354,38 @@ impl MariadbService {
         environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
+        let version = &service_data.version;
+        let service_data_folder = self.getservice_data_folder(environment_id, version);
+        let config_path = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MARIADB_CONFIG"))
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| service_data_folder.join("my.cnf"));
+
+        // 从配置文件解析端口和绑定地址
+        let mut port = "3306".to_string();
+        let mut bind_address = "127.0.0.1".to_string();
+        if config_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&config_path) {
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if let Some(val) = trimmed.strip_prefix("port") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            port = val.to_string();
+                        }
+                    } else if let Some(val) = trimmed.strip_prefix("bind-address") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            bind_address = val.to_string();
+                        }
+                    }
+                }
+            }
+        }
+
         let running = if cfg!(target_os = "windows") {
             let output = create_command("tasklist")
                 .arg("/FI")
@@ -368,14 +396,59 @@ impl MariadbService {
                 Err(_) => false,
             }
         } else {
-            let output = create_command("pgrep").arg("-f").arg("mysqld").output();
+            // 优先用 lsof 检测端口，与 MongoDB 逻辑保持一致
+            let port_arg = format!(":{}", port);
+            let output = create_command("lsof")
+                .arg("-iTCP")
+                .arg(&port_arg)
+                .arg("-sTCP:LISTEN")
+                .output();
             match output {
-                Ok(o) => o.status.success(),
-                Err(_) => false,
+                Ok(o) => {
+                    let stdout = String::from_utf8_lossy(&o.stdout);
+                    if stdout.contains("mysqld") {
+                        true
+                    } else if !stdout.trim().is_empty() {
+                        // 端口被其他进程占用
+                        false
+                    } else {
+                        // lsof 无输出时回退到 pgrep
+                        let output = create_command("pgrep").arg("-x").arg("mysqld").output();
+                        match output {
+                            Ok(o2) => {
+                                let stdout2 = String::from_utf8_lossy(&o2.stdout);
+                                o2.status.success() && !stdout2.is_empty()
+                            }
+                            Err(_) => false,
+                        }
+                    }
+                }
+                Err(_) => {
+                    // lsof 不可用，回退到 pgrep
+                    let output = create_command("pgrep").arg("-x").arg("mysqld").output();
+                    match output {
+                        Ok(o) => {
+                            let stdout = String::from_utf8_lossy(&o.stdout);
+                            o.status.success() && !stdout.is_empty()
+                        }
+                        Err(_) => false,
+                    }
+                }
             }
         };
 
-        let data = serde_json::json!({ "isRunning": running });
+        let status = if running {
+            ServiceStatus::Running
+        } else {
+            ServiceStatus::Stopped
+        };
+        let data = serde_json::json!({
+            "isRunning": running,
+            "status": status,
+            "port": port,
+            "bindAddress": bind_address,
+            "configPath": config_path.to_string_lossy().to_string(),
+        });
         Ok(ServiceDataResult {
             success: true,
             message: "获取状态成功".to_string(),
@@ -391,6 +464,7 @@ impl MariadbService {
     ) -> Result<ServiceDataResult> {
         let version = &service_data.version;
         let install_path = self.get_install_path(version);
+        let service_data_folder = self.getservice_data_folder(environment_id, version);
         let mysqld = if cfg!(target_os = "windows") {
             install_path.join("bin").join("mysqld.exe")
         } else {
@@ -405,19 +479,50 @@ impl MariadbService {
             });
         }
 
-        let data_dir = install_path.join("data");
-        std::fs::create_dir_all(&data_dir).ok();
+        let config_path = service_data_folder.join("my.cnf");
+        if !config_path.exists() {
+            return Ok(ServiceDataResult {
+                success: false,
+                message: "MariaDB 尚未初始化，请先执行初始化操作".to_string(),
+                data: None,
+            });
+        }
 
-        let child_res = create_command(mysqld)
-            .arg(format!("--datadir={}", data_dir.to_string_lossy()))
-            .spawn();
+        let child_res = if cfg!(target_os = "windows") {
+            create_command(&mysqld)
+                .arg(format!("--defaults-file={}", config_path.to_string_lossy()))
+                .spawn()
+        } else if cfg!(target_os = "macos") {
+            // macOS: 后台运行，重定向 stdio，防止进程随终端关闭
+            create_command(&mysqld)
+                .arg(format!("--defaults-file={}", config_path.to_string_lossy()))
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+        } else {
+            // Linux: mysqld 自身支持 daemonize 配置
+            create_command(&mysqld)
+                .arg(format!("--defaults-file={}", config_path.to_string_lossy()))
+                .spawn()
+        };
 
         match child_res {
-            Ok(_child) => Ok(ServiceDataResult {
-                success: true,
-                message: "MariaDB 启动命令已发送".to_string(),
-                data: None,
-            }),
+            Ok(child) => {
+                log::info!("MariaDB 进程已启动，PID: {:?}", child.id());
+                // 等待服务完成初始化
+                std::thread::sleep(Duration::from_millis(500));
+                Ok(ServiceDataResult {
+                    success: true,
+                    message: format!(
+                        "MariaDB 启动命令已发送（使用配置文件: {}）",
+                        config_path.display()
+                    ),
+                    data: Some(serde_json::json!({
+                        "configPath": config_path.to_string_lossy().to_string(),
+                    })),
+                })
+            }
             Err(e) => Ok(ServiceDataResult {
                 success: false,
                 message: format!("启动失败: {}", e),
@@ -436,12 +541,15 @@ impl MariadbService {
                 .args(&["/IM", "mysqld.exe", "/F"])
                 .output()
         } else {
-            create_command("pkill").arg("mysqld").output()
+            // 使用 -x 精确匹配进程名，避免误杀其他包含 mysqld 的进程
+            create_command("pkill").args(&["-x", "mysqld"]).output()
         };
 
         match res {
             Ok(o) => {
-                if o.status.success() {
+                let exit_code = o.status.code().unwrap_or(-1);
+                // exit code 0 = 成功停止，1 = 进程不存在（也算成功）
+                if exit_code == 0 || exit_code == 1 {
                     Ok(ServiceDataResult {
                         success: true,
                         message: "停止 MariaDB 成功".to_string(),
@@ -450,7 +558,7 @@ impl MariadbService {
                 } else {
                     Ok(ServiceDataResult {
                         success: false,
-                        message: format!("停止失败: {}", String::from_utf8_lossy(&o.stderr)),
+                        message: format!("停止失败(exit {}): {}", exit_code, String::from_utf8_lossy(&o.stderr)),
                         data: None,
                     })
                 }
@@ -719,12 +827,15 @@ impl MariadbService {
         }
 
         // 启动临时服务器设置 root 密码
+        // 注意：不使用 --skip-grant-tables，因为 MariaDB 10.4+ 该选项会隐式启用
+        // --skip-networking，导致 TCP 连接被拒绝；--initialize-insecure 已创建 root@localhost（无密码）
         log::info!("启动临时服务器设置 root 密码...");
         let temp_port = "3307";
+        let temp_socket = tmp_dir.join("mysql_init.sock");
         let mut mysqld_process = create_command(&mysqld)
             .arg(format!("--defaults-file={}", config_path.display()))
             .arg(format!("--port={}", temp_port))
-            .arg("--skip-grant-tables")
+            .arg(format!("--socket={}", temp_socket.display()))
             .spawn()?;
 
         // 等待服务器启动
@@ -737,17 +848,32 @@ impl MariadbService {
             install_path.join("bin").join("mysql")
         };
 
+        // 使用 SET PASSWORD 兼容所有 MariaDB 版本，并切换认证方式为 mysql_native_password
+        // 连接时不传密码（--initialize-insecure 后 root 无密码）
         let set_password_cmd = format!(
-            "ALTER USER 'root'@'localhost' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
+            "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}'); FLUSH PRIVILEGES;",
             root_password
         );
 
-        let password_output = create_command(&mysql_client)
-            .arg(format!("--port={}", temp_port))
-            .arg("--host=127.0.0.1")
-            .arg("-e")
-            .arg(&set_password_cmd)
-            .output();
+        // Unix 下优先走 socket，Windows 下走 TCP
+        let password_output = if cfg!(target_os = "windows") {
+            create_command(&mysql_client)
+                .arg(format!("--port={}", temp_port))
+                .arg("--host=127.0.0.1")
+                .arg("-u").arg("root")
+                .arg("--password=")
+                .arg("-e")
+                .arg(&set_password_cmd)
+                .output()
+        } else {
+            create_command(&mysql_client)
+                .arg(format!("--socket={}", temp_socket.display()))
+                .arg("-u").arg("root")
+                .arg("--password=")
+                .arg("-e")
+                .arg(&set_password_cmd)
+                .output()
+        };
 
         // 等待密码设置完成并写入磁盘
         log::info!("等待密码数据写入磁盘 (2秒)...");
@@ -758,10 +884,16 @@ impl MariadbService {
         let _ = mysqld_process.wait();
 
         // 检查密码设置是否成功
-        if let Ok(output) = password_output {
-            if !output.status.success() {
+        match password_output {
+            Ok(output) if output.status.success() => {
+                log::info!("root 密码设置成功");
+            }
+            Ok(output) => {
                 let error = String::from_utf8_lossy(&output.stderr);
                 log::warn!("设置 root 密码可能失败: {}", error);
+            }
+            Err(e) => {
+                log::warn!("执行密码设置命令失败: {}", e);
             }
         }
 
