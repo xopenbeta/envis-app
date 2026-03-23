@@ -20,15 +20,21 @@ import {
   Copy
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ServiceData } from '@/types/index'
+import { ServiceData, ServiceDataStatus } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '../../../../store/environment'
 import {
-  type MySQLConfig
+  type MySQLConfig,
+  getMysqlConfig,
+  getMysqlServiceStatus,
+  startMysqlService,
+  stopMysqlService,
+  restartMysqlService,
+  setMysqlDataPath,
+  setMysqlLogPath,
 } from '@/hooks/services/mysql'
 import { useFileOperations } from "@/hooks/file-operations"
-import { getMariadbConfig, getMariadbServiceStatus, startMariadbService, stopMariadbService, restartMariadbService, setMariadbDataPath, setMariadbLogPath } from "@/hooks/services/mariadb"
 
 interface MySQLServiceProps {
   serviceData: ServiceData
@@ -39,10 +45,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   
   // 检查服务是否激活
-  const isServiceActive = ['running', 'active'].includes(serviceData.status)
+  const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
 
   // MySQL 配置状态
-  const [mysqlConfig, setMariadbConfig] = useState<MySQLConfig | null>(null)
+  const [mysqlConfig, setMysqlConfig] = useState<MySQLConfig | null>(null)
   
   // 加载状态
   const [isLoading, setIsLoading] = useState(false)
@@ -57,7 +63,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   useEffect(() => {
     // 只有在服务激活时才加载配置
     if (isServiceActive) {
-      loadMariadbConfig()
+      loadMysqlConfig()
       // 每隔一秒刷新一次
       const timer = setInterval(() => {
         checkServiceStatus()
@@ -67,20 +73,20 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       }
     } else {
       // 服务未激活时清空配置
-      setMariadbConfig(null)
+      setMysqlConfig(null)
       return () => {} // 确保所有路径都有返回值
     }
   }, [isServiceActive])
 
-  const loadMariadbConfig = async () => {
+  const loadMysqlConfig = async () => {
     // 只有在服务激活时才加载配置
     if (!isServiceActive) return
     
     setIsLoading(true)
     try {
-      const result = await getMariadbConfig(selectedEnvironmentId, serviceData)
+      const result = await getMysqlConfig(selectedEnvironmentId, serviceData)
       if (result.success && result.config) {
-        setMariadbConfig(result.config)
+        setMysqlConfig(result.config)
       } else {
         toast.error('加载 MySQL 配置失败: ' + result.message)
       }
@@ -93,9 +99,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
   const checkServiceStatus = async () => {
     try {
-      const result = await getMariadbServiceStatus(selectedEnvironmentId, serviceData)
+      const result = await getMysqlServiceStatus(selectedEnvironmentId, serviceData)
       if (result.success) {
-        setMariadbConfig(prev => (prev ? { ...prev, isRunning: result.isRunning || false } : prev))
+        setMysqlConfig(prev => (prev ? { ...prev, isRunning: result.isRunning || false } : prev))
       }
     } catch (error) {
       console.error('检查服务状态失败:', error)
@@ -108,7 +114,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     
     setIsStarting(true)
     try {
-      const result = await startMariadbService(selectedEnvironmentId, serviceData)
+      const result = await startMysqlService(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MySQL 服务启动成功')
         checkServiceStatus()
@@ -128,7 +134,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     
     setIsStopping(true)
     try {
-      const result = await stopMariadbService(selectedEnvironmentId, serviceData)
+      const result = await stopMysqlService(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MySQL 服务已停止')
         checkServiceStatus()
@@ -148,7 +154,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     
     setIsRestarting(true)
     try {
-      const result = await restartMariadbService(selectedEnvironmentId, serviceData)
+      const result = await restartMysqlService(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MySQL 服务重启成功')
         checkServiceStatus()
@@ -168,10 +174,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     
     setIsLoading(true)
     try {
-      const result = await setMariadbDataPath(selectedEnvironmentId, serviceData, dataPath)
+      const result = await setMysqlDataPath(selectedEnvironmentId, serviceData, dataPath)
       if (result.success) {
         toast.success('数据目录设置成功')
-        loadMariadbConfig()
+        loadMysqlConfig()
       } else {
         toast.error('设置数据目录失败: ' + result.message)
       }
@@ -188,10 +194,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     
     setIsLoading(true)
     try {
-      const result = await setMariadbLogPath(selectedEnvironmentId, serviceData, logPath)
+      const result = await setMysqlLogPath(selectedEnvironmentId, serviceData, logPath)
       if (result.success) {
         toast.success('日志目录设置成功')
-        loadMariadbConfig()
+        loadMysqlConfig()
       } else {
         toast.error('设置日志目录失败: ' + result.message)
       }
@@ -328,7 +334,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     <div className="flex items-center gap-2 mt-1">
                       <Input
                         value={mysqlConfig?.configPath || ''}
-                        onChange={(e) => mysqlConfig && setMariadbConfig({ ...mysqlConfig, configPath: e.target.value })}
+                        onChange={(e) => mysqlConfig && setMysqlConfig({ ...mysqlConfig, configPath: e.target.value })}
                         placeholder="MySQL 配置文件路径"
                         disabled={isLoading}
                         className="flex-1 h-8 text-xs shadow-none bg-content2 dark:bg-content3"
@@ -374,7 +380,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     <div className="flex items-center gap-2 mt-1">
                       <Input
                         value={mysqlConfig?.dataPath || ''}
-                        onChange={(e) => mysqlConfig && setMariadbConfig({ ...mysqlConfig, dataPath: e.target.value })}
+                        onChange={(e) => mysqlConfig && setMysqlConfig({ ...mysqlConfig, dataPath: e.target.value })}
                         placeholder="MySQL 数据目录路径"
                         disabled={true}
                         className="flex-1 h-8 text-xs shadow-none"
@@ -430,7 +436,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     <div className="flex items-center gap-2 mt-1">
                       <Input
                         value={mysqlConfig?.logPath || ''}
-                        onChange={(e) => mysqlConfig && setMariadbConfig({ ...mysqlConfig, logPath: e.target.value })}
+                        onChange={(e) => mysqlConfig && setMysqlConfig({ ...mysqlConfig, logPath: e.target.value })}
                         placeholder="MySQL 日志目录路径"
                         disabled={true}
                         className="flex-1 h-8 text-xs shadow-none"

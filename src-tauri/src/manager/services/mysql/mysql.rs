@@ -1,7 +1,7 @@
 ﻿use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
-use crate::types::ServiceData;
+use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
@@ -76,52 +76,74 @@ impl MysqlService {
         services_folder.join("mysql").join(version)
     }
 
+    fn series_from_version(version: &str) -> String {
+        let mut parts = version.split('.');
+        match (parts.next(), parts.next()) {
+            (Some(major), Some(minor)) => format!("{}.{}", major, minor),
+            _ => version.to_string(),
+        }
+    }
+
+    fn detect_macos_major_version() -> Option<String> {
+        let output = create_command("sw_vers").arg("-productVersion").output();
+        if let Ok(o) = output {
+            let v = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            if let Some(major) = v.split('.').next() {
+                if !major.is_empty() {
+                    return Some(major.to_string());
+                }
+            }
+        }
+        None
+    }
+
     /// 构建下载文件名和 URL 列表
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
+        let series = Self::series_from_version(version);
 
-        // MySQL 下载路径通常为 mysql-<version>-<os>-<arch>.<ext>
         let filename = match platform {
             "macos" => {
-                // macOS 通常使用 tar.gz
                 let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
-                format!("mysql-{}-macos-{}.tar.gz", version, arch_str)
+                if let Some(macos_major) = Self::detect_macos_major_version() {
+                    format!("mysql-{}-macos{}-{}.tar.gz", version, macos_major, arch_str)
+                } else {
+                    format!("mysql-{}-macos-{}.tar.gz", version, arch_str)
+                }
             }
             "linux" => {
-                let arch_str = if arch == "aarch64" {
-                    "aarch64"
-                } else {
-                    "x86_64"
-                };
-                format!("mysql-{}-linux-glibc2.17-{}.tar.gz", version, arch_str)
+                let arch_str = if arch == "aarch64" { "aarch64" } else { "x86_64" };
+                format!("mysql-{}-linux-glibc2.17-{}.tar.xz", version, arch_str)
             }
-            "windows" => {
-                format!("mysql-{}-winx64.zip", version)
-            }
+            "windows" => format!("mysql-{}-winx64.zip", version),
             _ => return Err(anyhow!("不支持的操作系统: {}", platform)),
         };
 
-        // MySQL 官方下载镜像
         let mut urls: Vec<String> = Vec::new();
 
-        // 官方镜像
+        // 官方 CDN，匹配如：https://cdn.mysql.com/Downloads/MySQL-9.6/mysql-9.6.0-macos15-arm64.dmg
         urls.push(format!(
-            "https://dev.mysql.com/get/Downloads/MySQL-8.0/{}",
-            filename
+            "https://cdn.mysql.com/Downloads/MySQL-{}/{}",
+            series, filename
+        ));
+        // 官方下载入口（会重定向到 CDN）
+        urls.push(format!(
+            "https://dev.mysql.com/get/Downloads/MySQL-{}/{}",
+            series, filename
         ));
 
-        // 备用镜像 - 阿里云
-        urls.push(format!(
-            "https://mirrors.aliyun.com/mysql/MySQL-8.0/{}",
-            filename
-        ));
-
-        // 备用镜像 - 清华大学
-        urls.push(format!(
-            "https://mirrors.tuna.tsinghua.edu.cn/mysql/downloads/MySQL-8.0/{}",
-            filename
-        ));
+        // 兼容旧目录结构作为兜底
+        if series != "8.0" {
+            urls.push(format!(
+                "https://cdn.mysql.com/Downloads/MySQL-8.0/{}",
+                filename
+            ));
+            urls.push(format!(
+                "https://dev.mysql.com/get/Downloads/MySQL-8.0/{}",
+                filename
+            ));
+        }
 
         Ok((urls, filename))
     }
@@ -240,6 +262,22 @@ impl MysqlService {
                     String::from_utf8_lossy(&output.stderr)
                 ));
             }
+        } else if task.filename.ends_with(".tar.xz") {
+            let output = create_command("tar")
+                .args(&[
+                    "-xJf",
+                    &archive_path.to_string_lossy(),
+                    "-C",
+                    &install_dir.to_string_lossy(),
+                    "--strip-components=1",
+                ])
+                .output()?;
+            if !output.status.success() {
+                return Err(anyhow!(
+                    "解压失败: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ));
+            }
         } else if task.filename.ends_with(".zip") {
             let output = create_command("unzip")
                 .args(&[
@@ -317,6 +355,37 @@ impl MysqlService {
         environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
+        let version = &service_data.version;
+        let service_data_folder = self.getservice_data_folder(environment_id, version);
+        let config_path = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_CONFIG"))
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| service_data_folder.join("my.cnf"));
+
+        let mut port = "3306".to_string();
+        let mut bind_address = "127.0.0.1".to_string();
+        if config_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&config_path) {
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if let Some(val) = trimmed.strip_prefix("port") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            port = val.to_string();
+                        }
+                    } else if let Some(val) = trimmed.strip_prefix("bind-address") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            bind_address = val.to_string();
+                        }
+                    }
+                }
+            }
+        }
+
         let running = if cfg!(target_os = "windows") {
             let output = create_command("tasklist")
                 .arg("/FI")
@@ -327,14 +396,55 @@ impl MysqlService {
                 Err(_) => false,
             }
         } else {
-            let output = create_command("pgrep").arg("-f").arg("mysqld").output();
+            let port_arg = format!(":{}", port);
+            let output = create_command("lsof")
+                .arg("-iTCP")
+                .arg(&port_arg)
+                .arg("-sTCP:LISTEN")
+                .output();
             match output {
-                Ok(o) => o.status.success(),
-                Err(_) => false,
+                Ok(o) => {
+                    let stdout = String::from_utf8_lossy(&o.stdout);
+                    if stdout.contains("mysqld") {
+                        true
+                    } else if !stdout.trim().is_empty() {
+                        false
+                    } else {
+                        let output = create_command("pgrep").arg("-x").arg("mysqld").output();
+                        match output {
+                            Ok(o2) => {
+                                let stdout2 = String::from_utf8_lossy(&o2.stdout);
+                                o2.status.success() && !stdout2.is_empty()
+                            }
+                            Err(_) => false,
+                        }
+                    }
+                }
+                Err(_) => {
+                    let output = create_command("pgrep").arg("-x").arg("mysqld").output();
+                    match output {
+                        Ok(o) => {
+                            let stdout = String::from_utf8_lossy(&o.stdout);
+                            o.status.success() && !stdout.is_empty()
+                        }
+                        Err(_) => false,
+                    }
+                }
             }
         };
 
-        let data = serde_json::json!({ "isRunning": running });
+        let status = if running {
+            ServiceStatus::Running
+        } else {
+            ServiceStatus::Stopped
+        };
+        let data = serde_json::json!({
+            "isRunning": running,
+            "status": status,
+            "port": port,
+            "bindAddress": bind_address,
+            "configPath": config_path.to_string_lossy().to_string(),
+        });
         Ok(ServiceDataResult {
             success: true,
             message: "获取状态成功".to_string(),
@@ -350,6 +460,7 @@ impl MysqlService {
     ) -> Result<ServiceDataResult> {
         let version = &service_data.version;
         let install_path = self.get_install_path(version);
+        let service_data_folder = self.getservice_data_folder(environment_id, version);
         let mysqld = if cfg!(target_os = "windows") {
             install_path.join("bin").join("mysqld.exe")
         } else {
@@ -364,19 +475,47 @@ impl MysqlService {
             });
         }
 
-        let data_dir = install_path.join("data");
-        std::fs::create_dir_all(&data_dir).ok();
+        let config_path = service_data_folder.join("my.cnf");
+        if !config_path.exists() {
+            return Ok(ServiceDataResult {
+                success: false,
+                message: "MySQL 尚未初始化，请先执行初始化操作".to_string(),
+                data: None,
+            });
+        }
 
-        let child_res = create_command(&mysqld)
-            .arg(format!("--datadir={}", data_dir.to_string_lossy()))
-            .spawn();
+        let child_res = if cfg!(target_os = "windows") {
+            create_command(&mysqld)
+                .arg(format!("--defaults-file={}", config_path.to_string_lossy()))
+                .spawn()
+        } else if cfg!(target_os = "macos") {
+            create_command(&mysqld)
+                .arg(format!("--defaults-file={}", config_path.to_string_lossy()))
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+        } else {
+            create_command(&mysqld)
+                .arg(format!("--defaults-file={}", config_path.to_string_lossy()))
+                .spawn()
+        };
 
         match child_res {
-            Ok(_child) => Ok(ServiceDataResult {
+            Ok(child) => {
+                log::info!("MySQL 进程已启动，PID: {:?}", child.id());
+                std::thread::sleep(Duration::from_millis(500));
+                Ok(ServiceDataResult {
                 success: true,
-                message: "MySQL 启动命令已发送".to_string(),
-                data: None,
-            }),
+                message: format!(
+                    "MySQL 启动命令已发送（使用配置文件: {}）",
+                    config_path.display()
+                ),
+                data: Some(serde_json::json!({
+                    "configPath": config_path.to_string_lossy().to_string(),
+                })),
+            })
+            }
             Err(e) => Ok(ServiceDataResult {
                 success: false,
                 message: format!("启动失败: {}", e),
@@ -387,20 +526,21 @@ impl MysqlService {
 
     pub fn stop_service(
         &self,
-        environment_id: &str,
-        service_data: &ServiceData,
+        _environment_id: &str,
+        _service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let res = if cfg!(target_os = "windows") {
             create_command("taskkill")
                 .args(&["/IM", "mysqld.exe", "/F"])
                 .output()
         } else {
-            create_command("pkill").arg("mysqld").output()
+            create_command("pkill").args(&["-x", "mysqld"]).output()
         };
 
         match res {
             Ok(o) => {
-                if o.status.success() {
+                let exit_code = o.status.code().unwrap_or(-1);
+                if exit_code == 0 || exit_code == 1 {
                     Ok(ServiceDataResult {
                         success: true,
                         message: "停止 MySQL 成功".to_string(),
@@ -409,7 +549,11 @@ impl MysqlService {
                 } else {
                     Ok(ServiceDataResult {
                         success: false,
-                        message: format!("停止失败: {}", String::from_utf8_lossy(&o.stderr)),
+                        message: format!(
+                            "停止失败(exit {}): {}",
+                            exit_code,
+                            String::from_utf8_lossy(&o.stderr)
+                        ),
                         data: None,
                     })
                 }
@@ -437,7 +581,61 @@ impl MysqlService {
         environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
-        let data = serde_json::to_value(&service_data.metadata).ok();
+        let status_res = self.get_service_status(environment_id, service_data)?;
+        let status_data = status_res.data.unwrap_or_else(|| serde_json::json!({}));
+
+        let version = &service_data.version;
+        let service_data_folder = self.getservice_data_folder(environment_id, version);
+        let default_config = service_data_folder.join("my.cnf");
+        let default_data = service_data_folder.join("data");
+        let default_logs = service_data_folder.join("logs");
+
+        let metadata = service_data.metadata.as_ref();
+        let config_path = metadata
+            .and_then(|m| m.get("MYSQL_CONFIG"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| default_config.to_string_lossy().to_string());
+        let data_path = metadata
+            .and_then(|m| m.get("MYSQL_DATA"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| default_data.to_string_lossy().to_string());
+        let log_path = metadata
+            .and_then(|m| m.get("MYSQL_LOG"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| default_logs.to_string_lossy().to_string());
+
+        let port = metadata
+            .and_then(|m| m.get("MYSQL_PORT"))
+            .and_then(|v| {
+                if let Some(s) = v.as_str() {
+                    s.parse::<u16>().ok()
+                } else {
+                    v.as_u64().and_then(|n| u16::try_from(n).ok())
+                }
+            })
+            .unwrap_or(3306);
+
+        let bind_ip = status_data
+            .get("bindAddress")
+            .and_then(|v| v.as_str())
+            .unwrap_or("127.0.0.1")
+            .to_string();
+        let is_running = status_data
+            .get("isRunning")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let data = Some(serde_json::json!({
+            "configPath": config_path,
+            "dataPath": data_path,
+            "logPath": log_path,
+            "port": port,
+            "bindIp": bind_ip,
+            "isRunning": is_running,
+        }));
         Ok(ServiceDataResult {
             success: true,
             message: "获取配置成功".to_string(),
@@ -665,10 +863,11 @@ impl MysqlService {
         // 启动临时服务器设置 root 密码
         log::info!("启动临时服务器设置 root 密码...");
         let temp_port = "3307";
+        let temp_socket = tmp_dir.join("mysql_init.sock");
         let mut mysqld_process = create_command(&mysqld)
             .arg(format!("--defaults-file={}", config_path.display()))
             .arg(format!("--port={}", temp_port))
-            .arg("--skip-grant-tables")
+            .arg(format!("--socket={}", temp_socket.display()))
             .spawn()?;
 
         // 等待服务器启动
@@ -686,12 +885,26 @@ impl MysqlService {
             root_password
         );
 
-        let password_output = create_command(mysql_client)
-            .arg(format!("--port={}", temp_port))
-            .arg("--host=127.0.0.1")
-            .arg("-e")
-            .arg(&set_password_cmd)
-            .output();
+        let password_output = if cfg!(target_os = "windows") {
+            create_command(&mysql_client)
+                .arg(format!("--port={}", temp_port))
+                .arg("--host=127.0.0.1")
+                .arg("-u")
+                .arg("root")
+                .arg("--password=")
+                .arg("-e")
+                .arg(&set_password_cmd)
+                .output()
+        } else {
+            create_command(&mysql_client)
+                .arg(format!("--socket={}", temp_socket.display()))
+                .arg("-u")
+                .arg("root")
+                .arg("--password=")
+                .arg("-e")
+                .arg(&set_password_cmd)
+                .output()
+        };
 
         // 等待密码设置完成并写入磁盘
         log::info!("等待密码数据写入磁盘 (2秒)...");
@@ -702,10 +915,16 @@ impl MysqlService {
         let _ = mysqld_process.wait();
 
         // 检查密码设置是否成功
-        if let Ok(output) = password_output {
-            if !output.status.success() {
+        match password_output {
+            Ok(output) if output.status.success() => {
+                log::info!("root 密码设置成功");
+            }
+            Ok(output) => {
                 let error = String::from_utf8_lossy(&output.stderr);
                 log::warn!("设置 root 密码可能失败: {}", error);
+            }
+            Err(e) => {
+                log::warn!("执行密码设置命令失败: {}", e);
             }
         }
 
@@ -813,8 +1032,8 @@ default-character-set = utf8mb4
             .metadata
             .as_ref()
             .and_then(|m| m.get("MYSQL_PORT"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("3306");
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
 
         // 获取 mysql 客户端路径
         let install_path = self.get_install_path(&service_data.version);
@@ -884,8 +1103,8 @@ default-character-set = utf8mb4
             .metadata
             .as_ref()
             .and_then(|m| m.get("MYSQL_PORT"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("3306");
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
 
         // 获取 mysql 客户端路径
         let install_path = self.get_install_path(&service_data.version);
@@ -943,8 +1162,8 @@ default-character-set = utf8mb4
             .metadata
             .as_ref()
             .and_then(|m| m.get("MYSQL_PORT"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("3306");
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
 
         // 获取 mysql 客户端路径
         let install_path = self.get_install_path(&service_data.version);
@@ -1009,8 +1228,8 @@ default-character-set = utf8mb4
             .metadata
             .as_ref()
             .and_then(|m| m.get("MYSQL_PORT"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("3306");
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
 
         // 构建连接字符串
         let connection_string = if root_password.is_empty() {
