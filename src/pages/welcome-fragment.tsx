@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { isAIPanelOpenAtom } from "@/store";
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Github, Server, Code, Database, Settings, PanelLeft, Bot, Zap, Globe, Box, Layers, Terminal, Command, Cpu, Plus, FolderOpen, Book, Clock, ArrowRight, Search, GripVertical, Play, Square, Hexagon, Info, MemoryStick, HardDrive, Wifi, Users, MessageCircle, MessageSquare, AlertTriangle, X } from "lucide-react";
 import {
     DndContext,
@@ -44,6 +44,23 @@ export function WelcomeFragment({ onOpen }: {
     const { openTerminal } = useSystemInfo()
     const systemInfo = useSystemMonitorData()
     const [showContactDialog, setShowContactDialog] = useState(false);
+    const [networkError, setNetworkError] = useState(false);
+
+    useEffect(() => {
+        // 只检测一次
+        fetch("https://www.google.com/generate_204", { method: "GET", mode: "no-cors" })
+            .then(() => {
+                setNetworkError(false);
+            })
+            .catch(() => {
+                setNetworkError(true);
+            });
+        // 兼容部分网络环境下fetch不抛异常但依然无法访问google的情况
+        setTimeout(() => {
+            // 如果5秒后依然没有响应，判定为网络不畅通
+            setNetworkError((prev) => prev || true);
+        }, 5000);
+    }, []);
 
     return (
         <div className="relative w-full h-full bg-white dark:bg-[#030303] text-gray-900 dark:text-white overflow-hidden flex flex-col font-sans selection:bg-blue-500/20 dark:selection:bg-white/20">
@@ -82,6 +99,17 @@ export function WelcomeFragment({ onOpen }: {
                 <Bot className="h-4 w-4" />
             </Button>
 
+            {/* 网络不畅通提示 */}
+            {networkError && (
+                <div className="w-full max-w-2xl mx-auto mt-6 mb-2 px-4">
+                    <div className="flex items-center gap-2 p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10">
+                        <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
+                        <div className="flex-1 text-xs text-red-700 dark:text-red-300">
+                            {t('welcome.network_error', '检测到当前网络无法访问 Google，下载 Github Release 程序等功能可能会受限，请检查网络连接或使用代理。')}
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Main Content - App Welcome Screen */}
             <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
                 <div className="w-full max-w-2xl px-6 flex flex-col gap-8">
