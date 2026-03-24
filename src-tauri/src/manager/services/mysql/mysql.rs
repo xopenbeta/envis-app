@@ -38,16 +38,12 @@ impl MysqlService {
     pub fn get_available_versions(&self) -> Vec<MysqlVersion> {
         vec![
             MysqlVersion {
-                version: "8.0.35".to_string(),
+                version: "9.6.0".to_string(),
                 date: "2023-12-20".to_string(),
             },
             MysqlVersion {
-                version: "8.0.34".to_string(),
-                date: "2023-10-15".to_string(),
-            },
-            MysqlVersion {
-                version: "8.0.33".to_string(),
-                date: "2023-08-10".to_string(),
+                version: "8.4.7".to_string(),
+                date: "2023-12-20".to_string(),
             },
             MysqlVersion {
                 version: "5.7.44".to_string(),
@@ -106,7 +102,9 @@ impl MysqlService {
         let filename = match platform {
             "macos" => {
                 let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
-                if let Some(macos_major) = Self::detect_macos_major_version() {
+                if arch == "aarch64" && (version == "9.6.0" || version == "8.4.7") {
+                    format!("mysql-{}-macos15-arm64.tar.gz", version)
+                } else if let Some(macos_major) = Self::detect_macos_major_version() {
                     format!("mysql-{}-macos{}-{}.tar.gz", version, macos_major, arch_str)
                 } else {
                     format!("mysql-{}-macos-{}.tar.gz", version, arch_str)

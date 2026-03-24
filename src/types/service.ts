@@ -19,6 +19,11 @@ export interface MariaDBMetadata {
     "MARIADB_ROOT_PASSWORD"?: string
 }
 
+export interface MySQLMetadata {
+    "MYSQL_CONFIG"?: string
+    "MYSQL_ROOT_PASSWORD"?: string
+}
+
 // SSL 证书格式
 export enum CertificateFormat {
     PEM = 'pem',           // PEM 格式 (Nginx, Apache)
