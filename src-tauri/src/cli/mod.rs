@@ -1,4 +1,3 @@
-use tauri_plugin_cli::CliExt;
 
 mod handlers;
 
@@ -6,7 +5,7 @@ mod handlers;
 pub fn handle_cli_early() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     
-    // 没有参数，返回
+    // 没有参数，直接返回 Ok(())，这样会让程序继续执行后续的 Tauri 应用初始化流程，从而启动 GUI
     if args.len() <= 1 {
         return Ok(());
     }
@@ -52,47 +51,6 @@ pub fn handle_cli_early() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-/// 初始化并处理 CLI 参数（保留以兼容旧代码）
-pub fn handle_cli(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    match app.cli().matches() {
-        Ok(matches) => {
-            // 处理顶层参数
-            if matches.args.get("version").is_some() {
-                println!("Envis version {}", app.package_info().version);
-                std::process::exit(0);
-            }
-
-            if matches.args.get("help").is_some() {
-                print_help();
-                std::process::exit(0);
-            }
-
-            // 处理子命令
-            if let Some(subcommand) = &matches.subcommand {
-                match subcommand.name.as_str() {
-                    "use" => handlers::handle_use(&subcommand.matches),
-                    "list" => handlers::handle_list(),
-                    "ls" => handlers::handle_list(),
-                    "refresh" => handlers::handle_refresh(),
-                    _ => {
-                        eprintln!("未知命令: {}", subcommand.name);
-                        std::process::exit(1);
-                    }
-                }
-
-                // CLI 模式下处理完命令后退出
-                std::process::exit(0);
-            }
-
-            Ok(())
-        }
-        Err(e) => {
-            log::error!("CLI 解析错误: {}", e);
-            Err(Box::new(e))
-        }
-    }
 }
 
 fn print_help() {
