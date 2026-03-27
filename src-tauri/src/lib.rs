@@ -13,6 +13,17 @@ use manager::exit_cleanup_manager::cleanup_on_app_close;
 use manager::service_manager::initialize_service_manager;
 use manager::shell_manamger::initialize_shell_manager;
 use tauri::Manager;
+
+// 导出 CLI 相关函数供 main.rs 使用
+pub use cli::handle_cli_early;
+
+/// 初始化必要的管理器（供 CLI 模式使用）
+pub fn initialize_managers() -> Result<(), Box<dyn std::error::Error>> {
+    initialize_config_manager()?;
+    initialize_shell_manager()?;
+    initialize_environment_manager()?;
+    Ok(())
+}
 use tauri_command::app_config_commands::{get_app_config, open_app_config_folder, set_app_config};
 use tauri_command::env_serv_data_commands::*;
 use tauri_command::environment_commands::*;
@@ -38,14 +49,12 @@ use tauri_plugin_log::{Target, TargetKind};
 // 在桌面端构建时：不会添加这个属性，run 只是普通函数，你通常会在 main() 里调用它。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // 检查是否是 CLI 模式（有命令行参数）
-    let is_cli_mode = std::env::args().len() > 1;
+    // 由于 CLI 模式已在 main.rs 中处理，这里只处理 GUI 模式
+    let is_cli_mode = false;
 
-    let mut builder = tauri::Builder::default();
-
-    // 只在非 CLI 模式下启用单实例插件
-    if !is_cli_mode {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+    // GUI 模式：启用单实例插件
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             log::debug!("检测到尝试启动新实例");
             log::debug!("启动参数: {:?}", args);
             log::debug!("工作目录: {}", cwd);
@@ -71,22 +80,13 @@ pub fn run() {
             } else {
                 log::warn!("未找到主窗口");
             }
-        }));
-    }
-
-    let app = builder
+        }))
         .plugin(
             tauri_plugin_log::Builder::new()
-                .targets(if is_cli_mode {
-                    // CLI 模式下不输出日志到 stdout，避免干扰命令输出
-                    vec![Target::new(TargetKind::Webview)]
-                } else {
-                    // GUI 模式下同时输出到 stdout 和 webview
-                    vec![
-                        Target::new(TargetKind::Stdout),
-                        Target::new(TargetKind::Webview),
-                    ]
-                })
+                .targets(vec![
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::Webview),
+                ])
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
@@ -104,14 +104,7 @@ pub fn run() {
                                                   // Host 管理器延迟初始化，在第一次调用时自动创建
                                                   // let _ = initialize_host_manager();
 
-            if !is_cli_mode {
-                log::info!("GUI 模式启动成功");
-            }
-
-            // 处理 CLI 参数
-            if let Err(e) = cli::handle_cli(app) {
-                log::error!("CLI 处理失败: {}", e);
-            }
+            log::info!("GUI 模式启动成功");
 
             // 设置系统托盘
             if let Err(e) = tray::setup_tray(app.handle()) {
