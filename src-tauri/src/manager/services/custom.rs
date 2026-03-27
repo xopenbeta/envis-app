@@ -81,6 +81,25 @@ impl ServiceLifecycle for CustomService {
                     }
                 }
             }
+
+            // 处理自动跳转目录（auto chdir）
+            let auto_chdir_enabled = metadata
+                .get("autoChdirEnabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true); // 默认启用
+
+            if auto_chdir_enabled {
+                if let Some(chdir_path_value) = metadata.get("autoChdirPath") {
+                    if let serde_json::Value::String(chdir_path) = chdir_path_value {
+                        if !chdir_path.is_empty() {
+                            shell_manager
+                                .add_chdir(chdir_path)
+                                .with_context(|| format!("设置自动跳转目录失败: {}", chdir_path))?;
+                            log::debug!("已设置自动跳转目录: {}", chdir_path);
+                        }
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -133,6 +152,25 @@ impl ServiceLifecycle for CustomService {
                             .delete_alias(key)
                             .with_context(|| format!("移除自定义 Alias {} 失败", key))?;
                         log::debug!("已移除自定义 Alias: {}", key);
+                    }
+                }
+            }
+
+            // 移除自动跳转目录（如果有配置）
+            let auto_chdir_enabled = metadata
+                .get("autoChdirEnabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true); // 默认启用
+
+            if auto_chdir_enabled {
+                if let Some(chdir_path_value) = metadata.get("autoChdirPath") {
+                    if let serde_json::Value::String(chdir_path) = chdir_path_value {
+                        if !chdir_path.is_empty() {
+                            shell_manager
+                                .delete_chdir()
+                                .with_context(|| "移除自动跳转目录失败".to_string())?;
+                            log::debug!("已移除自动跳转目录: {}", chdir_path);
+                        }
                     }
                 }
             }
