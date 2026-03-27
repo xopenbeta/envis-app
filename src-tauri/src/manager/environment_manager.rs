@@ -388,6 +388,40 @@ impl EnvironmentManager {
             serde_json::from_str(&config_content).context("解析环境配置失败")?;
         Ok(environment)
     }
+
+    /// 通过环境 ID 获取单个环境
+    pub fn get_environment(&self, environment_id: &str) -> Result<EnvironmentResult> {
+        let envs_folder = {
+            let app_config_manager = AppConfigManager::global();
+            let app_config_manager = app_config_manager.lock().unwrap();
+            app_config_manager.get_envs_folder()
+        };
+
+        let env_config_path = Path::new(&envs_folder)
+            .join(environment_id)
+            .join(ENV_CONFIG_FILE_NAME);
+
+        if !env_config_path.exists() {
+            return Ok(EnvironmentResult {
+                success: false,
+                message: format!("环境配置文件不存在: {}", environment_id),
+                data: None,
+            });
+        }
+
+        match self.load_environment_from_file(&env_config_path) {
+            Ok(environment) => Ok(EnvironmentResult {
+                success: true,
+                message: "获取环境成功".to_string(),
+                data: Some(serde_json::json!({ "environment": environment })),
+            }),
+            Err(e) => Ok(EnvironmentResult {
+                success: false,
+                message: format!("读取环境配置失败: {}", e),
+                data: None,
+            }),
+        }
+    }
 }
 
 /// 初始化环境管理器

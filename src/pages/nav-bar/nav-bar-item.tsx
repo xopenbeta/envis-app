@@ -27,6 +27,9 @@ import { useTranslation } from 'react-i18next'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useAppSettings } from '@/hooks/appSettings'
 import { toast } from 'sonner'
+import { useEnvironment } from '@/hooks/environment'
+import { useEffect, useState } from 'react'
+import { setImmediateInterval } from '@/utils/patch'
 
 interface SortableEnvironmentItemProps {
   environment: Environment;
@@ -50,6 +53,9 @@ export function SortableEnvironmentItem({
   const { t } = useTranslation()
   const { openFolderInFinder } = useFileOperations()
   const { systemSettings } = useAppSettings()
+  const { getEnvironment } = useEnvironment()
+  const [currentStatus, setCurrentStatus] = useState<EnvironmentStatus>(environment.status)
+
   const {
     attributes,
     listeners,
@@ -61,6 +67,17 @@ export function SortableEnvironmentItem({
     id: environment.id,
     disabled: !isDragEnabled
   });
+
+  // 轮询获取环境最新状态
+  useEffect(() => {
+    const timer = setImmediateInterval(async () => {
+      const res = await getEnvironment(environment.id);
+      if (res.success && res.data?.environment) {
+        setCurrentStatus(res.data.environment.status);
+      }
+    }, 500);
+    return () => clearInterval(timer);
+  }, [environment.id, getEnvironment]);
 
   // 打开环境文件夹
   const handleOpenFolder = () => {
@@ -107,8 +124,8 @@ export function SortableEnvironmentItem({
             <span className="font-medium text-sm text-gray-700 dark:text-gray-300 min-w-0 truncate">
               {environment.name}
             </span>
-            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", environment.status === 'active' ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
-              {environment.status === 'active' ? 'Active' : 'Inactive'}
+            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", currentStatus === 'active' ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
+              {currentStatus === 'active' ? 'Active' : 'Inactive'}
             </span>
           </div>
         </div>
@@ -128,7 +145,7 @@ export function SortableEnvironmentItem({
             onClick={(e) => { e.stopPropagation(); onToggle(environment); }}
             className="h-7 w-7 p-0"
           >
-            {environment.status === EnvironmentStatus.Active ? (
+            {currentStatus === EnvironmentStatus.Active ? (
               <Square className="h-3 w-3" />
             ) : (
               <Play className="h-3 w-3" />

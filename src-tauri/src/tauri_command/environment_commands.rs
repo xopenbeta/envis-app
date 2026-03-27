@@ -99,6 +99,24 @@ pub async fn delete_environment(
     }
 }
 
+/// 获取单个环境
+#[tauri::command]
+pub async fn get_environment(
+    environment_id: String,
+) -> Result<EnvironmentCommandResult, String> {
+    let manager = EnvironmentManager::global();
+    let manager = manager.lock().unwrap();
+
+    match manager.get_environment(&environment_id) {
+        Ok(result) => Ok(result.into()),
+        Err(e) => Ok(EnvironmentCommandResult {
+            success: false,
+            message: e.to_string(),
+            data: None,
+        }),
+    }
+}
+
 /// 检查环境是否存在
 #[tauri::command]
 pub async fn is_environment_exists(

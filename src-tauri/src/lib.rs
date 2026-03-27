@@ -130,6 +130,7 @@ pub fn run() {
             open_in_file_manager,
             // 环境相关命令
             get_all_environments,
+            get_environment,
             create_environment,
             save_environment,
             delete_environment,

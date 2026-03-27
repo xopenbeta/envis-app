@@ -1,7 +1,7 @@
 import { Environment, EnvironmentStatus } from "@/types/index"
 import { useAtom } from "jotai"
 import { useMemo } from "react"
-import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeactivateEnvironmentAndServices, ipcDeleteEnvironment, ipcSaveEnvironment } from "../ipc/environment"
+import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeactivateEnvironmentAndServices, ipcDeleteEnvironment, ipcGetEnvironment, ipcSaveEnvironment } from "../ipc/environment"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from "../store/environment"
 import { sortEnvironments } from "../utils/sort"
 import { useAppSettings } from "./appSettings"
@@ -159,6 +159,10 @@ export function useEnvironment() {
     }
   }
 
+  const getEnvironment = async (environmentId: string) => {
+    return await ipcGetEnvironment(environmentId)
+  }
+
   return {
     activeEnvironment,
     selectedEnvironment,
@@ -170,5 +174,6 @@ export function useEnvironment() {
     deactivateEnvironment,
     deactivateEnvironmentAndServices,
     updateEnvironmentsOrder,
+    getEnvironment,
   }
 }
