@@ -1,5 +1,20 @@
 # 更新日志 / Changelog
 
+## [0.8.0] - 2026-03-19
+
+### 新增 / Added
+- ✨ MariaDB 服务面板新增完整数据库管理功能：支持查看数据库列表、展开查看表列表、创建数据库、以及一键打开 MariaDB 客户端连接
+- ✨ MariaDB 新增多版本支持（10.6 LTS、10.11 LTS、11.4 LTS、11.8 Current Stable、12.2/12.3 Development），可自由选择安装版本
+- ✨ MariaDB 新增多来源多平台下载支持：macOS 从 GitHub Release 下载（支持主源与官方备用源），Linux/Windows 优先走清华镜像、阿里云镜像，最终回落官方下载站
+- ✨ MariaDB 初始化流程新增图形化配置弹窗，支持设置 root 密码、监听端口、绑定地址，并提供高级选项展开
+- ✨ 新增 `useMariadb()` Hook，统一封装 MariaDB 全部操作方法，方便前端调用
+- ✨ 新增 `MariaDBMetadata` 类型接口，规范 MariaDB 服务元数据结构
+
+### 修复 / Fixed
+- 🐛 修复下载管理器未校验响应 Content-Type 的问题：服务器返回 HTML 错误页面时将被识别并抛出明确错误，避免误将 HTML 页面当作二进制文件保存
+
+---
+
 ## [0.7.1] - 2026-03-06
 
 ### 修复 / Fixed

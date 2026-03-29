@@ -309,6 +309,19 @@ impl DownloadManager {
             return Err(anyhow!(error_msg));
         }
 
+        // 校验 Content-Type，防止将 HTML 错误页面误当二进制文件保存
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+        if content_type.contains("text/html") {
+            return Err(anyhow!(
+                "服务器返回了 HTML 页面而非二进制文件，URL 可能不正确: {}",
+                task.url
+            ));
+        }
+
         // 更新任务状态和文件大小到全局存储
         let total_size = response.content_length().unwrap_or(0);
         {

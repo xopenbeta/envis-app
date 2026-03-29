@@ -20,12 +20,6 @@ export function CustomService({ serviceData, selectedEnvironment }: CustomServic
 
     return (
         <div className="w-full p-3 space-y-4">
-            {/* Aliases Configuration */}
-            <AliasesConfigView
-                selectedEnvironmentId={selectedEnvironment.id}
-                serviceData={serviceData}
-            />
-            
             {/* Path Configuration */}
             <PathConfigView
                 selectedEnvironmentId={selectedEnvironment.id}
@@ -38,6 +32,12 @@ export function CustomService({ serviceData, selectedEnvironment }: CustomServic
                 serviceData={serviceData}
             />
 
+            {/* Aliases Configuration */}
+            <AliasesConfigView
+                selectedEnvironmentId={selectedEnvironment.id}
+                serviceData={serviceData}
+            />
+            
             {/* Auto Chdir Configuration */}
             <AutoChdirView
                 selectedEnvironmentId={selectedEnvironment.id}

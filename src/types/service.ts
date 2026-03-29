@@ -14,6 +14,11 @@ export interface MongoDBMetadata {
     "MONGODB_ADMIN_PASSWORD"?: string
 }
 
+export interface MariaDBMetadata {
+    "MARIADB_CONFIG"?: string
+    "MARIADB_ROOT_PASSWORD"?: string
+}
+
 // SSL 证书格式
 export enum CertificateFormat {
     PEM = 'pem',           // PEM 格式 (Nginx, Apache)

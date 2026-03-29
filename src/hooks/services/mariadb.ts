@@ -308,3 +308,26 @@ export async function openMariadbClient(
 ) {
     return ipcOpenMariadbClient(environmentId, serviceData);
 }
+
+/**
+ * MariaDB Hook
+ * 提供 MariaDB 相关的操作方法
+ */
+export function useMariadb() {
+    return {
+        getMariadbConfig,
+        setMariadbDataPath,
+        setMariadbLogPath,
+        setMariadbPort,
+        getMariadbServiceStatus,
+        startMariadbService,
+        stopMariadbService,
+        restartMariadbService,
+        initializeMariadb,
+        checkMariadbInitialized,
+        listMariadbDatabases,
+        createMariadbDatabase,
+        listMariadbTables,
+        openMariadbClient,
+    };
+}

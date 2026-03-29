@@ -308,3 +308,26 @@ export async function openMysqlClient(
 ) {
     return ipcOpenMysqlClient(environmentId, serviceData);
 }
+
+/**
+ * MySQL Hook
+ * 提供 MySQL 相关的操作方法
+ */
+export function useMysql() {
+    return {
+        getMysqlConfig,
+        setMysqlDataPath,
+        setMysqlLogPath,
+        setMysqlPort,
+        getMysqlServiceStatus,
+        startMysqlService,
+        stopMysqlService,
+        restartMysqlService,
+        initializeMysql,
+        checkMysqlInitialized,
+        listMysqlDatabases,
+        createMysqlDatabase,
+        listMysqlTables,
+        openMysqlClient,
+    };
+}
