@@ -52,7 +52,10 @@ pub async fn get_java_versions() -> Result<CommandResponse, String> {
 
 /// 下载 Java 的 Tauri 命令
 #[tauri::command]
-pub async fn download_java(version: String, install_maven: Option<bool>) -> Result<CommandResponse, String> {
+pub async fn download_java(
+    version: String,
+    install_maven: Option<bool>,
+) -> Result<CommandResponse, String> {
     log::info!("tauri::command 开始下载 Java {}...", version);
     let java_service = JavaService::global();
 
@@ -98,10 +101,7 @@ pub async fn cancel_download_java(version: String) -> Result<CommandResponse, St
                 Some(data),
             ))
         }
-        Err(e) => Ok(CommandResponse::error(format!(
-            "取消 Java 下载失败: {}",
-            e
-        ))),
+        Err(e) => Ok(CommandResponse::error(format!("取消 Java 下载失败: {}", e))),
     }
 }
 
@@ -126,12 +126,17 @@ pub async fn initialize_maven(
     mut service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let java_service = JavaService::global();
-    match java_service.download_and_install_maven(&service_data.version).await {
+    match java_service
+        .download_and_install_maven(&service_data.version)
+        .await
+    {
         Ok(result) => {
             let maven_home = java_service.get_maven_home(&service_data.version);
 
             if maven_home.is_some() {
-                if let Err(e) = java_service.ensure_maven_settings_use_env_repo(&service_data.version) {
+                if let Err(e) =
+                    java_service.ensure_maven_settings_use_env_repo(&service_data.version)
+                {
                     return Ok(CommandResponse::error(format!(
                         "初始化 Maven 失败: 更新 settings.xml 失败: {}",
                         e
@@ -157,7 +162,10 @@ pub async fn initialize_maven(
             });
 
             if result.success {
-                Ok(CommandResponse::success("Maven 初始化任务已开始".to_string(), Some(data)))
+                Ok(CommandResponse::success(
+                    "Maven 初始化任务已开始".to_string(),
+                    Some(data),
+                ))
             } else {
                 Ok(CommandResponse::error(result.message))
             }
@@ -347,7 +355,10 @@ pub async fn initialize_gradle(
     mut service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let java_service = JavaService::global();
-    match java_service.download_and_install_gradle(&service_data.version).await {
+    match java_service
+        .download_and_install_gradle(&service_data.version)
+        .await
+    {
         Ok(result) => {
             let gradle_home = java_service.get_gradle_home(&service_data.version);
 
@@ -369,7 +380,10 @@ pub async fn initialize_gradle(
             });
 
             if result.success {
-                Ok(CommandResponse::success("Gradle 初始化任务已开始".to_string(), Some(data)))
+                Ok(CommandResponse::success(
+                    "Gradle 初始化任务已开始".to_string(),
+                    Some(data),
+                ))
             } else {
                 Ok(CommandResponse::error(result.message))
             }

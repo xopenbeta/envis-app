@@ -89,7 +89,11 @@ impl NasmService {
                 (filename, urls)
             }
             "windows" => {
-                let package_suffix = if arch.contains("64") { "win64" } else { "win32" };
+                let package_suffix = if arch.contains("64") {
+                    "win64"
+                } else {
+                    "win32"
+                };
                 let filename = format!("nasm-{}-{}.zip", version, package_suffix);
                 let urls = vec![format!(
                     "https://www.nasm.us/pub/nasm/releasebuilds/{}/{}/{}",

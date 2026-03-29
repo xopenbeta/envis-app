@@ -75,7 +75,11 @@ pub fn cleanup_on_app_close() -> Result<bool> {
 
     for environment in &mut environments {
         if environment.status == EnvironmentStatus::Active {
-            log::info!("cleanup_on_app_close 停用环境: {} ({})", environment.name, environment.id);
+            log::info!(
+                "cleanup_on_app_close 停用环境: {} ({})",
+                environment.name,
+                environment.id
+            );
             if let Err(e) = env_manager.deactivate_environment_and_services(environment, None) {
                 log::error!(
                     "退出时停用环境失败: {} ({}), error: {}",

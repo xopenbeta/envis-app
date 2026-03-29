@@ -82,16 +82,16 @@ impl NodejsService {
         // 检查 NVM_DIR 环境变量
         if std::env::var("NVM_DIR").is_ok() {
             nvm_found = true;
-        } 
+        }
         // 检查 ~/.nvm 目录
         if !nvm_found {
-             if let Some(home) = dirs::home_dir() {
+            if let Some(home) = dirs::home_dir() {
                 if home.join(".nvm").exists() {
                     nvm_found = true;
                 }
             }
         }
-        
+
         if nvm_found {
             managers.push("nvm".to_string());
         }
@@ -117,7 +117,7 @@ impl NodejsService {
                 let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
                 // 使用 command -v 检查，它比 which 更通用，既能查 alias/func 也能查 path
                 let check_cmd = format!("command -v {}", cmd);
-                
+
                 crate::utils::create_command(&shell)
                     .arg("-l") // Login shell, reads login profiles
                     .arg("-c")
@@ -492,13 +492,13 @@ impl NodejsService {
             for entry in std::fs::read_dir(&bin_dir)? {
                 let entry = entry?;
                 let path = entry.path();
-                
+
                 // 尝试获取 metadata (跟随链接)
                 if let Ok(metadata) = std::fs::metadata(&path) {
                     let mut perms = metadata.permissions();
                     // 无论文件还是目录，在 bin 下通常都需要 755 (rwxr-xr-x)
                     perms.set_mode(0o755);
-                    
+
                     // set_permissions 也会跟随链接，修改目标
                     if let Err(e) = std::fs::set_permissions(&path, perms) {
                         log::warn!("无法设置权限 {:?}: {}", path, e);
@@ -543,7 +543,7 @@ impl NodejsService {
                 log::warn!("设置 Node.js 可执行权限失败: {}", e);
             }
         }
-        
+
         // 添加 Node.js 到 PATH
         let node_bin_path = if cfg!(target_os = "windows") {
             install_path.to_string_lossy().to_string()
@@ -620,10 +620,10 @@ impl NodejsService {
             .and_then(|v| v.as_str());
         if let Some(prefix) = npm_config_prefix {
             if !prefix.is_empty() {
-            let npm_bin_path = PathBuf::from(prefix).join("bin");
-            if npm_bin_path.exists() {
-                shell_manager.delete_path(&npm_bin_path.to_string_lossy().to_string())?;
-            }
+                let npm_bin_path = PathBuf::from(prefix).join("bin");
+                if npm_bin_path.exists() {
+                    shell_manager.delete_path(&npm_bin_path.to_string_lossy().to_string())?;
+                }
             }
         }
 
@@ -650,7 +650,7 @@ impl NodejsService {
     ) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
-        
+
         // 如果之前有 NPM_CONFIG_PREFIX，先从 PATH 中移除旧的 prefix/bin
         if let Some(old_prefix) = service_data
             .metadata
@@ -661,14 +661,14 @@ impl NodejsService {
             let old_prefix_bin = format!("{}/bin", old_prefix);
             let _ = shell_manager.delete_path(&old_prefix_bin);
         }
-        
+
         // 设置新的 NPM_CONFIG_PREFIX 环境变量
         shell_manager.add_export("NPM_CONFIG_PREFIX", config_prefix)?;
-        
+
         // 添加新的 prefix/bin 到 PATH
         let new_prefix_bin = format!("{}/bin", config_prefix);
         shell_manager.add_path(&new_prefix_bin)?;
-        
+
         Ok(())
     }
 
@@ -677,7 +677,7 @@ impl NodejsService {
         use std::collections::HashSet;
 
         let install_path = self.get_install_path(&service_data.version);
-        
+
         // 检查 Node.js 是否已安装
         if !self.is_installed(&service_data.version) {
             return Err(anyhow!("Node.js {} 未安装", service_data.version));
@@ -699,15 +699,15 @@ impl NodejsService {
             .and_then(|m| m.get("NPM_CONFIG_PREFIX"))
             .and_then(|v| v.as_str())
         {
-             if !prefix.is_empty() {
-                 let prefix_path = PathBuf::from(prefix);
-                 if cfg!(target_os = "windows") {
-                     // Windows 习惯是 binaries 在 prefix 根目录
-                     scan_paths.push(prefix_path.clone());
-                 } else {
-                     scan_paths.push(prefix_path.join("bin"));
-                 }
-             }
+            if !prefix.is_empty() {
+                let prefix_path = PathBuf::from(prefix);
+                if cfg!(target_os = "windows") {
+                    // Windows 习惯是 binaries 在 prefix 根目录
+                    scan_paths.push(prefix_path.clone());
+                } else {
+                    scan_paths.push(prefix_path.join("bin"));
+                }
+            }
         }
 
         let mut found_files = HashSet::new();
@@ -751,13 +751,14 @@ impl NodejsService {
     pub fn install_global_package(&self, _service_data: &ServiceData, package: &str) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
-        
+
         // 构建安装命令
         let install_command = format!("npm install -g {}", package);
-        
+
         // 使用 shell manager 执行命令，这样会加载所有环境变量
-        let (stdout, stderr, exit_code) = shell_manager.execute_command_with_env(&install_command)?;
-        
+        let (stdout, stderr, exit_code) =
+            shell_manager.execute_command_with_env(&install_command)?;
+
         // 检查执行结果
         if exit_code != 0 {
             return Err(anyhow!(
@@ -767,10 +768,10 @@ impl NodejsService {
                 stderr
             ));
         }
-        
+
         log::info!("成功安装全局包: {}", package);
         log::debug!("安装输出: {}", stdout);
-        
+
         Ok(())
     }
 }

@@ -1,5 +1,5 @@
-﻿use anyhow::Result;
 use crate::utils::create_command;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -221,7 +221,7 @@ impl SystemInfoManager {
                         // macOS APFS 卷修正：使用 total - available 作为 used
                         // 因为 df 输出的 used 可能只包含该卷独占空间，不包含共享容器中其他卷的空间
                         if total_space > available_space {
-                             used_space = total_space - available_space;
+                            used_space = total_space - available_space;
                         }
 
                         let usage_percent = if total_space > 0 {
@@ -554,9 +554,7 @@ impl SystemInfoManager {
 
         #[cfg(target_os = "windows")]
         {
-            if let Ok(output) = create_command("ipconfig")
-                .output()
-            {
+            if let Ok(output) = create_command("ipconfig").output() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for line in output_str.lines() {
                     let line = line.trim();

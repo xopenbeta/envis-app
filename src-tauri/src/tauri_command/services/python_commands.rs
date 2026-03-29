@@ -1,5 +1,5 @@
 use crate::manager::env_serv_data_manager::EnvServDataManager;
-use crate::manager::services::python::{PythonService, PythonInstallMode};
+use crate::manager::services::python::{PythonInstallMode, PythonService};
 use crate::types::{CommandResponse, ServiceData};
 
 /// 检查 Python 是否已安装的 Tauri 命令
@@ -57,7 +57,7 @@ pub async fn download_python(
         version,
         install_mode
     );
-    
+
     let python_service = PythonService::global();
     match python_service
         .download_and_install_with_mode(&version, install_mode)
@@ -213,10 +213,7 @@ pub async fn set_python3_as_python(
             } else {
                 "已移除 python 别名"
             };
-            Ok(CommandResponse::success(
-                message.to_string(),
-                Some(data),
-            ))
+            Ok(CommandResponse::success(message.to_string(), Some(data)))
         }
         Err(e) => Ok(CommandResponse::error(format!(
             "设置 python3 别名失败: {}",
@@ -311,7 +308,10 @@ pub async fn open_python_venv_terminal(
 ) -> Result<CommandResponse, String> {
     let python_service = PythonService::global();
     match python_service.open_venv_terminal(&environment_id, &service_data, &venv_name) {
-        Ok(_) => Ok(CommandResponse::success("已打开终端并激活 venv".to_string(), None)),
+        Ok(_) => Ok(CommandResponse::success(
+            "已打开终端并激活 venv".to_string(),
+            None,
+        )),
         Err(e) => Ok(CommandResponse::error(format!("打开终端失败: {}", e))),
     }
 }

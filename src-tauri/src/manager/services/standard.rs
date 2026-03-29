@@ -42,17 +42,15 @@ impl ServiceLifecycle for StandardService {
             let manager = app_config_manager.lock().unwrap();
             manager.get_services_folder()
         };
-        
+
         let service_dir_name = service_data.service_type.dir_name();
         let service_folder = Path::new(&services_folder)
             .join(service_dir_name)
             .join(&service_data.version);
 
         // 构建环境变量
-        let env_vars = EnvVarBuilder::build_env_vars_for_service(
-            &service_data.service_type,
-            &service_folder,
-        )?;
+        let env_vars =
+            EnvVarBuilder::build_env_vars_for_service(&service_data.service_type, &service_folder)?;
 
         // 优先从 service_data.metadata 替换值（如有），否则使用构建器默认值
         for (env_var_name, default_value) in env_vars.iter() {
@@ -108,17 +106,15 @@ impl ServiceLifecycle for StandardService {
             let manager = app_config_manager.lock().unwrap();
             manager.get_services_folder()
         };
-        
+
         let service_dir_name = service_data.service_type.dir_name();
         let service_folder = Path::new(&services_folder)
             .join(service_dir_name)
             .join(&service_data.version);
 
-        let env_vars = EnvVarBuilder::build_env_vars_for_service(
-            &service_data.service_type,
-            &service_folder,
-        )?;
-        
+        let env_vars =
+            EnvVarBuilder::build_env_vars_for_service(&service_data.service_type, &service_folder)?;
+
         for (env_var_name, _) in env_vars.iter() {
             shell_manager
                 .delete_export(env_var_name)

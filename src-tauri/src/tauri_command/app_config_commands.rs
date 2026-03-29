@@ -44,22 +44,20 @@ pub fn set_app_config(app_config: AppConfig) -> Result<Value, String> {
 pub fn open_app_config_folder() -> Result<Value, String> {
     let app_config_manager = AppConfigManager::global();
     let app_config_manager = app_config_manager.lock().map_err(|e| e.to_string())?;
-    
+
     match app_config_manager.get_app_config_folder_path() {
-        Ok(config_folder_path) => {
-            match FileManager::open_in_file_manager(&config_folder_path) {
-                Ok(_) => Ok(serde_json::json!({
-                    "success": true,
-                    "msg": "打开配置文件夹成功",
-                    "data": {}
-                })),
-                Err(e) => Ok(serde_json::json!({
-                    "success": false,
-                    "msg": format!("打开配置文件夹失败: {}", e),
-                    "data": {}
-                })),
-            }
-        }
+        Ok(config_folder_path) => match FileManager::open_in_file_manager(&config_folder_path) {
+            Ok(_) => Ok(serde_json::json!({
+                "success": true,
+                "msg": "打开配置文件夹成功",
+                "data": {}
+            })),
+            Err(e) => Ok(serde_json::json!({
+                "success": false,
+                "msg": format!("打开配置文件夹失败: {}", e),
+                "data": {}
+            })),
+        },
         Err(e) => Ok(serde_json::json!({
             "success": false,
             "msg": format!("获取配置文件夹路径失败: {}", e),

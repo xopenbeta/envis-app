@@ -480,10 +480,8 @@ impl HostManager {
                     .position(|e| e.ip == entry.ip && e.hostname == entry.hostname)
                 {
                     // Replace with new entry
-                    new_block_content.push_str(&format!(
-                        "{}\n",
-                        self.format_host_entry(&new_entries[idx])
-                    ));
+                    new_block_content
+                        .push_str(&format!("{}\n", self.format_host_entry(&new_entries[idx])));
                     handled_indices.insert(idx);
                 } else {
                     // Keep existing entry

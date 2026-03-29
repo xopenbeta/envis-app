@@ -99,7 +99,11 @@ impl EnvironmentManager {
     }
 
     /// 创建环境
-    pub fn create_environment(&self, name: String, description: Option<String>) -> Result<EnvironmentResult> {
+    pub fn create_environment(
+        &self,
+        name: String,
+        description: Option<String>,
+    ) -> Result<EnvironmentResult> {
         // 1. 生成 ID
         let id = format!("{}env", uuid::Uuid::new_v4());
         let timestamp = Utc::now().to_rfc3339();
@@ -107,11 +111,12 @@ impl EnvironmentManager {
         // 2. 计算 Sort
         // 获取现有的最大 sort 值
         let environments = self.get_all_environments().unwrap_or_default();
-        let max_sort = environments.iter()
+        let max_sort = environments
+            .iter()
             .filter_map(|e| e.sort)
             .max()
             .unwrap_or(0);
-        
+
         // 3. 构建 Metadata
         let mut metadata = HashMap::new();
         if let Some(desc) = description {
@@ -126,7 +131,11 @@ impl EnvironmentManager {
             is_default: None,
             status: EnvironmentStatus::Inactive,
             sort: Some(max_sort + 1),
-            metadata: if metadata.is_empty() { None } else { Some(metadata) },
+            metadata: if metadata.is_empty() {
+                None
+            } else {
+                Some(metadata)
+            },
             created_at: timestamp.clone(),
             updated_at: timestamp,
         };
@@ -218,10 +227,7 @@ impl EnvironmentManager {
     }
 
     /// 激活环境（仅更新状态和Shell环境块，不激活服务）
-    pub fn activate_environment(
-        &self,
-        environment: &mut Environment,
-    ) -> Result<EnvironmentResult> {
+    pub fn activate_environment(&self, environment: &mut Environment) -> Result<EnvironmentResult> {
         let environment_name = environment.name.clone();
         let environment_id = environment.id.clone();
 

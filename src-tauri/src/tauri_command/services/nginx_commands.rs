@@ -8,9 +8,15 @@ pub async fn check_nginx_installed(version: String) -> Result<CommandResponse, S
     let is_installed = nginx_service.is_installed(&version);
     let data = serde_json::json!({"installed": is_installed});
     if is_installed {
-        Ok(CommandResponse::success("Nginx 已安装".to_string(), Some(data)))
+        Ok(CommandResponse::success(
+            "Nginx 已安装".to_string(),
+            Some(data),
+        ))
     } else {
-        Ok(CommandResponse::success("Nginx 未安装".to_string(), Some(data)))
+        Ok(CommandResponse::success(
+            "Nginx 未安装".to_string(),
+            Some(data),
+        ))
     }
 }
 
@@ -27,7 +33,7 @@ pub async fn get_nginx_config(
         .and_then(|m| m.get("NGINX_CONF"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    
+
     // 读取配置文件内容
     if !conf_path.is_empty() {
         match std::fs::read_to_string(conf_path) {
@@ -43,7 +49,9 @@ pub async fn get_nginx_config(
             Err(e) => Ok(CommandResponse::error(format!("读取配置文件失败: {}", e))),
         }
     } else {
-        Ok(CommandResponse::error("未配置 Nginx 配置文件路径".to_string()))
+        Ok(CommandResponse::error(
+            "未配置 Nginx 配置文件路径".to_string(),
+        ))
     }
 }
 
@@ -59,7 +67,10 @@ pub async fn start_nginx_service(
             "Nginx 服务启动成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("启动 Nginx 服务失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "启动 Nginx 服务失败: {}",
+            e
+        ))),
     }
 }
 
@@ -75,7 +86,10 @@ pub async fn stop_nginx_service(
             "Nginx 服务停止成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("停止 Nginx 服务失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "停止 Nginx 服务失败: {}",
+            e
+        ))),
     }
 }
 
@@ -91,7 +105,10 @@ pub async fn restart_nginx_service(
             "Nginx 服务重启成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("重启 Nginx 服务失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "重启 Nginx 服务失败: {}",
+            e
+        ))),
     }
 }
 
@@ -158,9 +175,15 @@ pub async fn cancel_download_nginx(version: String) -> Result<CommandResponse, S
     match nginx_service.cancel_download(&version) {
         Ok(_) => {
             let data = serde_json::json!({"cancelled": true});
-            Ok(CommandResponse::success("Nginx 下载已取消".to_string(), Some(data)))
+            Ok(CommandResponse::success(
+                "Nginx 下载已取消".to_string(),
+                Some(data),
+            ))
         }
-        Err(e) => Ok(CommandResponse::error(format!("取消 Nginx 下载失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "取消 Nginx 下载失败: {}",
+            e
+        ))),
     }
 }
 

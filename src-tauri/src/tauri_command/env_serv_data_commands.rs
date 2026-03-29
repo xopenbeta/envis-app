@@ -27,10 +27,7 @@ pub async fn get_environment_all_service_datas(environment_id: String) -> Result
 
 /// 获取指定环境的单个服务数据（从文件读取）
 #[tauri::command]
-pub async fn get_service_data(
-    environment_id: String,
-    service_id: String,
-) -> Result<Value, String> {
+pub async fn get_service_data(environment_id: String, service_id: String) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
     let manager = manager.lock().unwrap();
     match manager.get_service_data(&environment_id, &service_id) {
@@ -82,7 +79,6 @@ pub async fn update_service_data(
         })),
     }
 }
-
 
 /// 删除服务数据
 #[tauri::command]

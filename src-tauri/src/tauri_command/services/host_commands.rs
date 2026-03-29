@@ -1,5 +1,5 @@
-use crate::manager::host_manager::{HostEntry, HostManager};
 use crate::manager::file_manager::FileManager;
+use crate::manager::host_manager::{HostEntry, HostManager};
 use crate::types::CommandResponse;
 
 /// 获取所有 host 条目
@@ -149,12 +149,19 @@ pub async fn clear_hosts(password: String) -> Result<CommandResponse, String> {
 #[tauri::command]
 pub async fn open_hosts_file() -> Result<CommandResponse, String> {
     match HostManager::get_hosts_file_path() {
-        Ok(path) => {
-            match FileManager::open_in_file_manager(&path) {
-                Ok(_) => Ok(CommandResponse::success("打开 hosts 文件成功".to_string(), None)),
-                Err(e) => Ok(CommandResponse::error(format!("打开 hosts 文件失败: {}", e))),
-            }
-        }
-        Err(e) => Ok(CommandResponse::error(format!("获取 hosts 路径失败: {}", e))),
+        Ok(path) => match FileManager::open_in_file_manager(&path) {
+            Ok(_) => Ok(CommandResponse::success(
+                "打开 hosts 文件成功".to_string(),
+                None,
+            )),
+            Err(e) => Ok(CommandResponse::error(format!(
+                "打开 hosts 文件失败: {}",
+                e
+            ))),
+        },
+        Err(e) => Ok(CommandResponse::error(format!(
+            "获取 hosts 路径失败: {}",
+            e
+        ))),
     }
 }
