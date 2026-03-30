@@ -20,6 +20,7 @@ impl MavenService {
     const ENVIS_MAVEN_MIRROR_ID: &'static str = "envis-mirror";
     pub const DEFAULT_MAVEN_REPO_URL: &'static str = "https://repo.maven.apache.org/maven2";
     const MAVEN_REPO_ENV_PLACEHOLDER: &'static str = "${env.MAVEN_REPO_URL}";
+    const MAVEN_LOCAL_REPO_ENV_PLACEHOLDER: &'static str = "${env.MAVEN_LOCAL_REPO}";
 
     /// 获取全局 Maven 服务管理器单例
     pub fn global() -> Arc<MavenService> {
@@ -160,54 +161,19 @@ impl MavenService {
         std::fs::write(settings_path, output).map_err(|e| anyhow!("写入 settings.xml 失败: {}", e))
     }
 
-    pub fn ensure_maven_settings_use_env_repo(&self, java_version: &str) -> Result<PathBuf> {
-        self.set_maven_repository_to_settings(java_version, Self::MAVEN_REPO_ENV_PLACEHOLDER)
+
+    /// 确保 Maven settings.xml 使用环境变量占位符（仓库地址和本地仓库路径）
+    pub fn ensure_maven_settings_use_env_placeholders(&self, java_version: &str) -> Result<()> {
+        // 设置远程仓库地址环境变量占位符
+        self.set_maven_repository_to_settings(java_version, Self::MAVEN_REPO_ENV_PLACEHOLDER)?;
+        
+        // 设置本地仓库路径环境变量占位符
+        self.set_maven_local_repository_to_settings(java_version, Self::MAVEN_LOCAL_REPO_ENV_PLACEHOLDER)?;
+        
+        Ok(())
     }
 
-    pub fn get_maven_repository_from_settings(&self, java_version: &str) -> Result<Option<String>> {
-        let settings_path = self
-            .get_maven_settings_path(java_version)
-            .ok_or_else(|| anyhow!("Maven 未初始化，无法读取 settings.xml"))?;
-
-        if !settings_path.exists() {
-            return Ok(None);
-        }
-
-        let content = std::fs::read_to_string(&settings_path)
-            .map_err(|e| anyhow!("读取 settings.xml 失败: {}", e))?;
-        let root = Self::parse_settings_xml(&content)?;
-
-        let mirrors = match Self::find_child(&root, "mirrors") {
-            Some(mirrors) => mirrors,
-            None => return Ok(None),
-        };
-
-        for node in &mirrors.children {
-            if let XMLNode::Element(mirror) = node {
-                if mirror.name != "mirror" {
-                    continue;
-                }
-                let mirror_id = Self::child_text(mirror, "id");
-                let url = Self::child_text(mirror, "url");
-                if mirror_id.as_deref() == Some(Self::ENVIS_MAVEN_MIRROR_ID) {
-                    return Ok(url);
-                }
-            }
-        }
-
-        for node in &mirrors.children {
-            if let XMLNode::Element(mirror) = node {
-                if mirror.name != "mirror" {
-                    continue;
-                }
-                if let Some(url) = Self::child_text(mirror, "url") {
-                    return Ok(Some(url));
-                }
-            }
-        }
-
-        Ok(None)
-    }
+    // 不用在这里写获取仓库地址方法，因为被放在了metadata里
 
     pub fn set_maven_repository_to_settings(
         &self,
@@ -272,26 +238,6 @@ impl MavenService {
         Self::write_settings_xml(&settings_path, &root)?;
 
         Ok(settings_path)
-    }
-
-    /// 获取 Maven 本地仓库路径（从 settings.xml 中 <localRepository>）
-    pub fn get_maven_local_repository_from_settings(
-        &self,
-        java_version: &str,
-    ) -> Result<Option<String>> {
-        let settings_path = self
-            .get_maven_settings_path(java_version)
-            .ok_or_else(|| anyhow!("Maven 未初始化，无法读取 settings.xml"))?;
-
-        if !settings_path.exists() {
-            return Ok(None);
-        }
-
-        let content = std::fs::read_to_string(&settings_path)
-            .map_err(|e| anyhow!("读取 settings.xml 失败: {}", e))?;
-        let root = Self::parse_settings_xml(&content)?;
-
-        Ok(Self::child_text(&root, "localRepository"))
     }
 
     /// 设置 Maven 本地仓库路径（写入 settings.xml 的 <localRepository>）
@@ -475,7 +421,8 @@ impl MavenService {
         #[cfg(not(target_os = "windows"))]
         super::java::set_executable_permissions(&install_dir)?;
 
-        self.ensure_maven_settings_use_env_repo(java_version)?;
+        // 统一设置环境变量占位符
+        self.ensure_maven_settings_use_env_placeholders(java_version)?;
 
         let _ = std::fs::remove_file(archive_path);
 
@@ -522,6 +469,7 @@ impl MavenService {
         let shell_manager = shell_manager.lock().unwrap();
         shell_manager.add_export("MAVEN_REPO_URL", metadata_maven_repo_url)?;
 
+        // 处理 MAVEN_LOCAL_REPO：导出环境变量
         if let Some(metadata) = &service_data.metadata {
             if let Some(local_repo) = metadata
                 .get("MAVEN_LOCAL_REPO")
@@ -529,11 +477,13 @@ impl MavenService {
                 .map(|v| v.trim())
                 .filter(|v| !v.is_empty())
             {
-                if let Err(e) = self.set_maven_local_repository_to_settings(java_version, local_repo)
-                {
-                    log::warn!("激活时写入 Maven 本地仓库路径失败: {}", e);
-                }
+                shell_manager.add_export("MAVEN_LOCAL_REPO", local_repo)?;
             }
+        }
+
+        // 统一设置 settings.xml 中的环境变量占位符
+        if let Err(e) = self.ensure_maven_settings_use_env_placeholders(java_version) {
+            log::warn!("激活时设置 Maven 环境变量占位符失败: {}", e);
         }
 
         Ok(())
@@ -561,6 +511,7 @@ impl MavenService {
         shell_manager.delete_export("MAVEN_HOME")?;
         shell_manager.delete_export("M2_HOME")?;
         shell_manager.delete_export("MAVEN_REPO_URL")?;
+        shell_manager.delete_export("MAVEN_LOCAL_REPO")?;
 
         Ok(())
     }

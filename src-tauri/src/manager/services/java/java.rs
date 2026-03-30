@@ -261,7 +261,13 @@ impl JavaService {
         let shell_manager = shell_manager.lock().unwrap();
 
         let java_home = install_path.to_string_lossy().to_string();
-        let bin_path = install_path.join("bin").to_string_lossy().to_string();
+        
+        // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
+        let bin_path = if cfg!(target_os = "windows") {
+            install_path.to_string_lossy().to_string()
+        } else {
+            install_path.join("bin").to_string_lossy().to_string()
+        };
 
         shell_manager.add_export("JAVA_HOME", &java_home)?;
         shell_manager.add_path(&bin_path)?;
@@ -291,7 +297,12 @@ impl JavaService {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
 
-        let bin_path = install_path.join("bin").to_string_lossy().to_string();
+        // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
+        let bin_path = if cfg!(target_os = "windows") {
+            install_path.to_string_lossy().to_string()
+        } else {
+            install_path.join("bin").to_string_lossy().to_string()
+        };
 
         // 取消激活 Maven 服务
         let maven_service = MavenService::global();
@@ -318,7 +329,7 @@ impl JavaService {
         }
 
         let java_binary = if cfg!(target_os = "windows") {
-            install_path.join("bin").join("java.exe")
+            install_path.join("java.exe")
         } else {
             install_path.join("bin").join("java")
         };
@@ -380,34 +391,9 @@ impl JavaService {
         MavenService::global().get_maven_download_progress(java_version)
     }
 
-    /// 确保 Maven settings.xml 使用环境变量仓库（代理方法）
-    pub fn ensure_maven_settings_use_env_repo(&self, java_version: &str) -> Result<PathBuf> {
-        MavenService::global().ensure_maven_settings_use_env_repo(java_version)
-    }
-
-    /// 从 settings.xml 获取 Maven 仓库（代理方法）
-    pub fn get_maven_repository_from_settings(
-        &self,
-        java_version: &str,
-    ) -> Result<Option<String>> {
-        MavenService::global().get_maven_repository_from_settings(java_version)
-    }
-
-    /// 设置 Maven 仓库到 settings.xml（代理方法）
-    pub fn set_maven_repository_to_settings(
-        &self,
-        java_version: &str,
-        repository_url: &str,
-    ) -> Result<PathBuf> {
-        MavenService::global().set_maven_repository_to_settings(java_version, repository_url)
-    }
-
-    /// 从 settings.xml 获取 Maven 本地仓库路径（代理方法）
-    pub fn get_maven_local_repository_from_settings(
-        &self,
-        java_version: &str,
-    ) -> Result<Option<String>> {
-        MavenService::global().get_maven_local_repository_from_settings(java_version)
+    /// 确保 Maven settings.xml 使用环境变量占位符（仓库地址和本地仓库路径）（代理方法）
+    pub fn ensure_maven_settings_use_env_placeholders(&self, java_version: &str) -> Result<()> {
+        MavenService::global().ensure_maven_settings_use_env_placeholders(java_version)
     }
 
     /// 设置 Maven 本地仓库路径到 settings.xml（代理方法）
