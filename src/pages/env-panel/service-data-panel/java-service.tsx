@@ -723,17 +723,17 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                         </div>
                     </div>
                 ) : !mavenHome.trim() ? (
-                    <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="w-full p-3 rounded-xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10">
                         <div className="flex items-start gap-4">
-                            <div className="p-2 bg-gray-100 dark:bg-white/5 rounded-lg shrink-0">
-                                <Package className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg shrink-0">
+                                <Package className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                             </div>
                             <div className="flex-1 space-y-3">
                                 <div>
-                                    <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+                                    <h3 className="font-semibold text-sm text-yellow-900 dark:text-yellow-200">
                                         {t('java_service.maven_not_initialized_title')}
                                     </h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <p className="text-xs text-yellow-700 dark:text-yellow-400/80 mt-1">
                                         {t('java_service.maven_not_initialized_desc')}
                                     </p>
                                 </div>
