@@ -8,9 +8,15 @@ pub async fn check_dnsmasq_installed(version: String) -> Result<CommandResponse,
     let is_installed = dnsmasq_service.is_installed(&version);
     let data = serde_json::json!({"installed": is_installed});
     if is_installed {
-        Ok(CommandResponse::success("Dnsmasq 已安装".to_string(), Some(data)))
+        Ok(CommandResponse::success(
+            "Dnsmasq 已安装".to_string(),
+            Some(data),
+        ))
     } else {
-        Ok(CommandResponse::success("Dnsmasq 未安装".to_string(), Some(data)))
+        Ok(CommandResponse::success(
+            "Dnsmasq 未安装".to_string(),
+            Some(data),
+        ))
     }
 }
 
@@ -22,14 +28,14 @@ pub async fn get_dnsmasq_config(
 ) -> Result<CommandResponse, String> {
     let dnsmasq_service = DnsmasqService::global();
     let conf_path = dnsmasq_service.get_config_path(&service_data);
-    
+
     if let Some(path) = conf_path {
         match std::fs::read_to_string(&path) {
             Ok(content) => {
                 let data = serde_json::json!({
                     "content": content,
                     // 返回实际使用的路径，以便前端可能需要更新 metadata
-                    "path": path 
+                    "path": path
                 });
                 Ok(CommandResponse::success(
                     "获取 Dnsmasq 配置成功".to_string(),
@@ -39,7 +45,9 @@ pub async fn get_dnsmasq_config(
             Err(e) => Ok(CommandResponse::error(format!("读取配置文件失败: {}", e))),
         }
     } else {
-        Ok(CommandResponse::error("未配置 Dnsmasq 配置文件路径，且默认配置文件不存在".to_string()))
+        Ok(CommandResponse::error(
+            "未配置 Dnsmasq 配置文件路径，且默认配置文件不存在".to_string(),
+        ))
     }
 }
 
@@ -55,7 +63,10 @@ pub async fn start_dnsmasq_service(
             "Dnsmasq 服务启动成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("启动 Dnsmasq 服务失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "启动 Dnsmasq 服务失败: {}",
+            e
+        ))),
     }
 }
 
@@ -71,7 +82,10 @@ pub async fn stop_dnsmasq_service(
             "Dnsmasq 服务停止成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("停止 Dnsmasq 服务失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "停止 Dnsmasq 服务失败: {}",
+            e
+        ))),
     }
 }
 
@@ -87,7 +101,10 @@ pub async fn restart_dnsmasq_service(
             "Dnsmasq 服务重启成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("重启 Dnsmasq 服务失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "重启 Dnsmasq 服务失败: {}",
+            e
+        ))),
     }
 }
 
@@ -153,7 +170,10 @@ pub async fn cancel_download_dnsmasq(version: String) -> Result<CommandResponse,
             "取消 Dnsmasq 下载成功".to_string(),
             None,
         )),
-        Err(e) => Ok(CommandResponse::error(format!("取消 Dnsmasq 下载失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "取消 Dnsmasq 下载失败: {}",
+            e
+        ))),
     }
 }
 

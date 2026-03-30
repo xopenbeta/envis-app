@@ -1,6 +1,6 @@
-﻿use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
-use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask, nginx};
+use crate::manager::services::{nginx, DownloadManager, DownloadResult, DownloadTask};
 use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
 use anyhow::{anyhow, Result};
@@ -38,11 +38,31 @@ impl NginxService {
     /// 获取可用的 Nginx 版本列表（静态列表示例）
     pub fn get_available_versions(&self) -> Vec<NginxVersion> {
         vec![
-            NginxVersion { version: "1.26.2".to_string(), stable: true, date: "2024-09-03".to_string() },
-            NginxVersion { version: "1.26.1".to_string(), stable: true, date: "2024-05-29".to_string() },
-            NginxVersion { version: "1.26.0".to_string(), stable: true, date: "2024-04-23".to_string() },
-            NginxVersion { version: "1.24.0".to_string(), stable: true, date: "2023-04-11".to_string() },
-            NginxVersion { version: "1.22.1".to_string(), stable: true, date: "2022-10-19".to_string() },
+            NginxVersion {
+                version: "1.26.2".to_string(),
+                stable: true,
+                date: "2024-09-03".to_string(),
+            },
+            NginxVersion {
+                version: "1.26.1".to_string(),
+                stable: true,
+                date: "2024-05-29".to_string(),
+            },
+            NginxVersion {
+                version: "1.26.0".to_string(),
+                stable: true,
+                date: "2024-04-23".to_string(),
+            },
+            NginxVersion {
+                version: "1.24.0".to_string(),
+                stable: true,
+                date: "2023-04-11".to_string(),
+            },
+            NginxVersion {
+                version: "1.22.1".to_string(),
+                stable: true,
+                date: "2022-10-19".to_string(),
+            },
         ]
     }
 
@@ -211,10 +231,10 @@ impl NginxService {
             // 基本编译参数（尽量通用）
             let mut args: Vec<String> = vec![
                 format!("--prefix={}", install_path.to_string_lossy()), // 指定安装目录
-                "--with-http_ssl_module".to_string(), // 启用 HTTPS 支持
-                "--with-http_v2_module".to_string(), // 启用 HTTP/2 协议
-                "--with-http_gzip_static_module".to_string(), // 启用静态文件 gzip 压缩
-                "--with-http_stub_status_module".to_string(), // 启用状态监控模块
+                "--with-http_ssl_module".to_string(),                   // 启用 HTTPS 支持
+                "--with-http_v2_module".to_string(),                    // 启用 HTTP/2 协议
+                "--with-http_gzip_static_module".to_string(),           // 启用静态文件 gzip 压缩
+                "--with-http_stub_status_module".to_string(),           // 启用状态监控模块
             ];
 
             // macOS: 修复 pwritev 可用性导致的编译报错
@@ -226,7 +246,8 @@ impl NginxService {
                 args.push(
                     "--with-cc-opt=\"-Wno-unguarded-availability-new -Wno-error=unguarded-availability-new -mmacosx-version-min=11.0\"".to_string(),
                 );
-                args.push("--with-ld-opt=\"-mmacosx-version-min=11.0\"".to_string()); // (macOS) 编译器和链接器选项
+                args.push("--with-ld-opt=\"-mmacosx-version-min=11.0\"".to_string());
+                // (macOS) 编译器和链接器选项
             }
 
             // 执行 ./configure
@@ -255,7 +276,11 @@ impl NginxService {
             make_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
             let output = make_cmd
                 .arg("-c")
-                .arg(format!("cd '{}' && make -j{}", src_dir.to_string_lossy(), num_cpus::get()))
+                .arg(format!(
+                    "cd '{}' && make -j{}",
+                    src_dir.to_string_lossy(),
+                    num_cpus::get()
+                ))
                 .output()?;
             if !output.status.success() {
                 return Err(anyhow!(
@@ -271,7 +296,10 @@ impl NginxService {
             install_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
             let output = install_cmd
                 .arg("-c")
-                .arg(format!("cd '{}' && make install", src_dir.to_string_lossy()))
+                .arg(format!(
+                    "cd '{}' && make install",
+                    src_dir.to_string_lossy()
+                ))
                 .output()?;
             if !output.status.success() {
                 return Err(anyhow!(
@@ -288,7 +316,9 @@ impl NginxService {
         // 设置权限（Unix）并删除压缩包
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_path)?;
-        if archive_path.exists() { let _ = std::fs::remove_file(archive_path); }
+        if archive_path.exists() {
+            let _ = std::fs::remove_file(archive_path);
+        }
         Ok(())
     }
 
@@ -340,7 +370,9 @@ impl NginxService {
         // 将 zip 根目录下内容提取到目标根（如果存在单一子目录）
         #[cfg(not(target_os = "windows"))]
         {
-            let entries: Vec<_> = std::fs::read_dir(target_dir)?.filter_map(|e| e.ok()).collect();
+            let entries: Vec<_> = std::fs::read_dir(target_dir)?
+                .filter_map(|e| e.ok())
+                .collect();
             if entries.len() == 1 && entries[0].path().is_dir() {
                 let extracted = entries[0].path();
                 for e in std::fs::read_dir(&extracted)? {
@@ -395,7 +427,7 @@ impl NginxService {
             install_path.join("sbin").join("nginx")
         };
         log::info!("Nginx 可执行文件路径: {:?}", nginx_bin);
-        
+
         if !nginx_bin.exists() {
             log::error!("Nginx 可执行文件不存在: {:?}", nginx_bin);
             return Ok(ServiceDataResult {
@@ -587,7 +619,10 @@ impl NginxService {
         } else {
             create_command("sh")
                 .arg("-c")
-                .arg(format!("ps aux | grep '[n]ginx: master process' | grep '{}'", conf_path))
+                .arg(format!(
+                    "ps aux | grep '[n]ginx: master process' | grep '{}'",
+                    conf_path
+                ))
                 .output()
         };
 
@@ -609,4 +644,3 @@ impl NginxService {
         }
     }
 }
-

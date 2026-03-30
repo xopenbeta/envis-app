@@ -198,10 +198,7 @@ impl JavaService {
                 "https://mirrors.aliyun.com/gradle/distributions/{}",
                 filename
             ),
-            format!(
-                "https://services.gradle.org/distributions/{}",
-                filename
-            ),
+            format!("https://services.gradle.org/distributions/{}", filename),
         ];
 
         Ok((urls, filename))
@@ -210,10 +207,7 @@ impl JavaService {
     /// 下载并安装 Gradle
     pub async fn download_and_install_gradle(&self, java_version: &str) -> Result<DownloadResult> {
         if self.is_gradle_installed(java_version) {
-            return Ok(DownloadResult::success(
-                "Gradle 已经安装".to_string(),
-                None,
-            ));
+            return Ok(DownloadResult::success("Gradle 已经安装".to_string(), None));
         }
 
         let (urls, filename) = self.build_gradle_download_info(java_version)?;
@@ -286,7 +280,9 @@ impl JavaService {
                         Some(task),
                     ))
                 } else {
-                    Ok(DownloadResult::error("无法获取 Gradle 下载任务状态".to_string()))
+                    Ok(DownloadResult::error(
+                        "无法获取 Gradle 下载任务状态".to_string(),
+                    ))
                 }
             }
             Err(e) => Ok(DownloadResult::error(format!("Gradle 下载失败: {}", e))),
@@ -422,8 +418,7 @@ impl JavaService {
         let emitter = EmitterConfig::new().perform_indent(true);
         root.write_with_config(&mut output, emitter)
             .map_err(|e| anyhow!("序列化 settings.xml 失败: {}", e))?;
-        std::fs::write(settings_path, output)
-            .map_err(|e| anyhow!("写入 settings.xml 失败: {}", e))
+        std::fs::write(settings_path, output).map_err(|e| anyhow!("写入 settings.xml 失败: {}", e))
     }
 
     pub fn ensure_maven_settings_use_env_repo(&self, java_version: &str) -> Result<PathBuf> {
@@ -490,7 +485,8 @@ impl JavaService {
             .ok_or_else(|| anyhow!("Maven 未初始化，无法写入 settings.xml"))?;
 
         if let Some(parent) = settings_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| anyhow!("创建 Maven 配置目录失败: {}", e))?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| anyhow!("创建 Maven 配置目录失败: {}", e))?;
         }
 
         let mut root = if settings_path.exists() {
@@ -610,28 +606,23 @@ impl JavaService {
         let urls = vec![
             format!(
                 "https://mirrors.huaweicloud.com/apache/maven/maven-3/{}/binaries/{}",
-                maven_version,
-                filename
+                maven_version, filename
             ),
             format!(
                 "https://mirrors.tuna.tsinghua.edu.cn/apache/maven/maven-3/{}/binaries/{}",
-                maven_version,
-                filename
+                maven_version, filename
             ),
             format!(
                 "https://dlcdn.apache.org/maven/maven-3/{}/binaries/{}",
-                maven_version,
-                filename
+                maven_version, filename
             ),
             format!(
                 "https://archive.apache.org/dist/maven/maven-3/{}/binaries/{}",
-                maven_version,
-                filename
+                maven_version, filename
             ),
             format!(
                 "https://mirrors.aliyun.com/apache/maven/maven-3/{}/binaries/{}",
-                maven_version,
-                filename
+                maven_version, filename
             ),
         ];
 
@@ -660,23 +651,18 @@ impl JavaService {
 
         // 验证 Java 版本是否支持
         match version {
-            "8" | "11" | "17" | "21" | "23" => {},
+            "8" | "11" | "17" | "21" | "23" => {}
             _ => return Err(anyhow!("不支持的 Java 版本: {}", version)),
         };
 
         // 新的文件命名格式：jdk-{version}-{platform}-{arch}.{ext}
-        let filename = format!(
-            "jdk-{}-{}-{}.{}",
-            version, os_name, arch_name, ext
-        );
+        let filename = format!("jdk-{}-{}-{}.{}", version, os_name, arch_name, ext);
 
         // 新的下载地址
-        let urls = vec![
-            format!(
-                "https://github.com/xopenbeta/java-archive/releases/latest/download/{}",
-                filename
-            ),
-        ];
+        let urls = vec![format!(
+            "https://github.com/xopenbeta/java-archive/releases/latest/download/{}",
+            filename
+        )];
 
         Ok((urls, filename))
     }
@@ -770,10 +756,7 @@ impl JavaService {
     /// 下载并安装 Maven
     pub async fn download_and_install_maven(&self, java_version: &str) -> Result<DownloadResult> {
         if self.is_maven_installed(java_version) {
-            return Ok(DownloadResult::success(
-                "Maven 已经安装".to_string(),
-                None,
-            ));
+            return Ok(DownloadResult::success("Maven 已经安装".to_string(), None));
         }
 
         let (urls, filename) = self.build_maven_download_info(java_version)?;
@@ -846,7 +829,9 @@ impl JavaService {
                         Some(task),
                     ))
                 } else {
-                    Ok(DownloadResult::error("无法获取 Maven 下载任务状态".to_string()))
+                    Ok(DownloadResult::error(
+                        "无法获取 Maven 下载任务状态".to_string(),
+                    ))
                 }
             }
             Err(e) => Ok(DownloadResult::error(format!("Maven 下载失败: {}", e))),
@@ -958,15 +943,15 @@ impl JavaService {
             let mut file = archive.by_index(i)?;
             let file_path = file.name();
 
-            let relative_path = if !top_level_dir.is_empty() && file_path.starts_with(&top_level_dir)
-            {
-                file_path
-                    .strip_prefix(&top_level_dir)
-                    .unwrap_or(file_path)
-                    .trim_start_matches('/')
-            } else {
-                file_path
-            };
+            let relative_path =
+                if !top_level_dir.is_empty() && file_path.starts_with(&top_level_dir) {
+                    file_path
+                        .strip_prefix(&top_level_dir)
+                        .unwrap_or(file_path)
+                        .trim_start_matches('/')
+                } else {
+                    file_path
+                };
 
             if relative_path.is_empty() {
                 continue;
@@ -1184,7 +1169,7 @@ impl JavaService {
             .output()?;
 
         let version_output = String::from_utf8_lossy(&output.stderr);
-        
+
         let mut java_version = service_data.version.clone();
         let mut vendor = "Unknown".to_string();
         let mut runtime = "Unknown".to_string();

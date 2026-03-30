@@ -1,10 +1,13 @@
-use crate::types::{ServiceData, ServiceType};
 use crate::manager::app_config_manager::AppConfigManager;
-use crate::manager::services::JavaService;
+use crate::manager::services::java::JavaService;
+use crate::manager::services::mingw::MinGWService;
+use crate::manager::services::postgresql::PostgresqlService;
+use crate::manager::services::python::PythonService;
+use crate::types::{ServiceData, ServiceType};
 use anyhow::Result;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 /// 元数据构建器
 /// 负责为不同服务类型构建默认的 metadata 配置
@@ -42,7 +45,11 @@ impl MetadataBuilder {
             }
             ServiceType::Postgresql => {
                 // 为 PostgreSQL 服务创建默认配置
-                Self::build_postgresql_default_metadata(environment_id, service_data, &mut metadata)?;
+                Self::build_postgresql_default_metadata(
+                    environment_id,
+                    service_data,
+                    &mut metadata,
+                )?;
             }
             ServiceType::Python => {
                 // 为 Python 服务创建默认配置

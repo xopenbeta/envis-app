@@ -1,4 +1,4 @@
-﻿use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::types::ServiceData;
@@ -335,7 +335,7 @@ impl PostgresqlService {
         // 设置 PATH 环境变量
         let shell_manager = crate::manager::shell_manamger::ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
-    shell_manager.add_path(&bin_path.to_string_lossy())?;
+        shell_manager.add_path(&bin_path.to_string_lossy())?;
 
         Ok(())
     }
@@ -348,7 +348,7 @@ impl PostgresqlService {
 
         let shell_manager = crate::manager::shell_manamger::ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
-    shell_manager.delete_path(&bin_path.to_string_lossy())?;
+        shell_manager.delete_path(&bin_path.to_string_lossy())?;
 
         Ok(())
     }

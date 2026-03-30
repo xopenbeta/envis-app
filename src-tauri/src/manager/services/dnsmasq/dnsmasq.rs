@@ -1,4 +1,4 @@
-﻿use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadStatus, DownloadTask};
 use crate::types::{ServiceData, ServiceStatus};
@@ -37,13 +37,11 @@ impl DnsmasqService {
 
     /// 获取可用的 Dnsmasq 版本列表（静态列表示例）
     pub fn get_available_versions(&self) -> Vec<DnsmasqVersion> {
-        vec![
-            DnsmasqVersion {
-                version: "2.90".to_string(),
-                stable: true,
-                date: "2024-02-13".to_string(),
-            },
-        ]
+        vec![DnsmasqVersion {
+            version: "2.90".to_string(),
+            stable: true,
+            date: "2024-02-13".to_string(),
+        }]
     }
 
     /// 检查 Dnsmasq 是否已安装（判断 sbin/dnsmasq 是否存在）
@@ -70,9 +68,7 @@ impl DnsmasqService {
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         // Dnsmasq 官方提供的是源码包，下载后需要编译
         let filename = format!("dnsmasq-{}.tar.gz", version);
-        let urls = vec![
-            format!("https://thekelleys.org.uk/dnsmasq/{}", filename)
-        ];
+        let urls = vec![format!("https://thekelleys.org.uk/dnsmasq/{}", filename)];
         Ok((urls, filename))
     }
 
@@ -89,7 +85,10 @@ impl DnsmasqService {
         let (urls, filename) = self.build_download_info(version)?;
         let install_path = self.get_install_path(version);
         // 使用临时目录下载，避免安装时清理目录导致文件丢失
-        let download_path = install_path.parent().ok_or_else(|| anyhow!("无法获取父目录"))?.join("temp");
+        let download_path = install_path
+            .parent()
+            .ok_or_else(|| anyhow!("无法获取父目录"))?
+            .join("temp");
 
         let task_id = format!("dnsmasq-{}", version);
         let download_manager = DownloadManager::global();
@@ -101,21 +100,33 @@ impl DnsmasqService {
             let task_clone = task.clone();
             let version_clone = version_for_callback.clone();
             let task_id = task.id.clone();
-            
+
             tauri::async_runtime::spawn(async move {
                 let download_manager = DownloadManager::global();
                 // 更新状态为 Installing
-                let _ = download_manager.update_task_status(&task_id, DownloadStatus::Installing, None);
+                let _ =
+                    download_manager.update_task_status(&task_id, DownloadStatus::Installing, None);
 
-                match dnsmasq_service.extract_and_install(&task_clone, &version_clone).await {
+                match dnsmasq_service
+                    .extract_and_install(&task_clone, &version_clone)
+                    .await
+                {
                     Ok(_) => {
                         // 更新状态为 Installed
-                        let _ = download_manager.update_task_status(&task_id, DownloadStatus::Installed, None);
+                        let _ = download_manager.update_task_status(
+                            &task_id,
+                            DownloadStatus::Installed,
+                            None,
+                        );
                     }
                     Err(e) => {
                         log::error!("安装 Dnsmasq 失败: {}", e);
                         // 更新状态为 Failed
-                        let _ = download_manager.update_task_status(&task_id, DownloadStatus::Failed, Some(e.to_string()));
+                        let _ = download_manager.update_task_status(
+                            &task_id,
+                            DownloadStatus::Failed,
+                            Some(e.to_string()),
+                        );
                     }
                 }
             });
@@ -145,7 +156,7 @@ impl DnsmasqService {
     pub async fn extract_and_install(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_path = self.get_install_path(version);
-        
+
         // 清理旧目录并创建新目录
         if install_path.exists() {
             std::fs::remove_dir_all(&install_path)?;
@@ -161,13 +172,13 @@ impl DnsmasqService {
             // 1. make
             // 检查 make 是否存在
             if create_command("make").arg("--version").output().is_err() {
-                return Err(anyhow!("未找到 make 命令，请先安装构建工具 (如 xcode-select --install)"));
+                return Err(anyhow!(
+                    "未找到 make 命令，请先安装构建工具 (如 xcode-select --install)"
+                ));
             }
 
-            let make_output = create_command("make")
-                .current_dir(&install_path)
-                .output()?;
-            
+            let make_output = create_command("make").current_dir(&install_path).output()?;
+
             if !make_output.status.success() {
                 let stderr = String::from_utf8_lossy(&make_output.stderr);
                 return Err(anyhow!("Dnsmasq 编译失败: {}", stderr));
@@ -196,14 +207,17 @@ impl DnsmasqService {
 
         #[cfg(target_os = "windows")]
         {
-             return Err(anyhow!("Windows 暂不支持自动编译安装 Dnsmasq，请手动下载二进制文件放置于: {}", install_path.display()));
+            return Err(anyhow!(
+                "Windows 暂不支持自动编译安装 Dnsmasq，请手动下载二进制文件放置于: {}",
+                install_path.display()
+            ));
         }
-        
+
         // 设置权限（Unix）并删除压缩包
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_path)?;
-        
-        if archive_path.exists() { 
+
+        if archive_path.exists() {
             let _ = std::fs::remove_file(archive_path);
             // 尝试删除下载目录（如果为空）
             if let Some(parent) = archive_path.parent() {
@@ -223,9 +237,12 @@ impl DnsmasqService {
             .arg(target_dir)
             .arg("--strip-components=1") // 假设有一层目录
             .output()?;
-            
+
         if !output.status.success() {
-            return Err(anyhow!("解压失败: {:?}", String::from_utf8_lossy(&output.stderr)));
+            return Err(anyhow!(
+                "解压失败: {:?}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
         }
         Ok(())
     }
@@ -304,12 +321,14 @@ impl DnsmasqService {
         cmd.arg("-C").arg(conf_path);
         cmd.arg("--pid-file").arg(&pid_file);
         // 不使用 -k，让它后台运行（daemonize），这样它会自己 fork 并写入 pid 文件
-        
-        let output = cmd.output().map_err(|e| anyhow!("启动 Dnsmasq 失败: {}", e))?;
-        
+
+        let output = cmd
+            .output()
+            .map_err(|e| anyhow!("启动 Dnsmasq 失败: {}", e))?;
+
         if !output.status.success() {
-             let stderr = String::from_utf8_lossy(&output.stderr);
-             return Err(anyhow!("启动 Dnsmasq 失败: {}", stderr));
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("启动 Dnsmasq 失败: {}", stderr));
         }
 
         Ok(ServiceDataResult {
@@ -335,12 +354,13 @@ impl DnsmasqService {
         #[cfg(not(target_os = "windows"))]
         {
             // 发送 SIGTERM
-            let output = create_command("kill")
-                .arg(pid.to_string())
-                .output()?;
-            
+            let output = create_command("kill").arg(pid.to_string()).output()?;
+
             if !output.status.success() {
-                 return Err(anyhow!("停止服务失败: {}", String::from_utf8_lossy(&output.stderr)));
+                return Err(anyhow!(
+                    "停止服务失败: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ));
             }
         }
 
@@ -351,11 +371,14 @@ impl DnsmasqService {
                 .arg(pid.to_string())
                 .arg("/F")
                 .output()?;
-             if !output.status.success() {
-                 return Err(anyhow!("停止服务失败: {}", String::from_utf8_lossy(&output.stderr)));
+            if !output.status.success() {
+                return Err(anyhow!(
+                    "停止服务失败: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ));
             }
         }
-        
+
         // 删除 PID 文件
         let _ = std::fs::remove_file(pid_file);
 
@@ -387,10 +410,7 @@ impl DnsmasqService {
         // 检查进程是否存在
         #[cfg(not(target_os = "windows"))]
         {
-            let output = create_command("ps")
-                .arg("-p")
-                .arg(pid)
-                .output()?;
+            let output = create_command("ps").arg("-p").arg(pid).output()?;
             if output.status.success() {
                 return Ok(ServiceStatus::Running);
             }
@@ -398,14 +418,14 @@ impl DnsmasqService {
 
         #[cfg(target_os = "windows")]
         {
-             let output = create_command("tasklist")
+            let output = create_command("tasklist")
                 .arg("/FI")
                 .arg(format!("PID eq {}", pid))
                 .output()?;
-             let stdout = String::from_utf8_lossy(&output.stdout);
-             if stdout.contains(pid) {
-                 return Ok(ServiceStatus::Running);
-             }
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.contains(pid) {
+                return Ok(ServiceStatus::Running);
+            }
         }
 
         Ok(ServiceStatus::Stopped)

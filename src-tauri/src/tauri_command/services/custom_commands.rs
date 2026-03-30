@@ -152,7 +152,9 @@ pub async fn execute_custom_service_alias(
             } else {
                 log::warn!(
                     "命令执行失败 ({}): 退出码 {}, stderr: {}",
-                    alias_name, exit_code, stderr
+                    alias_name,
+                    exit_code,
+                    stderr
                 );
                 Ok(CommandResponse {
                     success: false,

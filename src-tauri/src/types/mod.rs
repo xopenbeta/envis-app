@@ -77,18 +77,18 @@ impl ServiceType {
                     &["bin"]
                 }
             }
-            ServiceType::Mongodb => &["bin"],       // MongoDB 可执行文件目录
-            ServiceType::Mariadb => &["bin"],       // MariaDB 可执行文件目录
-            ServiceType::Mysql => &["bin"],         // MySQL 可执行文件目录
-            ServiceType::Postgresql => &["bin"],    // PostgreSQL 可执行文件目录
-            ServiceType::Nginx => &["sbin"],        // Nginx 可执行文件目录
-            ServiceType::Python => &["bin"],        // Python 可执行文件目录
-            ServiceType::Java => &["bin"],          // Java 可执行文件目录
-            ServiceType::Custom => &[],             // 自定义服务由用户配置
-            ServiceType::Host => &[],               // Host 服务不需要 PATH
-            ServiceType::SSL => &[],                // SSL 服务不需要 PATH
-            ServiceType::Dnsmasq => &["sbin"],      // Dnsmasq 可执行文件目录
-            ServiceType::Nasm => &[""],             // Nasm 解压后执行文件在根目录或自身路径
+            ServiceType::Mongodb => &["bin"], // MongoDB 可执行文件目录
+            ServiceType::Mariadb => &["bin"], // MariaDB 可执行文件目录
+            ServiceType::Mysql => &["bin"],   // MySQL 可执行文件目录
+            ServiceType::Postgresql => &["bin"], // PostgreSQL 可执行文件目录
+            ServiceType::Nginx => &["sbin"],  // Nginx 可执行文件目录
+            ServiceType::Python => &["bin"],  // Python 可执行文件目录
+            ServiceType::Java => &["bin"],    // Java 可执行文件目录
+            ServiceType::Custom => &[],       // 自定义服务由用户配置
+            ServiceType::Host => &[],         // Host 服务不需要 PATH
+            ServiceType::SSL => &[],          // SSL 服务不需要 PATH
+            ServiceType::Dnsmasq => &["sbin"], // Dnsmasq 可执行文件目录
+            ServiceType::Nasm => &[""],       // Nasm 解压后执行文件在根目录或自身路径
         }
     }
 
@@ -105,9 +105,9 @@ impl ServiceType {
             ServiceType::Nginx => vec![],
             ServiceType::Python => vec![],
             ServiceType::Java => vec!["JAVA_HOME", "JAVA_OPTS", "MAVEN_HOME", "GRADLE_HOME"], // Java 环境变量
-            ServiceType::Custom => vec![], // 自定义服务由用户配置
-            ServiceType::Host => vec![],   // Host 服务不需要环境变量
-            ServiceType::SSL => vec![],    // SSL 服务不需要环境变量
+            ServiceType::Custom => vec![],  // 自定义服务由用户配置
+            ServiceType::Host => vec![],    // Host 服务不需要环境变量
+            ServiceType::SSL => vec![],     // SSL 服务不需要环境变量
             ServiceType::Dnsmasq => vec![], // Dnsmasq 服务不需要环境变量
             ServiceType::Nasm => vec![],
         }
@@ -149,13 +149,13 @@ impl ServiceType {
                 "hosts", // host 条目列表
             ],
             ServiceType::SSL => vec![
-                "SSL_CA_INITIALIZED",    // CA 是否已初始化
-                "SSL_CA_CERT_PATH",      // CA 证书路径
-                "SSL_CA_KEY_PATH",       // CA 私钥路径
-                "SSL_CA_COMMON_NAME",    // CA 通用名称
-                "SSL_CA_ORGANIZATION",   // CA 组织名称
-                "SSL_CA_VALIDITY_DAYS",  // CA 有效期
-                "SSL_CERTIFICATES",      // 已签发的证书列表
+                "SSL_CA_INITIALIZED",   // CA 是否已初始化
+                "SSL_CA_CERT_PATH",     // CA 证书路径
+                "SSL_CA_KEY_PATH",      // CA 私钥路径
+                "SSL_CA_COMMON_NAME",   // CA 通用名称
+                "SSL_CA_ORGANIZATION",  // CA 组织名称
+                "SSL_CA_VALIDITY_DAYS", // CA 有效期
+                "SSL_CERTIFICATES",     // 已签发的证书列表
             ],
             ServiceType::Dnsmasq => vec!["DNSMASQ_CONF"],
             ServiceType::Nasm => vec![],

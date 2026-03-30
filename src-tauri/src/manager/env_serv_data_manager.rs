@@ -15,9 +15,7 @@ use crate::manager::services::{
     CustomService, HostService, JavaService, NodejsService, ServiceLifecycle, StandardService,
 };
 use crate::manager::shell_manamger::ShellManager;
-use crate::types::{
-    ServiceData, ServiceDataStatus, ServiceType, UpdateServiceDataRequest,
-};
+use crate::types::{ServiceData, ServiceDataStatus, ServiceType, UpdateServiceDataRequest};
 
 const ENV_SERVICE_CONFIG_FILE_NAME: &str = "service.json";
 
@@ -170,11 +168,7 @@ impl EnvServDataManager {
     }
 
     /// 获取指定环境的单个服务数据（从文件读取）
-    pub fn get_service_data(
-        &self,
-        environment_id: &str,
-        service_id: &str,
-    ) -> Result<ServiceData> {
+    pub fn get_service_data(&self, environment_id: &str, service_id: &str) -> Result<ServiceData> {
         let service_datas = self.get_environment_all_service_datas(environment_id)?;
         service_datas
             .into_iter()
@@ -257,7 +251,7 @@ impl EnvServDataManager {
             target_service.name = name;
         }
         // 不再允许更新 service_type 和 version
-        
+
         if let Some(status) = request.status {
             target_service.status = status;
         }

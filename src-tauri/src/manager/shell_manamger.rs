@@ -1,5 +1,5 @@
-use anyhow::{Context, Result};
 use crate::utils::create_command;
+use anyhow::{Context, Result};
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
@@ -74,23 +74,16 @@ impl ShellManager {
             // CMD 配置文件：优先复用已有 AutoRun 脚本，否则使用默认路径
             let default_cmd_dir = documents_dir.join("envis");
             let default_cmd_profile = default_cmd_dir.join("envis_autorun.cmd");
-            let cmd_profile = Self::get_existing_cmd_autorun_path()
-                .unwrap_or(default_cmd_profile);
+            let cmd_profile = Self::get_existing_cmd_autorun_path().unwrap_or(default_cmd_profile);
             paths.push(cmd_profile);
 
-            if !is_development {
-                // 线上环境才添加 PowerShell 配置文件
+            let ps5_dir = documents_dir.join("WindowsPowerShell");
+            let ps5_profile = ps5_dir.join("Microsoft.PowerShell_profile.ps1");
+            paths.push(ps5_profile);
 
-                // PowerShell 5.x 配置文件
-                let ps5_dir = documents_dir.join("WindowsPowerShell");
-                let ps5_profile = ps5_dir.join("Microsoft.PowerShell_profile.ps1");
-                paths.push(ps5_profile);
-
-                // PowerShell 7+ 配置文件
-                let ps7_dir = documents_dir.join("PowerShell");
-                let ps7_profile = ps7_dir.join("Microsoft.PowerShell_profile.ps1");
-                paths.push(ps7_profile);
-            }
+            let ps7_dir = documents_dir.join("PowerShell");
+            let ps7_profile = ps7_dir.join("Microsoft.PowerShell_profile.ps1");
+            paths.push(ps7_profile);
 
             paths
         } else {
@@ -124,32 +117,37 @@ impl ShellManager {
 
         #[cfg(target_os = "windows")]
         {
-        let output = create_command("reg")
-            .args(["query", "HKCU\\Software\\Microsoft\\Command Processor", "/v", "AutoRun"])
-            .output()
-            .ok()?;
+            let output = create_command("reg")
+                .args([
+                    "query",
+                    "HKCU\\Software\\Microsoft\\Command Processor",
+                    "/v",
+                    "AutoRun",
+                ])
+                .output()
+                .ok()?;
 
-        if !output.status.success() {
-            return None;
-        }
+            if !output.status.success() {
+                return None;
+            }
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        // reg query 输出示例：
-        //     AutoRun    REG_SZ    "C:\path\to\script.cmd"
-        for line in stdout.lines() {
-            let trimmed = line.trim();
-            let lower = trimmed.to_lowercase();
-            if lower.starts_with("autorun") {
-                // 取 REG_SZ 后面的值部分
-                if let Some(pos) = lower.find("reg_sz") {
-                    let path_str = trimmed[pos + 6..].trim().trim_matches('"');
-                    if !path_str.is_empty() {
-                        return Some(PathBuf::from(path_str));
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            // reg query 输出示例：
+            //     AutoRun    REG_SZ    "C:\path\to\script.cmd"
+            for line in stdout.lines() {
+                let trimmed = line.trim();
+                let lower = trimmed.to_lowercase();
+                if lower.starts_with("autorun") {
+                    // 取 REG_SZ 后面的值部分
+                    if let Some(pos) = lower.find("reg_sz") {
+                        let path_str = trimmed[pos + 6..].trim().trim_matches('"');
+                        if !path_str.is_empty() {
+                            return Some(PathBuf::from(path_str));
+                        }
                     }
                 }
             }
-        }
-        None
+            None
         } // end #[cfg(target_os = "windows")]
     }
 
@@ -178,9 +176,12 @@ impl ShellManager {
             .args([
                 "add",
                 "HKCU\\Software\\Microsoft\\Command Processor",
-                "/v", "AutoRun",
-                "/t", "REG_SZ",
-                "/d", &autorun_value,
+                "/v",
+                "AutoRun",
+                "/t",
+                "REG_SZ",
+                "/d",
+                &autorun_value,
                 "/f",
             ])
             .output()
@@ -718,7 +719,11 @@ alias mise=envis
                             .replace("+ $env:path", "")
                             .replace("$env:path", "");
                         // 去掉字符串连接产生的多余符号
-                        let cleaned_str = cleaned_str.replace("+", "").replace('"', "").trim().to_string();
+                        let cleaned_str = cleaned_str
+                            .replace("+", "")
+                            .replace('"', "")
+                            .trim()
+                            .to_string();
                         cleaned_str
                     } else {
                         rhs.replace("$PATH:", "")
@@ -993,11 +998,8 @@ alias mise=envis
             let cleared_content = self.clear_env_block_content(&content)?;
 
             // 2. 生成 envis 基础配置
-            let setup_cmds = self.generate_envis_setup_commands(
-                envis_path.as_ref(),
-                envis_exe.as_ref(),
-                path,
-            );
+            let setup_cmds =
+                self.generate_envis_setup_commands(envis_path.as_ref(), envis_exe.as_ref(), path);
 
             // 3. 将 envis 基础配置插入回去
             // 这样能保证即使外部调用了 clear，envis 命令依然可用
@@ -1114,15 +1116,14 @@ alias mise=envis
     /// - None 或空字符串：使用系统默认策略
     /// - 非空字符串：视为终端程序名或可执行文件路径
     pub fn open_terminal_with_type(terminal_type: Option<String>) -> Result<()> {
-        let configured_terminal = terminal_type
-            .and_then(|value| {
-                let trimmed = value.trim().to_string();
-                if trimmed.is_empty() {
-                    None
-                } else {
-                    Some(trimmed)
-                }
-            });
+        let configured_terminal = terminal_type.and_then(|value| {
+            let trimmed = value.trim().to_string();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            }
+        });
 
         #[cfg(target_os = "macos")]
         {
@@ -1242,7 +1243,10 @@ alias mise=envis
                 format!("doskey {}=", key)
             } else if is_ps {
                 // 兼容两种写法：Set-Alias 和 function 包装
-                if self.remove_line_from_file(config_file_path, &format!("Set-Alias {}", key)).is_ok() {}
+                if self
+                    .remove_line_from_file(config_file_path, &format!("Set-Alias {}", key))
+                    .is_ok()
+                {}
                 format!("function {} {{", key)
             } else {
                 format!("alias {}=", key)
@@ -1267,20 +1271,14 @@ alias mise=envis
             let is_ps = config_file_path.extension().and_then(|s| s.to_str()) == Some("ps1");
 
             let (prefix, chdir_line) = if is_cmd {
-                (
-                    "cd /d \"".to_string(),
-                    format!("cd /d \"{}\"", path),
-                )
+                ("cd /d \"".to_string(), format!("cd /d \"{}\"", path))
             } else if is_ps {
                 (
                     "Set-Location -Path \"".to_string(),
                     format!("Set-Location -Path \"{}\"", path),
                 )
             } else {
-                (
-                    "cd \"".to_string(),
-                    format!("cd \"{}\"", path),
-                )
+                ("cd \"".to_string(), format!("cd \"{}\"", path))
             };
 
             // 先删除旧的跳转行，再写入新行
@@ -1366,7 +1364,9 @@ alias mise=envis
             // 使用 -l (login shell) 和 -c 选项来执行命令
             // login shell 会自动加载 .zshrc (zsh) 或 .bash_profile (bash)
             // 这样可以获取到完整的 PATH，包括 VS Code 的 code 命令等
-            create_command(shell_cmd).args(["-l", "-c", command]).output()
+            create_command(shell_cmd)
+                .args(["-l", "-c", command])
+                .output()
         };
 
         match output {

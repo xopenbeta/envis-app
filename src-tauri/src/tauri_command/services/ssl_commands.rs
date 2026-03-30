@@ -1,20 +1,23 @@
-use crate::manager::services::ssl::{SslService, CAConfig};
+use crate::manager::services::ssl::{CAConfig, SslService};
 use crate::types::{CommandResponse, ServiceData};
 
 /// 检查 CA 是否已初始化
 #[tauri::command]
-pub async fn check_ca_initialized(
-    environment_id: String,
-) -> Result<CommandResponse, String> {
+pub async fn check_ca_initialized(environment_id: String) -> Result<CommandResponse, String> {
     let ssl_service = SslService::global();
     let initialized = ssl_service.is_ca_initialized(&environment_id);
-    
+
     let data = serde_json::json!({
         "initialized": initialized
     });
-    
+
     Ok(CommandResponse::success(
-        if initialized { "CA 已初始化" } else { "CA 未初始化" }.to_string(),
+        if initialized {
+            "CA 已初始化"
+        } else {
+            "CA 未初始化"
+        }
+        .to_string(),
         Some(data),
     ))
 }
@@ -33,7 +36,7 @@ pub async fn initialize_ca(
     validity_days: i32,
 ) -> Result<CommandResponse, String> {
     log::info!("开始初始化 CA for environment: {}", environment_id);
-    
+
     let ca_config = CAConfig {
         common_name,
         organization,
@@ -43,7 +46,7 @@ pub async fn initialize_ca(
         locality,
         validity_days,
     };
-    
+
     let ssl_service = SslService::global();
     match ssl_service.initialize_ca(&environment_id, &service_data, ca_config) {
         Ok(result) => Ok(CommandResponse::success(result.message, result.data)),
@@ -74,7 +77,7 @@ pub async fn issue_certificate(
     validity_days: i32,
 ) -> Result<CommandResponse, String> {
     log::info!("开始签发证书: {}", domain);
-    
+
     let ssl_service = SslService::global();
     match ssl_service.issue_certificate(
         &environment_id,
@@ -109,7 +112,7 @@ pub async fn delete_certificate(
     domain: String,
 ) -> Result<CommandResponse, String> {
     log::info!("删除证书: {}", domain);
-    
+
     let ssl_service = SslService::global();
     match ssl_service.delete_certificate(&environment_id, &service_data, domain) {
         Ok(result) => Ok(CommandResponse::success(result.message, result.data)),
@@ -132,12 +135,13 @@ pub async fn export_ca_certificate(
 
 /// 检查 CA 证书是否已安装到系统
 #[tauri::command]
-pub async fn check_ca_installed(
-    environment_id: String,
-) -> Result<CommandResponse, String> {
+pub async fn check_ca_installed(environment_id: String) -> Result<CommandResponse, String> {
     let ssl_service = SslService::global();
     match ssl_service.check_ca_installed(&environment_id) {
         Ok(result) => Ok(CommandResponse::success(result.message, result.data)),
-        Err(e) => Ok(CommandResponse::error(format!("检查 CA 安装状态失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "检查 CA 安装状态失败: {}",
+            e
+        ))),
     }
 }

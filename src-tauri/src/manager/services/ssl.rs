@@ -1,4 +1,4 @@
-﻿use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::types::ServiceData;
 use crate::utils::create_command;
@@ -111,12 +111,7 @@ impl SslService {
         // 生成 CA 私钥
         let ca_key_path = ca_folder.join("ca.key");
         let output = create_command("openssl")
-            .args(&[
-                "genrsa",
-                "-out",
-                ca_key_path.to_str().unwrap(),
-                "4096",
-            ])
+            .args(&["genrsa", "-out", ca_key_path.to_str().unwrap(), "4096"])
             .output()?;
 
         if !output.status.success() {
@@ -621,7 +616,7 @@ subjectAltName = @alt_names
                 })),
             });
         }
-        
+
         // 根据操作系统检查 CA 是否已安装
         let installed = if cfg!(target_os = "macos") {
             self.check_ca_installed_macos(&ca_cert_path)?
@@ -635,7 +630,12 @@ subjectAltName = @alt_names
 
         Ok(ServiceDataResult {
             success: true,
-            message: if installed { "CA 已安装到系统" } else { "CA 未安装到系统" }.to_string(),
+            message: if installed {
+                "CA 已安装到系统"
+            } else {
+                "CA 未安装到系统"
+            }
+            .to_string(),
             data: Some(serde_json::json!({
                 "installed": installed,
                 "certPath": ca_cert_path.to_str().unwrap(),
@@ -748,11 +748,7 @@ subjectAltName = @alt_names
         }
 
         let fingerprint = String::from_utf8_lossy(&output.stdout);
-        let fingerprint = fingerprint
-            .split('=')
-            .nth(1)
-            .unwrap_or("")
-            .trim();
+        let fingerprint = fingerprint.split('=').nth(1).unwrap_or("").trim();
 
         // 检查每个 CA 目录
         for ca_path in ca_paths {

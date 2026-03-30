@@ -57,9 +57,9 @@ impl ServiceLifecycle for CustomService {
                     for path_value in paths_array {
                         if let serde_json::Value::String(path_str) = path_value {
                             // 即使路径不存在也添加到 PATH
-                            shell_manager
-                                .add_path(path_str)
-                                .with_context(|| format!("添加自定义路径到 PATH 失败: {}", path_str))?;
+                            shell_manager.add_path(path_str).with_context(|| {
+                                format!("添加自定义路径到 PATH 失败: {}", path_str)
+                            })?;
                             log::debug!("已添加自定义路径到 PATH: {}", path_str);
                         }
                     }
@@ -133,11 +133,9 @@ impl ServiceLifecycle for CustomService {
                 if let serde_json::Value::Array(paths_array) = paths_value {
                     for path_value in paths_array {
                         if let serde_json::Value::String(path_str) = path_value {
-                            shell_manager
-                                .delete_path(path_str)
-                                .with_context(|| {
-                                    format!("从 PATH 移除自定义路径失败: {}", path_str)
-                                })?;
+                            shell_manager.delete_path(path_str).with_context(|| {
+                                format!("从 PATH 移除自定义路径失败: {}", path_str)
+                            })?;
                             log::debug!("已从 PATH 移除自定义路径: {}", path_str);
                         }
                     }

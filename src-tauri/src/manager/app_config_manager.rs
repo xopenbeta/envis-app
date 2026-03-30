@@ -30,7 +30,9 @@ pub struct AppConfig {
     pub show_service_info_on_terminal_open: bool,
 }
 
-fn default_true() -> bool { true }
+fn default_true() -> bool {
+    true
+}
 
 impl Default for AppConfig {
     fn default() -> Self {
@@ -101,9 +103,9 @@ impl AppConfigManager {
             }
         };
 
-    Self::sync_last_used_fields(&mut app_config);
+        Self::sync_last_used_fields(&mut app_config);
 
-    // 确保 .envis 目录存在
+        // 确保 .envis 目录存在
         let envis_dir = PathBuf::from(app_config.envis_folder.clone());
         if !envis_dir.exists() {
             fs::create_dir_all(&envis_dir).context("创建 .envis 目录失败")?;
@@ -140,7 +142,11 @@ impl AppConfigManager {
 
         // 如果 envis_folder 路径发生变化，需要迁移数据
         if old_envis_folder != new_envis_folder {
-            log::info!("检测到 .envis 路径变更，从 {} 迁移到 {}", old_envis_folder, new_envis_folder);
+            log::info!(
+                "检测到 .envis 路径变更，从 {} 迁移到 {}",
+                old_envis_folder,
+                new_envis_folder
+            );
             self.migrate_envis_folder(&old_envis_folder, &new_envis_folder)?;
         }
 
@@ -154,7 +160,9 @@ impl AppConfigManager {
         // 去重并保持顺序
         if !app_config.last_used_environment_ids.is_empty() {
             let mut seen = HashSet::new();
-            app_config.last_used_environment_ids.retain(|id| seen.insert(id.clone()));
+            app_config
+                .last_used_environment_ids
+                .retain(|id| seen.insert(id.clone()));
         }
     }
 
@@ -187,7 +195,11 @@ impl AppConfigManager {
             // 迁移 services 文件夹
             let old_services_dir = old_path.join(SERVICES_FOLDER);
             if old_services_dir.exists() {
-                log::info!("迁移 services 文件夹: {:?} -> {:?}", old_services_dir, new_services_dir);
+                log::info!(
+                    "迁移 services 文件夹: {:?} -> {:?}",
+                    old_services_dir,
+                    new_services_dir
+                );
                 self.copy_dir_all(&old_services_dir, &new_services_dir)
                     .context("迁移 services 文件夹失败")?;
             }
@@ -246,7 +258,8 @@ impl AppConfigManager {
 
     /// 获取配置文件夹路径（即配置文件所在的目录）
     pub fn get_app_config_folder_path(&self) -> Result<String> {
-        let config_dir = self.app_config_path
+        let config_dir = self
+            .app_config_path
             .parent()
             .context("无法获取配置文件所在目录")?;
         Ok(config_dir.to_string_lossy().to_string())

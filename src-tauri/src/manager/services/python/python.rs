@@ -1,4 +1,4 @@
-﻿use crate::manager::app_config_manager::AppConfigManager;
+use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::EnvServDataManager;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::manager::shell_manamger::ShellManager;
@@ -253,7 +253,10 @@ impl PythonService {
 
             if try_gnome.is_err() {
                 create_command("x-terminal-emulator")
-                    .args(["-e", &format!("bash -lc '{}'; exec bash", command.replace('"', "\\\""))])
+                    .args([
+                        "-e",
+                        &format!("bash -lc '{}'; exec bash", command.replace('"', "\\\"")),
+                    ])
                     .spawn()?;
             }
         }
@@ -286,9 +289,9 @@ impl PythonService {
         if cfg!(target_os = "windows") {
             install_path.join("python.exe").exists()
         } else {
-            install_path.join("bin").join("python3").exists() || 
-            install_path.join("bin").join("python").exists() ||
-            install_path.join("bin").join("python2").exists()
+            install_path.join("bin").join("python3").exists()
+                || install_path.join("bin").join("python").exists()
+                || install_path.join("bin").join("python2").exists()
         }
     }
 
@@ -303,10 +306,16 @@ impl PythonService {
     }
 
     /// 构建下载 URL 和文件名（根据安装模式）
-    fn build_download_info(&self, version: &str, mode: PythonInstallMode) -> Result<(Vec<String>, String)> {
+    fn build_download_info(
+        &self,
+        version: &str,
+        mode: PythonInstallMode,
+    ) -> Result<(Vec<String>, String)> {
         match mode {
             PythonInstallMode::Prebuilt => self.build_prebuilt_download_info(version),
-            PythonInstallMode::PythonBuild | PythonInstallMode::LocalBuild => self.build_source_download_info(version),
+            PythonInstallMode::PythonBuild | PythonInstallMode::LocalBuild => {
+                self.build_source_download_info(version)
+            }
         }
     }
 
@@ -344,7 +353,7 @@ impl PythonService {
 
         // 构建文件名: python-3.13.1-macos-arm64.tar.gz
         let filename = format!("python-{}-{}-{}.{}", version, os, arch, ext);
-        
+
         // GitHub releases URL - 使用 latest 标签访问最新的 release
         // 所有 Python 版本都打包在同一个 release 中
         let github_url = format!(
@@ -359,13 +368,13 @@ impl PythonService {
     /// macOS: .pkg 安装包（可用 pkgutil 解包提取）
     /// Windows: .msi 安装包（可用 msiexec 静默解压）
     /// Linux: 无官方预编译包，自动回退到源码编译
-    fn build_python27_prebuilt_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
+    fn build_python27_prebuilt_download_info(
+        &self,
+        version: &str,
+    ) -> Result<(Vec<String>, String)> {
         if cfg!(target_os = "macos") {
             let filename = format!("python-{}-macosx10.9.pkg", version);
-            let url = format!(
-                "https://www.python.org/ftp/python/{}/{}",
-                version, filename
-            );
+            let url = format!("https://www.python.org/ftp/python/{}/{}", version, filename);
             Ok((vec![url], filename))
         } else if cfg!(target_os = "windows") {
             let filename = if cfg!(target_arch = "x86_64") {
@@ -373,10 +382,7 @@ impl PythonService {
             } else {
                 format!("python-{}.msi", version)
             };
-            let url = format!(
-                "https://www.python.org/ftp/python/{}/{}",
-                version, filename
-            );
+            let url = format!("https://www.python.org/ftp/python/{}/{}", version, filename);
             Ok((vec![url], filename))
         } else {
             // Linux 没有官方预编译包，回退到源码
@@ -388,10 +394,7 @@ impl PythonService {
     /// 构建源码下载 URL（for python-build or local build）
     fn build_source_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let filename = format!("Python-{}.tar.xz", version);
-        let official_url = format!(
-            "https://www.python.org/ftp/python/{}/{}",
-            version, filename
-        );
+        let official_url = format!("https://www.python.org/ftp/python/{}/{}", version, filename);
         // 也可以添加国内镜像，例如淘宝镜像（如果可用）
         let mirror_url = format!(
             "https://npm.taobao.org/mirrors/python/{}/{}",
@@ -402,8 +405,11 @@ impl PythonService {
     }
 
     /// 下载并安装 Python（指定安装模式）
-    pub async fn download_and_install_with_mode(&self, version: &str, mode: PythonInstallMode) -> Result<DownloadResult> {
-
+    pub async fn download_and_install_with_mode(
+        &self,
+        version: &str,
+        mode: PythonInstallMode,
+    ) -> Result<DownloadResult> {
         if self.is_installed(version) {
             return Ok(DownloadResult {
                 success: false,
@@ -445,7 +451,11 @@ impl PythonService {
                 ) {
                     log::error!("更新任务状态失败: {}", e);
                 } else {
-                    log::info!("Python {} 开始安装 (模式: {:?})", version_for_spawn, mode_for_spawn);
+                    log::info!(
+                        "Python {} 开始安装 (模式: {:?})",
+                        version_for_spawn,
+                        mode_for_spawn
+                    );
                 }
 
                 // 执行安装（统一方法，根据模式选择）
@@ -512,7 +522,12 @@ impl PythonService {
     }
 
     /// 统一的安装方法（根据模式选择安装方式）
-    pub async fn install(&self, task: &DownloadTask, version: &str, mode: PythonInstallMode) -> Result<()> {
+    pub async fn install(
+        &self,
+        task: &DownloadTask,
+        version: &str,
+        mode: PythonInstallMode,
+    ) -> Result<()> {
         match mode {
             PythonInstallMode::Prebuilt => self.install_prebuilt(task, version).await,
             PythonInstallMode::PythonBuild => self.install_with_python_build(task, version).await,
@@ -524,12 +539,12 @@ impl PythonService {
     async fn install_prebuilt(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);
-        
+
         // 确保安装目录存在
         std::fs::create_dir_all(&install_dir)?;
 
         log::info!("正在解压预编译 Python 到: {:?}", install_dir);
-        
+
         // 根据文件类型选择解压方式
         if archive_path.extension().and_then(|s| s.to_str()) == Some("zip") {
             // Windows: 解压 zip
@@ -542,7 +557,7 @@ impl PythonService {
                 .arg(archive_path)
                 .arg("-C")
                 .arg(&install_dir)
-                .arg("--strip-components=1")  // 移除顶层目录
+                .arg("--strip-components=1") // 移除顶层目录
                 .status()?;
 
             if !status.success() {
@@ -599,7 +614,7 @@ impl PythonService {
     async fn install_prebuilt_python27(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);
-        
+
         std::fs::create_dir_all(&install_dir)?;
 
         if cfg!(target_os = "macos") {
@@ -607,7 +622,9 @@ impl PythonService {
         } else if cfg!(target_os = "windows") {
             self.install_python27_from_msi(archive_path, &install_dir, version)?
         } else {
-            return Err(anyhow!("Linux 平台不支持 Python 2.7 预编译安装，请使用源码编译模式"));
+            return Err(anyhow!(
+                "Linux 平台不支持 Python 2.7 预编译安装，请使用源码编译模式"
+            ));
         }
 
         // 清理安装包
@@ -622,11 +639,19 @@ impl PythonService {
 
     /// 从 macOS .pkg 安装包中提取 Python 2.7
     /// .pkg 是 xar 归档，内含 Payload (cpio 格式)，可以无需 root 权限提取
-    fn install_python27_from_pkg(&self, pkg_path: &PathBuf, install_dir: &PathBuf, version: &str) -> Result<()> {
+    fn install_python27_from_pkg(
+        &self,
+        pkg_path: &PathBuf,
+        install_dir: &PathBuf,
+        version: &str,
+    ) -> Result<()> {
         log::info!("正在从 macOS .pkg 中提取 Python {} ...", version);
-        
+
         // 创建临时解包目录
-        let tmp_dir = install_dir.parent().unwrap().join(format!("pkg-extract-{}", version));
+        let tmp_dir = install_dir
+            .parent()
+            .unwrap()
+            .join(format!("pkg-extract-{}", version));
         if tmp_dir.exists() {
             std::fs::remove_dir_all(&tmp_dir)?;
         }
@@ -650,7 +675,7 @@ impl PythonService {
         // 典型结构: expanded/Python_Framework.pkg/Payload/Library/Frameworks/Python.framework/Versions/2.7/
         let expanded_dir = tmp_dir.join("expanded");
         log::info!("Step 2: 在 {:?} 中搜索 Python framework...", expanded_dir);
-        
+
         let python_framework_path = self.find_python27_in_expanded_pkg(&expanded_dir, version)?;
         log::info!("找到 Python framework: {:?}", python_framework_path);
 
@@ -685,9 +710,13 @@ impl PythonService {
     }
 
     /// 在展开的 .pkg 目录中查找 Python 2.7 framework 路径
-    fn find_python27_in_expanded_pkg(&self, expanded_dir: &PathBuf, version: &str) -> Result<PathBuf> {
+    fn find_python27_in_expanded_pkg(
+        &self,
+        expanded_dir: &PathBuf,
+        version: &str,
+    ) -> Result<PathBuf> {
         let major_minor = if let Some(pos) = version.rfind('.') {
-            &version[..pos]  // "2.7.18" -> "2.7"
+            &version[..pos] // "2.7.18" -> "2.7"
         } else {
             version
         };
@@ -699,8 +728,9 @@ impl PythonService {
             let path = entry;
             if path.is_dir() {
                 let path_str = path.to_string_lossy();
-                if path_str.ends_with(&format!("Versions/{}", major_minor)) 
-                    && path_str.contains("Python.framework") {
+                if path_str.ends_with(&format!("Versions/{}", major_minor))
+                    && path_str.contains("Python.framework")
+                {
                     return Ok(path);
                 }
             }
@@ -718,17 +748,24 @@ impl PythonService {
             }
         }
 
-        Err(anyhow!("在 .pkg 展开目录中未找到 Python {} framework", version))
+        Err(anyhow!(
+            "在 .pkg 展开目录中未找到 Python {} framework",
+            version
+        ))
     }
 
     /// 将 Python 2.7 framework 内容复制到安装目录
-    fn copy_python27_framework(&self, framework_path: &PathBuf, install_dir: &PathBuf) -> Result<()> {
+    fn copy_python27_framework(
+        &self,
+        framework_path: &PathBuf,
+        install_dir: &PathBuf,
+    ) -> Result<()> {
         // Python.framework/Versions/2.7/ 下通常有: bin/, lib/, include/, share/
         for entry in std::fs::read_dir(framework_path)? {
             let entry = entry?;
             let src = entry.path();
             let dest = install_dir.join(entry.file_name());
-            
+
             if src.is_dir() {
                 copy_dir_recursive(&src, &dest)?;
             } else {
@@ -739,9 +776,14 @@ impl PythonService {
     }
 
     /// 从 Windows .msi 安装包中提取 Python 2.7
-    fn install_python27_from_msi(&self, msi_path: &PathBuf, install_dir: &PathBuf, version: &str) -> Result<()> {
+    fn install_python27_from_msi(
+        &self,
+        msi_path: &PathBuf,
+        install_dir: &PathBuf,
+        version: &str,
+    ) -> Result<()> {
         log::info!("正在从 Windows .msi 中提取 Python {} ...", version);
-        
+
         // 使用 msiexec 静默解压到指定目录
         // msiexec /a <msi_path> /qn TARGETDIR=<install_dir>
         let status = create_command("msiexec")
@@ -762,16 +804,14 @@ impl PythonService {
     /// 使用 python-build 工具安装
     async fn install_with_python_build(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let install_dir = self.get_install_path(version);
-        
+
         // 确保安装目录存在
         std::fs::create_dir_all(&install_dir)?;
 
         log::info!("使用 python-build 编译安装 Python {}...", version);
 
         // 检查是否安装了 python-build（来自 pyenv）
-        let python_build_check = create_command("python-build")
-            .arg("--version")
-            .output();
+        let python_build_check = create_command("python-build").arg("--version").output();
 
         if python_build_check.is_err() || !python_build_check.unwrap().status.success() {
             return Err(anyhow!(
@@ -790,7 +830,10 @@ impl PythonService {
         let status = create_command("python-build")
             .arg(version)
             .arg(&install_dir)
-            .env("PYTHON_BUILD_CACHE_PATH", task.target_path.parent().unwrap())
+            .env(
+                "PYTHON_BUILD_CACHE_PATH",
+                task.target_path.parent().unwrap(),
+            )
             .status()?;
 
         if !status.success() {
@@ -812,19 +855,22 @@ impl PythonService {
     async fn install_with_local_build(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);
-        
+
         // 确保安装目录存在
         std::fs::create_dir_all(&install_dir)?;
-        
+
         // 创建临时构建目录
-        let build_dir = install_dir.parent().unwrap().join(format!("build-{}", version));
+        let build_dir = install_dir
+            .parent()
+            .unwrap()
+            .join(format!("build-{}", version));
         if build_dir.exists() {
             std::fs::remove_dir_all(&build_dir)?;
         }
         std::fs::create_dir_all(&build_dir)?;
 
         log::info!("正在解压源码到: {:?}", build_dir);
-        
+
         // 使用系统 tar 命令解压，支持 .tar.xz
         let status = create_command("tar")
             .arg("-xf")
@@ -840,7 +886,9 @@ impl PythonService {
         // 找到解压后的源码目录 (通常是 Python-x.y.z)
         let source_dir = std::fs::read_dir(&build_dir)?
             .filter_map(|entry| entry.ok())
-            .find(|entry| entry.path().is_dir() && entry.file_name().to_string_lossy().starts_with("Python"))
+            .find(|entry| {
+                entry.path().is_dir() && entry.file_name().to_string_lossy().starts_with("Python")
+            })
             .map(|entry| entry.path())
             .ok_or_else(|| anyhow!("未找到源码目录"))?;
 
@@ -921,7 +969,7 @@ impl PythonService {
         };
 
         let actual_dylib_path = lib_dir.join(&dylib_name);
-        
+
         if !actual_dylib_path.exists() {
             log::warn!("未找到主 dylib 文件: {:?}", actual_dylib_path);
             return Ok(()); // 不是致命错误，可能是静态编译的
@@ -934,7 +982,7 @@ impl PythonService {
             for entry in std::fs::read_dir(&bin_dir)? {
                 let entry = entry?;
                 let bin_path = entry.path();
-                
+
                 if bin_path.is_file() && !bin_path.is_symlink() {
                     // 检查是否是可执行文件
                     if let Ok(metadata) = std::fs::metadata(&bin_path) {
@@ -964,28 +1012,34 @@ impl PythonService {
 
     /// 修复单个二进制文件的 dylib 引用
     #[cfg(target_os = "macos")]
-    fn fix_binary_dylib_path(&self, bin_path: &PathBuf, actual_dylib_path: &PathBuf, version: &str) -> Result<()> {
+    fn fix_binary_dylib_path(
+        &self,
+        bin_path: &PathBuf,
+        actual_dylib_path: &PathBuf,
+        version: &str,
+    ) -> Result<()> {
         // 检查当前的依赖路径
-        let output = create_command("otool")
-            .arg("-L")
-            .arg(bin_path)
-            .output()?;
+        let output = create_command("otool").arg("-L").arg(bin_path).output()?;
 
         if !output.status.success() {
             return Ok(()); // 不是 Mach-O 文件，跳过
         }
 
         let output_str = String::from_utf8_lossy(&output.stdout);
-        
+
         // 查找所有包含错误路径的 dylib 引用
         for line in output_str.lines() {
             let line = line.trim();
-            
+
             // 匹配类似 "/Users/runner/work/python-archive/python-archive/dist/python-2.7.18/lib/libpython2.7.dylib"
             if line.contains("/Users/runner/") || line.contains("/python-archive/") {
                 if let Some(dylib_path) = line.split_whitespace().next() {
-                    log::info!("修复 {:?} 中的路径: {}", bin_path.file_name().unwrap(), dylib_path);
-                    
+                    log::info!(
+                        "修复 {:?} 中的路径: {}",
+                        bin_path.file_name().unwrap(),
+                        dylib_path
+                    );
+
                     // 使用 install_name_tool 替换路径
                     let status = create_command("install_name_tool")
                         .arg("-change")
@@ -1016,27 +1070,29 @@ impl PythonService {
     #[cfg(target_os = "macos")]
     fn fix_dylib_install_name(&self, dylib_path: &PathBuf) -> Result<()> {
         // 检查当前的 install_name
-        let output = create_command("otool")
-            .arg("-D")
-            .arg(dylib_path)
-            .output()?;
+        let output = create_command("otool").arg("-D").arg(dylib_path).output()?;
 
         if !output.status.success() {
             return Ok(());
         }
 
         let output_str = String::from_utf8_lossy(&output.stdout);
-        
+
         // 如果 install_name 包含错误路径，修复它
-        for line in output_str.lines().skip(1) { // 跳过第一行（文件名）
+        for line in output_str.lines().skip(1) {
+            // 跳过第一行（文件名）
             let line = line.trim();
             if line.contains("/Users/runner/") || line.contains("/python-archive/") {
                 // 设置新的 install_name 为相对路径或 @rpath
                 let dylib_name = dylib_path.file_name().unwrap().to_string_lossy();
                 let new_install_name = format!("@rpath/{}", dylib_name);
-                
-                log::info!("修复 dylib install_name: {:?} -> {}", dylib_name, new_install_name);
-                
+
+                log::info!(
+                    "修复 dylib install_name: {:?} -> {}",
+                    dylib_name,
+                    new_install_name
+                );
+
                 let status = create_command("install_name_tool")
                     .arg("-id")
                     .arg(&new_install_name)
@@ -1046,7 +1102,7 @@ impl PythonService {
                 if !status.success() {
                     log::warn!("设置 install_name 失败: {:?}", dylib_path);
                 }
-                
+
                 break;
             }
         }
@@ -1166,7 +1222,7 @@ impl PythonService {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
 
-    shell_manager.add_path(&bin_path)?;
+        shell_manager.add_path(&bin_path)?;
 
         Ok(())
     }
@@ -1183,21 +1239,17 @@ impl PythonService {
 
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
-    shell_manager.delete_path(&bin_path)?;
+        shell_manager.delete_path(&bin_path)?;
 
         Ok(())
     }
 
     /// 设置 pip 镜像源
-    pub fn set_pip_index_url(
-        &self,
-        service_data: &ServiceData,
-        index_url: &str,
-    ) -> Result<()> {
+    pub fn set_pip_index_url(&self, service_data: &ServiceData, index_url: &str) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
 
-    shell_manager.add_export("PIP_INDEX_URL", index_url)?;
+        shell_manager.add_export("PIP_INDEX_URL", index_url)?;
 
         Ok(())
     }
@@ -1211,17 +1263,13 @@ impl PythonService {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
 
-    shell_manager.add_export("PIP_TRUSTED_HOST", trusted_host)?;
+        shell_manager.add_export("PIP_TRUSTED_HOST", trusted_host)?;
 
         Ok(())
     }
 
     /// 设置 python3 别名为 python
-    pub fn set_python3_as_python(
-        &self,
-        service_data: &ServiceData,
-        enable: bool,
-    ) -> Result<()> {
+    pub fn set_python3_as_python(&self, service_data: &ServiceData, enable: bool) -> Result<()> {
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
 
@@ -1247,7 +1295,7 @@ fn walkdir_recursive(dir: &PathBuf) -> Result<Vec<PathBuf>> {
     if !dir.exists() {
         return Ok(results);
     }
-    
+
     let mut stack = vec![dir.clone()];
     while let Some(current) = stack.pop() {
         if current.is_dir() {
@@ -1272,7 +1320,7 @@ fn copy_dir_recursive(src: &PathBuf, dst: &PathBuf) -> Result<()> {
         let entry = entry?;
         let src_path = entry.path();
         let dst_path = dst.join(entry.file_name());
-        
+
         if src_path.is_dir() {
             copy_dir_recursive(&src_path, &dst_path)?;
         } else if src_path.is_symlink() {

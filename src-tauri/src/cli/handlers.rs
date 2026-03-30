@@ -17,12 +17,14 @@ pub fn handle_use_early(target_str: &str) {
 
     // 2. 查找目标环境
     // 优先精确匹配 ID，然后精确匹配 Name
-    let target_idx = environments.iter().position(|e| e.id == target_str)
+    let target_idx = environments
+        .iter()
+        .position(|e| e.id == target_str)
         .or_else(|| environments.iter().position(|e| e.name == target_str));
 
     if let Some(idx) = target_idx {
         let mut target_env = environments[idx].clone();
-        
+
         println!("正在激活环境: {} ({}) ...", target_env.name, target_env.id);
 
         // 3. 停用其他活跃环境 (更新状态文件，避免下次 list 显示多个 Active)
@@ -30,7 +32,10 @@ pub fn handle_use_early(target_str: &str) {
             if i != idx && env.status == EnvironmentStatus::Active {
                 env.status = EnvironmentStatus::Inactive;
                 if let Err(e) = manager.save_environment(env) {
-                    eprintln!("警告: 无法更新原环境 {} 的状态 (非致命错误): {}", env.name, e);
+                    eprintln!(
+                        "警告: 无法更新原环境 {} 的状态 (非致命错误): {}",
+                        env.name, e
+                    );
                 }
             }
         }
@@ -50,7 +55,6 @@ pub fn handle_use_early(target_str: &str) {
                 std::process::exit(1);
             }
         }
-
     } else {
         eprintln!("错误: 未找到名称或 ID 为 '{}' 的环境", target_str);
         std::process::exit(1);
