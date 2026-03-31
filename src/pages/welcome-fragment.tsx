@@ -351,7 +351,7 @@ function CmdWarningBanner() {
         try { return localStorage.getItem(DISMISS_KEY) === '1' } catch { return false }
     })
 
-    // if (!isWindows || dismissed) return null
+    if (!isWindows || dismissed) return null
 
     const handleDismiss = () => {
         try { localStorage.setItem(DISMISS_KEY, '1') } catch {}
