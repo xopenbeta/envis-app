@@ -681,73 +681,64 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                         </div>
                     </div>
                 ) : !isMavenInstalled ? (
-                    <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
-                        <div className="flex items-start gap-4">
-                            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg shrink-0">
-                                <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1">
+                                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                                    {t('java_service.maven_not_installed_title')}
+                                </p>
+                                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                                    {t('java_service.maven_not_installed_desc')}
+                                </p>
                             </div>
-                            <div className="flex-1 space-y-3">
-                                <div>
-                                    <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
-                                        {t('java_service.maven_not_installed_title')}
-                                    </h3>
-                                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                                        {t('java_service.maven_not_installed_desc')}
-                                    </p>
+                        </div>
+                        <div className="flex">
+                            <Button
+                                size="sm"
+                                onClick={handleDownloadMaven}
+                                disabled={!isServiceDataActive || isMavenDownloading || isLoading}
+                                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                            >
+                                {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
+                            </Button>
+                            {!!mavenDownloadStatus && (
+                                <p className="text-[10px] text-orange-600 dark:text-orange-400">
+                                    {t('java_service.maven_download_status')}: {mavenDownloadStatus}
+                                </p>
+                            )}
+                            {isMavenDownloading && (
+                                <div className="space-y-1">
+                                    <Progress value={mavenDownloadProgress} className="h-1.5" />
+                                    <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
+                                        {Math.round(mavenDownloadProgress)}%
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={handleDownloadMaven}
-                                        disabled={!isServiceDataActive || isMavenDownloading || isLoading}
-                                        className="h-8 text-xs shadow-none bg-orange-600 hover:bg-orange-700 text-white"
-                                    >
-                                        {isMavenDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
-                                        {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
-                                    </Button>
-                                    {!!mavenDownloadStatus && (
-                                        <p className="text-[11px] text-orange-600 dark:text-orange-400">
-                                            {t('java_service.maven_download_status')}: {mavenDownloadStatus}
-                                        </p>
-                                    )}
-                                    {isMavenDownloading && (
-                                        <div className="space-y-1">
-                                            <Progress value={mavenDownloadProgress} className="h-1.5" />
-                                            <div className="text-[11px] text-orange-600 dark:text-orange-400 text-right">
-                                                {Math.round(mavenDownloadProgress)}%
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 ) : !mavenHome.trim() ? (
-                    <div className="w-full p-3 rounded-xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10">
-                        <div className="flex items-start gap-4">
-                            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg shrink-0">
-                                <Package className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1">
+                                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                                    {t('java_service.maven_not_initialized_title')}
+                                </p>
+                                <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                                    {t('java_service.maven_not_initialized_desc')}
+                                </p>
                             </div>
-                            <div className="flex-1 space-y-3">
-                                <div>
-                                    <h3 className="font-semibold text-sm text-yellow-900 dark:text-yellow-200">
-                                        {t('java_service.maven_not_initialized_title')}
-                                    </h3>
-                                    <p className="text-xs text-yellow-700 dark:text-yellow-400/80 mt-1">
-                                        {t('java_service.maven_not_initialized_desc')}
-                                    </p>
-                                </div>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleInitializeMaven}
-                                    disabled={!isServiceDataActive || isMavenInitializing || isLoading}
-                                    className="h-8 text-xs shadow-none"
-                                >
-                                    {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
-                                    {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
-                                </Button>
-                            </div>
+                        </div>
+                        <div className="flex">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleInitializeMaven}
+                                disabled={!isServiceDataActive || isMavenInitializing || isLoading}
+                                className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
+                            >
+                                {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
+                                {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -907,45 +898,39 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                         </div>
                     </div>
                 ) : !isGradleInstalled ? (
-                    <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
-                        <div className="flex items-start gap-4">
-                            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg shrink-0">
-                                <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1">
+                                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                                    {t('java_service.gradle_not_installed_title')}
+                                </p>
+                                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                                    {t('java_service.gradle_not_installed_desc')}
+                                </p>
                             </div>
-                            <div className="flex-1 space-y-3">
-                                <div>
-                                    <h3 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
-                                        {t('java_service.gradle_not_installed_title')}
-                                    </h3>
-                                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                                        {t('java_service.gradle_not_installed_desc')}
-                                    </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Button
+                                size="sm"
+                                onClick={handleDownloadGradle}
+                                disabled={!isServiceDataActive || isGradleDownloading || isLoading}
+                                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                            >
+                                {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
+                            </Button>
+                            {!!gradleDownloadStatus && (
+                                <p className="text-[10px] text-orange-600 dark:text-orange-400">
+                                    {t('java_service.gradle_download_status')}: {gradleDownloadStatus}
+                                </p>
+                            )}
+                            {isGradleDownloading && (
+                                <div className="space-y-1">
+                                    <Progress value={gradleDownloadProgress} className="h-1.5" />
+                                    <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
+                                        {Math.round(gradleDownloadProgress)}%
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={handleDownloadGradle}
-                                        disabled={!isServiceDataActive || isGradleDownloading || isLoading}
-                                        className="h-8 text-xs shadow-none bg-orange-600 hover:bg-orange-700 text-white"
-                                    >
-                                        {isGradleDownloading ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
-                                        {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
-                                    </Button>
-                                    {!!gradleDownloadStatus && (
-                                        <p className="text-[11px] text-orange-600 dark:text-orange-400">
-                                            {t('java_service.gradle_download_status')}: {gradleDownloadStatus}
-                                        </p>
-                                    )}
-                                    {isGradleDownloading && (
-                                        <div className="space-y-1">
-                                            <Progress value={gradleDownloadProgress} className="h-1.5" />
-                                            <div className="text-[11px] text-orange-600 dark:text-orange-400 text-right">
-                                                {Math.round(gradleDownloadProgress)}%
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 ) : (
