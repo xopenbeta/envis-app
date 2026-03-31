@@ -108,7 +108,7 @@ export const serviceCategories = {
   },
   'servers': {
     nginx: 'Nginx',
-    dnsmasq: 'Dnsmasq',
+    // dnsmasq: 'Dnsmasq',
   },
 }
 // 一般用这个

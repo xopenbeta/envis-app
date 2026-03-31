@@ -135,7 +135,7 @@ pub async fn initialize_maven(
 
             if maven_home.is_some() {
                 if let Err(e) =
-                    java_service.ensure_maven_settings_use_env_repo(&service_data.version)
+                    java_service.ensure_maven_settings_use_env_placeholders(&service_data.version)
                 {
                     return Ok(CommandResponse::error(format!(
                         "初始化 Maven 失败: 更新 settings.xml 失败: {}",

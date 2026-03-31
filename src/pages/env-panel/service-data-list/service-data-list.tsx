@@ -209,6 +209,7 @@ export function ServiceList({ onOpen }: {
                       serviceData={serviceData}
                       isSelected={selectedServiceDataId === serviceData.id}
                       isDragEnabled={isDragEnabled}
+                      onServiceItemClick={() => setSelectedServiceDataId(serviceData.id)}
                     />
                   )
                 })}

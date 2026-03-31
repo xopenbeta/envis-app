@@ -88,14 +88,16 @@ export function SortableServiceItem({
   selectedEnvironmentId,
   isSelected,
   isDragEnabled,
+  onServiceItemClick
 }: {
   serviceData: ServiceData;
   selectedEnvironmentId: string;
   isSelected: boolean;
   isDragEnabled: boolean;
+  onServiceItemClick: () => void;
 }) {
   const { t } = useTranslation()
-  const [selectedServiceDataId, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
+  const [selectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
   const [environments] = useAtom(environmentsAtom)
   const [envActivationEvent] = useAtom(envActivationEventAtom)
 
@@ -195,6 +197,7 @@ export function SortableServiceItem({
   }, [serviceData.id, selectedEnvironmentId]);
 
   // 监听环境激活事件，立即更新服务状态
+  // 这样会更快一点，不用等轮询的间隔
   useEffect(() => {
     if (envActivationEvent === 0) return; // 初始值，不处理
     
@@ -242,11 +245,6 @@ export function SortableServiceItem({
       // 如果取消失败，恢复状态
       toast.error(t('service_item.cancel_download_error'))
     }
-  }
-
-  // 处理服务选择
-  const onServiceItemClick = (serviceData: ServiceData) => {
-    setSelectedServiceDataId(serviceData.id)
   }
 
   // 删除服务
@@ -497,7 +495,7 @@ export function SortableServiceItem({
           : "hover:bg-content2 border-transparent dark:hover:bg-white/5",
         isDragging && "z-50"
       )}
-      onClick={() => onServiceItemClick(serviceData)}
+      onClick={onServiceItemClick}
     >
       {/* 背景图标 */}
       <div

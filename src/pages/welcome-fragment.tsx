@@ -394,12 +394,14 @@ doskey ll=dir /b $*`
 {cmdExample}
                 </pre>
             </details>
-            <button
-                onClick={handleDismiss}
-                className="text-[10px] text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
-            >
-                {t('welcome.cmd_warning_dismiss')}
-            </button>
+            <div className="flex justify-end">
+                <button
+                    onClick={handleDismiss}
+                    className="text-[10px] text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
+                >
+                    {t('welcome.cmd_warning_dismiss')}
+                </button>
+            </div>
         </div>
     )
 }

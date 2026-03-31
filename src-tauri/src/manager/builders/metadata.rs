@@ -1,5 +1,5 @@
 use crate::manager::app_config_manager::AppConfigManager;
-use crate::manager::services::java::JavaService;
+use crate::manager::services::java::{JavaService, MavenService};
 use crate::manager::services::mingw::MinGWService;
 use crate::manager::services::postgresql::PostgresqlService;
 use crate::manager::services::python::PythonService;
@@ -339,7 +339,7 @@ http {
 
         metadata.insert(
             "MAVEN_REPO_URL".to_string(),
-            serde_json::Value::String(JavaService::DEFAULT_MAVEN_REPO_URL.to_string()),
+            serde_json::Value::String(MavenService::DEFAULT_MAVEN_REPO_URL.to_string()),
         );
 
         // 设置 GRADLE_HOME（默认为空）

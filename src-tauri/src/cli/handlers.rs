@@ -1,18 +1,8 @@
 use crate::manager::environment_manager::EnvironmentManager;
 use crate::types::EnvironmentStatus;
 
-/// 处理 `use` 命令: 激活指定环境
-pub fn handle_use(matches: &tauri_plugin_cli::Matches) {
-    let name_or_id = get_string_arg(matches, "name");
-
-    if name_or_id.is_none() {
-        eprintln!("错误: 必须指定环境名称或 ID");
-        eprintln!("用法: envis use <name_or_id>");
-        std::process::exit(1);
-    }
-
-    let target_str = name_or_id.unwrap();
-
+/// 提前处理 `use` 命令（不依赖 Tauri 插件）
+pub fn handle_use_early(target_str: &str) {
     let manager = EnvironmentManager::global();
     let manager = manager.lock().unwrap();
 
@@ -102,13 +92,4 @@ pub fn handle_list() {
 pub fn handle_refresh() {
     // 什么都不做，直接成功退出
     // shell wrapper 中检测到 refresh 命令且退出码为 0 时，会自动执行 source
-}
-
-// 辅助函数
-fn get_string_arg(matches: &tauri_plugin_cli::Matches, name: &str) -> Option<String> {
-    matches.args.get(name).and_then(|arg| match &arg.value {
-        serde_json::Value::String(s) => Some(s.clone()),
-        serde_json::Value::Array(arr) if !arr.is_empty() => arr[0].as_str().map(|s| s.to_string()),
-        _ => None,
-    })
 }
