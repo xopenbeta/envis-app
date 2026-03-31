@@ -912,26 +912,30 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 </p>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Button
-                                size="sm"
-                                onClick={handleDownloadGradle}
-                                disabled={!isServiceDataActive || isGradleDownloading || isLoading}
-                                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
-                            >
-                                {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
-                            </Button>
+                        <div className="flex items-center">
+                            {!isGradleDownloading && (
+                                <Button
+                                    size="sm"
+                                    onClick={handleDownloadGradle}
+                                    disabled={!isServiceDataActive || isGradleDownloading || isLoading}
+                                    className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                                >
+                                    {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
+                                </Button>
+                            )}
                             {!!gradleDownloadStatus && (
                                 <p className="text-[10px] text-orange-600 dark:text-orange-400">
-                                    {t('java_service.gradle_download_status')}: {gradleDownloadStatus}
+                                    {gradleDownloadStatus}&nbsp;&nbsp;
                                 </p>
                             )}
                             {isGradleDownloading && (
-                                <div className="space-y-1">
-                                    <Progress value={gradleDownloadProgress} className="h-1.5" />
-                                    <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
-                                        {Math.round(gradleDownloadProgress)}%
-                                    </div>
+                                <div className="space-y-1 flex-1">
+                                    <Progress value={gradleDownloadProgress} />
+                                </div>
+                            )}
+                            {isGradleDownloading && (
+                                <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
+                                    &nbsp;&nbsp;{Math.round(gradleDownloadProgress)}%
                                 </div>
                             )}
                         </div>
