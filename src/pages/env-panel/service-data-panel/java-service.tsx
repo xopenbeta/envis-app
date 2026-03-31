@@ -692,26 +692,30 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 </p>
                             </div>
                         </div>
-                        <div className="flex">
-                            <Button
-                                size="sm"
-                                onClick={handleDownloadMaven}
-                                disabled={!isServiceDataActive || isMavenDownloading || isLoading}
-                                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
-                            >
-                                {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
-                            </Button>
+                        <div className="flex items-center">
+                            {!isMavenDownloading && (
+                                <Button
+                                    size="sm"
+                                    onClick={handleDownloadMaven}
+                                    disabled={!isServiceDataActive || isMavenDownloading || isLoading}
+                                    className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                                >
+                                    {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
+                                </Button>
+                            )}
                             {!!mavenDownloadStatus && (
                                 <p className="text-[10px] text-orange-600 dark:text-orange-400">
-                                    {t('java_service.maven_download_status')}: {mavenDownloadStatus}
+                                    {mavenDownloadStatus}&nbsp;&nbsp;
                                 </p>
                             )}
                             {isMavenDownloading && (
-                                <div className="space-y-1">
-                                    <Progress value={mavenDownloadProgress} className="h-1.5" />
-                                    <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
-                                        {Math.round(mavenDownloadProgress)}%
-                                    </div>
+                                <div className="space-y-1 flex-1">
+                                    <Progress value={mavenDownloadProgress} />
+                                </div>
+                            )}
+                            {isMavenDownloading && (
+                                <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
+                                    &nbsp;&nbsp;{Math.round(mavenDownloadProgress)}%
                                 </div>
                             )}
                         </div>
@@ -736,7 +740,6 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 disabled={!isServiceDataActive || isMavenInitializing || isLoading}
                                 className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
                             >
-                                {isMavenInitializing ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Package className="h-3 w-3 mr-1.5" />}
                                 {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
                             </Button>
                         </div>
