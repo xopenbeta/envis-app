@@ -257,33 +257,36 @@ impl JavaService {
             return Err(anyhow!("Java {} 未安装", service_data.version));
         }
 
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
+        // 限制 shell_manager 锁的作用域，避免在调用子服务时持有锁
+        {
+            let shell_manager = ShellManager::global();
+            let shell_manager = shell_manager.lock().unwrap();
 
-        let java_home = install_path.to_string_lossy().to_string();
-        
-        // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
-        let bin_path = if cfg!(target_os = "windows") {
-            install_path.to_string_lossy().to_string()
-        } else {
-            install_path.join("bin").to_string_lossy().to_string()
-        };
+            let java_home = install_path.to_string_lossy().to_string();
+            
+            // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
+            let bin_path = if cfg!(target_os = "windows") {
+                install_path.to_string_lossy().to_string()
+            } else {
+                install_path.join("bin").to_string_lossy().to_string()
+            };
 
-        shell_manager.add_export("JAVA_HOME", &java_home)?;
-        shell_manager.add_path(&bin_path)?;
+            shell_manager.add_export("JAVA_HOME", &java_home)?;
+            shell_manager.add_path(&bin_path)?;
 
-        // 设置 JAVA_OPTS
-        if let Some(metadata) = &service_data.metadata {
-            if let Some(java_opts) = metadata.get("JAVA_OPTS").and_then(|v| v.as_str()) {
-                shell_manager.add_export("JAVA_OPTS", java_opts)?;
+            // 设置 JAVA_OPTS
+            if let Some(metadata) = &service_data.metadata {
+                if let Some(java_opts) = metadata.get("JAVA_OPTS").and_then(|v| v.as_str()) {
+                    shell_manager.add_export("JAVA_OPTS", java_opts)?;
+                }
             }
-        }
+        } // shell_manager 锁在这里释放
 
-        // 激活 Maven 服务
+        // 激活 Maven 服务（不再持有 shell_manager 锁）
         let maven_service = MavenService::global();
         maven_service.activate(&service_data.version, service_data)?;
 
-        // 激活 Gradle 服务
+        // 激活 Gradle 服务（不再持有 shell_manager 锁）
         let gradle_service = GradleService::global();
         gradle_service.activate(service_data)?;
 
@@ -294,27 +297,30 @@ impl JavaService {
     /// 取消激活服务
     pub fn deactivate_service(&self, service_data: &ServiceData) -> Result<()> {
         let install_path = self.get_install_path(&service_data.version);
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
 
-        // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
-        let bin_path = if cfg!(target_os = "windows") {
-            install_path.to_string_lossy().to_string()
-        } else {
-            install_path.join("bin").to_string_lossy().to_string()
-        };
-
-        // 取消激活 Maven 服务
+        // 先取消激活子服务（不持有 shell_manager 锁）
         let maven_service = MavenService::global();
         maven_service.deactivate(service_data)?;
 
-        // 取消激活 Gradle 服务
         let gradle_service = GradleService::global();
         gradle_service.deactivate(service_data)?;
 
-        shell_manager.delete_path(&bin_path)?;
-        shell_manager.delete_export("JAVA_HOME")?;
-        shell_manager.delete_export("JAVA_OPTS")?;
+        // 然后再操作 shell_manager（获取锁）
+        {
+            let shell_manager = ShellManager::global();
+            let shell_manager = shell_manager.lock().unwrap();
+
+            // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
+            let bin_path = if cfg!(target_os = "windows") {
+                install_path.to_string_lossy().to_string()
+            } else {
+                install_path.join("bin").to_string_lossy().to_string()
+            };
+
+            shell_manager.delete_path(&bin_path)?;
+            shell_manager.delete_export("JAVA_HOME")?;
+            shell_manager.delete_export("JAVA_OPTS")?;
+        } // shell_manager 锁在这里释放
 
         log::info!("Java {} 服务已取消激活", service_data.version);
         Ok(())

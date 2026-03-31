@@ -641,14 +641,6 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                             <span className="font-medium">{javaInfo.version}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-muted-foreground">{t('java_service.java_vendor')}:</span>
-                                            <span className="font-medium">{javaInfo.vendor}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">{t('java_service.java_runtime')}:</span>
-                                            <span className="font-medium text-xs break-all">{javaInfo.runtime}</span>
-                                        </div>
-                                        <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('java_service.java_install_path')}:</span>
                                             <div className="flex items-center gap-1">
                                                 <span className="font-medium text-xs truncate max-w-[200px]" title={javaInfo.home}>
@@ -663,6 +655,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                                     <FolderOpen className="h-3 w-3" />
                                                 </Button>
                                             </div>
+                                        </div>
+                                        <div className="flex flex-col justify-between">
+                                            <span className="text-muted-foreground">{t('java_service.java_vendor')}:</span>
+                                            <span className="font-medium">{javaInfo.vendor}</span>
+                                        </div>
+                                        <div className="flex flex-col justify-between">
+                                            <span className="text-muted-foreground">{t('java_service.java_runtime')}:</span>
+                                            <span className="font-medium text-xs break-all">{javaInfo.runtime}</span>
                                         </div>
                                     </div>
                                 </CollapsibleContent>

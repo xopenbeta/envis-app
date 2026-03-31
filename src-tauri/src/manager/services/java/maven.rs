@@ -447,15 +447,6 @@ impl MavenService {
             .filter(|value| !value.is_empty())
             .map(|value| value.to_string());
 
-        if let Some(maven_home) = metadata_maven_home {
-            let shell_manager = ShellManager::global();
-            let shell_manager = shell_manager.lock().unwrap();
-            shell_manager.add_export("MAVEN_HOME", &maven_home)?;
-            shell_manager.add_export("M2_HOME", &maven_home)?;
-            let maven_bin = format!("{}/bin", maven_home);
-            shell_manager.add_path(&maven_bin)?;
-        }
-
         let metadata_maven_repo_url = service_data
             .metadata
             .as_ref()
@@ -465,23 +456,38 @@ impl MavenService {
             .filter(|value| !value.is_empty())
             .unwrap_or(Self::DEFAULT_MAVEN_REPO_URL);
 
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-        shell_manager.add_export("MAVEN_REPO_URL", metadata_maven_repo_url)?;
+        let metadata_maven_local_repo = service_data
+            .metadata
+            .as_ref()
+            .and_then(|metadata| metadata.get("MAVEN_LOCAL_REPO"))
+            .and_then(|v| v.as_str())
+            .map(|v| v.trim())
+            .filter(|v| !v.is_empty())
+            .map(|v| v.to_string());
 
-        // 处理 MAVEN_LOCAL_REPO：导出环境变量
-        if let Some(metadata) = &service_data.metadata {
-            if let Some(local_repo) = metadata
-                .get("MAVEN_LOCAL_REPO")
-                .and_then(|v| v.as_str())
-                .map(|v| v.trim())
-                .filter(|v| !v.is_empty())
-            {
+        // 统一获取一次锁，完成所有 shell_manager 操作
+        {
+            let shell_manager = ShellManager::global();
+            let shell_manager = shell_manager.lock().unwrap();
+
+            // 设置 MAVEN_HOME
+            if let Some(maven_home) = &metadata_maven_home {
+                shell_manager.add_export("MAVEN_HOME", maven_home)?;
+                shell_manager.add_export("M2_HOME", maven_home)?;
+                let maven_bin = format!("{}/bin", maven_home);
+                shell_manager.add_path(&maven_bin)?;
+            }
+
+            // 设置 MAVEN_REPO_URL
+            shell_manager.add_export("MAVEN_REPO_URL", metadata_maven_repo_url)?;
+
+            // 设置 MAVEN_LOCAL_REPO
+            if let Some(local_repo) = &metadata_maven_local_repo {
                 shell_manager.add_export("MAVEN_LOCAL_REPO", local_repo)?;
             }
-        }
+        } // shell_manager 锁在这里释放
 
-        // 统一设置 settings.xml 中的环境变量占位符
+        // 统一设置 settings.xml 中的环境变量占位符（文件操作，不需要锁）
         if let Err(e) = self.ensure_maven_settings_use_env_placeholders(java_version) {
             log::warn!("激活时设置 Maven 环境变量占位符失败: {}", e);
         }
