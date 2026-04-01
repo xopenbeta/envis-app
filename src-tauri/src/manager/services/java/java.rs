@@ -72,7 +72,7 @@ impl JavaService {
     pub fn is_installed(&self, version: &str) -> bool {
         let install_path = self.get_install_path(version);
         let java_binary = if cfg!(target_os = "windows") {
-            install_path.join("java.exe")
+            install_path.join("bin").join("java.exe")
         } else {
             install_path.join("bin").join("java")
         };
@@ -264,12 +264,7 @@ impl JavaService {
 
             let java_home = install_path.to_string_lossy().to_string();
             
-            // Windows 平台 java.exe 直接在根目录，其他平台在 bin 子文件夹
-            let bin_path = if cfg!(target_os = "windows") {
-                install_path.to_string_lossy().to_string()
-            } else {
-                install_path.join("bin").to_string_lossy().to_string()
-            };
+            let bin_path = install_path.join("bin").to_string_lossy().to_string();
 
             shell_manager.add_export("JAVA_HOME", &java_home)?;
             shell_manager.add_path(&bin_path)?;
@@ -335,7 +330,7 @@ impl JavaService {
         }
 
         let java_binary = if cfg!(target_os = "windows") {
-            install_path.join("java.exe")
+            install_path.join("bin").join("java.exe")
         } else {
             install_path.join("bin").join("java")
         };
@@ -464,8 +459,7 @@ pub(crate) async fn extract_tar(archive_path: &PathBuf, target_dir: &PathBuf) ->
     cmd.arg("-xzf")
         .arg(archive_path)
         .arg("-C")
-        .arg(target_dir)
-        .arg("--strip-components=1");
+        .arg(target_dir);
 
     #[cfg(target_os = "windows")]
     {
@@ -487,39 +481,19 @@ pub(crate) async fn extract_tar(archive_path: &PathBuf, target_dir: &PathBuf) ->
 /// 解压 zip 格式文件
 pub(crate) async fn extract_zip(archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
     use std::fs::File;
+    use zip::ZipArchive;
 
     let file = File::open(archive_path)?;
-    let mut archive = zip::ZipArchive::new(file)?;
-
-    let top_level_dir = if archive.len() > 0 {
-        let first_file = archive.by_index(0)?;
-        let path = first_file.name();
-        path.split('/').next().unwrap_or("").to_string()
-    } else {
-        String::new()
-    };
+    let mut archive = ZipArchive::new(file)?;
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
-        let file_path = file.name();
+        let outpath = match file.enclosed_name() {
+            Some(path) => target_dir.join(path),
+            None => continue,
+        };
 
-        let relative_path =
-            if !top_level_dir.is_empty() && file_path.starts_with(&top_level_dir) {
-                file_path
-                    .strip_prefix(&top_level_dir)
-                    .unwrap_or(file_path)
-                    .trim_start_matches('/')
-            } else {
-                file_path
-            };
-
-        if relative_path.is_empty() {
-            continue;
-        }
-
-        let outpath = target_dir.join(relative_path);
-
-        if file.is_dir() {
+        if file.name().ends_with('/') {
             std::fs::create_dir_all(&outpath)?;
         } else {
             if let Some(parent) = outpath.parent() {

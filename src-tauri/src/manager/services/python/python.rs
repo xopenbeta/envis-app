@@ -8,6 +8,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
+use std::collections::HashSet;
 
 /// Python 安装模式
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -1123,17 +1124,12 @@ impl PythonService {
         for entry in archive.entries()? {
             let mut entry = entry?;
             let path = entry.path()?;
-            let components: Vec<_> = path.components().collect();
+            let target_path = target_dir.join(path);
 
-            if components.len() > 1 {
-                let new_path: PathBuf = components[1..].iter().collect();
-                let target_path = target_dir.join(new_path);
-
-                if let Some(parent) = target_path.parent() {
-                    std::fs::create_dir_all(parent)?;
-                }
-                entry.unpack(&target_path)?;
+            if let Some(parent) = target_path.parent() {
+                std::fs::create_dir_all(parent)?;
             }
+            entry.unpack(&target_path)?;
         }
 
         Ok(())
@@ -1149,15 +1145,7 @@ impl PythonService {
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             let outpath = match file.enclosed_name() {
-                Some(path) => {
-                    let components: Vec<_> = path.components().collect();
-                    if components.len() > 1 {
-                        let new_path: PathBuf = components[1..].iter().collect();
-                        target_dir.join(new_path)
-                    } else {
-                        continue;
-                    }
-                }
+                Some(path) => target_dir.join(path),
                 None => continue,
             };
 

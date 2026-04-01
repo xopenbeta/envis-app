@@ -9,6 +9,7 @@ import { useAppSettings } from "./appSettings"
 export function useEnvironment() {
   const [environments, setEnvironments] = useAtom(environmentsAtom)
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
+  const [selectedServiceDatas, setSelectedServiceDatas] = useAtom(selectedServiceDatasAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
 
   const activeEnvironment = useMemo(() => {
@@ -30,6 +31,7 @@ export function useEnvironment() {
       setEnvironments(updatedEnvironments);
       
       setSelectedEnvironmentId(newEnvironment.id);
+      setSelectedServiceDatas([]); // 清空选中服务数据列表
       setSelectedServiceDataId(''); // 清空选中服务数据
       
       // UI 逻辑：如果当前没有任何激活环境，则自动激活新创建的环境（比较方便，删除该逻辑也没事）
