@@ -29,6 +29,7 @@ pub struct Environment {
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ServiceType {
+    Redis,
     Mongodb,
     Mariadb,
     Mysql,
@@ -49,6 +50,7 @@ impl ServiceType {
     /// 获取服务类型对应的目录名（小写）
     pub fn dir_name(&self) -> &'static str {
         match self {
+            ServiceType::Redis => "redis",
             ServiceType::Mongodb => "mongodb",
             ServiceType::Mariadb => "mariadb",
             ServiceType::Mysql => "mysql",
@@ -68,6 +70,7 @@ impl ServiceType {
     /// 定义每种服务类型需要添加到 PATH 的子目录
     pub fn sub_dirs(&self) -> &'static [&'static str] {
         match self {
+            ServiceType::Redis => &["bin"],
             ServiceType::Nodejs => {
                 // Windows: node.exe/npm/npx 在根目录
                 // Unix: node/npm/npx 在 bin 子目录
@@ -95,6 +98,7 @@ impl ServiceType {
     /// 获取该服务类型需要设置的环境变量
     pub fn env_vars(&self) -> Vec<&'static str> {
         match self {
+            ServiceType::Redis => vec![],
             ServiceType::Nodejs => vec![
                 "NPM_CONFIG_PREFIX", // npm 全局安装路径
             ],
@@ -115,6 +119,7 @@ impl ServiceType {
 
     pub fn default_name(&self) -> String {
         match self {
+            ServiceType::Redis => "Redis".to_string(),
             ServiceType::Mongodb => "MongoDB".to_string(),
             ServiceType::Mariadb => "MariaDB".to_string(),
             ServiceType::Mysql => "MySQL".to_string(),
@@ -133,6 +138,14 @@ impl ServiceType {
 
     pub fn metadata_keys(&self) -> Vec<&'static str> {
         match self {
+            ServiceType::Redis => vec![
+                "REDIS_CONFIG",
+                "REDIS_DATA",
+                "REDIS_LOG",
+                "REDIS_PORT",
+                "REDIS_BIND_IP",
+                "REDIS_PASSWORD",
+            ],
             ServiceType::Nodejs => vec!["NPM_CONFIG_PREFIX"],
             ServiceType::Mongodb => vec!["MONGODB_CONFIG", "MONGODB_KEYFILE_PATH"],
             ServiceType::Mariadb => vec![],

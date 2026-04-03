@@ -233,6 +233,7 @@ impl ServiceManager {
     /// 将服务类型枚举转换为字符串
     fn service_type_to_string(&self, service_type: &ServiceType) -> String {
         match service_type {
+            ServiceType::Redis => "redis".to_string(),
             ServiceType::Mongodb => "mongodb".to_string(),
             ServiceType::Mariadb => "mariadb".to_string(),
             ServiceType::Mysql => "mysql".to_string(),
@@ -252,6 +253,7 @@ impl ServiceManager {
     /// 将字符串转换为服务类型枚举
     fn string_to_service_type(&self, service_type_str: &str) -> Option<ServiceType> {
         match service_type_str {
+            "redis" => Some(ServiceType::Redis),
             "mongodb" => Some(ServiceType::Mongodb),
             "mariadb" => Some(ServiceType::Mariadb),
             "mysql" => Some(ServiceType::Mysql),

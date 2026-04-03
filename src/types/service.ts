@@ -14,6 +14,25 @@ export interface MongoDBMetadata {
     "MONGODB_ADMIN_PASSWORD"?: string
 }
 
+export interface RedisConfig {
+    configPath: string
+    dataPath: string
+    logPath: string
+    port: number
+    bindIp: string
+    password?: string
+    isRunning?: boolean
+}
+
+export interface RedisMetadata {
+    "REDIS_CONFIG"?: string
+    "REDIS_DATA"?: string
+    "REDIS_LOG"?: string
+    "REDIS_PORT"?: number
+    "REDIS_BIND_IP"?: string
+    "REDIS_PASSWORD"?: string
+}
+
 export interface MariaDBMetadata {
     "MARIADB_CONFIG"?: string
     "MARIADB_ROOT_PASSWORD"?: string

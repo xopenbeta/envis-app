@@ -41,6 +41,7 @@ use tauri_command::services::nginx_commands::*;
 use tauri_command::services::nodejs_commands::*;
 use tauri_command::services::postgresql_commands::*;
 use tauri_command::services::python_commands::*;
+use tauri_command::services::redis_commands::*;
 use tauri_command::services::ssl_commands::*;
 use tauri_command::system_info_commands::*;
 use tauri_plugin_log::{Target, TargetKind};
@@ -238,6 +239,20 @@ pub fn run() {
             list_mongodb_users,
             update_mongodb_user_roles,
             delete_mongodb_user,
+            // Redis 服务命令
+            download_redis,
+            get_redis_versions,
+            check_redis_installed,
+            cancel_download_redis,
+            get_redis_download_progress,
+            // Redis 控制与配置
+            get_redis_config,
+            start_redis_service,
+            stop_redis_service,
+            restart_redis_service,
+            get_redis_service_status,
+            initialize_redis,
+            check_redis_initialized,
             // MariaDB 服务命令
             download_mariadb,
             get_mariadb_versions,

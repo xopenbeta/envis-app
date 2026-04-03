@@ -52,6 +52,7 @@ export enum ServiceDataStatus {
 }
 
 export enum ServiceType {
+  Redis = "redis",
   Mongodb = "mongodb",
   Mariadb = "mariadb",
   Mysql = "mysql",
@@ -71,6 +72,7 @@ export enum ServiceType {
 export const serviceTypeNames: Record<ServiceType, string> = {
   [ServiceType.Nodejs]: 'Node.js',
   [ServiceType.Nginx]: 'Nginx',
+  [ServiceType.Redis]: 'Redis',
   [ServiceType.Mongodb]: 'MongoDB',
   [ServiceType.Mariadb]: 'MariaDB',
   [ServiceType.Mysql]: 'MySQL',
@@ -102,6 +104,7 @@ export const serviceCategories = {
   'databases': {
     mysql: 'MySQL',
     mariadb: 'MariaDB',
+    redis: 'Redis',
     mongodb: 'MongoDB',
     postgresql: 'PostgreSQL',
     // redis: 'Redis'
@@ -115,6 +118,7 @@ export const serviceCategories = {
 export const NeedDownloadServices: ServiceType[] = [
   ServiceType.Nodejs,
   ServiceType.Nginx,
+  ServiceType.Redis,
   ServiceType.Mongodb,
   ServiceType.Mariadb,
   ServiceType.Mysql,
@@ -133,6 +137,7 @@ export const NoNeedDownloadServices: ServiceType[] = [
 // 一般用这个
 export const CanRunServices: ServiceType[] = [
   ServiceType.Nginx,
+  ServiceType.Redis,
   ServiceType.Mongodb,
   ServiceType.Mariadb,
   ServiceType.Mysql,

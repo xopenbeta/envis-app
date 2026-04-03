@@ -15,6 +15,9 @@ impl EnvVarBuilder {
         let mut env_vars = HashMap::new();
 
         match service_type {
+            ServiceType::Redis => {
+                // Redis 服务不需要默认环境变量
+            }
             ServiceType::Nodejs => {
                 Self::build_nodejs_env_vars(&mut env_vars, service_folder)?;
             }

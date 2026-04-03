@@ -23,6 +23,9 @@ impl MetadataBuilder {
         let mut metadata = HashMap::new();
 
         match service_data.service_type {
+            ServiceType::Redis => {
+                // Redis 默认 metadata 在初始化阶段写入
+            }
             ServiceType::Nodejs => {
                 // 为 Node.js 服务创建默认的包管理器配置
                 Self::build_nodejs_default_metadata(environment_id, service_data, &mut metadata)?;
