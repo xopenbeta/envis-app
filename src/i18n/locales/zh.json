@@ -423,6 +423,19 @@
     "upload": "上传",
     "download": "下载"
   },
+  "resource_monitor": {
+    "title": "服务资源",
+    "not_running": "未运行",
+    "tag_disk": "磁盘占用",
+    "tag_memory": "内存占用",
+    "tag_cpu": "CPU 占用",
+    "tag_network": "网络流量",
+    "col_service": "服务",
+    "col_resources": "资源类型",
+    "col_cpu": "CPU",
+    "col_memory": "内存",
+    "col_disk": "磁盘 I/O"
+  },
   "node_service": {
     "enter_package_name": "请输入包名",
     "install_success": "安装成功",

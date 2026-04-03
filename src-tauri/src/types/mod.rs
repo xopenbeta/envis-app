@@ -266,3 +266,20 @@ pub struct ServiceDownloadProgress {
     pub status: String,
     pub error_message: Option<String>,
 }
+
+/// 进程资源统计（按进程名聚合）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessStat {
+    pub process_name: String,
+    /// 所有同名进程的 CPU 使用率之和 (%)
+    pub cpu_usage: f32,
+    /// 所有同名进程的内存使用量之和 (bytes)
+    pub memory_bytes: u64,
+    /// 所有同名进程本次刷新间隔内的磁盘读取字节数
+    pub disk_read_bytes: u64,
+    /// 所有同名进程本次刷新间隔内的磁盘写入字节数
+    pub disk_write_bytes: u64,
+    /// 匹配到的进程数量
+    pub pid_count: usize,
+}

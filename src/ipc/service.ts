@@ -65,3 +65,16 @@ export const ipcGetServiceStatus = ipcLogFunc('获取服务状态', async (envir
 }>> => {
     return invokeCommand(`get_${serviceData.type}_service_status`, { environmentId, serviceData })
 }, true)
+
+export interface ProcessStatData {
+    processName: string
+    cpuUsage: number
+    memoryBytes: number
+    diskReadBytes: number
+    diskWriteBytes: number
+    pidCount: number
+}
+
+export const ipcGetServicesProcessStats = ipcLogFunc('获取服务进程统计', async (serviceTypes: string[]): Promise<IPCResult<ProcessStatData[]>> => {
+    return invokeCommand('get_services_process_stats', { serviceTypes })
+}, true)

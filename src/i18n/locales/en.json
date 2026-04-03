@@ -420,6 +420,19 @@
     "upload": "Upload",
     "download": "Download"
   },
+  "resource_monitor": {
+    "title": "Service Resources",
+    "not_running": "Not running",
+    "tag_disk": "Disk usage",
+    "tag_memory": "Memory usage",
+    "tag_cpu": "CPU usage",
+    "tag_network": "Network traffic",
+    "col_service": "Service",
+    "col_resources": "Resources",
+    "col_cpu": "CPU",
+    "col_memory": "Memory",
+    "col_disk": "Disk I/O"
+  },
   "welcome": {
     "github_star": "Star on GitHub",
     "subtitle": "A powerful, easy-to-use environment management tool for developers.",

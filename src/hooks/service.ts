@@ -1,4 +1,4 @@
-import { ipcDeleteService, ipcGetAllInstalledServices, ipcGetServiceDownloadProgress, ipcGetServiceSize, ipcGetServiceVersions, ServiceDownloadOptions } from "../ipc/service";
+import { ipcDeleteService, ipcGetAllInstalledServices, ipcGetServiceDownloadProgress, ipcGetServiceSize, ipcGetServiceVersions, ipcGetServicesProcessStats, ServiceDownloadOptions } from "../ipc/service";
 import { ServiceType } from "@/types/index";
 import { ipcCheckServiceInstalled, ipcDownloadService, ipcCancelServiceDownload } from "../ipc/service";
 import { toast } from "sonner";
@@ -49,6 +49,11 @@ export function useService() {
         return res;
     }
 
+    async function getServicesProcessStats(serviceTypes: ServiceType[]) {
+        const res = await ipcGetServicesProcessStats(serviceTypes as unknown as string[])
+        return res
+    }
+
     return {
         checkServiceInstalled,
         downloadService,
@@ -57,6 +62,7 @@ export function useService() {
         getServiceSize,
         deleteService,
         getServiceVersions,
-        getServiceDownloadProgress
+        getServiceDownloadProgress,
+        getServicesProcessStats
     }
 }

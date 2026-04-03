@@ -14,6 +14,7 @@ import { selectedEnvironmentIdAtom } from '@/store/environment'
 import { useRedis } from '@/hooks/services/redis'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
+import { ipcOpenSelectDialog } from '@/ipc/file-operations'
 
 interface RedisServiceProps {
   serviceData: ServiceData
@@ -57,6 +58,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   })
 
   const configPath = useMemo(() => metadata.REDIS_CONFIG || '', [metadata.REDIS_CONFIG])
+  const [editConfigPath, setEditConfigPath] = useState(metadata.REDIS_CONFIG || '')
 
   useEffect(() => {
     setRuntimeConfig({
@@ -76,6 +78,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       rdbEnabled: false,
       aofEnabled: false,
     })
+    setEditConfigPath(metadata.REDIS_CONFIG || '')
   }, [metadata.REDIS_CONFIG, selectedEnvironmentId, serviceData.id])
 
   useEffect(() => {
@@ -110,6 +113,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       if (result.success && result.data) {
         const configData = result.data
         setRuntimeConfig(configData)
+        setEditConfigPath(configData.configPath || '')
         setDialogData(prev => ({
           ...prev,
           password: configData.password || '',
@@ -121,6 +125,24 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       }
     } catch (error) {
       console.error('获取 Redis 配置路径失败:', error)
+    }
+  }
+
+  const handleBrowseConfigFile = async () => {
+    const result = await ipcOpenSelectDialog()
+    if (result.success && result.data) {
+      setEditConfigPath(result.data as string)
+    }
+  }
+
+  const handleSaveConfigPath = async () => {
+    if (!editConfigPath) return
+    try {
+      await persistRedisMetadata({ REDIS_CONFIG: editConfigPath })
+      setRuntimeConfig(prev => ({ ...prev, configPath: editConfigPath }))
+      toast.success('配置文件路径已保存')
+    } catch (error) {
+      toast.error('保存配置文件路径失败: ' + error)
     }
   }
 
@@ -354,20 +376,41 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={runtimeConfig.configPath || configPath}
-                    disabled
+                    value={editConfigPath}
+                    onChange={(e) => setEditConfigPath(e.target.value)}
                     className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    placeholder="请输入或选择配置文件路径"
                   />
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    onClick={() => (runtimeConfig.configPath || configPath) && openFolderInFinder(runtimeConfig.configPath || configPath)}
-                    disabled={!(runtimeConfig.configPath || configPath)}
+                    onClick={handleBrowseConfigFile}
+                    title="选择文件"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    onClick={() => editConfigPath && openFolderInFinder(editConfigPath)}
+                    disabled={!editConfigPath}
                     title="打开目录"
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
+                  {editConfigPath !== (runtimeConfig.configPath || configPath) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 shadow-none text-xs text-blue-600 hover:text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/20"
+                      onClick={handleSaveConfigPath}
+                      title="保存配置文件路径"
+                    >
+                      保存
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-3">

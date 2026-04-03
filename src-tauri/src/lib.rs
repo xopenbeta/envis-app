@@ -152,6 +152,7 @@ pub fn run() {
             get_all_installed_services,
             get_service_size,
             delete_service,
+            get_services_process_stats,
             // 系统信息相关命令
             get_system_info,
             open_terminal,

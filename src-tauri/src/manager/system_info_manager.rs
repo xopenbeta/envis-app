@@ -1,9 +1,10 @@
 use crate::utils::create_command;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex, OnceLock};
-use sysinfo::System;
+use sysinfo::{ProcessRefreshKind, System};
 
 /// 系统信息数据结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -641,6 +642,61 @@ impl SystemInfoManager {
         } else {
             format!("{:.2} {}", value, UNITS[exp])
         }
+    }
+
+    /// 按进程名查询进程资源统计（CPU + 内存），同名进程合并累加
+    pub fn get_process_stats_by_names(
+        &self,
+        names: &[&str],
+    ) -> Result<Vec<crate::types::ProcessStat>> {
+        if names.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // 先刷新进程 CPU / 内存 / 磁盘 I/O 数据
+        {
+            let mut system = self
+                .system
+                .lock()
+                .map_err(|_| anyhow::anyhow!("Failed to lock system for process refresh"))?;
+            system.refresh_processes_specifics(
+                ProcessRefreshKind::new().with_cpu().with_memory().with_disk_usage(),
+            );
+        }
+
+        let system = self
+            .system
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Failed to lock system"))?;
+
+        let mut stats_map: HashMap<String, crate::types::ProcessStat> = HashMap::new();
+
+        for (_pid, process) in system.processes() {
+            let proc_name = process.name();
+            for &target in names {
+                if proc_name == target {
+                    let entry =
+                        stats_map
+                            .entry(target.to_string())
+                            .or_insert_with(|| crate::types::ProcessStat {
+                                process_name: target.to_string(),
+                                cpu_usage: 0.0,
+                                memory_bytes: 0,
+                                disk_read_bytes: 0,
+                                disk_write_bytes: 0,
+                                pid_count: 0,
+                            });
+                    entry.cpu_usage += process.cpu_usage();
+                    entry.memory_bytes += process.memory();
+                    entry.disk_read_bytes += process.disk_usage().read_bytes;
+                    entry.disk_write_bytes += process.disk_usage().written_bytes;
+                    entry.pid_count += 1;
+                    break;
+                }
+            }
+        }
+
+        Ok(stats_map.into_values().collect())
     }
 
     /// 格式化运行时间为人类可读格式
