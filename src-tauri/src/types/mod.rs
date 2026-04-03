@@ -140,10 +140,6 @@ impl ServiceType {
         match self {
             ServiceType::Redis => vec![
                 "REDIS_CONFIG",
-                "REDIS_DATA",
-                "REDIS_LOG",
-                "REDIS_PORT",
-                "REDIS_BIND_IP",
                 "REDIS_PASSWORD",
             ],
             ServiceType::Nodejs => vec!["NPM_CONFIG_PREFIX"],

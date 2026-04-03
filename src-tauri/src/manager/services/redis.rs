@@ -339,7 +339,7 @@ impl RedisService {
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let config = self.get_runtime_config(environment_id, service_data)?;
-        let running = self.is_running_on_port(config.port);
+        let running = self.is_running(service_data, &config);
 
         Ok(ServiceDataResult {
             success: true,
@@ -403,14 +403,29 @@ impl RedisService {
             Ok(child) => {
                 log::info!("Redis 进程已启动，PID: {:?}", child.id());
                 std::thread::sleep(Duration::from_millis(500));
-                Ok(ServiceDataResult {
-                    success: true,
-                    message: "Redis 启动成功".to_string(),
-                    data: Some(serde_json::json!({
-                        "port": config.port,
-                        "configPath": config.config_path,
-                    })),
-                })
+                if self.is_running(service_data, &config) {
+                    Ok(ServiceDataResult {
+                        success: true,
+                        message: "Redis 启动成功".to_string(),
+                        data: Some(serde_json::json!({
+                            "port": config.port,
+                            "configPath": config.config_path,
+                        })),
+                    })
+                } else {
+                    Ok(ServiceDataResult {
+                        success: false,
+                        message: format!(
+                            "Redis 启动命令已执行，但服务未处于运行状态，请检查日志: {}",
+                            config.log_path
+                        ),
+                        data: Some(serde_json::json!({
+                            "port": config.port,
+                            "configPath": config.config_path,
+                            "logPath": config.log_path,
+                        })),
+                    })
+                }
             }
             Err(e) => Ok(ServiceDataResult {
                 success: false,
@@ -513,6 +528,8 @@ impl RedisService {
                 "port": config.port,
                 "bindIp": config.bind_ip,
                 "password": config.password,
+                "rdbEnabled": config.rdb_enabled,
+                "aofEnabled": config.aof_enabled,
                 "content": content,
                 "isRunning": self.is_running_on_port(config.port),
             })),
@@ -522,7 +539,7 @@ impl RedisService {
     pub fn is_initialized(&self, environment_id: &str, service_data: &ServiceData) -> bool {
         let version = &service_data.version;
         let service_data_folder = self.get_service_data_folder(environment_id, version);
-        service_data_folder.join("redis.conf").exists() && service_data_folder.join("data").exists()
+        service_data_folder.join("redis.conf").exists()
     }
 
     pub fn initialize_redis(
@@ -532,6 +549,8 @@ impl RedisService {
         password: Option<String>,
         port: Option<String>,
         bind_ip: Option<String>,
+        rdb_enabled: bool,
+        aof_enabled: bool,
         reset: bool,
     ) -> Result<ServiceDataResult> {
         let version = &service_data.version;
@@ -590,7 +609,16 @@ impl RedisService {
         let config_path = service_data_folder.join("redis.conf");
         let log_path = log_dir.join("redis.log");
 
-        self.create_default_config(&config_path, &data_dir, &log_path, port, &bind_ip, &password)?;
+        self.create_default_config(
+            &config_path,
+            &data_dir,
+            &log_path,
+            port,
+            &bind_ip,
+            &password,
+            rdb_enabled,
+            aof_enabled,
+        )?;
 
         let manager = EnvServDataManager::global();
         let manager = manager.lock().unwrap();
@@ -601,30 +629,6 @@ impl RedisService {
             &mut service_data_copy,
             "REDIS_CONFIG",
             serde_json::Value::String(config_path.to_string_lossy().to_string()),
-        );
-        let _ = manager.set_metadata(
-            environment_id,
-            &mut service_data_copy,
-            "REDIS_DATA",
-            serde_json::Value::String(data_dir.to_string_lossy().to_string()),
-        );
-        let _ = manager.set_metadata(
-            environment_id,
-            &mut service_data_copy,
-            "REDIS_LOG",
-            serde_json::Value::String(log_path.to_string_lossy().to_string()),
-        );
-        let _ = manager.set_metadata(
-            environment_id,
-            &mut service_data_copy,
-            "REDIS_PORT",
-            serde_json::Value::Number(serde_json::Number::from(port)),
-        );
-        let _ = manager.set_metadata(
-            environment_id,
-            &mut service_data_copy,
-            "REDIS_BIND_IP",
-            serde_json::Value::String(bind_ip.clone()),
         );
         let _ = manager.set_metadata(
             environment_id,
@@ -647,8 +651,85 @@ impl RedisService {
                 "port": port.to_string(),
                 "bindIp": bind_ip,
                 "password": password,
+                "rdbEnabled": rdb_enabled,
+                "aofEnabled": aof_enabled,
             })),
         })
+    }
+
+    pub fn open_client(
+        &self,
+        environment_id: &str,
+        service_data: &ServiceData,
+    ) -> Result<ServiceDataResult> {
+        let config = self.get_runtime_config(environment_id, service_data)?;
+        let cli_in_bin = self.get_cli_bin_path(&service_data.version);
+        let cli_cmd = if cli_in_bin.exists() {
+            cli_in_bin.to_string_lossy().to_string()
+        } else {
+            if cfg!(target_os = "windows") {
+                "redis-cli.exe".to_string()
+            } else {
+                "redis-cli".to_string()
+            }
+        };
+
+        let endpoint = format!("{}:{}", config.bind_ip, config.port);
+        let mut args = vec![
+            "-h".to_string(),
+            config.bind_ip.clone(),
+            "-p".to_string(),
+            config.port.to_string(),
+        ];
+
+        if !config.password.is_empty() {
+            args.push("-a".to_string());
+            args.push(config.password.clone());
+        }
+
+        let result = if cfg!(target_os = "macos") {
+            let shell_cmd = Self::build_terminal_command(&cli_cmd, &args);
+            create_command("osascript")
+                .arg("-e")
+                .arg(format!(
+                    "tell application \"Terminal\" to do script \"{}\"",
+                    Self::escape_applescript_string(&shell_cmd)
+                ))
+                .arg("-e")
+                .arg("tell application \"Terminal\" to activate")
+                .spawn()
+        } else if cfg!(target_os = "windows") {
+            let mut cmd_args = vec!["/C".to_string(), "start".to_string(), "cmd".to_string(), "/K".to_string(), cli_cmd];
+            cmd_args.extend(args.clone());
+            create_command("cmd").args(&cmd_args).spawn()
+        } else {
+            create_command("gnome-terminal")
+                .arg("--")
+                .arg(&cli_cmd)
+                .args(&args)
+                .spawn()
+                .or_else(|_| {
+                    create_command("xterm")
+                        .arg("-e")
+                        .arg(Self::build_terminal_command(&cli_cmd, &args))
+                        .spawn()
+                })
+        };
+
+        match result {
+            Ok(_) => Ok(ServiceDataResult {
+                success: true,
+                message: "Redis CLI 已打开".to_string(),
+                data: Some(serde_json::json!({
+                    "endpoint": endpoint,
+                })),
+            }),
+            Err(e) => Ok(ServiceDataResult {
+                success: false,
+                message: format!("无法打开 Redis CLI: {}", e),
+                data: None,
+            }),
+        }
     }
 
     fn create_default_config(
@@ -659,6 +740,8 @@ impl RedisService {
         port: u16,
         bind_ip: &str,
         password: &str,
+        rdb_enabled: bool,
+        aof_enabled: bool,
     ) -> Result<()> {
         let mut lines = vec![
             "protected-mode yes".to_string(),
@@ -666,11 +749,16 @@ impl RedisService {
             format!("port {}", port),
             format!("dir {}", data_dir.to_string_lossy()),
             format!("logfile {}", log_path.to_string_lossy()),
-            "appendonly yes".to_string(),
-            "save 900 1".to_string(),
-            "save 300 10".to_string(),
-            "save 60 10000".to_string(),
+            format!("appendonly {}", if aof_enabled { "yes" } else { "no" }),
         ];
+
+        if rdb_enabled {
+            lines.push("save 900 1".to_string());
+            lines.push("save 300 10".to_string());
+            lines.push("save 60 10000".to_string());
+        } else {
+            lines.push("save \"\"".to_string());
+        }
 
         if !password.is_empty() {
             lines.push(format!("requirepass {}", password));
@@ -678,6 +766,51 @@ impl RedisService {
 
         std::fs::write(config_path, lines.join("\n") + "\n")?;
         Ok(())
+    }
+
+    fn shell_quote(value: &str) -> String {
+        format!("'{}'", value.replace('\'', "'\\''"))
+    }
+
+    fn build_terminal_command(command: &str, args: &[String]) -> String {
+        let mut parts = vec![Self::shell_quote(command)];
+        parts.extend(args.iter().map(|arg| Self::shell_quote(arg)));
+        parts.push("; exec $SHELL".to_string());
+        parts.join(" ")
+    }
+
+    fn escape_applescript_string(value: &str) -> String {
+        value.replace('\\', "\\\\").replace('"', "\\\"")
+    }
+
+    fn is_running(&self, service_data: &ServiceData, config: &RedisRuntimeConfig) -> bool {
+        self.is_running_by_cli(service_data, config.port, &config.password)
+            || self.is_running_on_port(config.port)
+    }
+
+    fn is_running_by_cli(&self, service_data: &ServiceData, port: u16, password: &str) -> bool {
+        let cli_bin = self.get_cli_bin_path(&service_data.version);
+        if !cli_bin.exists() {
+            return false;
+        }
+
+        let mut cmd = create_command(&cli_bin);
+        cmd.arg("-p").arg(port.to_string());
+        if !password.is_empty() {
+            cmd.arg("-a").arg(password);
+        }
+        cmd.arg("ping");
+
+        match cmd.output() {
+            Ok(output) => {
+                if !output.status.success() {
+                    return false;
+                }
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                stdout.contains("PONG")
+            }
+            Err(_) => false,
+        }
     }
 
     fn is_running_on_port(&self, port: u16) -> bool {
@@ -692,7 +825,10 @@ impl RedisService {
         }
 
         let port_arg = format!(":{}", port);
+        // 使用 -c redis-server 预先按进程名过滤，避免 macOS lsof 截断 COMMAND 列
+        // 导致 "redis-server" 变成 "redis-ser" 而无法匹配的问题
         let output = create_command("lsof")
+            .arg("-c").arg("redis-server")
             .arg("-iTCP")
             .arg(&port_arg)
             .arg("-sTCP:LISTEN")
@@ -701,10 +837,9 @@ impl RedisService {
         match output {
             Ok(o) => {
                 let stdout = String::from_utf8_lossy(&o.stdout);
-                if stdout.contains("redis-server") {
+                // -c redis-server 保证输出只包含 redis-server 进程，非空即表示正在运行
+                if !stdout.trim().is_empty() {
                     true
-                } else if !stdout.trim().is_empty() {
-                    false
                 } else {
                     create_command("pgrep")
                         .arg("-x")
@@ -734,16 +869,12 @@ impl RedisService {
             .map(|s| s.to_string())
             .unwrap_or_else(|| service_data_folder.join("redis.conf").to_string_lossy().to_string());
 
-        let data_path = metadata
-            .and_then(|m| m.get("REDIS_DATA"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
+        let data_path = self
+            .read_data_dir_from_config(Path::new(&config_path))
             .unwrap_or_else(|| service_data_folder.join("data").to_string_lossy().to_string());
 
-        let log_path = metadata
-            .and_then(|m| m.get("REDIS_LOG"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
+        let log_path = self
+            .read_log_path_from_config(Path::new(&config_path))
             .unwrap_or_else(|| {
                 service_data_folder
                     .join("logs")
@@ -752,28 +883,20 @@ impl RedisService {
                     .to_string()
             });
 
-        let port = metadata
-            .and_then(|m| m.get("REDIS_PORT"))
-            .and_then(|v| {
-                if let Some(s) = v.as_str() {
-                    s.parse::<u16>().ok()
-                } else {
-                    v.as_u64().and_then(|n| u16::try_from(n).ok())
-                }
-            })
-            .unwrap_or_else(|| self.read_port_from_config(Path::new(&config_path)).unwrap_or(6379));
+        let port = self.read_port_from_config(Path::new(&config_path)).unwrap_or(6379);
 
-        let bind_ip = metadata
-            .and_then(|m| m.get("REDIS_BIND_IP"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| self.read_bind_from_config(Path::new(&config_path)).unwrap_or_else(|| "127.0.0.1".to_string()));
+        let bind_ip = self
+            .read_bind_from_config(Path::new(&config_path))
+            .unwrap_or_else(|| "127.0.0.1".to_string());
 
         let password = metadata
             .and_then(|m| m.get("REDIS_PASSWORD"))
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
             .unwrap_or_else(|| self.read_password_from_config(Path::new(&config_path)).unwrap_or_default());
+
+        let rdb_enabled = self.read_rdb_enabled_from_config(Path::new(&config_path)).unwrap_or(false);
+        let aof_enabled = self.read_aof_enabled_from_config(Path::new(&config_path)).unwrap_or(false);
 
         Ok(RedisRuntimeConfig {
             config_path,
@@ -782,44 +905,65 @@ impl RedisService {
             port,
             bind_ip,
             password,
+            rdb_enabled,
+            aof_enabled,
         })
     }
 
-    fn read_port_from_config(&self, path: &Path) -> Option<u16> {
+    fn read_config_value(&self, path: &Path, key: &str) -> Option<String> {
         let content = std::fs::read_to_string(path).ok()?;
         for line in content.lines() {
             let trimmed = line.trim();
-            if trimmed.starts_with("port ") {
-                let v = trimmed.trim_start_matches("port ").trim();
-                if let Ok(port) = v.parse::<u16>() {
-                    return Some(port);
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            if let Some(value) = trimmed.strip_prefix(&format!("{} ", key)) {
+                let value = value.trim();
+                if !value.is_empty() {
+                    return Some(value.to_string());
                 }
             }
         }
         None
+    }
+
+    fn read_port_from_config(&self, path: &Path) -> Option<u16> {
+        self.read_config_value(path, "port")?.parse::<u16>().ok()
     }
 
     fn read_bind_from_config(&self, path: &Path) -> Option<String> {
-        let content = std::fs::read_to_string(path).ok()?;
-        for line in content.lines() {
-            let trimmed = line.trim();
-            if trimmed.starts_with("bind ") {
-                let v = trimmed.trim_start_matches("bind ").trim();
-                if !v.is_empty() {
-                    return Some(v.to_string());
-                }
-            }
-        }
-        None
+        self.read_config_value(path, "bind")
     }
 
     fn read_password_from_config(&self, path: &Path) -> Option<String> {
+        self.read_config_value(path, "requirepass")
+    }
+
+    fn read_data_dir_from_config(&self, path: &Path) -> Option<String> {
+        self.read_config_value(path, "dir")
+    }
+
+    fn read_log_path_from_config(&self, path: &Path) -> Option<String> {
+        self.read_config_value(path, "logfile")
+    }
+
+    fn read_aof_enabled_from_config(&self, path: &Path) -> Option<bool> {
+        self.read_config_value(path, "appendonly")
+            .map(|value| value.eq_ignore_ascii_case("yes"))
+    }
+
+    fn read_rdb_enabled_from_config(&self, path: &Path) -> Option<bool> {
         let content = std::fs::read_to_string(path).ok()?;
         for line in content.lines() {
             let trimmed = line.trim();
-            if trimmed.starts_with("requirepass ") {
-                let v = trimmed.trim_start_matches("requirepass ").trim();
-                return Some(v.to_string());
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            if let Some(value) = trimmed.strip_prefix("save ") {
+                let value = value.trim();
+                return Some(!value.is_empty() && value != "\"\"" && value != "''");
             }
         }
         None
@@ -833,4 +977,6 @@ struct RedisRuntimeConfig {
     port: u16,
     bind_ip: String,
     password: String,
+    rdb_enabled: bool,
+    aof_enabled: bool,
 }

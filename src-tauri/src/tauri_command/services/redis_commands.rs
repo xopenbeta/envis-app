@@ -127,6 +127,8 @@ pub async fn initialize_redis(
     password: Option<String>,
     port: Option<String>,
     bind_ip: Option<String>,
+    rdb_enabled: Option<bool>,
+    aof_enabled: Option<bool>,
     reset: Option<bool>,
 ) -> Result<CommandResponse, String> {
     let service = RedisService::global();
@@ -136,6 +138,8 @@ pub async fn initialize_redis(
         password,
         port,
         bind_ip,
+        rdb_enabled.unwrap_or(false),
+        aof_enabled.unwrap_or(false),
         reset.unwrap_or(false),
     ) {
         Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
@@ -159,4 +163,16 @@ pub async fn check_redis_initialized(
         .to_string(),
         Some(serde_json::json!({ "initialized": initialized })),
     ))
+}
+
+#[tauri::command]
+pub async fn open_redis_client(
+    environment_id: String,
+    service_data: ServiceData,
+) -> Result<CommandResponse, String> {
+    let service = RedisService::global();
+    match service.open_client(&environment_id, &service_data) {
+        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Err(e) => Ok(CommandResponse::error(format!("打开 Redis CLI 失败: {}", e))),
+    }
 }

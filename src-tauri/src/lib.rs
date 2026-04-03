@@ -253,6 +253,7 @@ pub fn run() {
             get_redis_service_status,
             initialize_redis,
             check_redis_initialized,
+            open_redis_client,
             // MariaDB 服务命令
             download_mariadb,
             get_mariadb_versions,

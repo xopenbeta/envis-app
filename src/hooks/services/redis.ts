@@ -3,6 +3,7 @@ import {
     ipcGetRedisConfig,
     ipcInitializeRedis,
     ipcCheckRedisInitialized,
+    ipcOpenRedisClient,
 } from "../../ipc/services/redis";
 
 export async function getRedisConfig(environmentId: string, serviceData: ServiceData) {
@@ -15,13 +16,19 @@ export async function initializeRedis(
     password?: string,
     port?: string,
     bindIp?: string,
+    rdbEnabled?: boolean,
+    aofEnabled?: boolean,
     reset?: boolean,
 ) {
-    return ipcInitializeRedis(environmentId, serviceData, password, port, bindIp, reset)
+    return ipcInitializeRedis(environmentId, serviceData, password, port, bindIp, rdbEnabled, aofEnabled, reset)
 }
 
 export async function checkRedisInitialized(environmentId: string, serviceData: ServiceData) {
     return ipcCheckRedisInitialized(environmentId, serviceData)
+}
+
+export async function openRedisClient(environmentId: string, serviceData: ServiceData) {
+    return ipcOpenRedisClient(environmentId, serviceData)
 }
 
 export function useRedis() {
@@ -29,5 +36,6 @@ export function useRedis() {
         getRedisConfig,
         initializeRedis,
         checkRedisInitialized,
+        openRedisClient,
     }
 }

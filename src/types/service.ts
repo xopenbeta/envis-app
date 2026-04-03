@@ -21,15 +21,13 @@ export interface RedisConfig {
     port: number
     bindIp: string
     password?: string
+    rdbEnabled?: boolean
+    aofEnabled?: boolean
     isRunning?: boolean
 }
 
 export interface RedisMetadata {
     "REDIS_CONFIG"?: string
-    "REDIS_DATA"?: string
-    "REDIS_LOG"?: string
-    "REDIS_PORT"?: number
-    "REDIS_BIND_IP"?: string
     "REDIS_PASSWORD"?: string
 }
 

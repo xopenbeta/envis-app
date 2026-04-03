@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from 'sonner'
-import { Database, FolderOpen, Power, PowerOff, RefreshCw, RotateCw, FileText, Settings } from 'lucide-react'
+import { Database, FolderOpen, Power, PowerOff, RefreshCw, RotateCw, FileText, Settings, Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
-import { RedisMetadata } from '@/types/service'
+import { RedisConfig, RedisMetadata } from '@/types/service'
 import { useEffect, useMemo, useState } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '@/store/environment'
@@ -21,7 +22,7 @@ interface RedisServiceProps {
 export function RedisService({ serviceData }: RedisServiceProps) {
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   const { openFolderInFinder } = useFileOperations()
-  const { initializeRedis, checkRedisInitialized, getRedisConfig } = useRedis()
+  const { initializeRedis, checkRedisInitialized, getRedisConfig, openRedisClient } = useRedis()
   const { startServiceData, stopServiceData, restartServiceData } = useServiceData()
   const { getServiceStatus, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
 
@@ -37,28 +38,60 @@ export function RedisService({ serviceData }: RedisServiceProps) {
 
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
+  const [runtimeConfig, setRuntimeConfig] = useState<RedisConfig>({
+    configPath: metadata.REDIS_CONFIG || '',
+    dataPath: '',
+    logPath: '',
+    port: 6379,
+    bindIp: '127.0.0.1',
+    password: '',
+    rdbEnabled: false,
+    aofEnabled: false,
+  })
   const [dialogData, setDialogData] = useState({
-    password: metadata.REDIS_PASSWORD || '',
-    port: String(metadata.REDIS_PORT || 6379),
-    bindIp: metadata.REDIS_BIND_IP || '127.0.0.1',
+    password: '',
+    port: '6379',
+    bindIp: '127.0.0.1',
+    rdbEnabled: false,
+    aofEnabled: false,
   })
 
   const configPath = useMemo(() => metadata.REDIS_CONFIG || '', [metadata.REDIS_CONFIG])
-  const dataPath = useMemo(() => metadata.REDIS_DATA || '', [metadata.REDIS_DATA])
-  const logPath = useMemo(() => metadata.REDIS_LOG || '', [metadata.REDIS_LOG])
 
   useEffect(() => {
-    setDialogData({
-      password: metadata.REDIS_PASSWORD || '',
-      port: String(metadata.REDIS_PORT || 6379),
-      bindIp: metadata.REDIS_BIND_IP || '127.0.0.1',
+    setRuntimeConfig({
+      configPath: metadata.REDIS_CONFIG || '',
+      dataPath: '',
+      logPath: '',
+      port: 6379,
+      bindIp: '127.0.0.1',
+      password: '',
+      rdbEnabled: false,
+      aofEnabled: false,
     })
-  }, [metadata.REDIS_PASSWORD, metadata.REDIS_PORT, metadata.REDIS_BIND_IP])
+    setDialogData({
+      password: '',
+      port: '6379',
+      bindIp: '127.0.0.1',
+      rdbEnabled: false,
+      aofEnabled: false,
+    })
+  }, [metadata.REDIS_CONFIG, selectedEnvironmentId, serviceData.id])
 
   useEffect(() => {
     if (!isServiceActive) {
       setServiceStatus(ServiceStatus.Unknown)
       setIsInitialized(null)
+      setRuntimeConfig({
+        configPath: metadata.REDIS_CONFIG || '',
+        dataPath: '',
+        logPath: '',
+        port: 6379,
+        bindIp: '127.0.0.1',
+        password: '',
+        rdbEnabled: false,
+        aofEnabled: false,
+      })
       return
     }
 
@@ -71,25 +104,73 @@ export function RedisService({ serviceData }: RedisServiceProps) {
     return () => clearInterval(timer)
   }, [isServiceActive, selectedEnvironmentId, serviceData.id])
 
+  const refreshConfigPaths = async () => {
+    try {
+      const result = await getRedisConfig(selectedEnvironmentId, serviceData)
+      if (result.success && result.data) {
+        const configData = result.data
+        setRuntimeConfig(configData)
+        setDialogData(prev => ({
+          ...prev,
+          password: configData.password || '',
+          port: String(configData.port),
+          bindIp: configData.bindIp,
+          rdbEnabled: configData.rdbEnabled,
+          aofEnabled: configData.aofEnabled,
+        }))
+      }
+    } catch (error) {
+      console.error('获取 Redis 配置路径失败:', error)
+    }
+  }
+
   const refreshInitStatus = async () => {
     try {
       const result = await checkRedisInitialized(selectedEnvironmentId, serviceData)
       if (result.success && result.data) {
         setIsInitialized(result.data.initialized)
+        if (result.data.initialized) {
+          await refreshConfigPaths()
+        }
+        return
       }
+
+      console.error('检查 Redis 初始化状态失败:', result.message)
+      setIsInitialized(false)
+      setRuntimeConfig(prev => ({
+        ...prev,
+        dataPath: '',
+        logPath: '',
+        port: 6379,
+        bindIp: '127.0.0.1',
+        rdbEnabled: false,
+        aofEnabled: false,
+      }))
     } catch (error) {
       console.error('检查 Redis 初始化状态失败:', error)
+      setIsInitialized(false)
+      setRuntimeConfig(prev => ({
+        ...prev,
+        dataPath: '',
+        logPath: '',
+        port: 6379,
+        bindIp: '127.0.0.1',
+        rdbEnabled: false,
+        aofEnabled: false,
+      }))
     }
   }
 
   const refreshServiceStatus = async () => {
     try {
       const result = await getServiceStatus(selectedEnvironmentId, serviceData)
+      console.log('获取 Redis 服务状态:', result)
       if (result.success && result.data?.status) {
         setServiceStatus(result.data.status)
       }
     } catch (error) {
       console.error('获取 Redis 服务状态失败:', error)
+      setServiceStatus(ServiceStatus.Unknown)
     }
   }
 
@@ -113,6 +194,8 @@ export function RedisService({ serviceData }: RedisServiceProps) {
         dialogData.password || undefined,
         dialogData.port || undefined,
         dialogData.bindIp || undefined,
+        dialogData.rdbEnabled,
+        dialogData.aofEnabled,
         reset,
       )
 
@@ -123,10 +206,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
 
       await persistRedisMetadata({
         REDIS_CONFIG: result.data.configPath,
-        REDIS_DATA: result.data.dataPath,
-        REDIS_LOG: result.data.logPath,
-        REDIS_PORT: Number(result.data.port),
-        REDIS_BIND_IP: result.data.bindIp,
         REDIS_PASSWORD: result.data.password,
       })
 
@@ -139,12 +218,9 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       if (configRes.success && configRes.data) {
         await persistRedisMetadata({
           REDIS_CONFIG: configRes.data.configPath,
-          REDIS_DATA: configRes.data.dataPath,
-          REDIS_LOG: configRes.data.logPath,
-          REDIS_PORT: Number(configRes.data.port),
-          REDIS_BIND_IP: configRes.data.bindIp,
           REDIS_PASSWORD: configRes.data.password,
         })
+        setRuntimeConfig(configRes.data)
       }
     } catch (error) {
       toast.error('初始化 Redis 失败: ' + error)
@@ -157,6 +233,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
     try {
       setIsStarting(true)
       const res = await startServiceData(selectedEnvironmentId, serviceData)
+      console.log('启动 Redis 结果:', res)
       if (res?.success) {
         toast.success('Redis 启动成功')
         await refreshServiceStatus()
@@ -258,47 +335,130 @@ export function RedisService({ serviceData }: RedisServiceProps) {
             <div className="flex flex-wrap gap-2">
               <Button size="sm" className="shadow-none" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
                 {isStarting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5 text-green-600" />}
-                启动
+                &nbsp;启动
               </Button>
               <Button size="sm" className="shadow-none" variant="outline" onClick={handleStop} disabled={!isServiceActive || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
                 <PowerOff className="h-3.5 w-3.5 text-red-600" />
-                停止
+                &nbsp;停止
               </Button>
               <Button size="sm" className="shadow-none" variant="outline" onClick={handleRestart} disabled={!isServiceActive || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
                 <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
-                重启
+                &nbsp;重启
               </Button>
             </div>
           </div>
 
           <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
-            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">运行信息</Label>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span>端口</span>
-                <span className="font-mono">{metadata.REDIS_PORT || 6379}</span>
+            <div className="grid grid-cols-1 gap-3 text-xs">
+              <div>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={runtimeConfig.configPath || configPath}
+                    disabled
+                    className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    onClick={() => (runtimeConfig.configPath || configPath) && openFolderInFinder(runtimeConfig.configPath || configPath)}
+                    disabled={!(runtimeConfig.configPath || configPath)}
+                    title="打开目录"
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>绑定地址</span>
-                <span className="font-mono">{metadata.REDIS_BIND_IP || '127.0.0.1'}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>配置文件</span>
-                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => configPath && openFolderInFinder(configPath)} disabled={!configPath}>
-                  <FolderOpen className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>日志文件</span>
-                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => logPath && openFolderInFinder(logPath)} disabled={!logPath}>
-                  <FileText className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>数据目录</span>
-                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => dataPath && openFolderInFinder(dataPath)} disabled={!dataPath}>
-                  <FolderOpen className="h-3.5 w-3.5" />
-                </Button>
+              <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-3">
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      value={runtimeConfig.logPath}
+                      disabled
+                      className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                      onClick={() => runtimeConfig.logPath && openFolderInFinder(runtimeConfig.logPath)}
+                      disabled={!runtimeConfig.logPath}
+                      title="打开目录"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      value={runtimeConfig.dataPath}
+                      disabled
+                      className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                      onClick={() => runtimeConfig.dataPath && openFolderInFinder(runtimeConfig.dataPath)}
+                      disabled={!runtimeConfig.dataPath}
+                      title="打开目录"
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">绑定地址</Label>
+                    <div className="mt-1">
+                      <Input
+                        value={runtimeConfig.bindIp}
+                        disabled
+                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口</Label>
+                    <div className="mt-1">
+                      <Input
+                        value={String(runtimeConfig.port)}
+                        disabled
+                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Button
+                      size="sm"
+                      className="shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          const result = await openRedisClient(selectedEnvironmentId, serviceData)
+                          if (result.success) {
+                            toast.success('Redis CLI 已打开')
+                          } else {
+                            toast.error(result.message || '打开 Redis CLI 失败')
+                          }
+                        } catch (error) {
+                          toast.error('打开 Redis CLI 失败: ' + error)
+                        }
+                      }}
+                      disabled={serviceStatus !== ServiceStatus.Running}
+                    >
+                      <Terminal className="h-3.5 w-3.5" />
+                      Redis CLI
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -308,8 +468,8 @@ export function RedisService({ serviceData }: RedisServiceProps) {
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
-                className="shadow-none"
-                variant="outline"
+                className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-none"
+                variant="ghost"
                 onClick={() => setShowResetDialog(true)}
                 disabled={!isServiceActive || isLoading || isInitialized !== true || serviceStatus === ServiceStatus.Running}
               >
@@ -361,6 +521,25 @@ export function RedisService({ serviceData }: RedisServiceProps) {
               <Label>密码（可选）</Label>
               <Input value={dialogData.password} onChange={(e) => setDialogData(prev => ({ ...prev, password: e.target.value }))} placeholder="留空表示不启用 requirepass" />
             </div>
+            <div className="space-y-2">
+              <Label>持久化</Label>
+              <div className="space-y-2 rounded-md border border-border/60 p-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={dialogData.rdbEnabled}
+                    onCheckedChange={(checked) => setDialogData(prev => ({ ...prev, rdbEnabled: checked === true }))}
+                  />
+                  <span>启用 RDB 快照</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={dialogData.aofEnabled}
+                    onCheckedChange={(checked) => setDialogData(prev => ({ ...prev, aofEnabled: checked === true }))}
+                  />
+                  <span>启用 AOF 追加日志</span>
+                </label>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInitDialog(false)}>取消</Button>
@@ -389,6 +568,25 @@ export function RedisService({ serviceData }: RedisServiceProps) {
             <div className="space-y-1.5">
               <Label>密码（可选）</Label>
               <Input value={dialogData.password} onChange={(e) => setDialogData(prev => ({ ...prev, password: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>持久化</Label>
+              <div className="space-y-2 rounded-md border border-border/60 p-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={dialogData.rdbEnabled}
+                    onCheckedChange={(checked) => setDialogData(prev => ({ ...prev, rdbEnabled: checked === true }))}
+                  />
+                  <span>启用 RDB 快照</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={dialogData.aofEnabled}
+                    onCheckedChange={(checked) => setDialogData(prev => ({ ...prev, aofEnabled: checked === true }))}
+                  />
+                  <span>启用 AOF 追加日志</span>
+                </label>
+              </div>
             </div>
           </div>
           <DialogFooter>
