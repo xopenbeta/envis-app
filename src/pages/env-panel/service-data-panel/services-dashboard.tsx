@@ -152,6 +152,9 @@ export function ServicesDashboard() {
                     <th className="py-2 px-3 text-left text-[10px] font-medium text-gray-400 uppercase tracking-wider">
                       {t('resource_monitor.col_service')}
                     </th>
+                    <th className="py-2 px-3 text-left text-[10px] font-medium text-gray-400 uppercase tracking-wider w-16">
+                      {t('resource_monitor.col_version')}
+                    </th>
                     <th className="py-2 px-3 text-right text-[10px] font-medium text-gray-400 uppercase tracking-wider w-16">
                       {t('resource_monitor.col_cpu')}
                     </th>
@@ -174,14 +177,14 @@ export function ServicesDashboard() {
                         key={service.id}
                         className={`${index > 0 ? 'border-t border-gray-200 dark:border-white/5' : ''} hover:bg-gray-100/50 dark:hover:bg-white/[0.02] transition-colors`}
                       >
-                        {/* 服务名 + 版本 */}
+                        {/* 服务名 */}
                         <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-medium text-foreground truncate">{service.name}</span>
-                            <span className="text-gray-400 text-[10px] flex-shrink-0">v{service.version}</span>
-                          </div>
+                          <span className="font-medium text-foreground truncate">{service.name}</span>
                         </td>
-
+                        {/* 版本 */}
+                        <td className="py-2.5 px-3 text-left w-16">
+                          <span className="text-gray-400 text-[10px] flex-shrink-0">{service.version}</span>
+                        </td>
                         {/* CPU */}
                         <td className="py-2.5 px-3 text-right w-16">
                           {isRunning ? (
@@ -194,7 +197,6 @@ export function ServicesDashboard() {
                             </span>
                           )}
                         </td>
-
                         {/* 内存 */}
                         <td className="py-2.5 px-3 text-right w-20">
                           {isRunning ? (
@@ -205,23 +207,18 @@ export function ServicesDashboard() {
                             <span className="text-gray-300 dark:text-gray-600 text-[10px]">--</span>
                           )}
                         </td>
-
                         {/* 磁盘 I/O */}
                         <td className="py-2.5 px-3 text-right w-28">
                           {isRunning ? (
-                            <div className="text-[10px] space-y-0.5">
-                              <div className="flex justify-end gap-1 text-gray-500">
-                                <span className="text-gray-400">R</span>
-                                <span className="font-mono text-gray-700 dark:text-gray-300">
-                                  {formatBytes(stat!.diskReadBytes)}/s
-                                </span>
-                              </div>
-                              <div className="flex justify-end gap-1 text-gray-500">
-                                <span className="text-gray-400">W</span>
-                                <span className="font-mono text-gray-700 dark:text-gray-300">
-                                  {formatBytes(stat!.diskWriteBytes)}/s
-                                </span>
-                              </div>
+                            <div className="text-[10px] flex justify-end items-center gap-1 text-gray-500 whitespace-nowrap">
+                              <span className="text-gray-400">R</span>
+                              <span className="font-mono text-gray-700 dark:text-gray-300">
+                                {formatBytes(stat!.diskReadBytes)}/s
+                              </span>
+                              <span className="text-gray-400">W</span>
+                              <span className="font-mono text-gray-700 dark:text-gray-300">
+                                {formatBytes(stat!.diskWriteBytes)}/s
+                              </span>
                             </div>
                           ) : (
                             <span className="text-gray-300 dark:text-gray-600 text-[10px]">--</span>

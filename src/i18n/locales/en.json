@@ -428,6 +428,7 @@
     "tag_cpu": "CPU usage",
     "tag_network": "Network traffic",
     "col_service": "Service",
+    "col_version": "Version",
     "col_resources": "Resources",
     "col_cpu": "CPU",
     "col_memory": "Memory",

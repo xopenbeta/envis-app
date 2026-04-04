@@ -708,7 +708,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-3">
       {/* 初始化对话框 */}
       <Dialog open={showInitDialog} onOpenChange={setShowInitDialog}>
         <DialogContent>
@@ -1008,7 +1008,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-3">
         {/* 未初始化提示 */}
         {isServiceActive && isInitialized === false && (
           <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-6">
@@ -1361,7 +1361,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
             <div className="space-y-2">
               {databases.length > 0 ? (
-                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="space-y-1 border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   {(showAllDatabases ? databases : databases.slice(0, 4)).map((db) => (
                     <div
                       key={db.name}

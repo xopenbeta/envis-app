@@ -298,7 +298,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   }
 
   return (
-    <div className="w-full p-3 space-y-4">
+    <div className="w-full p-3 space-y-3">
       {isInitialized === null ? (
         <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">

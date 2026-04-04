@@ -431,6 +431,7 @@
     "tag_cpu": "CPU 占用",
     "tag_network": "网络流量",
     "col_service": "服务",
+    "col_version": "版本",
     "col_resources": "资源类型",
     "col_cpu": "CPU",
     "col_memory": "内存",
