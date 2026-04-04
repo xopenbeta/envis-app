@@ -11,6 +11,7 @@ import { FolderOpen, Play, Square, RotateCw, Save, FileText, AlertTriangle } fro
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface DnsmasqConfigViewProps {
     selectedEnvironmentId: string
@@ -30,7 +31,6 @@ export function DnsmasqConfigView({
     const {
         updateServiceData,
         selectedServiceDatas,
-        getServiceStatus,
     } = useEnvironmentServiceData()
     const { getDnsmasqConfig } = useDnsmasqService()
 
@@ -43,8 +43,10 @@ export function DnsmasqConfigView({
     const [editingConfigPath, setEditingConfigPath] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
     
-    // 服务状态相关
-    const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
+    const { status: serviceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+        enabled: isServiceActive,
+        interval: 3000,
+    })
     const [isStarting, setIsStarting] = useState(false)
     const [isStopping, setIsStopping] = useState(false)
     const [isRestarting, setIsRestarting] = useState(false)
@@ -57,26 +59,6 @@ export function DnsmasqConfigView({
     useEffect(() => {
         setEditingConfigPath(configPath)
     }, [configPath])
-
-    // 轮询服务状态
-    useEffect(() => {
-        if (!isServiceActive) return
-
-        const checkStatus = async () => {
-            try {
-                const res = await getServiceStatus(selectedEnvironmentId, serviceData)
-                if (res.success && res.data) {
-                    setServiceStatus(res.data.status)
-                }
-            } catch (error) {
-                console.error('获取服务状态失败:', error)
-            }
-        }
-
-        checkStatus()
-        const interval = setInterval(checkStatus, 3000)
-        return () => clearInterval(interval)
-    }, [isServiceActive, selectedEnvironmentId, serviceData])
 
     // 加载配置
     useEffect(() => {

@@ -15,6 +15,7 @@ import { useRedis } from '@/hooks/services/redis'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { ipcOpenSelectDialog } from '@/ipc/file-operations'
+import { useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface RedisServiceProps {
   serviceData: ServiceData
@@ -25,12 +26,15 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   const { openFolderInFinder } = useFileOperations()
   const { initializeRedis, checkRedisInitialized, getRedisConfig, openRedisClient } = useRedis()
   const { startServiceData, stopServiceData, restartServiceData } = useServiceData()
-  const { getServiceStatus, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
+  const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
 
   const isServiceActive = serviceData.status === ServiceDataStatus.Active
   const metadata = (serviceData.metadata || {}) as RedisMetadata
 
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive,
+    interval: 2000,
+  })
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
@@ -83,7 +87,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
 
   useEffect(() => {
     if (!isServiceActive) {
-      setServiceStatus(ServiceStatus.Unknown)
       setIsInitialized(null)
       setRuntimeConfig({
         configPath: metadata.REDIS_CONFIG || '',
@@ -103,8 +106,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
     }
 
     refreshBaseState()
-    const timer = setInterval(refreshServiceStatus, 2000)
-    return () => clearInterval(timer)
+    return () => {}
   }, [isServiceActive, selectedEnvironmentId, serviceData.id])
 
   const refreshConfigPaths = async () => {
@@ -180,19 +182,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
         rdbEnabled: false,
         aofEnabled: false,
       }))
-    }
-  }
-
-  const refreshServiceStatus = async () => {
-    try {
-      const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-      console.log('获取 Redis 服务状态:', result)
-      if (result.success && result.data?.status) {
-        setServiceStatus(result.data.status)
-      }
-    } catch (error) {
-      console.error('获取 Redis 服务状态失败:', error)
-      setServiceStatus(ServiceStatus.Unknown)
     }
   }
 

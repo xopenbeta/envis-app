@@ -5,6 +5,11 @@ import { useAtom } from "jotai";
 import { isAppLoadingAtom } from "@/store/appSettings";
 import { useLogger } from "./log";
 import { Environment } from "@/types";
+export {
+    useServiceProcessStatus,
+    useServiceActivationStatus,
+    useServiceDownloadStatus,
+} from './service-pollers'
 
 // 初始化整个Envis应用
 export function useInitEnvis() {

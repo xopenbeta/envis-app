@@ -32,6 +32,7 @@ import { useMysql } from '@/hooks/services/mysql'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MySQLMetadata } from '@/types/service'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
+import { useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface MySQLServiceProps {
   serviceData: ServiceData
@@ -44,14 +45,16 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   // 检查服务是否激活
   const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
 
-  // MySQL 配置状态
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
-
   // 初始化状态
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
+
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive && Boolean(isInitialized),
+    interval: 500,
+  })
 
   // 弹窗数据
   const [dialogData, setDialogData] = useState({
@@ -99,7 +102,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   } = useServiceData()
 
   const {
-    getServiceStatus,
     updateServiceData,
     selectedServiceDatas,
   } = useEnvironmentServiceData()
@@ -110,18 +112,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       checkInitialized()
     }
   }, [isServiceActive])
-
-  // 加载配置和定时刷新状态
-  useEffect(() => {
-    if (isServiceActive && isInitialized) {
-      const timer = setInterval(() => {
-        checkServiceStatus()
-      }, 500)
-      return () => clearInterval(timer)
-    } else {
-      return () => {}
-    }
-  }, [isServiceActive, isInitialized])
 
   // 定时刷新数据库列表（每3秒）
   useEffect(() => {
@@ -145,17 +135,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       }
     } catch (error) {
       console.error('检查 MySQL 初始化状态失败:', error)
-    }
-  }
-
-  const checkServiceStatus = async () => {
-    try {
-      const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-      if (result.success && result.data) {
-        setServiceStatus(result.data.status)
-      }
-    } catch (error) {
-      console.error('检查服务状态失败:', error)
     }
   }
 
@@ -267,7 +246,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MySQL 服务启动成功')
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error('启动 MySQL 服务失败: ' + result.message)
       }
@@ -286,7 +265,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MySQL 服务已停止')
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error('停止 MySQL 服务失败: ' + result.message)
       }
@@ -305,7 +284,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MySQL 服务重启成功')
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error('重启 MySQL 服务失败: ' + result.message)
       }

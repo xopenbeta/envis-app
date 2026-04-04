@@ -15,13 +15,14 @@ import {
   Save
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ServiceData, Environment } from '@/types/index'
+import { ServiceData, Environment, ServiceStatus } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { 
   usePostgresqlService,
   type PostgreSQLConfig
 } from '@/hooks/services/postgresql'
 import { useFileOperations } from "@/hooks/file-operations"
+import { useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface PostgreSQLServiceProps {
   serviceData: ServiceData
@@ -34,14 +35,18 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     getPostgresqlConfig,
     setPostgresqlDataPath,
     setPostgresqlPort,
-    getPostgresqlServiceStatus,
     startPostgresqlService,
     stopPostgresqlService,
     restartPostgresqlService
   } = usePostgresqlService()
-  
+
   // 检查服务是否激活
   const isServiceActive = serviceData.status === 'active'
+
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironment.id, serviceData, {
+    enabled: isServiceActive,
+    interval: 1000,
+  })
 
   // PostgreSQL 配置状态
   const [pgConfig, setPgConfig] = useState<PostgreSQLConfig | null>(null)
@@ -56,17 +61,23 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
   useEffect(() => {
     if (isServiceActive) {
       loadPgConfig()
-      const timer = setInterval(() => {
-        checkServiceStatus()
-      }, 1000);
-      return () => {
-        clearInterval(timer)
-      }
+      refreshServiceStatus()
+      return () => {}
     } else {
       setPgConfig(null)
       return () => {}
     }
   }, [isServiceActive, selectedEnvironment.id])
+
+  useEffect(() => {
+    setPgConfig(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        isRunning: serviceStatus === ServiceStatus.Running,
+      }
+    })
+  }, [serviceStatus])
 
   const loadPgConfig = async () => {
     if (!isServiceActive) return
@@ -83,22 +94,6 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
       toast.error('加载 PostgreSQL 配置失败: ' + error)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const checkServiceStatus = async () => {
-    if (!isServiceActive) return
-    
-    try {
-      const result = await getPostgresqlServiceStatus(selectedEnvironment.id, serviceData)
-      if (result.success && pgConfig) {
-        setPgConfig({
-          ...pgConfig,
-          isRunning: result.isRunning
-        })
-      }
-    } catch (error) {
-      // 静默失败，不显示错误提示
     }
   }
 
@@ -146,7 +141,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
       const result = await startPostgresqlService(selectedEnvironment.id, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务启动成功')
-        await checkServiceStatus()
+        await refreshServiceStatus()
       } else {
         toast.error('启动失败: ' + result.message)
       }
@@ -163,7 +158,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
       const result = await stopPostgresqlService(selectedEnvironment.id, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务停止成功')
-        await checkServiceStatus()
+        await refreshServiceStatus()
       } else {
         toast.error('停止失败: ' + result.message)
       }
@@ -180,7 +175,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
       const result = await restartPostgresqlService(selectedEnvironment.id, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务重启成功')
-        await checkServiceStatus()
+        await refreshServiceStatus()
       } else {
         toast.error('重启失败: ' + result.message)
       }

@@ -28,6 +28,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useNginxService } from '@/hooks/services/nginx'
+import { useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface NginxConfigViewProps {
     selectedEnvironmentId: string
@@ -56,7 +57,6 @@ export function NginxConfigView({
     const {
         updateServiceData,
         selectedServiceDatas,
-        getServiceStatus,
     } = useEnvironmentServiceData()
     const { getNginxConfig } = useNginxService()
 
@@ -68,8 +68,10 @@ export function NginxConfigView({
     const [editingConfigPath, setEditingConfigPath] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
     
-    // 服务状态相关
-    const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
+    const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+        enabled: isServiceActive,
+        interval: 3000,
+    })
     const [isStarting, setIsStarting] = useState(false)
     const [isStopping, setIsStopping] = useState(false)
     const [isRestarting, setIsRestarting] = useState(false)
@@ -81,26 +83,6 @@ export function NginxConfigView({
     useEffect(() => {
         setEditingConfigPath(configPath)
     }, [configPath])
-
-    // 轮询服务状态
-    useEffect(() => {
-        if (!isServiceActive) return
-
-        const checkStatus = async () => {
-            try {
-                const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-                if (result.success && result.data) {
-                    setServiceStatus(result.data.status);
-                }
-            } catch (error) {
-                console.error('获取服务状态失败:', error)
-            }
-        }
-
-        checkStatus()
-        const interval = setInterval(checkStatus, 3000)
-        return () => clearInterval(interval)
-    }, [isServiceActive, selectedEnvironmentId, serviceData])
 
     // 加载并解析配置
     useEffect(() => {
@@ -235,10 +217,7 @@ export function NginxConfigView({
             const res = await startServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务启动成功')
-                const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-                if (result.success && result.data) {
-                    setServiceStatus(result.data.status);
-                }
+                await refreshServiceStatus()
             } else {
                 toast.error((res as any)?.message || '启动失败')
             }
@@ -257,10 +236,7 @@ export function NginxConfigView({
             const res = await stopServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务停止成功')
-                const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-                if (result.success && result.data) {
-                    setServiceStatus(result.data.status);
-                }
+                await refreshServiceStatus()
             } else {
                 toast.error((res as any)?.message || '停止失败')
             }
@@ -279,10 +255,7 @@ export function NginxConfigView({
             const res = await restartServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务重启成功')
-                const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-                if (result.success && result.data) {
-                    setServiceStatus(result.data.status);
-                }
+                await refreshServiceStatus()
             } else {
                 toast.error((res as any)?.message || '重启失败')
             }

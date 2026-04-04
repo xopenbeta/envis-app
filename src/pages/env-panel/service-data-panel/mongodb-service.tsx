@@ -50,6 +50,7 @@ import { MongoDBConfig, MongoDBMetadata } from "@/types/service"
 import { useMongodb } from "@/hooks/services/mongodb"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
 import { useService } from "@/hooks/service"
+import { useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface MongoDBServiceProps {
   serviceData: ServiceData
@@ -67,7 +68,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
   // MongoDB 配置状态
   const [mongoConfig, setMongoConfig] = useState<MongoDBConfig | null>(null)
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown);
 
   // 编辑中的配置路径
   const [editingConfigPath, setEditingConfigPath] = useState<string>('')
@@ -77,6 +77,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive && Boolean(isInitialized),
+    interval: 500,
+  })
 
   // 弹窗数据 - 整合到一个 state 对象
   const [dialogData, setDialogData] = useState({
@@ -158,7 +162,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       restartServiceData,
   } = useServiceData()
   const {
-    getServiceStatus,
     updateServiceData,
     selectedServiceDatas,
   } = useEnvironmentServiceData();
@@ -467,13 +470,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     // 只有在服务激活且已初始化时才加载配置
     if (isServiceActive && isInitialized) {
       loadMongoConfig(serviceData)
-      // 每隔一秒刷新一次
-      const timer = setInterval(() => {
-        checkServiceStatus()
-      }, 500);
-      return () => {
-        clearInterval(timer)
-      }
+      return () => { }
     } else {
       // 服务未激活时清空配置
       setMongoConfig(null)
@@ -527,18 +524,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     }
   }
 
-  const checkServiceStatus = async () => {
-    try {
-      const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-      // console.log('zws 服务状态检查结果:', result.data)
-      if (result.success && result.data) {
-        setServiceStatus(result.data.status);
-      }
-    } catch (error) {
-      console.error('检查服务状态失败:', error)
-    }
-  }
-
   // 启动 MongoDB 服务
   const startService = async () => {
     if (!serviceData?.version) return
@@ -548,7 +533,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mongodb.start_success'))
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error(t('mongodb.start_error', { message: result.message }))
       }
@@ -568,7 +553,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mongodb.stop_success'))
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error(t('mongodb.stop_error', { message: result.message }))
       }
@@ -588,7 +573,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mongodb.restart_success'))
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error(t('mongodb.restart_error', { message: result.message }))
       }

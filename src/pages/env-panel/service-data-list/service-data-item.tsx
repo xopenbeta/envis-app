@@ -48,15 +48,14 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useService } from '@/hooks/service'
-import { useServiceData } from '@/hooks/env-serv-data'
 import { toast } from 'sonner'
-import { selectedServiceDataIdAtom, envActivationEventAtom, environmentsAtom } from '@/store/environment'
+import { selectedServiceDataIdAtom, environmentsAtom } from '@/store/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { Input } from '@/components/ui/input'
 import { useAppSettings } from '@/hooks/appSettings'
 import { useFileOperations } from '@/hooks/file-operations'
-import { setImmediateInterval } from '@/utils/patch'
 import { useEnvironment } from '@/hooks/environment'
+import { useServiceActivationStatus, useServiceDownloadStatus, useServiceProcessStatus } from '@/hooks/service-pollers'
 
 export interface ServiceDownloadProgress {
   serviceType: ServiceType;
@@ -100,19 +99,25 @@ export function SortableServiceItem({
   const { t } = useTranslation()
   const [selectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
   const [environments] = useAtom(environmentsAtom)
-  const [envActivationEvent] = useAtom(envActivationEventAtom)
 
   const [showEnvironmentActivationDialog, setShowEnvironmentActivationDialog] = useState(false)
-  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(DownloadStatus.Unknown);
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown);
-  const [activationStatus, setActivationStatus] = useState<ServiceDataStatus>(ServiceDataStatus.Unknown);
-  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const { selectedEnvironment, activeEnvironment } = useEnvironment();
+  const { cancelServiceDownload, downloadService } = useService();
+  const { switchEnvAndServDatasWithActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
+  const { status: serviceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+    enabled: CanRunServices.includes(serviceData.type),
+    interval: 500,
+  })
+  const { activationStatus, setActivationStatus } = useServiceActivationStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
+    interval: 500,
+  })
+  const { downloadStatus, downloadProgress } = useServiceDownloadStatus(serviceData.type, serviceData.version, {
+    enabled: NeedDownloadServices.includes(serviceData.type),
+    interval: 500,
+  })
   const serviceDataStatus = (activeEnvironment?.id === selectedEnvironmentId) ? activationStatus : ServiceDataStatus.Inactive;
-  const { getServiceData } = useServiceData();
-  const { cancelServiceDownload, downloadService, checkServiceInstalled, getServiceDownloadProgress } = useService();
-  const { switchEnvAndServDatasWithActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, getServiceStatus, selectedServiceDatas } = useEnvironmentServiceData();
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [renameValue, setRenameValue] = useState(serviceData.name || '')
   const [renameLoading, setRenameLoading] = useState(false)
@@ -131,85 +136,6 @@ export function SortableServiceItem({
     id: serviceData.id,
     disabled: !isDragEnabled
   });
-
-  // 安装状态轮询
-  useEffect(() => {
-    if (!NeedDownloadServices.includes(serviceData.type)) {
-      // 不需要下载的服务，不用轮询
-      return;
-    }
-    // let hasShownDownloadFailedToast = false;
-    const timer = setImmediateInterval(async () => {
-      let downloadStatus = DownloadStatus.Unknown;
-      const downloadRes = await getServiceDownloadProgress(serviceData.type, serviceData.version);
-      if (downloadRes.success && downloadRes.data && downloadRes.data.task) {
-        const downloadTask = downloadRes.data.task;
-        downloadStatus = downloadTask.status;
-        setDownloadProgress(downloadTask.progress);
-        // 下载取消toast在点击下载取消按钮时弹
-        // failed状态在点击下载按钮时弹
-        // if (downloadTask.status === DownloadStatus.Failed) {
-        //   if (!hasShownDownloadFailedToast) {
-        //     hasShownDownloadFailedToast = true;
-        //     toast.error(`服务 ${serviceData.name} 下载失败: ${downloadRes.message || '未知错误'}`);
-        //     console.log('zws 2423', downloadRes)
-        //   }
-        // } else {
-        //   // 非 failed 状态时重置，下一次失败可以再次提示
-        //   if (hasShownDownloadFailedToast) {
-        //     hasShownDownloadFailedToast = false;
-        //   }
-        // }
-      } else {
-        const isInstalledRes = await checkServiceInstalled(serviceData.type, serviceData.version);
-        if (isInstalledRes.success && isInstalledRes.data) {
-          downloadStatus = isInstalledRes.data.installed ? DownloadStatus.Installed : DownloadStatus.NotInstalled;
-        }
-      }
-      setDownloadStatus(downloadStatus);
-    }, 500);
-    return () => clearInterval(timer);
-  }, [serviceData.id, serviceData.type, serviceData.version]);
-
-  // 服务程序状态轮询
-  useEffect(() => {
-    if (!CanRunServices.includes(serviceData.type)) {
-      // 不可运行的服务，不用轮询
-      return;
-    }
-    const timer = setInterval(async () => {
-      const res = await getServiceStatus(selectedEnvironmentId, serviceData);
-      if (res.success && res.data) {
-        setServiceStatus(res.data.status);
-      }
-    }, 500);
-    return () => clearInterval(timer);
-  }, [serviceData.id, serviceData.type, serviceData.version]);
-
-  // 服务激活状态轮询（从文件读取）
-  useEffect(() => {
-    const timer = setImmediateInterval(async () => {
-      const res = await getServiceData(selectedEnvironmentId, serviceData.id);
-      if (res.success && res.data?.serviceData) {
-        setActivationStatus(res.data.serviceData.status);
-      }
-    }, 500);
-    return () => clearInterval(timer);
-  }, [serviceData.id, selectedEnvironmentId]);
-
-  // 监听环境激活事件，立即更新服务状态
-  // 这样会更快一点，不用等轮询的间隔
-  useEffect(() => {
-    if (envActivationEvent === 0) return; // 初始值，不处理
-    
-    const updateStatus = async () => {
-      const res = await getServiceData(selectedEnvironmentId, serviceData.id);
-      if (res.success && res.data?.serviceData) {
-        setActivationStatus(res.data.serviceData.status);
-      }
-    };
-    updateStatus();
-  }, [envActivationEvent]);
 
   // 激活环境并启动所有服务
   const handleActivateEnvironmentAndStartServices = async () => {

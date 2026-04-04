@@ -32,6 +32,7 @@ import { useMariadb } from '@/hooks/services/mariadb'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MariaDBMetadata } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
+import { useServiceActivationStatus, useServiceProcessStatus } from '@/hooks/service-pollers'
 
 interface MariaDBServiceProps {
   serviceData: ServiceData
@@ -44,14 +45,20 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   // 检查服务是否激活
   const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
 
-  // MariaDB 配置状态
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
-
   // 初始化状态
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
+
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive && Boolean(isInitialized),
+    interval: 500,
+  })
+  const { activationStatus } = useServiceActivationStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
+    interval: 500,
+  })
 
   // 弹窗数据
   const [dialogData, setDialogData] = useState({
@@ -100,10 +107,32 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   } = useServiceData()
 
   const {
-    getServiceStatus,
     updateServiceData,
     selectedServiceDatas,
   } = useEnvironmentServiceData()
+
+  // 激活状态变化时回写到 store，驱动面板自动同步
+  useEffect(() => {
+    if (activationStatus === ServiceDataStatus.Unknown || activationStatus === serviceData.status) {
+      return
+    }
+
+    updateServiceData({
+      environmentId: selectedEnvironmentId,
+      serviceId: serviceData.id,
+      updates: { status: activationStatus },
+      serviceDatasSnapshot: selectedServiceDatas,
+    }).catch((error) => {
+      console.error('回写 MariaDB 激活状态失败:', error)
+    })
+  }, [
+    activationStatus,
+    selectedEnvironmentId,
+    serviceData.id,
+    serviceData.status,
+    selectedServiceDatas,
+    updateServiceData,
+  ])
 
   // 检查初始化状态
   useEffect(() => {
@@ -111,18 +140,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       checkInitialized()
     }
   }, [isServiceActive])
-
-  // 加载配置和定时刷新状态
-  useEffect(() => {
-    if (isServiceActive && isInitialized) {
-      const timer = setInterval(() => {
-        checkServiceStatus()
-      }, 500)
-      return () => clearInterval(timer)
-    } else {
-      return () => {}
-    }
-  }, [isServiceActive, isInitialized])
 
   // 定时刷新数据库列表（每3秒）
   useEffect(() => {
@@ -146,17 +163,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       }
     } catch (error) {
       console.error('检查 MariaDB 初始化状态失败:', error)
-    }
-  }
-
-  const checkServiceStatus = async () => {
-    try {
-      const result = await getServiceStatus(selectedEnvironmentId, serviceData)
-      if (result.success && result.data) {
-        setServiceStatus(result.data.status)
-      }
-    } catch (error) {
-      console.error('检查服务状态失败:', error)
     }
   }
 
@@ -268,7 +274,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MariaDB 服务启动成功')
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error('启动 MariaDB 服务失败: ' + result.message)
       }
@@ -287,7 +293,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MariaDB 服务已停止')
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error('停止 MariaDB 服务失败: ' + result.message)
       }
@@ -306,7 +312,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('MariaDB 服务重启成功')
-        checkServiceStatus()
+        refreshServiceStatus()
       } else {
         toast.error('重启 MariaDB 服务失败: ' + result.message)
       }
