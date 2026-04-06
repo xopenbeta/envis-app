@@ -54,7 +54,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   })
 
   const isInstalled = !NeedDownloadServices.includes(serviceData.type) || downloadStatus === DownloadStatus.Installed
-  const isActiveByPoller = serviceDataStatus === ServiceDataStatus.Active
 
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
@@ -78,6 +77,11 @@ export function RedisService({ serviceData }: RedisServiceProps) {
 
   const configPath = useMemo(() => metadata.REDIS_CONFIG || '', [metadata.REDIS_CONFIG])
   const [editConfigPath, setEditConfigPath] = useState(metadata.REDIS_CONFIG || '')
+
+  // 判断初始化
+  useEffect(() => {
+    refreshInitStatus()
+  }, [selectedEnvironmentId, serviceData.id])
 
   const refreshConfigPaths = async (effectiveServiceData: ServiceData = serviceData) => {
     try {
@@ -248,256 +252,238 @@ export function RedisService({ serviceData }: RedisServiceProps) {
     }
   }
 
-  return (
-    <div className="w-full p-3 space-y-3">
-      {isInitialized === null ? (
-        <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-          <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            Redis 初始化状态检测中...
-          </div>
-        </div>
-      ) : !isInitialized ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="flex-1 space-y-1">
-              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                Redis 尚未初始化
-              </p>
-              <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
-                请先完成 Redis 初始化，初始化后可使用运行控制与运行信息设置。
-              </p>
+  // 检测初始化模块
+  const InitRedisCard = () => {
+    if (!isInstalled) return null;
+    return (
+      <>
+        {isInitialized === null ? (
+          <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              Redis 初始化状态检测中...
             </div>
           </div>
-          <div className="flex">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowInitDialog(true)}
-              disabled={!isServiceActive || !isActiveByPoller || !isInstalled || isLoading}
-              className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
-            >
-              初始化 Redis
-            </Button>
-          </div>
-        </div>
-      ) : (
-        null
-      )}
-
-      {isServiceActive && isActiveByPoller && isInstalled && isInitialized ? (
-        <>
-          <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-            <div className="flex items-center justify-between mb-2">
-              <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                <Database className="h-3.5 w-3.5" />
-                Redis 状态
-              </Label>
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  serviceStatus === ServiceStatus.Running ? "bg-green-500" :
-                  serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
-                )} />
-                <span className="text-xs text-muted-foreground">
-                  {serviceStatus === ServiceStatus.Running ? '运行中' : serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知'}
-                </span>
+        ) : !isInitialized ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 space-y-1">
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  Redis 尚未初始化
+                </p>
+                <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                  请先完成 Redis 初始化，初始化后可使用运行控制与运行信息设置。
+                </p>
               </div>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" className="shadow-none" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isActiveByPoller || !isInstalled || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
-                {isStarting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5 text-green-600" />}
-                &nbsp;启动
-              </Button>
-              <Button size="sm" className="shadow-none" variant="outline" onClick={handleStop} disabled={!isServiceActive || !isActiveByPoller || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
-                <PowerOff className="h-3.5 w-3.5 text-red-600" />
-                &nbsp;停止
-              </Button>
-              <Button size="sm" className="shadow-none" variant="outline" onClick={handleRestart} disabled={!isServiceActive || !isActiveByPoller || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
-                <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
-                &nbsp;重启
-              </Button>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
-            <div className="grid grid-cols-1 gap-3 text-xs">
-              <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input
-                    value={editConfigPath}
-                    onChange={(e) => setEditConfigPath(e.target.value)}
-                    className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    placeholder="请输入或选择配置文件路径"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    onClick={handleBrowseConfigFile}
-                    title="选择文件"
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    onClick={() => editConfigPath && openFolderInFinder(editConfigPath)}
-                    disabled={!editConfigPath}
-                    title="打开目录"
-                  >
-                    <FolderOpen className="h-3.5 w-3.5" />
-                  </Button>
-                  {editConfigPath !== (runtimeConfig.configPath || configPath) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-3 shadow-none text-xs text-blue-600 hover:text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/20"
-                      onClick={handleSaveConfigPath}
-                      title="保存配置文件路径"
-                    >
-                      保存
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-3">
-                <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input
-                      value={runtimeConfig.logPath}
-                      disabled
-                      className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                      onClick={() => runtimeConfig.logPath && openFolderInFinder(runtimeConfig.logPath)}
-                      disabled={!runtimeConfig.logPath}
-                      title="打开目录"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input
-                      value={runtimeConfig.dataPath}
-                      disabled
-                      className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                      onClick={() => runtimeConfig.dataPath && openFolderInFinder(runtimeConfig.dataPath)}
-                      disabled={!runtimeConfig.dataPath}
-                      title="打开目录"
-                    >
-                      <FolderOpen className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">绑定地址</Label>
-                    <div className="mt-1">
-                      <Input
-                        value={runtimeConfig.bindIp}
-                        disabled
-                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口</Label>
-                    <div className="mt-1">
-                      <Input
-                        value={String(runtimeConfig.port)}
-                        disabled
-                        className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Button
-                      size="sm"
-                      className="shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          const result = await openRedisClient(selectedEnvironmentId, serviceData)
-                          if (result.success) {
-                            toast.success('Redis CLI 已打开')
-                          } else {
-                            toast.error(result.message || '打开 Redis CLI 失败')
-                          }
-                        } catch (error) {
-                          toast.error('打开 Redis CLI 失败: ' + error)
-                        }
-                      }}
-                      disabled={!isActiveByPoller || !isInstalled || serviceStatus !== ServiceStatus.Running}
-                    >
-                      <Terminal className="h-3.5 w-3.5" />
-                      Redis CLI
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
-            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">其他操作</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex">
               <Button
                 size="sm"
-                className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-none"
-                variant="ghost"
-                onClick={() => setShowResetDialog(true)}
-                disabled={!isServiceActive || !isActiveByPoller || !isInstalled || isLoading || isInitialized !== true || serviceStatus === ServiceStatus.Running}
+                variant="outline"
+                onClick={() => setShowInitDialog(true)}
+                disabled={!isServiceActive || !isServiceActive || !isInstalled || isLoading}
+                className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
               >
-                重置初始化
+                初始化 Redis
               </Button>
             </div>
           </div>
-        </>
-      ) : (
-        <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
-          <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
-          {!isServiceActive || !isActiveByPoller ? (
-            <>
-              <p className="text-sm">服务未激活，无法显示 Redis 设置信息</p>
-              <p className="text-xs">请先激活 Redis 服务</p>
-            </>
-          ) : !isInstalled ? (
-            <>
-              <p className="text-sm">Redis 尚未安装完成</p>
-              <p className="text-xs">请等待下载/安装完成后再操作</p>
-            </>
-          ) : isInitialized === null ? (
-            <>
-              <p className="text-sm">Redis 初始化状态检测中</p>
-              <p className="text-xs">请稍候后刷新当前状态</p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm">Redis 尚未初始化</p>
-              <p className="text-xs">请先完成初始化</p>
-            </>
-          )}
+        ) : (
+          null
+        )}
+      </>
+    )
+  }
+
+  return (
+    <div className="w-full p-3 space-y-3">
+
+      <InitRedisCard />
+
+      <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between mb-2">
+          <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Database className="h-3.5 w-3.5" />
+            Redis 状态
+          </Label>
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              serviceStatus === ServiceStatus.Running ? "bg-green-500" :
+                serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+            )} />
+            <span className="text-xs text-muted-foreground">
+              {serviceStatus === ServiceStatus.Running ? '运行中' : serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知'}
+            </span>
+          </div>
         </div>
-      )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" className="shadow-none" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isServiceActive || !isInstalled || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+            {isStarting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5 text-green-600" />}
+            &nbsp;启动
+          </Button>
+          <Button size="sm" className="shadow-none" variant="outline" onClick={handleStop} disabled={!isServiceActive || !isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+            <PowerOff className="h-3.5 w-3.5 text-red-600" />
+            &nbsp;停止
+          </Button>
+          <Button size="sm" className="shadow-none" variant="outline" onClick={handleRestart} disabled={!isServiceActive || !isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+            <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
+            &nbsp;重启
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
+        <div className="grid grid-cols-1 gap-3 text-xs">
+          <div>
+            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                value={editConfigPath}
+                onChange={(e) => setEditConfigPath(e.target.value)}
+                className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                placeholder="请输入或选择配置文件路径"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                onClick={handleBrowseConfigFile}
+                title="选择文件"
+              >
+                <FileText className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                onClick={() => editConfigPath && openFolderInFinder(editConfigPath)}
+                disabled={!editConfigPath}
+                title="打开目录"
+              >
+                <FolderOpen className="h-3.5 w-3.5" />
+              </Button>
+              {editConfigPath !== (runtimeConfig.configPath || configPath) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-3 shadow-none text-xs text-blue-600 hover:text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/20"
+                  onClick={handleSaveConfigPath}
+                  title="保存配置文件路径"
+                >
+                  保存
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-3">
+            <div>
+              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={runtimeConfig.logPath}
+                  disabled
+                  className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  onClick={() => runtimeConfig.logPath && openFolderInFinder(runtimeConfig.logPath)}
+                  disabled={!runtimeConfig.logPath}
+                  title="打开目录"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={runtimeConfig.dataPath}
+                  disabled
+                  className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  onClick={() => runtimeConfig.dataPath && openFolderInFinder(runtimeConfig.dataPath)}
+                  disabled={!runtimeConfig.dataPath}
+                  title="打开目录"
+                >
+                  <FolderOpen className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">绑定地址</Label>
+                <div className="mt-1">
+                  <Input
+                    value={runtimeConfig.bindIp}
+                    disabled
+                    className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口</Label>
+                <div className="mt-1">
+                  <Input
+                    value={String(runtimeConfig.port)}
+                    disabled
+                    className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Button
+                  size="sm"
+                  className="shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const result = await openRedisClient(selectedEnvironmentId, serviceData)
+                      if (result.success) {
+                        toast.success('Redis CLI 已打开')
+                      } else {
+                        toast.error(result.message || '打开 Redis CLI 失败')
+                      }
+                    } catch (error) {
+                      toast.error('打开 Redis CLI 失败: ' + error)
+                    }
+                  }}
+                  disabled={!isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running}
+                >
+                  <Terminal className="h-3.5 w-3.5" />
+                  Redis CLI
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
+        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">其他操作</Label>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-none"
+            variant="ghost"
+            onClick={() => setShowResetDialog(true)}
+            disabled={!isServiceActive || !isServiceActive || !isInstalled || isLoading || isInitialized !== true || serviceStatus === ServiceStatus.Running}
+          >
+            重置初始化
+          </Button>
+        </div>
+      </div>
 
       <Dialog open={showInitDialog} onOpenChange={setShowInitDialog}>
         <DialogContent>
