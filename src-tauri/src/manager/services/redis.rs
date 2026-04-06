@@ -221,20 +221,7 @@ impl RedisService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = create_command("unzip")
-                .args(&[
-                    "-q",
-                    &archive_path.to_string_lossy(),
-                    "-d",
-                    &install_dir.to_string_lossy(),
-                ])
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "解压失败: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                ));
-            }
+            Self::extract_zip(archive_path, &install_dir)?;
         } else {
             return Err(anyhow!("不支持的压缩格式: {}", task.filename));
         }
@@ -765,6 +752,75 @@ impl RedisService {
         }
 
         std::fs::write(config_path, lines.join("\n") + "\n")?;
+        Ok(())
+    }
+
+    fn extract_zip(archive_path: &Path, dest_dir: &Path) -> Result<()> {
+        let file = std::fs::File::open(archive_path)
+            .map_err(|e| anyhow!("无法打开 zip 文件: {}", e))?;
+        let mut archive = zip::ZipArchive::new(file)
+            .map_err(|e| anyhow!("无法读取 zip 文件: {}", e))?;
+
+        // 检测顶层公共前缀目录（类似 --strip-components=1）
+        let strip_prefix: Option<String> = {
+            let first_name = archive.by_index(0).ok().map(|f| f.name().to_string());
+            first_name.and_then(|name| {
+                let top = name.split('/').next()?.to_string();
+                if !top.is_empty() && top != "." {
+                    Some(top)
+                } else {
+                    None
+                }
+            })
+        };
+
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)
+                .map_err(|e| anyhow!("读取 zip 条目失败: {}", e))?;
+
+            let raw_name = file.name().to_string();
+            // 跳过 __MACOSX 等系统垃圾
+            if raw_name.contains("__MACOSX") || raw_name.ends_with(".DS_Store") {
+                continue;
+            }
+
+            // 剥去公共顶层目录
+            let relative = if let Some(ref prefix) = strip_prefix {
+                let stripped = raw_name
+                    .strip_prefix(&format!("{}/", prefix))
+                    .unwrap_or(&raw_name);
+                stripped.to_string()
+            } else {
+                raw_name.clone()
+            };
+
+            if relative.is_empty() {
+                continue;
+            }
+
+            let out_path = dest_dir.join(&relative);
+
+            if file.is_dir() {
+                std::fs::create_dir_all(&out_path)?;
+            } else {
+                if let Some(parent) = out_path.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                let mut out_file = std::fs::File::create(&out_path)
+                    .map_err(|e| anyhow!("创建文件失败 {:?}: {}", out_path, e))?;
+                std::io::copy(&mut file, &mut out_file)
+                    .map_err(|e| anyhow!("写入文件失败 {:?}: {}", out_path, e))?;
+
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    if let Some(mode) = file.unix_mode() {
+                        std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode))?;
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
