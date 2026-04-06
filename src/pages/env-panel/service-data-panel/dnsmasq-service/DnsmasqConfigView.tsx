@@ -11,7 +11,7 @@ import { FolderOpen, Play, Square, RotateCw, Save, FileText, AlertTriangle } fro
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceStatus } from '@/hooks/service-pollers'
 
 interface DnsmasqConfigViewProps {
     selectedEnvironmentId: string
@@ -43,7 +43,7 @@ export function DnsmasqConfigView({
     const [editingConfigPath, setEditingConfigPath] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
     
-    const { status: serviceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+    const { status: serviceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
         enabled: isServiceActive,
         interval: 3000,
     })

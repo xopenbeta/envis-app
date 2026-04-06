@@ -32,7 +32,7 @@ import { useMariadb } from '@/hooks/services/mariadb'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MariaDBMetadata } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
-import { useServiceActivationStatus, useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 interface MariaDBServiceProps {
   serviceData: ServiceData
@@ -51,11 +51,11 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
 
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: isServiceActive && Boolean(isInitialized),
     interval: 500,
   })
-  const { activationStatus } = useServiceActivationStatus(selectedEnvironmentId, serviceData.id, {
+  const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
     enabled: true,
     interval: 500,
   })
@@ -113,20 +113,20 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
 
   // 激活状态变化时回写到 store，驱动面板自动同步
   useEffect(() => {
-    if (activationStatus === ServiceDataStatus.Unknown || activationStatus === serviceData.status) {
+    if (serviceDataStatus === ServiceDataStatus.Unknown || serviceDataStatus === serviceData.status) {
       return
     }
 
     updateServiceData({
       environmentId: selectedEnvironmentId,
       serviceId: serviceData.id,
-      updates: { status: activationStatus },
+      updates: { status: serviceDataStatus },
       serviceDatasSnapshot: selectedServiceDatas,
     }).catch((error) => {
       console.error('回写 MariaDB 激活状态失败:', error)
     })
   }, [
-    activationStatus,
+    serviceDataStatus,
     selectedEnvironmentId,
     serviceData.id,
     serviceData.status,

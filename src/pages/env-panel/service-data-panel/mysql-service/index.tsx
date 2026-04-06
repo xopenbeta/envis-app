@@ -32,7 +32,7 @@ import { useMysql } from '@/hooks/services/mysql'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MySQLMetadata } from '@/types/service'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
-import { useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceStatus } from '@/hooks/service-pollers'
 
 interface MySQLServiceProps {
   serviceData: ServiceData
@@ -51,7 +51,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
 
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: isServiceActive && Boolean(isInitialized),
     interval: 500,
   })

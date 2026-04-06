@@ -15,7 +15,7 @@ import { useRedis } from '@/hooks/services/redis'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { ipcOpenSelectDialog } from '@/ipc/file-operations'
-import { useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceStatus } from '@/hooks/service-pollers'
 
 interface RedisServiceProps {
   serviceData: ServiceData
@@ -31,7 +31,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   const isServiceActive = serviceData.status === ServiceDataStatus.Active
   const metadata = (serviceData.metadata || {}) as RedisMetadata
 
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: isServiceActive,
     interval: 2000,
   })
