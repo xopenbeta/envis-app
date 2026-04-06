@@ -224,6 +224,9 @@ impl JavaService {
             extract_tar(archive_path, &install_dir).await?;
         } else if task.filename.ends_with(".zip") {
             extract_zip(archive_path, &install_dir).await?;
+            // 先删除压缩包，再提升目录（避免 zip 文件干扰子目录检测）
+            let _ = std::fs::remove_file(archive_path);
+            flatten_single_subdir(&install_dir)?;
         } else {
             return Err(anyhow!("不支持的压缩格式"));
         }
@@ -231,6 +234,7 @@ impl JavaService {
         #[cfg(not(target_os = "windows"))]
         set_executable_permissions(&install_dir)?;
 
+        // zip 文件已在上方提前删除，tar.gz 在此清理
         let _ = std::fs::remove_file(archive_path);
 
         log::info!("Java {} 解压和安装完成", version);
@@ -459,7 +463,8 @@ pub(crate) async fn extract_tar(archive_path: &PathBuf, target_dir: &PathBuf) ->
     cmd.arg("-xzf")
         .arg(archive_path)
         .arg("-C")
-        .arg(target_dir);
+        .arg(target_dir)
+        .arg("--strip-components=1");
 
     #[cfg(target_os = "windows")]
     {
@@ -474,6 +479,39 @@ pub(crate) async fn extract_tar(archive_path: &PathBuf, target_dir: &PathBuf) ->
         let error = String::from_utf8_lossy(&output.stderr);
         return Err(anyhow!("解压 tar 文件失败: {}", error));
     }
+
+    Ok(())
+}
+
+/// 若 target_dir 下存在唯一的子目录（忽略文件），则将其内容提升到 target_dir（去除顶层嵌套目录）
+pub(crate) fn flatten_single_subdir(target_dir: &PathBuf) -> Result<()> {
+    // 只统计子目录，忽略普通文件（如残留的 zip/tar.gz 下载文件）
+    let subdirs: Vec<_> = std::fs::read_dir(target_dir)
+        .map_err(|e| anyhow!("读取目录失败: {}", e))?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_dir())
+        .collect();
+
+    if subdirs.len() != 1 {
+        return Ok(());
+    }
+
+    let nested_dir = subdirs[0].path();
+
+    // 将嵌套目录中的所有条目移动到 target_dir
+    for entry in std::fs::read_dir(&nested_dir)
+        .map_err(|e| anyhow!("读取嵌套目录失败: {}", e))?
+    {
+        let entry = entry.map_err(|e| anyhow!("读取目录条目失败: {}", e))?;
+        let src = entry.path();
+        let dest = target_dir.join(entry.file_name());
+        std::fs::rename(&src, &dest)
+            .map_err(|e| anyhow!("移动 {:?} 到 {:?} 失败: {}", src, dest, e))?;
+    }
+
+    // 删除已清空的嵌套目录
+    std::fs::remove_dir(&nested_dir)
+        .map_err(|e| anyhow!("删除嵌套目录 {:?} 失败: {}", nested_dir, e))?;
 
     Ok(())
 }

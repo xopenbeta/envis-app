@@ -215,11 +215,14 @@ impl GradleService {
 
         // Gradle 统一使用 zip 格式
         super::java::extract_zip(archive_path, &install_dir).await?;
+        // 先删除压缩包，再提升目录（避免 zip 文件干扰子目录检测）
+        let _ = std::fs::remove_file(archive_path);
+        super::java::flatten_single_subdir(&install_dir)?;
 
         #[cfg(not(target_os = "windows"))]
         super::java::set_executable_permissions(&install_dir)?;
 
-        let _ = std::fs::remove_file(archive_path);
+        // zip 文件已在上方提前删除，此处清理不会报错
 
         log::info!("Gradle 解压和安装完成");
         Ok(())
