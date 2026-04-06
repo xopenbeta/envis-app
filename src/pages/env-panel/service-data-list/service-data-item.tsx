@@ -117,7 +117,6 @@ export function SortableServiceItem({
     enabled: NeedDownloadServices.includes(serviceData.type),
     interval: 500,
   })
-  const serviceDataStatus = (activeEnvironment?.id === selectedEnvironmentId) ? serviceDataStatus : ServiceDataStatus.Inactive;
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [renameValue, setRenameValue] = useState(serviceData.name || '')
   const [renameLoading, setRenameLoading] = useState(false)

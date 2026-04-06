@@ -6,16 +6,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from 'sonner'
 import { Database, FolderOpen, Power, PowerOff, RefreshCw, RotateCw, FileText, Settings, Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
+import { DownloadStatus, NeedDownloadServices, ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
 import { RedisConfig, RedisMetadata } from '@/types/service'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '@/store/environment'
 import { useRedis } from '@/hooks/services/redis'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { ipcOpenSelectDialog } from '@/ipc/file-operations'
-import { useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 interface RedisServiceProps {
   serviceData: ServiceData
@@ -28,18 +28,33 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   const { startServiceData, stopServiceData, restartServiceData } = useServiceData()
   const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
 
-  const isServiceActive = serviceData.status === ServiceDataStatus.Active
   const metadata = (serviceData.metadata || {}) as RedisMetadata
 
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
-    enabled: isServiceActive,
-    interval: 2000,
-  })
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [isStopping, setIsStopping] = useState(false)
   const [isRestarting, setIsRestarting] = useState(false)
+
+  const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
+    interval: 500,
+  })
+
+  const isServiceActive = serviceDataStatus === ServiceDataStatus.Active
+
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive && Boolean(isInitialized),
+    interval: 500,
+  })
+
+  const { downloadStatus } = useServiceDownloadStatus(serviceData.type, serviceData.version, {
+    enabled: NeedDownloadServices.includes(serviceData.type),
+    interval: 500,
+  })
+
+  const isInstalled = !NeedDownloadServices.includes(serviceData.type) || downloadStatus === DownloadStatus.Installed
+  const isActiveByPoller = serviceDataStatus === ServiceDataStatus.Active
 
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
@@ -64,54 +79,9 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   const configPath = useMemo(() => metadata.REDIS_CONFIG || '', [metadata.REDIS_CONFIG])
   const [editConfigPath, setEditConfigPath] = useState(metadata.REDIS_CONFIG || '')
 
-  useEffect(() => {
-    setRuntimeConfig({
-      configPath: metadata.REDIS_CONFIG || '',
-      dataPath: '',
-      logPath: '',
-      port: 6379,
-      bindIp: '127.0.0.1',
-      password: '',
-      rdbEnabled: false,
-      aofEnabled: false,
-    })
-    setDialogData({
-      password: '',
-      port: '6379',
-      bindIp: '127.0.0.1',
-      rdbEnabled: false,
-      aofEnabled: false,
-    })
-    setEditConfigPath(metadata.REDIS_CONFIG || '')
-  }, [metadata.REDIS_CONFIG, selectedEnvironmentId, serviceData.id])
-
-  useEffect(() => {
-    if (!isServiceActive) {
-      setIsInitialized(null)
-      setRuntimeConfig({
-        configPath: metadata.REDIS_CONFIG || '',
-        dataPath: '',
-        logPath: '',
-        port: 6379,
-        bindIp: '127.0.0.1',
-        password: '',
-        rdbEnabled: false,
-        aofEnabled: false,
-      })
-      return
-    }
-
-    const refreshBaseState = async () => {
-      await Promise.all([refreshInitStatus(), refreshServiceStatus()])
-    }
-
-    refreshBaseState()
-    return () => {}
-  }, [isServiceActive, selectedEnvironmentId, serviceData.id])
-
-  const refreshConfigPaths = async () => {
+  const refreshConfigPaths = async (effectiveServiceData: ServiceData = serviceData) => {
     try {
-      const result = await getRedisConfig(selectedEnvironmentId, serviceData)
+      const result = await getRedisConfig(selectedEnvironmentId, effectiveServiceData)
       if (result.success && result.data) {
         const configData = result.data
         setRuntimeConfig(configData)
@@ -140,21 +110,21 @@ export function RedisService({ serviceData }: RedisServiceProps) {
   const handleSaveConfigPath = async () => {
     if (!editConfigPath) return
     try {
-      await persistRedisMetadata({ REDIS_CONFIG: editConfigPath })
-      setRuntimeConfig(prev => ({ ...prev, configPath: editConfigPath }))
+      const updatedServiceData = await persistRedisMetadata({ REDIS_CONFIG: editConfigPath })
+      await refreshConfigPaths(updatedServiceData)
       toast.success('配置文件路径已保存')
     } catch (error) {
       toast.error('保存配置文件路径失败: ' + error)
     }
   }
 
-  const refreshInitStatus = async () => {
+  const refreshInitStatus = async (effectiveServiceData: ServiceData = serviceData) => {
     try {
-      const result = await checkRedisInitialized(selectedEnvironmentId, serviceData)
+      const result = await checkRedisInitialized(selectedEnvironmentId, effectiveServiceData)
       if (result.success && result.data) {
         setIsInitialized(result.data.initialized)
         if (result.data.initialized) {
-          await refreshConfigPaths()
+          await refreshConfigPaths(effectiveServiceData)
         }
         return
       }
@@ -185,14 +155,15 @@ export function RedisService({ serviceData }: RedisServiceProps) {
     }
   }
 
-  const persistRedisMetadata = async (patch: RedisMetadata) => {
+  const persistRedisMetadata = async (patch: RedisMetadata): Promise<ServiceData> => {
     const newMetadata: RedisMetadata = { ...(serviceData.metadata || {}), ...patch }
-    await updateServiceData({
+    const updated = await updateServiceData({
       environmentId: selectedEnvironmentId,
       serviceId: serviceData.id,
       updates: { metadata: newMetadata },
       serviceDatasSnapshot: selectedServiceDatas,
     })
+    return updated ?? { ...serviceData, metadata: newMetadata }
   }
 
   const handleInitialize = async (reset: boolean) => {
@@ -215,7 +186,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
         return
       }
 
-      await persistRedisMetadata({
+      const updatedServiceData = await persistRedisMetadata({
         REDIS_CONFIG: result.data.configPath,
         REDIS_PASSWORD: result.data.password,
       })
@@ -223,16 +194,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       toast.success(reset ? 'Redis 重置并初始化成功' : 'Redis 初始化成功')
       setShowInitDialog(false)
       setShowResetDialog(false)
-      await refreshInitStatus()
-
-      const configRes = await getRedisConfig(selectedEnvironmentId, serviceData)
-      if (configRes.success && configRes.data) {
-        await persistRedisMetadata({
-          REDIS_CONFIG: configRes.data.configPath,
-          REDIS_PASSWORD: configRes.data.password,
-        })
-        setRuntimeConfig(configRes.data)
-      }
+      await refreshInitStatus(updatedServiceData)
     } catch (error) {
       toast.error('初始化 Redis 失败: ' + error)
     } finally {
@@ -312,7 +274,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
               size="sm"
               variant="outline"
               onClick={() => setShowInitDialog(true)}
-              disabled={!isServiceActive || isLoading}
+              disabled={!isServiceActive || !isActiveByPoller || !isInstalled || isLoading}
               className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
             >
               初始化 Redis
@@ -323,7 +285,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
         null
       )}
 
-      {isServiceActive && isInitialized ? (
+      {isServiceActive && isActiveByPoller && isInstalled && isInitialized ? (
         <>
           <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
             <div className="flex items-center justify-between mb-2">
@@ -344,15 +306,15 @@ export function RedisService({ serviceData }: RedisServiceProps) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" className="shadow-none" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+              <Button size="sm" className="shadow-none" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isActiveByPoller || !isInstalled || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
                 {isStarting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5 text-green-600" />}
                 &nbsp;启动
               </Button>
-              <Button size="sm" className="shadow-none" variant="outline" onClick={handleStop} disabled={!isServiceActive || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+              <Button size="sm" className="shadow-none" variant="outline" onClick={handleStop} disabled={!isServiceActive || !isActiveByPoller || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
                 <PowerOff className="h-3.5 w-3.5 text-red-600" />
                 &nbsp;停止
               </Button>
-              <Button size="sm" className="shadow-none" variant="outline" onClick={handleRestart} disabled={!isServiceActive || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+              <Button size="sm" className="shadow-none" variant="outline" onClick={handleRestart} disabled={!isServiceActive || !isActiveByPoller || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
                 <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
                 &nbsp;重启
               </Button>
@@ -484,7 +446,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                           toast.error('打开 Redis CLI 失败: ' + error)
                         }
                       }}
-                      disabled={serviceStatus !== ServiceStatus.Running}
+                      disabled={!isActiveByPoller || !isInstalled || serviceStatus !== ServiceStatus.Running}
                     >
                       <Terminal className="h-3.5 w-3.5" />
                       Redis CLI
@@ -503,7 +465,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-none"
                 variant="ghost"
                 onClick={() => setShowResetDialog(true)}
-                disabled={!isServiceActive || isLoading || isInitialized !== true || serviceStatus === ServiceStatus.Running}
+                disabled={!isServiceActive || !isActiveByPoller || !isInstalled || isLoading || isInitialized !== true || serviceStatus === ServiceStatus.Running}
               >
                 重置初始化
               </Button>
@@ -513,10 +475,15 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       ) : (
         <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
           <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
-          {!isServiceActive ? (
+          {!isServiceActive || !isActiveByPoller ? (
             <>
               <p className="text-sm">服务未激活，无法显示 Redis 设置信息</p>
               <p className="text-xs">请先激活 Redis 服务</p>
+            </>
+          ) : !isInstalled ? (
+            <>
+              <p className="text-sm">Redis 尚未安装完成</p>
+              <p className="text-xs">请等待下载/安装完成后再操作</p>
             </>
           ) : isInitialized === null ? (
             <>
