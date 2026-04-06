@@ -414,6 +414,9 @@ impl MavenService {
             super::java::extract_tar(archive_path, &install_dir).await?;
         } else if task.filename.ends_with(".zip") {
             super::java::extract_zip(archive_path, &install_dir).await?;
+            // 先删除压缩包，再提升目录（避免 zip 文件干扰子目录检测）
+            let _ = std::fs::remove_file(archive_path);
+            super::java::flatten_single_subdir(&install_dir)?;
         } else {
             return Err(anyhow!("不支持的 Maven 压缩格式"));
         }
@@ -424,6 +427,7 @@ impl MavenService {
         // 统一设置环境变量占位符
         self.ensure_maven_settings_use_env_placeholders(java_version)?;
 
+        // zip 文件已在上方提前删除，tar.gz 在此清理
         let _ = std::fs::remove_file(archive_path);
 
         log::info!("Maven 解压和安装完成");
