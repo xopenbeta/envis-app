@@ -100,3 +100,40 @@ export const ipcListMariadbTables = ipcLogFunc('列出 MariaDB 表', async (envi
 export const ipcOpenMariadbClient = ipcLogFunc('打开 MariaDB 客户端', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{ connectionString: string }>> => {
     return invokeCommand('open_mariadb_client', { environmentId, serviceData })
 })
+
+export const ipcListMariadbUsers = ipcLogFunc('列出 MariaDB 用户', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{
+    users: Array<{
+        username: string
+        host: string
+        grants: Array<{ database: string; privilege: string }>
+    }>
+}>> => {
+    return invokeCommand('list_mariadb_users', { environmentId, serviceData })
+})
+
+export const ipcCreateMariadbUser = ipcLogFunc('创建 MariaDB 用户', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    password: string,
+    grants: Array<{ database: string; privilege: string }>
+): Promise<IPCResult<{ username: string }>> => {
+    return invokeCommand('create_mariadb_user', { environmentId, serviceData, username, password, grants })
+})
+
+export const ipcDeleteMariadbUser = ipcLogFunc('删除 MariaDB 用户', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string
+): Promise<IPCResult<{ username: string }>> => {
+    return invokeCommand('delete_mariadb_user', { environmentId, serviceData, username })
+})
+
+export const ipcUpdateMariadbUserGrants = ipcLogFunc('更新 MariaDB 用户权限', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    grants: Array<{ database: string; privilege: string }>
+): Promise<IPCResult<{ username: string }>> => {
+    return invokeCommand('update_mariadb_user_grants', { environmentId, serviceData, username, grants })
+})

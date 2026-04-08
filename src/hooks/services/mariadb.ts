@@ -14,6 +14,10 @@ import {
     ipcCreateMariadbDatabase,
     ipcListMariadbTables,
     ipcOpenMariadbClient,
+    ipcListMariadbUsers,
+    ipcCreateMariadbUser,
+    ipcDeleteMariadbUser,
+    ipcUpdateMariadbUserGrants,
 } from "../../ipc/services/mariadb";
 
 // MariaDB 配置接口
@@ -310,6 +314,52 @@ export async function openMariadbClient(
 }
 
 /**
+ * 列出所有用户
+ */
+export async function listMariadbUsers(
+    environmentId: string,
+    serviceData: ServiceData
+) {
+    return ipcListMariadbUsers(environmentId, serviceData);
+}
+
+/**
+ * 创建用户
+ */
+export async function createMariadbUser(
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    password: string,
+    grants: Array<{ database: string; privilege: string }>
+) {
+    return ipcCreateMariadbUser(environmentId, serviceData, username, password, grants);
+}
+
+/**
+ * 删除用户
+ */
+export async function deleteMariadbUser(
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string
+) {
+    return ipcDeleteMariadbUser(environmentId, serviceData, username);
+}
+
+/**
+ * 更新用户权限（全量替换）
+ */
+export async function updateMariadbUserGrants(
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    grants: Array<{ database: string; privilege: string }>
+) {
+    return ipcUpdateMariadbUserGrants(environmentId, serviceData, username, grants);
+}
+
+/**
  * MariaDB Hook
  * 提供 MariaDB 相关的操作方法
  */
@@ -329,5 +379,9 @@ export function useMariadb() {
         createMariadbDatabase,
         listMariadbTables,
         openMariadbClient,
+        listMariadbUsers,
+        createMariadbUser,
+        deleteMariadbUser,
+        updateMariadbUserGrants,
     };
 }

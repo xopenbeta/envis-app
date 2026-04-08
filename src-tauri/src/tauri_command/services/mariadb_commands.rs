@@ -269,3 +269,57 @@ pub async fn open_mariadb_client(
         Err(e) => Ok(CommandResponse::error(format!("打开客户端失败: {}", e))),
     }
 }
+
+#[tauri::command]
+pub async fn list_mariadb_users(
+    environment_id: String,
+    service_data: ServiceData,
+) -> Result<CommandResponse, String> {
+    let service = MariadbService::global();
+    match service.list_users(&environment_id, &service_data) {
+        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Err(e) => Ok(CommandResponse::error(format!("列出用户失败: {}", e))),
+    }
+}
+
+#[tauri::command]
+pub async fn create_mariadb_user(
+    environment_id: String,
+    service_data: ServiceData,
+    username: String,
+    password: String,
+    grants: Vec<serde_json::Value>,
+) -> Result<CommandResponse, String> {
+    let service = MariadbService::global();
+    match service.create_user(&environment_id, &service_data, username, password, grants) {
+        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Err(e) => Ok(CommandResponse::error(format!("创建用户失败: {}", e))),
+    }
+}
+
+#[tauri::command]
+pub async fn delete_mariadb_user(
+    environment_id: String,
+    service_data: ServiceData,
+    username: String,
+) -> Result<CommandResponse, String> {
+    let service = MariadbService::global();
+    match service.delete_user(&environment_id, &service_data, username) {
+        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Err(e) => Ok(CommandResponse::error(format!("删除用户失败: {}", e))),
+    }
+}
+
+#[tauri::command]
+pub async fn update_mariadb_user_grants(
+    environment_id: String,
+    service_data: ServiceData,
+    username: String,
+    grants: Vec<serde_json::Value>,
+) -> Result<CommandResponse, String> {
+    let service = MariadbService::global();
+    match service.update_user_grants(&environment_id, &service_data, username, grants) {
+        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Err(e) => Ok(CommandResponse::error(format!("更新用户权限失败: {}", e))),
+    }
+}

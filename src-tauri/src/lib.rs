@@ -276,6 +276,10 @@ pub fn run() {
             create_mariadb_database,
             list_mariadb_tables,
             open_mariadb_client,
+            list_mariadb_users,
+            create_mariadb_user,
+            delete_mariadb_user,
+            update_mariadb_user_grants,
             // MySQL 服务命令
             download_mysql,
             get_mysql_versions,

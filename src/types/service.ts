@@ -36,6 +36,17 @@ export interface MariaDBMetadata {
     "MARIADB_ROOT_PASSWORD"?: string
 }
 
+export interface MariaDBGrant {
+    database: string
+    privilege: 'SELECT' | 'ALL PRIVILEGES'
+}
+
+export interface MariaDBUser {
+    username: string
+    host: string
+    grants: MariaDBGrant[]
+}
+
 export interface MySQLMetadata {
     "MYSQL_CONFIG"?: string
     "MYSQL_ROOT_PASSWORD"?: string
