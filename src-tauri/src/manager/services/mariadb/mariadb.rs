@@ -808,9 +808,12 @@ impl MariadbService {
         log::info!("初始化数据目录...");
         let init_output = if mysql_install_db.exists() {
             // 使用 mysql_install_db（旧版本）
+            // --auth-root-authentication-method=normal：在 MariaDB 10.4+ 中禁用 unix_socket 插件，
+            // 改为密码认证，确保后续通过 socket 以空密码连接设置 root 密码时不因 OS 用户不匹配而被拒绝
             create_command(&mysql_install_db)
                 .arg(format!("--datadir={}", data_dir.display()))
                 .arg(format!("--basedir={}", install_path.display()))
+                .arg("--auth-root-authentication-method=normal")
                 .output()?
         } else {
             // 使用 mysqld --initialize-insecure（新版本）
@@ -850,9 +853,14 @@ impl MariadbService {
 
         // 使用 SET PASSWORD 兼容所有 MariaDB 版本，并切换认证方式为 mysql_native_password
         // 连接时不传密码（--initialize-insecure 后 root 无密码）
+        // 同时确保 root@127.0.0.1 和 root@::1 也拥有相同密码，
+        // 因为后续操作通过 TCP --host=127.0.0.1 连接，MySQL 将其视为 root@127.0.0.1
         let set_password_cmd = format!(
-            "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}'); FLUSH PRIVILEGES;",
-            root_password
+            "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{pw}'); \
+             GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' IDENTIFIED BY '{pw}' WITH GRANT OPTION; \
+             GRANT ALL PRIVILEGES ON *.* TO 'root'@'::1' IDENTIFIED BY '{pw}' WITH GRANT OPTION; \
+             FLUSH PRIVILEGES;",
+            pw = root_password
         );
 
         // Unix 下优先走 socket，Windows 下走 TCP
@@ -1190,7 +1198,6 @@ default-character-set = utf8mb4
         _environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
-        log::info!("列出 MariaDB 用户");
 
         let root_password = service_data
             .metadata
