@@ -1,5 +1,20 @@
 # 更新日志 / Changelog
 
+## [0.11.0] - 2026-04-08
+
+### 新增 / Added
+- ✨ 服务总览面板新增进程资源监控模块，实时展示活跃服务的 CPU 使用率、内存占用及磁盘 I/O，每 2 秒自动刷新
+- ✨ 新增 `useServiceProcessStatus`、`useServiceActivationStatus`、`useServiceDownloadStatus` 三个服务状态轮询 Hooks，统一管理响应式轮询逻辑，替代各面板中内联的 `setInterval` 代码
+- ✨ 新增后端 `get_services_process_stats` Tauri 命令，支持按服务类型批量查询进程资源统计（CPU、内存、磁盘读写、进程数）
+- ✨ MariaDB 服务面板新增「打开终端客户端」功能，支持在系统终端（macOS Terminal / Windows CMD / Linux xterm）中直接连接 MariaDB，无需手动输入连接参数
+
+### 修复 / Fixed
+- 🐛 修复 Java / Maven / Gradle 安装包解压后出现多层嵌套目录的问题：tar.gz 格式新增 `--strip-components=1` 参数，zip 格式实现自定义 `extract_zip` 函数并自动剥离顶层公共目录
+- 🐛 修复 Redis zip 安装包解压时未处理顶层目录前缀的问题，新增 `extract_zip` 通用函数，同时过滤 macOS `__MACOSX` 元数据文件
+- 🐛 修复 MariaDB 激活状态变更后前端状态未自动同步的问题，新增激活状态轮询并回写到 store
+
+---
+
 ## [0.10.0] - 2026-04-03
 
 ### 新增 / Added
