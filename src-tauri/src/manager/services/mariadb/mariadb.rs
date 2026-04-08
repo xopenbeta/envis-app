@@ -1204,17 +1204,97 @@ default-character-set = utf8mb4
             .and_then(|v| v.as_str())
             .unwrap_or("3306");
 
-        // 构建连接字符串
-        let connection_string = if root_password.is_empty() {
-            format!("mysql://root@127.0.0.1:{}", port)
+        // 查找 mysql 客户端二进制
+        let install_path = self.get_install_path(&service_data.version);
+        let cli_in_bin = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("mysql.exe")
         } else {
-            format!("mysql://root:{}@127.0.0.1:{}", root_password, port)
+            install_path.join("bin").join("mysql")
+        };
+        let cli_cmd = if cli_in_bin.exists() {
+            cli_in_bin.to_string_lossy().to_string()
+        } else if cfg!(target_os = "windows") {
+            "mysql.exe".to_string()
+        } else {
+            "mysql".to_string()
         };
 
-        Ok(ServiceDataResult {
-            success: true,
-            message: "获取连接字符串成功".to_string(),
-            data: Some(serde_json::json!({ "connectionString": connection_string })),
-        })
+        // 构建命令参数
+        let mut args = vec![
+            "-u".to_string(),
+            "root".to_string(),
+            "-h".to_string(),
+            "127.0.0.1".to_string(),
+            "-P".to_string(),
+            port.to_string(),
+        ];
+        if !root_password.is_empty() {
+            args.push(format!("-p{}", root_password));
+        }
+
+        let result = if cfg!(target_os = "macos") {
+            let shell_cmd = Self::build_terminal_command(&cli_cmd, &args);
+            create_command("osascript")
+                .arg("-e")
+                .arg(format!(
+                    "tell application \"Terminal\" to do script \"{}\"",
+                    Self::escape_applescript_string(&shell_cmd)
+                ))
+                .arg("-e")
+                .arg("tell application \"Terminal\" to activate")
+                .spawn()
+        } else if cfg!(target_os = "windows") {
+            let mut cmd_args = vec![
+                "/C".to_string(),
+                "start".to_string(),
+                "cmd".to_string(),
+                "/K".to_string(),
+                cli_cmd,
+            ];
+            cmd_args.extend(args);
+            create_command("cmd").args(&cmd_args).spawn()
+        } else {
+            create_command("gnome-terminal")
+                .arg("--")
+                .arg(&cli_cmd)
+                .args(&args)
+                .spawn()
+                .or_else(|_| {
+                    create_command("xterm")
+                        .arg("-e")
+                        .arg(Self::build_terminal_command(&cli_cmd, &args))
+                        .spawn()
+                })
+        };
+
+        match result {
+            Ok(_) => Ok(ServiceDataResult {
+                success: true,
+                message: "MariaDB 客户端已打开".to_string(),
+                data: Some(serde_json::json!({
+                    "port": port,
+                })),
+            }),
+            Err(e) => Ok(ServiceDataResult {
+                success: false,
+                message: format!("无法打开 MariaDB 客户端: {}", e),
+                data: None,
+            }),
+        }
+    }
+
+    fn shell_quote(value: &str) -> String {
+        format!("'{}'", value.replace('\'', "'\\''"))
+    }
+
+    fn build_terminal_command(command: &str, args: &[String]) -> String {
+        let mut parts = vec![Self::shell_quote(command)];
+        parts.extend(args.iter().map(|arg| Self::shell_quote(arg)));
+        parts.push("; exec $SHELL".to_string());
+        parts.join(" ")
+    }
+
+    fn escape_applescript_string(value: &str) -> String {
+        value.replace('\\', "\\\\").replace('"', "\\\"")
     }
 }
