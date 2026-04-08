@@ -6,8 +6,8 @@ import { isAppLoadingAtom } from "@/store/appSettings";
 import { useLogger } from "./log";
 import { Environment } from "@/types";
 export {
-    useServiceProcessStatus,
-    useServiceActivationStatus,
+    useServiceStatus,
+    useServiceDataStatus,
     useServiceDownloadStatus,
 } from './service-pollers'
 

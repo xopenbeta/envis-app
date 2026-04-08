@@ -55,7 +55,7 @@ import { Input } from '@/components/ui/input'
 import { useAppSettings } from '@/hooks/appSettings'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useEnvironment } from '@/hooks/environment'
-import { useServiceActivationStatus, useServiceDownloadStatus, useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 export interface ServiceDownloadProgress {
   serviceType: ServiceType;
@@ -105,11 +105,11 @@ export function SortableServiceItem({
   const { selectedEnvironment, activeEnvironment } = useEnvironment();
   const { cancelServiceDownload, downloadService } = useService();
   const { switchEnvAndServDatasWithActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
-  const { status: serviceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+  const { status: serviceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: CanRunServices.includes(serviceData.type),
     interval: 500,
   })
-  const { activationStatus, setActivationStatus } = useServiceActivationStatus(selectedEnvironmentId, serviceData.id, {
+  const { serviceDataStatus, setServiceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
     enabled: true,
     interval: 500,
   })
@@ -117,7 +117,6 @@ export function SortableServiceItem({
     enabled: NeedDownloadServices.includes(serviceData.type),
     interval: 500,
   })
-  const serviceDataStatus = (activeEnvironment?.id === selectedEnvironmentId) ? activationStatus : ServiceDataStatus.Inactive;
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [renameValue, setRenameValue] = useState(serviceData.name || '')
   const [renameLoading, setRenameLoading] = useState(false)
@@ -176,7 +175,7 @@ export function SortableServiceItem({
 
   // 删除服务
   const onDeleteBtnClick = async (serviceData: ServiceData) => {
-    if ([ServiceDataStatus.Active].includes(activationStatus)) {
+    if ([ServiceDataStatus.Active].includes(serviceDataStatus)) {
       toast.error(t('service_item.delete_active_error'))
       return
     }
@@ -201,12 +200,12 @@ export function SortableServiceItem({
     }
 
     // 乐观更新：先保存当前状态
-    const previousStatus = activationStatus;
-    const isCurrentlyActive = activationStatus === ServiceDataStatus.Active;
+    const previousStatus = serviceDataStatus;
+    const isCurrentlyActive = serviceDataStatus === ServiceDataStatus.Active;
 
     try {
       // 乐观更新：立即切换状态，让用户感觉响应快
-      setActivationStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
+      setServiceDataStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
 
       if (isCurrentlyActive) {
         // 停用服务
@@ -214,7 +213,7 @@ export function SortableServiceItem({
         
         if (!res?.success) {
           // 回滚状态
-          setActivationStatus(previousStatus);
+          setServiceDataStatus(previousStatus);
           // 严格根据后端返回的错误信息判断是否是权限问题
           if (serviceData.type === ServiceType.Host && res?.message?.includes('needAdminPasswordToModifyHosts')) {
             setShowPasswordDialog(true)
@@ -230,7 +229,7 @@ export function SortableServiceItem({
         
         if (!res?.success) {
           // 回滚状态
-          setActivationStatus(previousStatus);
+          setServiceDataStatus(previousStatus);
           // 严格根据后端返回的错误信息判断是否是权限问题
           if (serviceData.type === ServiceType.Host && res?.message?.includes('needAdminPasswordToModifyHosts')) {
             setShowPasswordDialog(true)
@@ -243,7 +242,7 @@ export function SortableServiceItem({
       }
     } catch (err) {
       // 回滚状态
-      setActivationStatus(previousStatus);
+      setServiceDataStatus(previousStatus);
       console.error('切换服务状态失败:', err)
       toast.error(t('service_item.toggle_error'))
     }
@@ -253,14 +252,14 @@ export function SortableServiceItem({
     if (!password.trim() || !selectedEnvironment) return;
     
     // 乐观更新：先保存当前状态
-    const previousStatus = activationStatus;
-    const isCurrentlyActive = activationStatus === ServiceDataStatus.Active;
+    const previousStatus = serviceDataStatus;
+    const isCurrentlyActive = serviceDataStatus === ServiceDataStatus.Active;
     
     setShowPasswordDialog(false);
     
     try {
       // 乐观更新：立即切换状态
-      setActivationStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
+      setServiceDataStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
       
       let res = await activateServiceData(selectedEnvironment.id, serviceData);
 
@@ -269,7 +268,7 @@ export function SortableServiceItem({
         toast.success(isCurrentlyActive ? t('service_item.stop_success') : t('service_item.start_success'));
       } else {
         // 回滚状态
-        setActivationStatus(previousStatus);
+        setServiceDataStatus(previousStatus);
         toast.error(t(isCurrentlyActive ? 'service_item.stop_error' : 'service_item.start_error', { message: res?.message || t('common.unknown_error') }));
         // 如果是因为密码错误，可能需要再次弹窗，这里暂时只提示错误
         if (res?.message?.includes('密码')) {
@@ -279,7 +278,7 @@ export function SortableServiceItem({
       }
     } catch (err) {
       // 回滚状态
-      setActivationStatus(previousStatus);
+      setServiceDataStatus(previousStatus);
       console.error('带密码操作服务失败:', err);
       toast.error(t('service_item.operation_error'));
     } finally {

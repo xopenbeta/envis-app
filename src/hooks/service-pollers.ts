@@ -19,7 +19,7 @@ interface PollingOptions {
 
 const DEFAULT_INTERVAL = 500
 
-export function useServiceProcessStatus(
+export function useServiceStatus(
   environmentId: string,
   serviceData: ServiceData,
   options: PollingOptions = {}
@@ -65,7 +65,7 @@ export function useServiceProcessStatus(
   }
 }
 
-export function useServiceActivationStatus(
+export function useServiceDataStatus(
   environmentId: string,
   serviceId: string,
   options: PollingOptions = {}
@@ -74,14 +74,14 @@ export function useServiceActivationStatus(
   const enabled = options.enabled ?? true
   const interval = options.interval ?? DEFAULT_INTERVAL
   const immediate = options.immediate ?? true
-  const [activationStatus, setActivationStatus] = useState<ServiceDataStatus>(ServiceDataStatus.Unknown)
+  const [serviceDataStatus, setServiceDataStatus] = useState<ServiceDataStatus>(ServiceDataStatus.Unknown)
 
   const refresh = async () => {
     if (!enabled) return
     try {
       const result = await getServiceData(environmentId, serviceId)
       if (result.success && result.data?.serviceData) {
-        setActivationStatus(result.data.serviceData.status)
+        setServiceDataStatus(result.data.serviceData.status)
       }
     } catch (error) {
       console.error('轮询服务激活状态失败:', error)
@@ -90,7 +90,7 @@ export function useServiceActivationStatus(
 
   useEffect(() => {
     if (!enabled) {
-      setActivationStatus(ServiceDataStatus.Unknown)
+      setServiceDataStatus(ServiceDataStatus.Unknown)
       return
     }
 
@@ -106,8 +106,8 @@ export function useServiceActivationStatus(
   }, [enabled, interval, immediate, environmentId, serviceId])
 
   return {
-    activationStatus,
-    setActivationStatus,
+    serviceDataStatus,
+    setServiceDataStatus,
     refresh,
   }
 }

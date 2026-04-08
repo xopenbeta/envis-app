@@ -50,7 +50,7 @@ import { MongoDBConfig, MongoDBMetadata } from "@/types/service"
 import { useMongodb } from "@/hooks/services/mongodb"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
 import { useService } from "@/hooks/service"
-import { useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceStatus } from '@/hooks/service-pollers'
 
 interface MongoDBServiceProps {
   serviceData: ServiceData
@@ -77,7 +77,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironmentId, serviceData, {
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: isServiceActive && Boolean(isInitialized),
     interval: 500,
   })

@@ -22,7 +22,7 @@ import {
   type PostgreSQLConfig
 } from '@/hooks/services/postgresql'
 import { useFileOperations } from "@/hooks/file-operations"
-import { useServiceProcessStatus } from '@/hooks/service-pollers'
+import { useServiceStatus } from '@/hooks/service-pollers'
 
 interface PostgreSQLServiceProps {
   serviceData: ServiceData
@@ -43,7 +43,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
   // 检查服务是否激活
   const isServiceActive = serviceData.status === 'active'
 
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceProcessStatus(selectedEnvironment.id, serviceData, {
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironment.id, serviceData, {
     enabled: isServiceActive,
     interval: 1000,
   })
