@@ -33,7 +33,7 @@ import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '../../../../store/environment'
-import { useMariadb } from '@/hooks/services/mariadb'
+import { useMariadb, MariaDBConfig } from '@/hooks/services/mariadb'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MariaDBMetadata, MariaDBUser, MariaDBGrant } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
@@ -75,6 +75,9 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
 
   // 密码显示状态
   const [showPassword, setShowPassword] = useState(false)
+
+  // MariaDB 配置状态
+  const [mariadbConfig, setMariadbConfig] = useState<MariaDBConfig | null>(null)
 
   // 加载状态
   const [isStarting, setIsStarting] = useState(false)
@@ -168,6 +171,15 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     }
   }, [isServiceActive])
 
+  // 加载 MariaDB 配置（初始化完成后）
+  useEffect(() => {
+    if (isServiceActive && isInitialized) {
+      loadMariadbConfig()
+    } else {
+      setMariadbConfig(null)
+    }
+  }, [isServiceActive, isInitialized])
+
   // 定时刷新数据库列表（每3秒）
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
@@ -204,6 +216,18 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       }
     } catch (error) {
       console.error('检查 MariaDB 初始化状态失败:', error)
+    }
+  }
+
+  // 加载 MariaDB 配置
+  const loadMariadbConfig = async () => {
+    try {
+      const result = await getMariadbConfig(selectedEnvironmentId, serviceData)
+      if (result.success && result.config) {
+        setMariadbConfig(result.config)
+      }
+    } catch (error) {
+      console.error('加载 MariaDB 配置失败:', error)
     }
   }
 
@@ -797,34 +821,77 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 </div>
               </div>
 
-              {/* Root 密码 */}
+              {/* 数据目录 */}
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">Root 密码</Label>
-                <div className="relative mt-1">
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录（从配置文件读取）</Label>
+                <div className="flex items-center gap-2 mt-1">
                   <Input
-                    type={showPassword ? 'text' : 'password'}
-                    value={serviceData.metadata?.['MARIADB_ROOT_PASSWORD'] || '未设置'}
+                    value={mariadbConfig?.dataPath || '未配置'}
                     readOnly
-                    className="h-8 text-xs shadow-none bg-muted cursor-not-allowed pr-10 border-gray-200 dark:border-white/10"
+                    className={cn(
+                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      !mariadbConfig?.dataPath && "text-muted-foreground"
+                    )}
                   />
                   <Button
                     size="sm"
-                    variant="ghost"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={!serviceData.metadata?.['MARIADB_ROOT_PASSWORD']}
-                    className="absolute right-1 top-0 h-8 w-8 p-0 hover:bg-transparent"
-                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                    variant="outline"
+                    onClick={() => mariadbConfig?.dataPath && openFolderInFinder(mariadbConfig.dataPath)}
+                    disabled={!mariadbConfig?.dataPath}
+                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    title="打开目录"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-3 w-3 text-gray-500" />
-                    ) : (
-                      <Eye className="h-3 w-3 text-gray-500" />
-                    )}
+                    <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
 
-              {/* 连接信息 */}
+              {/* 日志文件 */}
+              <div>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件（从配置文件读取）</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={mariadbConfig?.logPath || '未配置'}
+                    readOnly
+                    className={cn(
+                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      !mariadbConfig?.logPath && "text-muted-foreground"
+                    )}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => mariadbConfig?.logPath && openFolderInFinder(mariadbConfig.logPath)}
+                    disabled={!mariadbConfig?.logPath}
+                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    title="打开目录"
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* 主机 & 端口 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">主机（从配置文件读取）</Label>
+                  <Input
+                    value={mariadbConfig?.bindIp || '未配置'}
+                    readOnly
+                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口（从配置文件读取）</Label>
+                  <Input
+                    value={mariadbConfig?.port ?? '未配置'}
+                    readOnly
+                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                  />
+                </div>
+              </div>
+
+              {/* 管理工具 */}
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
                 <div className="flex items-center gap-2 mt-1">
