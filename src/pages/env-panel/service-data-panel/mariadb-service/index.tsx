@@ -892,7 +892,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               </div>
 
               {/* 管理工具 */}
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
+              <div>
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
@@ -957,15 +957,15 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           </div>
 
           {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {databases.length > 0 ? (
-                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   {(showAllDatabases ? databases : databases.slice(0, 4)).map((db) => (
                     <div key={db.name} className="text-xs">
                       {/* 数据库行 */}
                       <div
                         onClick={() => toggleTables(db.name)}
-                        className="flex items-center justify-between p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors cursor-pointer"
+                        className="flex items-center justify-between p-1  hover:bg-gray-50 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Database className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
@@ -1427,36 +1427,42 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                     <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-muted-foreground">ALL PRIVILEGES</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {serviceData.metadata?.['MARIADB_ROOT_PASSWORD']
+                      ? showPassword
+                        ? serviceData.metadata['MARIADB_ROOT_PASSWORD']
+                        : '••••••••'
+                      : '—'}
+                  </span>
+                  {serviceData.metadata?.['MARIADB_ROOT_PASSWORD'] && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      onClick={() => setShowPassword(v => !v)}
+                    >
+                      {!showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    </Button>
+                  )}
+                </div>
               </div>
               {/* 普通用户列表 */}
               {users.length > 0 ? (
-                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   {users.map((user) => (
-                    <div key={user.username} className="flex items-center justify-between p-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 text-xs">
+                    <div key={user.username} className="flex items-center justify-between p-1 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 text-xs">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <Users className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <span className="font-medium text-gray-700 dark:text-gray-300">{user.username}</span>
-                          {user.grants.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-0.5">
-                              {user.grants.map((g) => (
-                                <span
-                                  key={g.database}
-                                  className="inline-block px-1.5 py-0 rounded text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30"
-                                >
-                                  {g.database}: {g.privilege === 'ALL PRIVILEGES' ? 'RW' : 'R'}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                           onClick={() => openEditUserDialog(user)}
                           title="编辑权限"
                         >
@@ -1465,7 +1471,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                           onClick={() => {
                             setSelectedUsername(user.username)
                             setShowDeleteUserDialog(true)

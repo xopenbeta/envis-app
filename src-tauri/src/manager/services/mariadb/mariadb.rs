@@ -586,11 +586,70 @@ impl MariadbService {
         environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
-        let data = serde_json::to_value(&service_data.metadata).ok();
+        let config_path = match service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MARIADB_CONFIG"))
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+        {
+            Some(p) => p,
+            None => {
+                return Ok(ServiceDataResult {
+                    success: false,
+                    message: "MariaDB 尚未初始化".to_string(),
+                    data: None,
+                });
+            }
+        };
+
+        let mut port = String::new();
+        let mut bind_ip = String::new();
+        let mut data_path = String::new();
+        let mut log_path = String::new();
+
+        if config_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&config_path) {
+                let mut in_mysqld = false;
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with('[') {
+                        in_mysqld = trimmed == "[mysqld]";
+                        continue;
+                    }
+                    if !in_mysqld || trimmed.starts_with('#') {
+                        continue;
+                    }
+                    let parse_val = |prefix: &str| -> Option<String> {
+                        trimmed.strip_prefix(prefix).and_then(|rest| {
+                            let v = rest.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                            if v.is_empty() { None } else { Some(v.to_string()) }
+                        })
+                    };
+                    if let Some(v) = parse_val("port") {
+                        port = v;
+                    } else if let Some(v) = parse_val("bind-address") {
+                        bind_ip = v;
+                    } else if let Some(v) = parse_val("datadir") {
+                        data_path = v;
+                    } else if let Some(v) = parse_val("log-error") {
+                        log_path = v;
+                    }
+                }
+            }
+        }
+
+        let data = serde_json::json!({
+            "configPath": config_path.to_string_lossy().to_string(),
+            "dataPath": data_path,
+            "logPath": log_path,
+            "port": port.parse::<u16>().unwrap_or(3306),
+            "bindIp": bind_ip,
+        });
         Ok(ServiceDataResult {
             success: true,
             message: "获取配置成功".to_string(),
-            data,
+            data: Some(data),
         })
     }
 
