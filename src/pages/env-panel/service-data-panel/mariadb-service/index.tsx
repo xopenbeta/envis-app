@@ -1401,7 +1401,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              <Users className="h-3.5 w-3.5" />
               用户管理
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (

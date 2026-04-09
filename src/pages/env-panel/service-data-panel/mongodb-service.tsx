@@ -37,7 +37,10 @@ import {
   Users,
   MoreHorizontal,
   RotateCw,
-  User
+  User,
+  UserPlus,
+  ShieldCheck,
+  Pencil
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
@@ -1344,16 +1347,16 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           </div>
 
           {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {databases.length > 0 ? (
-                <div className="space-y-1 border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                   {(showAllDatabases ? databases : databases.slice(0, 4)).map((db) => (
                     <div
                       key={db.name}
                       className="text-xs"
                     >
                       {/* 数据库行 */}
-                      <div onClick={() => toggleCollections(db.name)} className="flex items-center justify-between p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors cursor-pointer">
+                      <div onClick={() => toggleCollections(db.name)} className="flex items-center justify-between p-1 hover:bg-gray-50 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Database className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
                           <span className="font-medium truncate text-gray-700 dark:text-gray-300">{db.name}</span>
@@ -1472,7 +1475,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              {/* <Users className="w-3.5 h-3.5" /> */}
               用户管理
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1489,8 +1491,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 }}
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
-                <Plus className="h-3 w-3 mr-1" />
-                创建用户
+                <UserPlus className="h-3 w-3 mr-1" />
+                新建用户
               </Button>
             )}
           </div>
@@ -1499,117 +1501,73 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             <div className="space-y-2">
               {/* Admin User */}
               {serviceData.metadata?.['MONGODB_ADMIN_USERNAME'] && (
-                <div className="border rounded-lg p-3 space-y-2 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <User className="h-3.5 w-3.5 text-gray-500" />
-                      <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{serviceData.metadata['MONGODB_ADMIN_USERNAME']}</span>
-                      <Badge variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 h-5">
-                        超级管理员
-                      </Badge>
+                <div className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{serviceData.metadata['MONGODB_ADMIN_USERNAME']}</span>
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mt-1">
-                      <Label className="text-xs font-medium text-gray-500 text-right">
-                        密码
-                      </Label>
-
-                      <div className="relative flex-1">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          value={serviceData.metadata['MONGODB_ADMIN_PASSWORD'] || '未设置'}
-                          readOnly
-                          className="h-7 text-xs shadow-none bg-muted cursor-not-allowed pr-10 border-gray-200 dark:border-white/10"
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setShowPassword(!showPassword)}
-                          disabled={!serviceData.metadata['MONGODB_ADMIN_PASSWORD']}
-                          className="absolute right-1 top-0 h-7 w-7 p-0 hover:bg-transparent"
-                          title={showPassword ? "隐藏密码" : "显示密码"}
-                          aria-label={showPassword ? "隐藏密码" : "显示密码"}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-3 w-3 text-gray-500" />
-                          ) : (
-                            <Eye className="h-3 w-3 text-gray-500" />
-                          )}
-                        </Button>
-                      </div>
-
-                      {/* <Button
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {serviceData.metadata?.['MONGODB_ADMIN_PASSWORD']
+                        ? showPassword
+                          ? serviceData.metadata['MONGODB_ADMIN_PASSWORD']
+                          : '••••••••'
+                        : '—'}
+                    </span>
+                    {serviceData.metadata?.['MONGODB_ADMIN_PASSWORD'] && (
+                      <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const password = serviceData.metadata?.['MONGODB_ADMIN_PASSWORD']
-                          if (password) {
-                            navigator.clipboard.writeText(password)
-                            toast.success('密码已复制到剪贴板')
-                          }
-                        }}
-                        disabled={!serviceData.metadata['MONGODB_ADMIN_PASSWORD']}
-                        className="h-7 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                        title="复制密码"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        onClick={() => setShowPassword(v => !v)}
                       >
-                        <Copy className="h-3 w-3" />
-                      </Button> */}
-                    </div>
+                        {!showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Normal Users */}
               {users.filter(u => u.user !== serviceData.metadata?.['MONGODB_ADMIN_USERNAME']).length > 0 && (
-                users
-                  .filter(u => u.user !== serviceData.metadata?.['MONGODB_ADMIN_USERNAME'])
-                  .map((user) => (
-                    <div
-                      key={user._id}
-                      className="border rounded-lg p-3 space-y-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="h-3.5 w-3.5 text-gray-500" />
-                          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{user.user}</span>
+                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                  {users
+                    .filter(u => u.user !== serviceData.metadata?.['MONGODB_ADMIN_USERNAME'])
+                    .map((user) => (
+                      <div key={user._id} className="flex items-center justify-between p-1 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 text-xs">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Users className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">{user.user}</span>
+                          </div>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-shrink-0">
                           <Button
-                            variant="ghost"
                             size="sm"
+                            variant="ghost"
+                            className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                             onClick={() => openEditUserDialog(user)}
-                            className="h-6 px-2 text-xs text-gray-500 hover:text-gray-900 dark:hover:text-gray-100"
+                            title="编辑权限"
                           >
-                            <Settings className="h-3 w-3 mr-1" />
-                            编辑权限
+                            <Pencil className="h-3 w-3" />
                           </Button>
                           <Button
-                            variant="ghost"
                             size="sm"
+                            variant="ghost"
+                            className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                             onClick={() => handleDeleteUser(user.user)}
-                            className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="删除用户"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center flex-wrap gap-1">
-                          <span className="text-xs text-gray-500 font-medium">数据库权限:</span>
-                          {user.roles.map((role, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="outline"
-                              className="text-xs h-5 font-normal"
-                            >
-                              {role.db}: {role.role}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                    ))
+                  }
+                </div>
               )}
             </div>
           ) : (
@@ -1668,140 +1626,134 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>创建 MongoDB 用户</DialogTitle>
-              <DialogDescription>
-                创建一个新的 MongoDB 用户，并为其分配数据库访问权限
-              </DialogDescription>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                新建用户
+              </DialogTitle>
+              <DialogDescription>创建一个新的 MongoDB 用户并分配数据库权限。</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="username">用户名</Label>
+                <Label htmlFor="new-username">用户名</Label>
                 <Input
-                  id="username"
+                  id="new-username"
                   value={userForm.username}
-                  onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                  onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
                   placeholder="输入用户名"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">密码</Label>
+                <Label htmlFor="new-user-password">密码</Label>
                 <Input
-                  id="password"
+                  id="new-user-password"
                   type="password"
                   value={userForm.password}
-                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
                   placeholder="输入密码"
                 />
               </div>
+              {/* 数据库权限设置 */}
               <div className="space-y-2">
-                <Label>数据库权限设置</Label>
-                <div className="text-xs text-muted-foreground mb-2">
-                  为每个数据库单独设置访问权限
-                </div>
-
-                <div className="flex items-end gap-2 mb-2">
-                  <div className="space-y-1 flex-1">
-                    <Label className="text-xs font-normal text-muted-foreground">添加其他数据库</Label>
-                    <Input
-                      placeholder="输入数据库名称"
-                      value={customDbName}
-                      onChange={e => setCustomDbName(e.target.value)}
-                      className="h-8 text-sm"
-                    />
+                <Label className="text-xs font-medium">数据库权限</Label>
+                {databases.length > 0 && (
+                  <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
+                    {databases.map((db) => (
+                      <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                        <div className="flex gap-1">
+                          {(['read', 'readWrite'] as const).map((role) => (
+                            <button
+                              key={role}
+                              type="button"
+                              onClick={() => setUserForm(prev => {
+                                const newRoles = { ...prev.databaseRoles }
+                                if (newRoles[db.name] === role) {
+                                  delete newRoles[db.name]
+                                } else {
+                                  newRoles[db.name] = role
+                                }
+                                return { ...prev, databaseRoles: newRoles }
+                              })}
+                              className={cn(
+                                'px-2 py-0.5 rounded text-[10px] border transition-colors',
+                                userForm.databaseRoles[db.name] === role
+                                  ? role === 'readWrite'
+                                    ? 'bg-blue-500 border-blue-500 text-white'
+                                    : 'bg-green-500 border-green-500 text-white'
+                                  : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                              )}
+                            >
+                              {role === 'read' ? 'Read' : 'ReadWrite'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 shadow-none"
-                    onClick={() => {
-                      if (customDbName) {
+                )}
+                {/* 自定义数据库 */}
+                <div className="flex gap-2">
+                  <Input
+                    value={customDbName}
+                    onChange={(e) => setCustomDbName(e.target.value)}
+                    placeholder="自定义数据库名"
+                    className="h-7 text-xs shadow-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && customDbName) {
                         setUserForm(prev => ({
                           ...prev,
-                          databaseRoles: {
-                            ...prev.databaseRoles,
-                            [customDbName]: 'read'
-                          }
+                          databaseRoles: { ...prev.databaseRoles, [customDbName]: 'read' },
                         }))
                         setCustomDbName('')
                       }
                     }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs shadow-none"
                     disabled={!customDbName}
+                    onClick={() => {
+                      if (!customDbName) return
+                      setUserForm(prev => ({
+                        ...prev,
+                        databaseRoles: { ...prev.databaseRoles, [customDbName]: 'read' },
+                      }))
+                      setCustomDbName('')
+                    }}
                   >
-                    添加
+                    <Plus className="h-3 w-3" />
                   </Button>
                 </div>
-
-                <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-2">
-                  {Array.from(new Set([
-                    ...databases.map(d => d.name),
-                    ...Object.keys(userForm.databaseRoles)
-                  ])).sort().map((dbName) => (
-                    <div key={dbName} className="flex items-center justify-between py-1.5 hover:bg-accent rounded px-2">
-                      <div className="flex items-center gap-2">
-                        <Database className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm font-medium">{dbName}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <Checkbox
-                            checked={userForm.databaseRoles[dbName] === 'read'}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: {
-                                    ...userForm.databaseRoles,
-                                    [dbName]: 'read'
-                                  }
-                                })
-                              } else {
-                                const newRoles = { ...userForm.databaseRoles }
-                                delete newRoles[dbName]
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: newRoles
-                                })
-                              }
-                            }}
-                          />
-                          <span className="text-sm">只读</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <Checkbox
-                            checked={userForm.databaseRoles[dbName] === 'readWrite'}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: {
-                                    ...userForm.databaseRoles,
-                                    [dbName]: 'readWrite'
-                                  }
-                                })
-                              } else {
-                                const newRoles = { ...userForm.databaseRoles }
-                                delete newRoles[dbName]
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: newRoles
-                                })
-                              }
-                            }}
-                          />
-                          <span className="text-sm">读写</span>
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* 已选权限预览 */}
+                {Object.keys(userForm.databaseRoles).length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(userForm.databaseRoles).map(([db, role]) => (
+                      <span
+                        key={db}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                      >
+                        {db}: {role === 'readWrite' ? 'ReadWrite' : 'Read'}
+                        <button
+                          type="button"
+                          onClick={() => setUserForm(prev => {
+                            const newRoles = { ...prev.databaseRoles }
+                            delete newRoles[db]
+                            return { ...prev, databaseRoles: newRoles }
+                          })}
+                          className="hover:text-blue-900 dark:hover:text-blue-100"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)}>
-                取消
-              </Button>
-              <Button onClick={handleCreateUser}>
-                创建用户
+              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)}>取消</Button>
+              <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password}>
+                创建
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1811,85 +1763,109 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>编辑用户权限</DialogTitle>
-              <DialogDescription>
-                修改用户 "{selectedUser}" 的数据库访问权限
-              </DialogDescription>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                编辑权限 - {selectedUser}
+              </DialogTitle>
+              <DialogDescription>修改用户的数据库访问权限（全量替换）。</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>数据库权限设置</Label>
-                <div className="text-xs text-muted-foreground mb-2">
-                  为每个数据库单独设置访问权限
-                </div>
-                <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-2">
+              {databases.length > 0 && (
+                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-48 overflow-y-auto">
                   {databases.map((db) => (
-                    <div key={db.name} className="flex items-center justify-between py-1.5 hover:bg-accent rounded px-2">
-                      <div className="flex items-center gap-2">
-                        <Database className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm font-medium">{db.name}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <Checkbox
-                            checked={userForm.databaseRoles[db.name] === 'read'}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: {
-                                    ...userForm.databaseRoles,
-                                    [db.name]: 'read'
-                                  }
-                                })
-                              } else {
-                                const newRoles = { ...userForm.databaseRoles }
+                    <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                      <div className="flex gap-1">
+                        {(['read', 'readWrite'] as const).map((role) => (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => setUserForm(prev => {
+                              const newRoles = { ...prev.databaseRoles }
+                              if (newRoles[db.name] === role) {
                                 delete newRoles[db.name]
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: newRoles
-                                })
-                              }
-                            }}
-                          />
-                          <span className="text-sm">只读</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <Checkbox
-                            checked={userForm.databaseRoles[db.name] === 'readWrite'}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: {
-                                    ...userForm.databaseRoles,
-                                    [db.name]: 'readWrite'
-                                  }
-                                })
                               } else {
-                                const newRoles = { ...userForm.databaseRoles }
-                                delete newRoles[db.name]
-                                setUserForm({
-                                  ...userForm,
-                                  databaseRoles: newRoles
-                                })
+                                newRoles[db.name] = role
                               }
-                            }}
-                          />
-                          <span className="text-sm">读写</span>
-                        </label>
+                              return { ...prev, databaseRoles: newRoles }
+                            })}
+                            className={cn(
+                              'px-2 py-0.5 rounded text-[10px] border transition-colors',
+                              userForm.databaseRoles[db.name] === role
+                                ? role === 'readWrite'
+                                  ? 'bg-blue-500 border-blue-500 text-white'
+                                  : 'bg-green-500 border-green-500 text-white'
+                                : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                            )}
+                          >
+                            {role === 'read' ? 'Read' : 'ReadWrite'}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  value={customDbName}
+                  onChange={(e) => setCustomDbName(e.target.value)}
+                  placeholder="自定义数据库名"
+                  className="h-7 text-xs shadow-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && customDbName) {
+                      setUserForm(prev => ({
+                        ...prev,
+                        databaseRoles: { ...prev.databaseRoles, [customDbName]: 'read' },
+                      }))
+                      setCustomDbName('')
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-xs shadow-none"
+                  disabled={!customDbName}
+                  onClick={() => {
+                    if (!customDbName) return
+                    setUserForm(prev => ({
+                      ...prev,
+                      databaseRoles: { ...prev.databaseRoles, [customDbName]: 'read' },
+                    }))
+                    setCustomDbName('')
+                  }}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
               </div>
+              {Object.keys(userForm.databaseRoles).length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(userForm.databaseRoles).map(([db, role]) => (
+                    <span
+                      key={db}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                    >
+                      {db}: {role === 'readWrite' ? 'ReadWrite' : 'Read'}
+                      <button
+                        type="button"
+                        onClick={() => setUserForm(prev => {
+                          const newRoles = { ...prev.databaseRoles }
+                          delete newRoles[db]
+                          return { ...prev, databaseRoles: newRoles }
+                        })}
+                        className="hover:text-blue-900 dark:hover:text-blue-100"
+                      >×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)}>
-                取消
-              </Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)}>取消</Button>
               <Button onClick={handleUpdateUser}>
-                保存更改
+                保存
               </Button>
             </DialogFooter>
           </DialogContent>
