@@ -63,6 +63,24 @@ export interface MySQLUser {
     grants: MySQLGrant[]
 }
 
+export interface PostgreSQLMetadata {
+    "POSTGRESQL_CONFIG"?: string
+    "POSTGRESQL_SUPER_PASSWORD"?: string
+    "PGDATA"?: string
+    "PGPORT"?: string | number
+    "PGHOST"?: string
+}
+
+export interface PostgreSQLGrant {
+    database: string
+    privilege: 'SELECT' | 'ALL PRIVILEGES'
+}
+
+export interface PostgreSQLRole {
+    roleName: string
+    grants: PostgreSQLGrant[]
+}
+
 // SSL 证书格式
 export enum CertificateFormat {
     PEM = 'pem',           // PEM 格式 (Nginx, Apache)

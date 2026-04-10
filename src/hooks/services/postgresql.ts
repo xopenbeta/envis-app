@@ -6,14 +6,37 @@ import {
     ipcGetPostgresqlServiceStatus,
     ipcStartPostgresqlService,
     ipcStopPostgresqlService,
-    ipcRestartPostgresqlService
+    ipcRestartPostgresqlService,
+    ipcInitializePostgresql,
+    ipcCheckPostgresqlInitialized,
+    ipcListPostgresqlDatabases,
+    ipcCreatePostgresqlDatabase,
+    ipcListPostgresqlTables,
+    ipcOpenPostgresqlClient,
+    ipcListPostgresqlRoles,
+    ipcCreatePostgresqlRole,
+    ipcDeletePostgresqlRole,
+    ipcUpdatePostgresqlRoleGrants,
 } from "../../ipc/services/postgresql";
 
 // PostgreSQL 配置接口
 export interface PostgreSQLConfig {
+    configPath?: string
     dataPath: string
+    logPath?: string
+    bindIp?: string
     port: number
     isRunning: boolean
+}
+
+export interface PostgreSQLGrant {
+    database: string
+    privilege: 'SELECT' | 'ALL PRIVILEGES'
+}
+
+export interface PostgreSQLRole {
+    roleName: string
+    grants: PostgreSQLGrant[]
 }
 
 /**
@@ -30,7 +53,10 @@ export async function getPostgresqlConfig(environmentId: string, serviceData: Se
         const ipcRes = await ipcGetPostgresqlConfig(environmentId, serviceData);
         if (ipcRes.success) {
             const config: PostgreSQLConfig = {
+                configPath: ipcRes.data?.configPath || '',
                 dataPath: ipcRes.data?.dataPath || '',
+                logPath: ipcRes.data?.logPath || '',
+                bindIp: ipcRes.data?.bindIp || '127.0.0.1',
                 port: ipcRes.data?.port || 5432,
                 isRunning: ipcRes.data?.isRunning || false
             };
@@ -188,6 +214,118 @@ export async function restartPostgresqlService(
     }
 }
 
+/**
+ * 初始化 PostgreSQL
+ */
+export async function initializePostgresql(
+    environmentId: string,
+    serviceData: ServiceData,
+    superPassword: string,
+    port?: string,
+    bindAddress?: string,
+    reset?: boolean
+) {
+    return ipcInitializePostgresql(environmentId, serviceData, superPassword, port, bindAddress, reset);
+}
+
+/**
+ * 检查 PostgreSQL 是否已初始化
+ */
+export async function checkPostgresqlInitialized(
+    environmentId: string,
+    serviceData: ServiceData
+) {
+    return ipcCheckPostgresqlInitialized(environmentId, serviceData);
+}
+
+/**
+ * 列出 PostgreSQL 数据库
+ */
+export async function listPostgresqlDatabases(
+    environmentId: string,
+    serviceData: ServiceData
+) {
+    return ipcListPostgresqlDatabases(environmentId, serviceData);
+}
+
+/**
+ * 创建 PostgreSQL 数据库
+ */
+export async function createPostgresqlDatabase(
+    environmentId: string,
+    serviceData: ServiceData,
+    databaseName: string
+) {
+    return ipcCreatePostgresqlDatabase(environmentId, serviceData, databaseName);
+}
+
+/**
+ * 列出 PostgreSQL 数据库表
+ */
+export async function listPostgresqlTables(
+    environmentId: string,
+    serviceData: ServiceData,
+    databaseName: string
+) {
+    return ipcListPostgresqlTables(environmentId, serviceData, databaseName);
+}
+
+/**
+ * 打开 PostgreSQL 客户端
+ */
+export async function openPostgresqlClient(
+    environmentId: string,
+    serviceData: ServiceData
+) {
+    return ipcOpenPostgresqlClient(environmentId, serviceData);
+}
+
+/**
+ * 列出 PostgreSQL 角色
+ */
+export async function listPostgresqlRoles(
+    environmentId: string,
+    serviceData: ServiceData
+) {
+    return ipcListPostgresqlRoles(environmentId, serviceData);
+}
+
+/**
+ * 创建 PostgreSQL 角色
+ */
+export async function createPostgresqlRole(
+    environmentId: string,
+    serviceData: ServiceData,
+    roleName: string,
+    password: string,
+    grants: PostgreSQLGrant[]
+) {
+    return ipcCreatePostgresqlRole(environmentId, serviceData, roleName, password, grants);
+}
+
+/**
+ * 删除 PostgreSQL 角色
+ */
+export async function deletePostgresqlRole(
+    environmentId: string,
+    serviceData: ServiceData,
+    roleName: string
+) {
+    return ipcDeletePostgresqlRole(environmentId, serviceData, roleName);
+}
+
+/**
+ * 更新 PostgreSQL 角色权限
+ */
+export async function updatePostgresqlRoleGrants(
+    environmentId: string,
+    serviceData: ServiceData,
+    roleName: string,
+    grants: PostgreSQLGrant[]
+) {
+    return ipcUpdatePostgresqlRoleGrants(environmentId, serviceData, roleName, grants);
+}
+
 export function usePostgresqlService() {
     return {
         getPostgresqlConfig,
@@ -196,6 +334,16 @@ export function usePostgresqlService() {
         getPostgresqlServiceStatus,
         startPostgresqlService,
         stopPostgresqlService,
-        restartPostgresqlService
+        restartPostgresqlService,
+        initializePostgresql,
+        checkPostgresqlInitialized,
+        listPostgresqlDatabases,
+        createPostgresqlDatabase,
+        listPostgresqlTables,
+        openPostgresqlClient,
+        listPostgresqlRoles,
+        createPostgresqlRole,
+        deletePostgresqlRole,
+        updatePostgresqlRoleGrants,
     }
 }
