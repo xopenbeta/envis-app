@@ -47,24 +47,24 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   const { openFolderInFinder } = useFileOperations()
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
 
-  // 检查服务是否激活
-  const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
-
   // 初始化状态
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
 
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
-    enabled: isServiceActive && Boolean(isInitialized),
-    interval: 500,
-  })
   const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
     enabled: true,
     interval: 500,
   })
 
+  // 检查服务是否激活
+  const isServiceActive = serviceDataStatus === ServiceDataStatus.Active;
+
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive && Boolean(isInitialized),
+    interval: 500,
+  })
   // 弹窗数据
   const [dialogData, setDialogData] = useState({
     rootPassword: '',

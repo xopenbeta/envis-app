@@ -28,7 +28,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useNginxService } from '@/hooks/services/nginx'
-import { useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 interface NginxConfigViewProps {
     selectedEnvironmentId: string
@@ -60,13 +60,20 @@ export function NginxConfigView({
     } = useEnvironmentServiceData()
     const { getNginxConfig } = useNginxService()
 
-    const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
     const configPath = useMemo(() => {
         return serviceData.metadata?.['NGINX_CONF'] || ''
     }, [serviceData.metadata])
 
     const [editingConfigPath, setEditingConfigPath] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
+    
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
+    interval: 500,
+    })
+
+    // 检查服务是否激活
+    const isServiceActive = serviceDataStatus === ServiceDataStatus.Active;
     
     const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
         enabled: isServiceActive,

@@ -53,7 +53,7 @@ import { MongoDBConfig, MongoDBMetadata } from "@/types/service"
 import { useMongodb } from "@/hooks/services/mongodb"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
 import { useService } from "@/hooks/service"
-import { useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 interface MongoDBServiceProps {
   serviceData: ServiceData
@@ -63,8 +63,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   const { t } = useTranslation()
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
 
-  // 检查服务是否激活
-  const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
   const configPath = useMemo(() => {
     return serviceData.metadata?.['MONGODB_CONFIG'] || ''
   }, [serviceData, serviceData.metadata, serviceData.metadata?.['MONGODB_CONFIG']])
@@ -80,6 +78,15 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
+
+  const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
+    interval: 500,
+  })
+
+  // 检查服务是否激活
+  const isServiceActive = serviceDataStatus === ServiceDataStatus.Active;
+
   const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: isServiceActive && Boolean(isInitialized),
     interval: 500,
@@ -734,6 +741,16 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               />
             </div>
 
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
+              className="w-full"
+              type="button"
+            >
+              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+            </Button>
+
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
@@ -782,16 +799,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 </div>
               </>
             )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
-              className="w-full"
-              type="button"
-            >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
-            </Button>
 
             {isInitializing && (dialogData.initStep || dialogData.initMessage) ? (
               <Alert>
@@ -895,6 +902,15 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               />
             </div>
 
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
+              className="w-full"
+            >
+              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+            </Button>
+
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
@@ -940,14 +956,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 </div>
               </>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
-              className="w-full"
-            >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
-            </Button>
 
             {isInitializing && (dialogData.initStep || dialogData.initMessage) && (
               <Alert>
@@ -999,28 +1007,25 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       <div className="w-full space-y-3">
         {/* 未初始化提示 */}
         {isServiceActive && isInitialized === false && (
-          <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                <Key className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+          <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 space-y-1">
+                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                  MongoDB 尚未初始化
+                </p>
+                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                  首次使用需要初始化配置文件、数据目录、安全密钥文件，并创建管理员账户。
+                </p>
               </div>
-              <div className="flex-1 space-y-3">
-                <div>
-                  <h3 className="font-semibold text-orange-900 dark:text-orange-100">
-                    MongoDB 尚未初始化
-                  </h3>
-                  <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                    首次使用需要初始化配置文件、数据目录、安全密钥文件，并创建管理员账户。
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setShowInitDialog(true)}
-                  className="bg-orange-600 hover:bg-orange-700 shadow-none"
-                >
-                  <Key className="h-4 w-4 mr-2" />
-                  立即初始化
-                </Button>
-              </div>
+            </div>
+            <div className="flex">
+              <Button
+                size="sm"
+                onClick={() => setShowInitDialog(true)}
+                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+              >
+                立即初始化
+              </Button>
             </div>
           </div>
         )}

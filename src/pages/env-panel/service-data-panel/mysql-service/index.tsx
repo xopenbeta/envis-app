@@ -532,7 +532,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   const configPath = serviceData.metadata?.['MYSQL_CONFIG'] || ''
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-3">
       {/* 初始化对话框 */}
       <Dialog open={showInitDialog} onOpenChange={setShowInitDialog}>
         <DialogContent>
@@ -987,31 +987,28 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-3">
         {/* 未初始化提示 */}
         {isServiceActive && isInitialized === false && (
-          <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                <Key className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+          <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 space-y-1">
+                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                  MySQL 尚未初始化
+                </p>
+                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                  首次使用需要初始化配置文件、数据目录，并创建 root 账户。
+                </p>
               </div>
-              <div className="flex-1 space-y-3">
-                <div>
-                  <h3 className="font-semibold text-orange-900 dark:text-orange-100">
-                    MySQL 尚未初始化
-                  </h3>
-                  <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                    首次使用需要初始化配置文件、数据目录，并创建 root 账户。
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setShowInitDialog(true)}
-                  className="bg-orange-600 hover:bg-orange-700 shadow-none"
-                >
-                  <Key className="h-4 w-4 mr-2" />
-                  立即初始化
-                </Button>
-              </div>
+            </div>
+            <div className="flex">
+              <Button
+                size="sm"
+                onClick={() => setShowInitDialog(true)}
+                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+              >
+                立即初始化
+              </Button>
             </div>
           </div>
         )}
