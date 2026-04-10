@@ -14,6 +14,10 @@ import {
     ipcCreateMysqlDatabase,
     ipcListMysqlTables,
     ipcOpenMysqlClient,
+    ipcListMysqlUsers,
+    ipcCreateMysqlUser,
+    ipcDeleteMysqlUser,
+    ipcUpdateMysqlUserGrants,
 } from "../../ipc/services/mysql";
 
 // MySQL 配置接口
@@ -310,6 +314,52 @@ export async function openMysqlClient(
 }
 
 /**
+ * 列出所有用户
+ */
+export async function listMysqlUsers(
+    environmentId: string,
+    serviceData: ServiceData
+) {
+    return ipcListMysqlUsers(environmentId, serviceData);
+}
+
+/**
+ * 创建用户
+ */
+export async function createMysqlUser(
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    password: string,
+    grants: Array<{ database: string; privilege: string }>
+) {
+    return ipcCreateMysqlUser(environmentId, serviceData, username, password, grants);
+}
+
+/**
+ * 删除用户
+ */
+export async function deleteMysqlUser(
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string
+) {
+    return ipcDeleteMysqlUser(environmentId, serviceData, username);
+}
+
+/**
+ * 更新用户权限
+ */
+export async function updateMysqlUserGrants(
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    grants: Array<{ database: string; privilege: string }>
+) {
+    return ipcUpdateMysqlUserGrants(environmentId, serviceData, username, grants);
+}
+
+/**
  * MySQL Hook
  * 提供 MySQL 相关的操作方法
  */
@@ -329,5 +379,9 @@ export function useMysql() {
         createMysqlDatabase,
         listMysqlTables,
         openMysqlClient,
+        listMysqlUsers,
+        createMysqlUser,
+        deleteMysqlUser,
+        updateMysqlUserGrants,
     };
 }

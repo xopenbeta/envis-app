@@ -52,6 +52,17 @@ export interface MySQLMetadata {
     "MYSQL_ROOT_PASSWORD"?: string
 }
 
+export interface MySQLGrant {
+    database: string
+    privilege: 'SELECT' | 'ALL PRIVILEGES'
+}
+
+export interface MySQLUser {
+    username: string
+    host: string
+    grants: MySQLGrant[]
+}
+
 // SSL 证书格式
 export enum CertificateFormat {
     PEM = 'pem',           // PEM 格式 (Nginx, Apache)

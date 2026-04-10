@@ -301,6 +301,10 @@ pub fn run() {
             create_mysql_database,
             list_mysql_tables,
             open_mysql_client,
+            list_mysql_users,
+            create_mysql_user,
+            delete_mysql_user,
+            update_mysql_user_grants,
             // PostgreSQL 服务命令
             download_postgresql,
             get_postgresql_versions,

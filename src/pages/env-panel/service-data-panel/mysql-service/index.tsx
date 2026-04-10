@@ -22,17 +22,22 @@ import {
   ChevronRight,
   ChevronUp,
   RotateCw,
+  Users,
+  UserPlus,
+  Trash2,
+  Pencil,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
 import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '../../../../store/environment'
-import { useMysql } from '@/hooks/services/mysql'
+import { useMysql, MySQLConfig } from '@/hooks/services/mysql'
 import { useFileOperations } from "@/hooks/file-operations"
-import { MySQLMetadata } from '@/types/service'
+import { MySQLMetadata, MySQLUser, MySQLGrant } from '@/types/service'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
-import { useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 interface MySQLServiceProps {
   serviceData: ServiceData
@@ -55,6 +60,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     enabled: isServiceActive && Boolean(isInitialized),
     interval: 500,
   })
+  const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
+    interval: 500,
+  })
 
   // 弹窗数据
   const [dialogData, setDialogData] = useState({
@@ -66,6 +75,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
   // 密码显示状态
   const [showPassword, setShowPassword] = useState(false)
+
+  // MySQL 配置状态
+  const [mysqlConfig, setMysqlConfig] = useState<MySQLConfig | null>(null)
 
   // 加载状态
   const [isStarting, setIsStarting] = useState(false)
@@ -86,13 +98,37 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   const [newDbName, setNewDbName] = useState('')
   const [isCreatingDb, setIsCreatingDb] = useState(false)
 
+  // 用户管理相关状态
+  const [users, setUsers] = useState<MySQLUser[]>([])
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false)
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false)
+  const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false)
+  const [selectedUsername, setSelectedUsername] = useState('')
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false)
+  const [userForm, setUserForm] = useState<{
+    username: string
+    password: string
+    grants: Record<string, 'SELECT' | 'ALL PRIVILEGES'>
+    customDb: string
+  }>({
+    username: '',
+    password: '',
+    grants: {},
+    customDb: '',
+  })
+
   const {
+    getMysqlConfig,
     initializeMysql,
     checkMysqlInitialized,
     listMysqlDatabases,
     createMysqlDatabase,
     listMysqlTables,
     openMysqlClient,
+    listMysqlUsers,
+    createMysqlUser,
+    deleteMysqlUser,
+    updateMysqlUserGrants,
   } = useMysql()
 
   const {
@@ -113,6 +149,37 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     }
   }, [isServiceActive])
 
+  // 激活状态变化时回写到 store
+  useEffect(() => {
+    if (serviceDataStatus === ServiceDataStatus.Unknown || serviceDataStatus === serviceData.status) {
+      return
+    }
+    updateServiceData({
+      environmentId: selectedEnvironmentId,
+      serviceId: serviceData.id,
+      updates: { status: serviceDataStatus },
+      serviceDatasSnapshot: selectedServiceDatas,
+    }).catch((error) => {
+      console.error('回写 MySQL 激活状态失败:', error)
+    })
+  }, [
+    serviceDataStatus,
+    selectedEnvironmentId,
+    serviceData.id,
+    serviceData.status,
+    selectedServiceDatas,
+    updateServiceData,
+  ])
+
+  // 加载 MySQL 配置（初始化完成后）
+  useEffect(() => {
+    if (isServiceActive && isInitialized) {
+      loadMysqlConfig()
+    } else {
+      setMysqlConfig(null)
+    }
+  }, [isServiceActive, isInitialized])
+
   // 定时刷新数据库列表（每3秒）
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
@@ -127,6 +194,20 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     }
   }, [isServiceActive, isInitialized, serviceStatus])
 
+  // 定时刷新用户列表（每3秒）
+  useEffect(() => {
+    if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
+      loadUsers()
+      const timer = setInterval(() => {
+        loadUsers()
+      }, 3000)
+      return () => clearInterval(timer)
+    } else {
+      setUsers([])
+      return () => {}
+    }
+  }, [isServiceActive, isInitialized, serviceStatus])
+
   const checkInitialized = async () => {
     try {
       const result = await checkMysqlInitialized(selectedEnvironmentId, serviceData)
@@ -135,6 +216,34 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       }
     } catch (error) {
       console.error('检查 MySQL 初始化状态失败:', error)
+    }
+  }
+
+  // 加载 MySQL 配置
+  const loadMysqlConfig = async () => {
+    try {
+      const result = await getMysqlConfig(selectedEnvironmentId, serviceData)
+      if (result.success && result.config) {
+        setMysqlConfig(result.config)
+      }
+    } catch (error) {
+      console.error('加载 MySQL 配置失败:', error)
+    }
+  }
+
+  // 加载用户列表
+  const loadUsers = async () => {
+    if (!isServiceActive || !isInitialized || serviceStatus !== ServiceStatus.Running) {
+      setUsers([])
+      return
+    }
+    try {
+      const result = await listMysqlUsers(selectedEnvironmentId, serviceData)
+      if (result.success && result.data?.users) {
+        setUsers(result.data.users as MySQLUser[])
+      }
+    } catch (error) {
+      console.error('加载用户列表失败:', error)
     }
   }
 
@@ -235,6 +344,86 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       toast.error('创建数据库失败: ' + error)
     } finally {
       setIsCreatingDb(false)
+    }
+  }
+
+  // 创建用户
+  const handleCreateUser = async () => {
+    if (!userForm.username || !userForm.password) return
+    setIsSubmittingUser(true)
+    try {
+      const grants: MySQLGrant[] = Object.entries(userForm.grants).map(([database, privilege]) => ({
+        database,
+        privilege,
+      }))
+      const result = await createMysqlUser(selectedEnvironmentId, serviceData, userForm.username, userForm.password, grants)
+      if (result.success) {
+        toast.success(`用户 '${userForm.username}' 创建成功`)
+        setShowCreateUserDialog(false)
+        setUserForm({ username: '', password: '', grants: {}, customDb: '' })
+        loadUsers()
+      } else {
+        toast.error('创建用户失败: ' + result.message)
+      }
+    } catch (error) {
+      toast.error('创建用户失败: ' + error)
+    } finally {
+      setIsSubmittingUser(false)
+    }
+  }
+
+  // 打开编辑权限弹框
+  const openEditUserDialog = (user: MySQLUser) => {
+    const grantsMap: Record<string, 'SELECT' | 'ALL PRIVILEGES'> = {}
+    for (const g of user.grants) {
+      grantsMap[g.database] = g.privilege as 'SELECT' | 'ALL PRIVILEGES'
+    }
+    setSelectedUsername(user.username)
+    setUserForm({ username: user.username, password: '', grants: grantsMap, customDb: '' })
+    setShowEditUserDialog(true)
+  }
+
+  // 更新用户权限
+  const handleUpdateUserGrants = async () => {
+    if (!selectedUsername) return
+    setIsSubmittingUser(true)
+    try {
+      const grants: MySQLGrant[] = Object.entries(userForm.grants).map(([database, privilege]) => ({
+        database,
+        privilege,
+      }))
+      const result = await updateMysqlUserGrants(selectedEnvironmentId, serviceData, selectedUsername, grants)
+      if (result.success) {
+        toast.success(`用户 '${selectedUsername}' 权限更新成功`)
+        setShowEditUserDialog(false)
+        loadUsers()
+      } else {
+        toast.error('更新权限失败: ' + result.message)
+      }
+    } catch (error) {
+      toast.error('更新权限失败: ' + error)
+    } finally {
+      setIsSubmittingUser(false)
+    }
+  }
+
+  // 删除用户
+  const handleDeleteUser = async () => {
+    if (!selectedUsername) return
+    setIsSubmittingUser(true)
+    try {
+      const result = await deleteMysqlUser(selectedEnvironmentId, serviceData, selectedUsername)
+      if (result.success) {
+        toast.success(`用户 '${selectedUsername}' 删除成功`)
+        setShowDeleteUserDialog(false)
+        loadUsers()
+      } else {
+        toast.error('删除用户失败: ' + result.message)
+      }
+    } catch (error) {
+      toast.error('删除用户失败: ' + error)
+    } finally {
+      setIsSubmittingUser(false)
     }
   }
 
@@ -524,6 +713,280 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         </DialogContent>
       </Dialog>
 
+      {/* 创建用户对话框 */}
+      <Dialog open={showCreateUserDialog} onOpenChange={(open) => {
+        setShowCreateUserDialog(open)
+        if (!open) setUserForm({ username: '', password: '', grants: {}, customDb: '' })
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              新建用户
+            </DialogTitle>
+            <DialogDescription>创建一个新的 MySQL 用户并分配数据库权限。</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-username">用户名</Label>
+              <Input
+                id="new-username"
+                value={userForm.username}
+                onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="输入用户名"
+                disabled={isSubmittingUser}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-password">密码</Label>
+              <Input
+                id="new-user-password"
+                type="password"
+                value={userForm.password}
+                onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="输入密码"
+                disabled={isSubmittingUser}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">数据库权限</Label>
+              {databases.length > 0 && (
+                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
+                  {databases.map((db) => (
+                    <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                      <div className="flex gap-1">
+                        {(['SELECT', 'ALL PRIVILEGES'] as const).map((priv) => (
+                          <button
+                            key={priv}
+                            type="button"
+                            onClick={() => setUserForm(prev => {
+                              const newGrants = { ...prev.grants }
+                              if (newGrants[db.name] === priv) {
+                                delete newGrants[db.name]
+                              } else {
+                                newGrants[db.name] = priv
+                              }
+                              return { ...prev, grants: newGrants }
+                            })}
+                            className={cn(
+                              'px-2 py-0.5 rounded text-[10px] border transition-colors',
+                              userForm.grants[db.name] === priv
+                                ? priv === 'ALL PRIVILEGES'
+                                  ? 'bg-blue-500 border-blue-500 text-white'
+                                  : 'bg-green-500 border-green-500 text-white'
+                                : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                            )}
+                          >
+                            {priv === 'SELECT' ? 'Read' : 'ReadWrite'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  value={userForm.customDb}
+                  onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
+                  placeholder="自定义数据库名"
+                  className="h-7 text-xs shadow-none"
+                  disabled={isSubmittingUser}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && userForm.customDb) {
+                      setUserForm(prev => ({
+                        ...prev,
+                        grants: { ...prev.grants, [prev.customDb]: 'SELECT' },
+                        customDb: '',
+                      }))
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-xs shadow-none"
+                  disabled={!userForm.customDb || isSubmittingUser}
+                  onClick={() => {
+                    if (!userForm.customDb) return
+                    setUserForm(prev => ({
+                      ...prev,
+                      grants: { ...prev.grants, [prev.customDb]: 'SELECT' },
+                      customDb: '',
+                    }))
+                  }}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+              {Object.keys(userForm.grants).length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(userForm.grants).map(([db, priv]) => (
+                    <span
+                      key={db}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                    >
+                      {db}: {priv === 'ALL PRIVILEGES' ? 'ReadWrite' : 'Read'}
+                      <button
+                        type="button"
+                        onClick={() => setUserForm(prev => {
+                          const newGrants = { ...prev.grants }
+                          delete newGrants[db]
+                          return { ...prev, grants: newGrants }
+                        })}
+                        className="hover:text-blue-900 dark:hover:text-blue-100"
+                      >×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+            <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password || isSubmittingUser}>
+              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />创建中...</> : '创建'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 编辑用户权限对话框 */}
+      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              编辑权限 - {selectedUsername}
+            </DialogTitle>
+            <DialogDescription>修改用户的数据库访问权限（全量替换）。</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {databases.length > 0 && (
+              <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-48 overflow-y-auto">
+                {databases.map((db) => (
+                  <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                    <div className="flex gap-1">
+                      {(['SELECT', 'ALL PRIVILEGES'] as const).map((priv) => (
+                        <button
+                          key={priv}
+                          type="button"
+                          onClick={() => setUserForm(prev => {
+                            const newGrants = { ...prev.grants }
+                            if (newGrants[db.name] === priv) {
+                              delete newGrants[db.name]
+                            } else {
+                              newGrants[db.name] = priv
+                            }
+                            return { ...prev, grants: newGrants }
+                          })}
+                          className={cn(
+                            'px-2 py-0.5 rounded text-[10px] border transition-colors',
+                            userForm.grants[db.name] === priv
+                              ? priv === 'ALL PRIVILEGES'
+                                ? 'bg-blue-500 border-blue-500 text-white'
+                                : 'bg-green-500 border-green-500 text-white'
+                              : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                          )}
+                        >
+                          {priv === 'SELECT' ? 'Read' : 'ReadWrite'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={userForm.customDb}
+                onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
+                placeholder="自定义数据库名"
+                className="h-7 text-xs shadow-none"
+                disabled={isSubmittingUser}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && userForm.customDb) {
+                    setUserForm(prev => ({
+                      ...prev,
+                      grants: { ...prev.grants, [prev.customDb]: 'SELECT' },
+                      customDb: '',
+                    }))
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs shadow-none"
+                disabled={!userForm.customDb || isSubmittingUser}
+                onClick={() => {
+                  if (!userForm.customDb) return
+                  setUserForm(prev => ({
+                    ...prev,
+                    grants: { ...prev.grants, [prev.customDb]: 'SELECT' },
+                    customDb: '',
+                  }))
+                }}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+            {Object.keys(userForm.grants).length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(userForm.grants).map(([db, priv]) => (
+                  <span
+                    key={db}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                  >
+                    {db}: {priv === 'ALL PRIVILEGES' ? 'ReadWrite' : 'Read'}
+                    <button
+                      type="button"
+                      onClick={() => setUserForm(prev => {
+                        const newGrants = { ...prev.grants }
+                        delete newGrants[db]
+                        return { ...prev, grants: newGrants }
+                      })}
+                      className="hover:text-blue-900 dark:hover:text-blue-100"
+                    >×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+            <Button onClick={handleUpdateUserGrants} disabled={isSubmittingUser}>
+              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />保存中...</> : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除用户确认对话框 */}
+      <Dialog open={showDeleteUserDialog} onOpenChange={setShowDeleteUserDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              删除用户
+            </DialogTitle>
+            <DialogDescription>
+              确认要删除用户 <span className="font-semibold text-foreground">'{selectedUsername}'</span> 吗？此操作不可恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmittingUser}>
+              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />删除中...</> : '确认删除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="w-full space-y-4">
         {/* 未初始化提示 */}
         {isServiceActive && isInitialized === false && (
@@ -635,6 +1098,76 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
+                </div>
+              </div>
+
+              {/* 数据目录 */}
+              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录（从配置文件读取）</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={mysqlConfig?.dataPath || '未配置'}
+                    readOnly
+                    className={cn(
+                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      !mysqlConfig?.dataPath && "text-muted-foreground"
+                    )}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => mysqlConfig?.dataPath && openFolderInFinder(mysqlConfig.dataPath)}
+                    disabled={!mysqlConfig?.dataPath}
+                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    title="打开目录"
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* 日志文件 */}
+              <div>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件（从配置文件读取）</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={mysqlConfig?.logPath || '未配置'}
+                    readOnly
+                    className={cn(
+                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      !mysqlConfig?.logPath && "text-muted-foreground"
+                    )}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => mysqlConfig?.logPath && openFolderInFinder(mysqlConfig.logPath)}
+                    disabled={!mysqlConfig?.logPath}
+                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    title="打开目录"
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* 主机 & 端口 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">主机（从配置文件读取）</Label>
+                  <Input
+                    value={mysqlConfig?.bindIp || '未配置'}
+                    readOnly
+                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口（从配置文件读取）</Label>
+                  <Input
+                    value={mysqlConfig?.port ?? '未配置'}
+                    readOnly
+                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                  />
                 </div>
               </div>
 
@@ -895,6 +1428,110 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* 用户管理 */}
+        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+              用户管理
+            </Label>
+            {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateUserDialog(true)}
+                className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+              >
+                <UserPlus className="h-3 w-3 mr-1" />
+                新建用户
+              </Button>
+            )}
+          </div>
+          {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
+            <div className="space-y-2">
+              {/* root 管理员卡片 */}
+              <div className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">root</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {serviceData.metadata?.['MYSQL_ROOT_PASSWORD']
+                      ? showPassword
+                        ? serviceData.metadata['MYSQL_ROOT_PASSWORD']
+                        : '••••••••'
+                      : '—'}
+                  </span>
+                  {serviceData.metadata?.['MYSQL_ROOT_PASSWORD'] && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      onClick={() => setShowPassword(v => !v)}
+                    >
+                      {!showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {/* 普通用户列表 */}
+              {users.length > 0 ? (
+                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                  {users.map((user) => (
+                    <div key={user.username} className="flex items-center justify-between p-1 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 text-xs">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Users className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{user.username}</span>
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                          onClick={() => openEditUserDialog(user)}
+                          title="编辑权限"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                          onClick={() => {
+                            setSelectedUsername(user.username)
+                            setShowDeleteUserDialog(true)
+                          }}
+                          title="删除用户"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
+                  暂无普通用户
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+              <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
+              {!isServiceActive ? (
+                <><p className="text-sm">服务未激活</p><p className="text-xs">无法管理用户</p></>
+              ) : !isInitialized ? (
+                <><p className="text-sm">MySQL 尚未初始化</p><p className="text-xs">请先完成初始化</p></>
+              ) : (
+                <><p className="text-sm">服务未运行</p><p className="text-xs">请先启动服务</p></>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* 其他操作 */}
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">

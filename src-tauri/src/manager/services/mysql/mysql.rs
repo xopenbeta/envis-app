@@ -1214,7 +1214,6 @@ default-character-set = utf8mb4
     ) -> Result<ServiceDataResult> {
         log::info!("打开 MySQL 客户端");
 
-        // 从 metadata 中获取连接信息
         let root_password = service_data
             .metadata
             .as_ref()
@@ -1229,17 +1228,432 @@ default-character-set = utf8mb4
             .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
             .unwrap_or_else(|| "3306".to_string());
 
-        // 构建连接字符串
-        let connection_string = if root_password.is_empty() {
-            format!("mysql://root@127.0.0.1:{}", port)
+        let install_path = self.get_install_path(&service_data.version);
+        let cli_in_bin = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("mysql.exe")
         } else {
-            format!("mysql://root:{}@127.0.0.1:{}", root_password, port)
+            install_path.join("bin").join("mysql")
         };
+        let cli_cmd = if cli_in_bin.exists() {
+            cli_in_bin.to_string_lossy().to_string()
+        } else if cfg!(target_os = "windows") {
+            "mysql.exe".to_string()
+        } else {
+            "mysql".to_string()
+        };
+
+        let mut args = vec![
+            "-u".to_string(),
+            "root".to_string(),
+            "-h".to_string(),
+            "127.0.0.1".to_string(),
+            "-P".to_string(),
+            port.clone(),
+        ];
+        if !root_password.is_empty() {
+            args.push(format!("-p{}", root_password));
+        }
+
+        let result = if cfg!(target_os = "macos") {
+            let shell_cmd = Self::build_terminal_command(&cli_cmd, &args);
+            create_command("osascript")
+                .arg("-e")
+                .arg(format!(
+                    "tell application \"Terminal\" to do script \"{}\"",
+                    Self::escape_applescript_string(&shell_cmd)
+                ))
+                .arg("-e")
+                .arg("tell application \"Terminal\" to activate")
+                .spawn()
+        } else if cfg!(target_os = "windows") {
+            let mut cmd_args = vec![
+                "/C".to_string(),
+                "start".to_string(),
+                "cmd".to_string(),
+                "/K".to_string(),
+                cli_cmd,
+            ];
+            cmd_args.extend(args);
+            create_command("cmd").args(&cmd_args).spawn()
+        } else {
+            create_command("gnome-terminal")
+                .arg("--")
+                .arg(&cli_cmd)
+                .args(&args)
+                .spawn()
+                .or_else(|_| {
+                    create_command("xterm")
+                        .arg("-e")
+                        .arg(Self::build_terminal_command(&cli_cmd, &args))
+                        .spawn()
+                })
+        };
+
+        match result {
+            Ok(_) => Ok(ServiceDataResult {
+                success: true,
+                message: "MySQL 客户端已打开".to_string(),
+                data: Some(serde_json::json!({ "port": port })),
+            }),
+            Err(e) => Ok(ServiceDataResult {
+                success: false,
+                message: format!("无法打开 MySQL 客户端: {}", e),
+                data: None,
+            }),
+        }
+    }
+
+    fn shell_quote(value: &str) -> String {
+        format!("'{}'", value.replace('\'', "'\\''"))
+    }
+
+    fn build_terminal_command(command: &str, args: &[String]) -> String {
+        let mut parts = vec![Self::shell_quote(command)];
+        parts.extend(args.iter().map(|arg| Self::shell_quote(arg)));
+        parts.push("; exec $SHELL".to_string());
+        parts.join(" ")
+    }
+
+    fn escape_applescript_string(value: &str) -> String {
+        value.replace('\\', "\\\\").replace('"', "\\\"")
+    }
+
+    /// 列出所有用户（不含 root）
+    pub fn list_users(
+        &self,
+        _environment_id: &str,
+        service_data: &ServiceData,
+    ) -> Result<ServiceDataResult> {
+        let root_password = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_ROOT_PASSWORD"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("未找到 root 密码"))?;
+
+        let port = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_PORT"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
+
+        let install_path = self.get_install_path(&service_data.version);
+        let mysql_client = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("mysql.exe")
+        } else {
+            install_path.join("bin").join("mysql")
+        };
+        if !mysql_client.exists() {
+            return Err(anyhow!("mysql 客户端未安装"));
+        }
+
+        let output = create_command(&mysql_client)
+            .arg(format!("--port={}", port))
+            .arg("--host=127.0.0.1")
+            .arg("-u").arg("root")
+            .arg(format!("--password={}", root_password))
+            .arg("-e")
+            .arg("SELECT User, Host FROM mysql.user WHERE User != '' AND User != 'mysql.sys' AND User != 'mysql.infoschema' AND User != 'mysql.session' AND User != 'root' AND Host = 'localhost' ORDER BY User")
+            .arg("--batch")
+            .arg("--skip-column-names")
+            .output()?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("列出用户失败: {}", error));
+        }
+
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        let mut users: Vec<serde_json::Value> = Vec::new();
+
+        for line in output_str.lines().filter(|l| !l.is_empty()) {
+            let parts: Vec<&str> = line.splitn(2, '\t').collect();
+            if parts.len() < 2 {
+                continue;
+            }
+            let username = parts[0].trim();
+            let host = parts[1].trim();
+
+            let grants_output = create_command(&mysql_client)
+                .arg(format!("--port={}", port))
+                .arg("--host=127.0.0.1")
+                .arg("-u").arg("root")
+                .arg(format!("--password={}", root_password))
+                .arg("-e")
+                .arg(format!("SHOW GRANTS FOR '{}'@'{}'", username, host))
+                .arg("--batch")
+                .arg("--skip-column-names")
+                .output()?;
+
+            let mut grants: Vec<serde_json::Value> = Vec::new();
+            if grants_output.status.success() {
+                let grants_str = String::from_utf8_lossy(&grants_output.stdout);
+                for grant_line in grants_str.lines().filter(|l| !l.is_empty()) {
+                    if let Some(on_pos) = grant_line.find(" ON ") {
+                        let priv_part = &grant_line[6..on_pos];
+                        let rest = &grant_line[on_pos + 4..];
+                        if let Some(dot_pos) = rest.find(".*") {
+                            let db_part = &rest[..dot_pos];
+                            let db_name = db_part.trim_matches('`').trim_matches('\'');
+                            if db_name != "*" && db_name != "mysql" {
+                                let privilege = if priv_part.contains("ALL PRIVILEGES") {
+                                    "ALL PRIVILEGES"
+                                } else {
+                                    "SELECT"
+                                };
+                                grants.push(serde_json::json!({
+                                    "database": db_name,
+                                    "privilege": privilege,
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+
+            users.push(serde_json::json!({
+                "username": username,
+                "host": host,
+                "grants": grants,
+            }));
+        }
 
         Ok(ServiceDataResult {
             success: true,
-            message: "获取连接字符串成功".to_string(),
-            data: Some(serde_json::json!({ "connectionString": connection_string })),
+            message: "获取用户列表成功".to_string(),
+            data: Some(serde_json::json!({ "users": users })),
+        })
+    }
+
+    /// 创建用户
+    pub fn create_user(
+        &self,
+        _environment_id: &str,
+        service_data: &ServiceData,
+        username: String,
+        password: String,
+        grants: Vec<serde_json::Value>,
+    ) -> Result<ServiceDataResult> {
+        log::info!("创建 MySQL 用户: {}", username);
+
+        if username.is_empty() {
+            return Err(anyhow!("用户名不能为空"));
+        }
+        if username.to_lowercase() == "root" {
+            return Err(anyhow!("不能创建 root 用户"));
+        }
+        if password.is_empty() {
+            return Err(anyhow!("密码不能为空"));
+        }
+
+        let root_password = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_ROOT_PASSWORD"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("未找到 root 密码"))?;
+
+        let port = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_PORT"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
+
+        let install_path = self.get_install_path(&service_data.version);
+        let mysql_client = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("mysql.exe")
+        } else {
+            install_path.join("bin").join("mysql")
+        };
+        if !mysql_client.exists() {
+            return Err(anyhow!("mysql 客户端未安装"));
+        }
+
+        let mut sql_parts = vec![
+            format!("CREATE USER '{}'@'localhost' IDENTIFIED BY '{}'", username, password),
+        ];
+        for grant in &grants {
+            let database = grant.get("database").and_then(|v| v.as_str()).unwrap_or("");
+            let privilege = grant.get("privilege").and_then(|v| v.as_str()).unwrap_or("SELECT");
+            if !database.is_empty() {
+                sql_parts.push(format!(
+                    "GRANT {} ON `{}`.* TO '{}'@'localhost'",
+                    privilege, database, username
+                ));
+            }
+        }
+        sql_parts.push("FLUSH PRIVILEGES".to_string());
+        let sql = sql_parts.join("; ");
+
+        let output = create_command(&mysql_client)
+            .arg(format!("--port={}", port))
+            .arg("--host=127.0.0.1")
+            .arg("-u").arg("root")
+            .arg(format!("--password={}", root_password))
+            .arg("-e")
+            .arg(&sql)
+            .output()?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("创建用户失败: {}", error));
+        }
+
+        Ok(ServiceDataResult {
+            success: true,
+            message: format!("用户 '{}' 创建成功", username),
+            data: Some(serde_json::json!({ "username": username })),
+        })
+    }
+
+    /// 删除用户
+    pub fn delete_user(
+        &self,
+        _environment_id: &str,
+        service_data: &ServiceData,
+        username: String,
+    ) -> Result<ServiceDataResult> {
+        log::info!("删除 MySQL 用户: {}", username);
+
+        if username.to_lowercase() == "root" {
+            return Ok(ServiceDataResult {
+                success: false,
+                message: "不能删除 root 用户".to_string(),
+                data: None,
+            });
+        }
+
+        let root_password = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_ROOT_PASSWORD"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("未找到 root 密码"))?;
+
+        let port = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_PORT"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
+
+        let install_path = self.get_install_path(&service_data.version);
+        let mysql_client = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("mysql.exe")
+        } else {
+            install_path.join("bin").join("mysql")
+        };
+        if !mysql_client.exists() {
+            return Err(anyhow!("mysql 客户端未安装"));
+        }
+
+        let sql = format!(
+            "DROP USER IF EXISTS '{}'@'localhost'; FLUSH PRIVILEGES",
+            username
+        );
+
+        let output = create_command(&mysql_client)
+            .arg(format!("--port={}", port))
+            .arg("--host=127.0.0.1")
+            .arg("-u").arg("root")
+            .arg(format!("--password={}", root_password))
+            .arg("-e")
+            .arg(&sql)
+            .output()?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("删除用户失败: {}", error));
+        }
+
+        Ok(ServiceDataResult {
+            success: true,
+            message: format!("用户 '{}' 删除成功", username),
+            data: Some(serde_json::json!({ "username": username })),
+        })
+    }
+
+    /// 更新用户权限（全量替换）
+    pub fn update_user_grants(
+        &self,
+        _environment_id: &str,
+        service_data: &ServiceData,
+        username: String,
+        grants: Vec<serde_json::Value>,
+    ) -> Result<ServiceDataResult> {
+        log::info!("更新 MySQL 用户权限: {}", username);
+
+        if username.to_lowercase() == "root" {
+            return Ok(ServiceDataResult {
+                success: false,
+                message: "不能修改 root 用户权限".to_string(),
+                data: None,
+            });
+        }
+
+        let root_password = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_ROOT_PASSWORD"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("未找到 root 密码"))?;
+
+        let port = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("MYSQL_PORT"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_else(|| "3306".to_string());
+
+        let install_path = self.get_install_path(&service_data.version);
+        let mysql_client = if cfg!(target_os = "windows") {
+            install_path.join("bin").join("mysql.exe")
+        } else {
+            install_path.join("bin").join("mysql")
+        };
+        if !mysql_client.exists() {
+            return Err(anyhow!("mysql 客户端未安装"));
+        }
+
+        let mut sql_parts = vec![
+            format!(
+                "REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{}'@'localhost'",
+                username
+            ),
+        ];
+        for grant in &grants {
+            let database = grant.get("database").and_then(|v| v.as_str()).unwrap_or("");
+            let privilege = grant.get("privilege").and_then(|v| v.as_str()).unwrap_or("SELECT");
+            if !database.is_empty() {
+                sql_parts.push(format!(
+                    "GRANT {} ON `{}`.* TO '{}'@'localhost'",
+                    privilege, database, username
+                ));
+            }
+        }
+        sql_parts.push("FLUSH PRIVILEGES".to_string());
+        let sql = sql_parts.join("; ");
+
+        let output = create_command(&mysql_client)
+            .arg(format!("--port={}", port))
+            .arg("--host=127.0.0.1")
+            .arg("-u").arg("root")
+            .arg(format!("--password={}", root_password))
+            .arg("-e")
+            .arg(&sql)
+            .output()?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("更新用户权限失败: {}", error));
+        }
+
+        Ok(ServiceDataResult {
+            success: true,
+            message: format!("用户 '{}' 权限更新成功", username),
+            data: Some(serde_json::json!({ "username": username })),
         })
     }
 }

@@ -89,6 +89,43 @@ export const ipcListMysqlTables = ipcLogFunc('列出 MySQL 表', async (environm
     return invokeCommand('list_mysql_tables', { environmentId, serviceData, databaseName })
 })
 
-export const ipcOpenMysqlClient = ipcLogFunc('打开 MySQL 客户端', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{ connectionString: string }>> => {
+export const ipcOpenMysqlClient = ipcLogFunc('打开 MySQL 客户端', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{ port: string }>> => {
     return invokeCommand('open_mysql_client', { environmentId, serviceData })
+})
+
+export const ipcListMysqlUsers = ipcLogFunc('列出 MySQL 用户', async (environmentId: string, serviceData: ServiceData): Promise<IPCResult<{
+    users: Array<{
+        username: string
+        host: string
+        grants: Array<{ database: string; privilege: string }>
+    }>
+}>> => {
+    return invokeCommand('list_mysql_users', { environmentId, serviceData })
+})
+
+export const ipcCreateMysqlUser = ipcLogFunc('创建 MySQL 用户', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    password: string,
+    grants: Array<{ database: string; privilege: string }>
+): Promise<IPCResult<{ username: string }>> => {
+    return invokeCommand('create_mysql_user', { environmentId, serviceData, username, password, grants })
+})
+
+export const ipcDeleteMysqlUser = ipcLogFunc('删除 MySQL 用户', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string
+): Promise<IPCResult<{ username: string }>> => {
+    return invokeCommand('delete_mysql_user', { environmentId, serviceData, username })
+})
+
+export const ipcUpdateMysqlUserGrants = ipcLogFunc('更新 MySQL 用户权限', async (
+    environmentId: string,
+    serviceData: ServiceData,
+    username: string,
+    grants: Array<{ database: string; privilege: string }>
+): Promise<IPCResult<{ username: string }>> => {
+    return invokeCommand('update_mysql_user_grants', { environmentId, serviceData, username, grants })
 })
