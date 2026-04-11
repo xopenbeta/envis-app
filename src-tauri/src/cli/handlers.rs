@@ -27,13 +27,12 @@ pub fn handle_use_early(target_str: &str) {
 
         println!("正在激活环境: {} ({}) ...", target_env.name, target_env.id);
 
-        // 3. 停用其他活跃环境 (更新状态文件，避免下次 list 显示多个 Active)
+        // 3. 停用其他活跃环境 (复用既有 deactive 逻辑，统一停服务+状态持久化)
         for (i, env) in environments.iter_mut().enumerate() {
             if i != idx && env.status == EnvironmentStatus::Active {
-                env.status = EnvironmentStatus::Inactive;
-                if let Err(e) = manager.save_environment(env) {
+                if let Err(e) = manager.deactivate_environment_and_services(env, None) {
                     eprintln!(
-                        "警告: 无法更新原环境 {} 的状态 (非致命错误): {}",
+                        "警告: 无法停用并停止原环境 {} 的服务 (非致命错误): {}",
                         env.name, e
                     );
                 }

@@ -24,6 +24,7 @@ export default function Envis() {
   const [envPanelWidthRatio, setEnvPanelWidthRatio] = useAtom(envPanelWidthRatioAtom);
   const [isAIPanelOpen, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom);
   const [aiPanelWidthRatio, setAIPanelWidthRatio] = useAtom(aiPanelWidthRatioAtom);
+  const [isResizingPanels, setIsResizingPanels] = useState(false);
 
   const navPanelRef = useRef<ImperativePanelHandle>(null);
   const envPanelRef = useRef<ImperativePanelHandle>(null);
@@ -86,7 +87,7 @@ export default function Envis() {
     previousAIPanelOpenRef.current = isAIPanelOpen;
   }, [isAIPanelOpen, aiPanelWidthRatio]);
 
-  const resizableHandleClassName = "w-px bg-content2 hover:bg-default heroui-transition";
+  const resizableHandleClassName = "w-px bg-content2 hover:bg-default transition-colors duration-100";
   return <div className="fixed w-screen h-screen overflow-hidden bg-content2">
     <ResizablePanelGroup direction="horizontal" className="w-screen h-screen">
 
@@ -98,7 +99,7 @@ export default function Envis() {
         collapsible={true}
         minSize={10}
         className="min-w-0"
-        animateCollapse={true}
+        animateCollapse={!isResizingPanels}
         onResize={(size) => {
           if (isNavPanelOpen) setNavPanelWidthRatio(size);
         }}
@@ -107,7 +108,10 @@ export default function Envis() {
       </ResizablePanel>
 
       {/* 拖动线 */}
-      <ResizableHandle className={resizableHandleClassName} />
+      <ResizableHandle
+        className={resizableHandleClassName}
+        onDragging={(isDragging) => setIsResizingPanels(isDragging)}
+      />
 
       {/* 主体内容 */}
       <ResizablePanel
@@ -130,7 +134,10 @@ export default function Envis() {
       </ResizablePanel>
 
       {/* 拖动线 */}
-      <ResizableHandle className={resizableHandleClassName} />
+      <ResizableHandle
+        className={resizableHandleClassName}
+        onDragging={(isDragging) => setIsResizingPanels(isDragging)}
+      />
 
       {/* AI面板 */}
       <ResizablePanel
@@ -140,6 +147,7 @@ export default function Envis() {
         collapsible={true}
         minSize={20}
         maxSize={50}
+        animateCollapse={!isResizingPanels}
         onResize={(size) => {
           if (isAIPanelOpen) setAIPanelWidthRatio(size);
         }}
