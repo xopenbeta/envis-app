@@ -150,7 +150,7 @@ impl DownloadManager {
     /// 创建新的下载管理器实例（内部使用）
     fn new() -> Self {
         let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(300)) // 5分钟超时
+            .timeout(std::time::Duration::from_secs(1800)) // 30分钟超时
             .build()
             .expect("Failed to create HTTP client");
 
