@@ -39,20 +39,12 @@ impl MongodbService {
     pub fn get_available_versions(&self) -> Vec<MongodbVersion> {
         vec![
             MongodbVersion {
-                version: "8.2.1".to_string(),
+                version: "8.2.6".to_string(),
                 date: "2024-10-01".to_string(),
             },
             MongodbVersion {
-                version: "8.0.4".to_string(),
-                date: "2024-09-15".to_string(),
-            },
-            MongodbVersion {
-                version: "7.0.15".to_string(),
+                version: "7.0.31".to_string(),
                 date: "2024-08-20".to_string(),
-            },
-            MongodbVersion {
-                version: "6.0.14".to_string(),
-                date: "2024-08-01".to_string(),
             },
         ]
     }
