@@ -261,7 +261,9 @@ export function SortableServiceItem({
       // 乐观更新：立即切换状态
       setServiceDataStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
       
-      let res = await activateServiceData(selectedEnvironment.id, serviceData);
+      const res = isCurrentlyActive
+        ? await deactivateServiceData(selectedEnvironment.id, serviceData, password)
+        : await activateServiceData(selectedEnvironment.id, serviceData, password);
 
       if (res?.success) {
         sessionStorage.setItem('envis_sudo_password', password);

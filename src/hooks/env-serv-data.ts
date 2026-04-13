@@ -218,7 +218,7 @@ export function useEnvironmentServiceData() {
     }
 
     // 激活服务数据，这里没有直接更新界面，因为可能不是当前选中的环境的服务数据
-    async function activateServiceData(environmentId: string, serviceData: ServiceData) {
+    async function activateServiceData(environmentId: string, serviceData: ServiceData, passwordOverride?: string) {
         // 渲染层先检查服务是否已安装，只有已安装的服务才会尝试激活
         if (NeedDownloadServices.includes(serviceData.type)) {
             const checkRes = await checkServiceInstalled(serviceData.type, serviceData.version);
@@ -228,7 +228,7 @@ export function useEnvironmentServiceData() {
             }
         }
 
-        const effectivePassword = getSudoPassword();
+        const effectivePassword = passwordOverride || getSudoPassword();
         const ipcRes = await ipcActivateServiceData(environmentId, serviceData, effectivePassword);
         if (ipcRes.success) {
             console.log('激活服务成功:', serviceData.type, serviceData.id);
@@ -239,8 +239,8 @@ export function useEnvironmentServiceData() {
         return ipcRes;
     }
 
-    async function deactivateServiceData(environmentId: string, serviceData: ServiceData) {
-        const effectivePassword = getSudoPassword();
+    async function deactivateServiceData(environmentId: string, serviceData: ServiceData, passwordOverride?: string) {
+        const effectivePassword = passwordOverride || getSudoPassword();
 
         const ipcRes = await ipcDeactivateServiceData(environmentId, serviceData, effectivePassword);
         if (ipcRes.success) {
