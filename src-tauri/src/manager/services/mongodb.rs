@@ -453,6 +453,43 @@ impl MongodbService {
     //     Err(anyhow!("mongosh 下载超时"))
     // }
 
+    /// 使用 Rust zip 库解压 zip 文件，避免依赖系统 unzip 命令
+    fn extract_zip_archive(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
+        use std::fs::File;
+        use std::io::copy;
+        use zip::ZipArchive;
+
+        let file = File::open(archive_path)?;
+        let mut archive = ZipArchive::new(file)?;
+
+        for i in 0..archive.len() {
+            let mut zipped_file = archive.by_index(i)?;
+            let outpath = target_dir.join(zipped_file.mangled_name());
+
+            if zipped_file.name().ends_with('/') {
+                std::fs::create_dir_all(&outpath)?;
+                continue;
+            }
+
+            if let Some(parent) = outpath.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+
+            let mut outfile = File::create(&outpath)?;
+            copy(&mut zipped_file, &mut outfile)?;
+
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Some(mode) = zipped_file.unix_mode() {
+                    std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode))?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// 解压 mongosh 到 MongoDB 的 bin 目录
     async fn extract_mongosh(
         &self,
@@ -485,22 +522,8 @@ impl MongodbService {
 
         // 解压文件
         if filename.ends_with(".zip") {
-            log::info!("使用 unzip 解压 mongosh...");
-            let output = create_command("unzip")
-                .args(&[
-                    "-q",
-                    "-o", // 覆盖已存在的文件
-                    &archive_path.to_string_lossy(),
-                    "-d",
-                    &temp_dir.to_string_lossy(),
-                ])
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "解压 mongosh 失败: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                ));
-            }
+            log::info!("使用内置 zip 解压 mongosh...");
+            self.extract_zip_archive(archive_path, &temp_dir)?;
             log::info!("mongosh 解压成功");
         } else if filename.ends_with(".tgz") || filename.ends_with(".tar.gz") {
             log::info!("使用 tar 解压 mongosh...");
@@ -597,20 +620,7 @@ impl MongodbService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = create_command("unzip")
-                .args(&[
-                    "-q",
-                    &archive_path.to_string_lossy(),
-                    "-d",
-                    &install_dir.to_string_lossy(),
-                ])
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "解压失败: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                ));
-            }
+            self.extract_zip_archive(archive_path, &install_dir)?;
         }
 
         // 有时候二进制位于子目录（如 mongodb-macos-x64/bin），尝试查找 mongod 并如果不在根目录则将其移动到 install_dir/bin
