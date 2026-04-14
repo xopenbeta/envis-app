@@ -1145,7 +1145,17 @@ impl PythonService {
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             let outpath = match file.enclosed_name() {
-                Some(path) => target_dir.join(path),
+                Some(path) => {
+                    // 模拟 --strip-components=1，移除顶层目录
+                    let mut components = path.components();
+                    components.next(); // 忽略第一层目录
+                    let stripped_path: PathBuf = components.collect();
+                    
+                    if stripped_path.as_os_str().is_empty() {
+                        continue;
+                    }
+                    target_dir.join(stripped_path)
+                }
                 None => continue,
             };
 
@@ -1201,16 +1211,21 @@ impl PythonService {
     pub fn activate_service(&self, service_data: &ServiceData) -> Result<()> {
         let install_path = self.get_install_path(&service_data.version);
 
-        let bin_path = if cfg!(target_os = "windows") {
-            install_path.to_string_lossy().to_string()
+        let paths_to_add = if cfg!(target_os = "windows") {
+            vec![
+                install_path.to_string_lossy().to_string(),
+                install_path.join("Scripts").to_string_lossy().to_string(),
+            ]
         } else {
-            install_path.join("bin").to_string_lossy().to_string()
+            vec![install_path.join("bin").to_string_lossy().to_string()]
         };
 
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
 
-        shell_manager.add_path(&bin_path)?;
+        for bin_path in paths_to_add {
+            shell_manager.add_path(&bin_path)?;
+        }
 
         Ok(())
     }
@@ -1219,15 +1234,21 @@ impl PythonService {
     pub fn deactivate_service(&self, service_data: &ServiceData) -> Result<()> {
         let install_path = self.get_install_path(&service_data.version);
 
-        let bin_path = if cfg!(target_os = "windows") {
-            install_path.to_string_lossy().to_string()
+        let paths_to_remove = if cfg!(target_os = "windows") {
+            vec![
+                install_path.to_string_lossy().to_string(),
+                install_path.join("Scripts").to_string_lossy().to_string(),
+            ]
         } else {
-            install_path.join("bin").to_string_lossy().to_string()
+            vec![install_path.join("bin").to_string_lossy().to_string()]
         };
 
         let shell_manager = ShellManager::global();
         let shell_manager = shell_manager.lock().unwrap();
-        shell_manager.delete_path(&bin_path)?;
+        
+        for bin_path in paths_to_remove {
+            shell_manager.delete_path(&bin_path)?;
+        }
 
         Ok(())
     }
