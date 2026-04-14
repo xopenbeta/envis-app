@@ -85,7 +85,15 @@ impl ServiceType {
             ServiceType::Mysql => &["bin"],   // MySQL 可执行文件目录
             ServiceType::Postgresql => &["bin"], // PostgreSQL 可执行文件目录
             ServiceType::Nginx => &["sbin"],  // Nginx 可执行文件目录
-            ServiceType::Python => &["bin"],  // Python 可执行文件目录
+            ServiceType::Python => {
+                // Windows: python.exe 位于安装根目录
+                // Unix: Python 可执行文件位于 bin 子目录
+                if cfg!(target_os = "windows") {
+                    &[""]
+                } else {
+                    &["bin"]
+                }
+            }
             ServiceType::Java => &["bin"],    // Java 可执行文件目录
             ServiceType::Custom => &[],       // 自定义服务由用户配置
             ServiceType::Host => &[],         // Host 服务不需要 PATH
@@ -107,7 +115,7 @@ impl ServiceType {
             ServiceType::Mysql => vec![],
             ServiceType::Postgresql => vec![],
             ServiceType::Nginx => vec![],
-            ServiceType::Python => vec![],
+            ServiceType::Python => vec!["PYTHON_HOME"],
             ServiceType::Java => vec!["JAVA_HOME", "JAVA_OPTS", "MAVEN_HOME", "GRADLE_HOME"], // Java 环境变量
             ServiceType::Custom => vec![],  // 自定义服务由用户配置
             ServiceType::Host => vec![],    // Host 服务不需要环境变量
@@ -148,7 +156,7 @@ impl ServiceType {
             ServiceType::Mysql => vec![],
             ServiceType::Postgresql => vec![],
             ServiceType::Nginx => vec![],
-            ServiceType::Python => vec![],
+            ServiceType::Python => vec!["PYTHON_HOME"],
             ServiceType::Java => vec!["JAVA_HOME", "JAVA_OPTS", "MAVEN_HOME", "GRADLE_HOME"],
             ServiceType::Custom => vec![
                 "paths",   // 自定义路径列表

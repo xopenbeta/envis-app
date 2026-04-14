@@ -1,4 +1,4 @@
-use crate::types::{ServiceData, ServiceType};
+use crate::types::ServiceType;
 use anyhow::Result;
 use std::collections::HashMap;
 
@@ -106,41 +106,46 @@ impl EnvVarBuilder {
 
     /// 构建 MongoDB 服务的环境变量
     fn build_mongodb_env_vars(
-        env_vars: &mut HashMap<String, String>,
-        service_folder: &std::path::Path,
+        _env_vars: &mut HashMap<String, String>,
+        _service_folder: &std::path::Path,
     ) -> Result<()> {
         Ok(())
     }
 
     /// 构建 MariaDB 服务的环境变量
     fn build_mariadb_env_vars(
-        env_vars: &mut HashMap<String, String>,
-        service_folder: &std::path::Path,
+        _env_vars: &mut HashMap<String, String>,
+        _service_folder: &std::path::Path,
     ) -> Result<()> {
         Ok(())
     }
 
     /// 构建 MySQL 服务的环境变量
     fn build_mysql_env_vars(
-        env_vars: &mut HashMap<String, String>,
-        service_folder: &std::path::Path,
+        _env_vars: &mut HashMap<String, String>,
+        _service_folder: &std::path::Path,
     ) -> Result<()> {
         Ok(())
     }
 
     /// 构建 PostgreSQL 服务的环境变量
     fn build_postgresql_env_vars(
-        env_vars: &mut HashMap<String, String>,
-        service_folder: &std::path::Path,
+        _env_vars: &mut HashMap<String, String>,
+        _service_folder: &std::path::Path,
     ) -> Result<()> {
         Ok(())
     }
 
     /// 构建 Python 服务的环境变量
     fn build_python_env_vars(
-        _env_vars: &mut HashMap<String, String>,
-        _service_folder: &std::path::Path,
+        env_vars: &mut HashMap<String, String>,
+        service_folder: &std::path::Path,
     ) -> Result<()> {
+        env_vars.insert(
+            "PYTHON_HOME".to_string(),
+            service_folder.to_string_lossy().to_string(),
+        );
+
         Ok(())
     }
 }
