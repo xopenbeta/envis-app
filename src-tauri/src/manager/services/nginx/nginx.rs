@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::copy;
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
 /// Nginx 版本信息
@@ -384,6 +385,22 @@ impl NginxService {
         DownloadManager::global().get_task_status(&task_id)
     }
 
+    fn create_runtime_command(
+        &self,
+        nginx_bin: &PathBuf,
+        install_path: &PathBuf,
+        conf_path: &PathBuf,
+    ) -> Command {
+        let mut command = create_command(nginx_bin);
+        command
+            .current_dir(install_path)
+            .arg("-p")
+            .arg(install_path)
+            .arg("-c")
+            .arg(conf_path);
+        command
+    }
+
     /// 启动 Nginx 服务
     pub fn start_service(&self, service_data: &ServiceData) -> Result<ServiceDataResult> {
         log::info!("启动 Nginx 服务");
@@ -450,9 +467,8 @@ impl NginxService {
         }
 
         // 执行 {nginx_bin} -c {config_path} 启动服务
-        let output = create_command(&nginx_bin)
-            .arg("-c")
-            .arg(&conf_path)
+        let output = self
+            .create_runtime_command(&nginx_bin, &install_path, &conf_path)
             .output()
             .map_err(|e| anyhow!("启动 Nginx 失败: {}", e))?;
 
@@ -500,9 +516,8 @@ impl NginxService {
         }
 
         // 使用安装路径下的 nginx 执行优雅停止
-        let output = create_command(&nginx_bin)
-            .arg("-c")
-            .arg(&conf_path)
+        let output = self
+            .create_runtime_command(&nginx_bin, &install_path, &conf_path)
             .arg("-s")
             .arg("stop")
             .output()
@@ -545,9 +560,8 @@ impl NginxService {
         }
 
         // 使用安装路径下的 nginx 执行优雅重载
-        let output = create_command(&nginx_bin)
-            .arg("-c")
-            .arg(&conf_path)
+        let output = self
+            .create_runtime_command(&nginx_bin, &install_path, &conf_path)
             .arg("-s")
             .arg("reload")
             .output()

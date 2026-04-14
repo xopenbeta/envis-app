@@ -63,10 +63,13 @@ pub async fn start_nginx_service(
 ) -> Result<CommandResponse, String> {
     let nginx_service = NginxService::global();
     match nginx_service.start_service(&service_data) {
-        Ok(_) => Ok(CommandResponse::success(
-            "Nginx 服务启动成功".to_string(),
-            None,
-        )),
+        Ok(result) => {
+            if result.success {
+                Ok(CommandResponse::success(result.message, result.data))
+            } else {
+                Ok(CommandResponse::error(result.message))
+            }
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "启动 Nginx 服务失败: {}",
             e
