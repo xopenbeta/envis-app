@@ -1,10 +1,12 @@
 use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::env_serv_data_manager::ServiceDataResult;
-use crate::manager::services::{nginx, DownloadManager, DownloadResult, DownloadTask};
+use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::copy;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
@@ -39,29 +41,14 @@ impl NginxService {
     pub fn get_available_versions(&self) -> Vec<NginxVersion> {
         vec![
             NginxVersion {
-                version: "1.26.2".to_string(),
-                stable: true,
-                date: "2024-09-03".to_string(),
+                version: "1.28.3".to_string(),
+                stable: false,
+                date: "2026-04-14".to_string(),
             },
             NginxVersion {
-                version: "1.26.1".to_string(),
+                version: "1.26.3".to_string(),
                 stable: true,
-                date: "2024-05-29".to_string(),
-            },
-            NginxVersion {
-                version: "1.26.0".to_string(),
-                stable: true,
-                date: "2024-04-23".to_string(),
-            },
-            NginxVersion {
-                version: "1.24.0".to_string(),
-                stable: true,
-                date: "2023-04-11".to_string(),
-            },
-            NginxVersion {
-                version: "1.22.1".to_string(),
-                stable: true,
-                date: "2022-10-19".to_string(),
+                date: "2026-04-14".to_string(),
             },
         ]
     }
@@ -95,24 +82,41 @@ impl NginxService {
 
     /// 构建下载 URL 和文件名
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
-        let platform = std::env::consts::OS;
-        let (filename, urls) = match platform {
-            "macos" | "linux" => {
-                let filename = format!("nginx-{}.tar.gz", version);
-                let urls = vec![
-                    format!("https://nginx.org/download/{}", filename),
-                    format!("https://mirrors.tuna.tsinghua.edu.cn/nginx/{}", filename),
-                ];
-                (filename, urls)
+        let (os, arch) = if cfg!(target_os = "macos") {
+            if cfg!(target_arch = "aarch64") {
+                ("macos", "arm64")
+            } else {
+                ("macos", "x86_64")
             }
-            "windows" => {
-                let filename = format!("nginx-{}.zip", version);
-                let urls = vec![format!("https://nginx.org/download/{}", filename)];
-                (filename, urls)
+        } else if cfg!(target_os = "linux") {
+            if cfg!(target_arch = "aarch64") {
+                ("linux", "arm64")
+            } else {
+                ("linux", "x86_64")
             }
-            _ => return Err(anyhow!("不支持的平台: {}", platform)),
+        } else if cfg!(target_os = "windows") {
+            if cfg!(target_arch = "aarch64") {
+                ("windows", "arm64")
+            } else {
+                ("windows", "x86_64")
+            }
+        } else {
+            return Err(anyhow!("不支持的操作系统"));
         };
-        Ok((urls, filename))
+
+        let ext = if cfg!(target_os = "windows") {
+            "zip"
+        } else {
+            "tar.gz"
+        };
+
+        let filename = format!("nginx-{}-{}-{}.{}", version, os, arch, ext);
+        let github_url = format!(
+            "https://github.com/xopenbeta/nginx-archive/releases/latest/download/{}",
+            filename
+        );
+
+        Ok((vec![github_url], filename))
     }
 
     /// 下载并安装 Nginx
@@ -213,176 +217,141 @@ impl NginxService {
         let install_path = self.get_install_path(version);
         std::fs::create_dir_all(&install_path)?;
 
-        if cfg!(target_os = "windows") {
-            // Windows 直接解压预编译 zip
-            self.extract_zip(archive_path, &install_path).await?;
+        self.clear_install_directory(&install_path, archive_path)?;
+
+        let temp_dir = install_path
+            .parent()
+            .unwrap_or(&install_path)
+            .join(format!("nginx_extract_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&temp_dir)?;
+
+        let extract_result = if archive_path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
+        {
+            self.extract_zip(archive_path, &temp_dir).await
         } else {
-            // Unix: 解压源码到临时 src 目录
-            let src_dir = install_path.join("src");
-            std::fs::create_dir_all(&src_dir)?;
-            self.extract_tar_to(&archive_path, &src_dir).await?;
+            self.extract_tar_to(archive_path, &temp_dir).await
+        };
 
-            // 运行 ./configure && make && make install
-            let configure_path = src_dir.join("configure");
-            if !configure_path.exists() {
-                return Err(anyhow!("配置脚本不存在，可能解压失败"));
-            }
-
-            // 基本编译参数（尽量通用）
-            let mut args: Vec<String> = vec![
-                format!("--prefix={}", install_path.to_string_lossy()), // 指定安装目录
-                "--with-http_ssl_module".to_string(),                   // 启用 HTTPS 支持
-                "--with-http_v2_module".to_string(),                    // 启用 HTTP/2 协议
-                "--with-http_gzip_static_module".to_string(),           // 启用静态文件 gzip 压缩
-                "--with-http_stub_status_module".to_string(),           // 启用状态监控模块
-            ];
-
-            // macOS: 修复 pwritev 可用性导致的编译报错
-            // - 设置最低系统版本，避免 SDK/部署目标不一致导致的可用性警告被当作错误
-            // - 关闭对 unguarded-availability 的错误提升，避免 clang 将警告视为错误
-            // 参考错误：pwritev 在 macOS 11.0 引入，但部署目标为 10.13 时会报错
-            #[cfg(target_os = "macos")]
-            {
-                args.push(
-                    "--with-cc-opt=\"-Wno-unguarded-availability-new -Wno-error=unguarded-availability-new -mmacosx-version-min=11.0\"".to_string(),
-                );
-                args.push("--with-ld-opt=\"-mmacosx-version-min=11.0\"".to_string());
-                // (macOS) 编译器和链接器选项
-            }
-
-            // 执行 ./configure
-            let mut configure_cmd = create_command("sh");
-            #[cfg(target_os = "macos")]
-            configure_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
-            let output = configure_cmd
-                .arg("-c")
-                .arg(format!(
-                    "cd '{}' && ./configure {}",
-                    src_dir.to_string_lossy(),
-                    args.join(" ")
-                ))
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "configure 失败: {}\nSTDOUT: {}",
-                    String::from_utf8_lossy(&output.stderr),
-                    String::from_utf8_lossy(&output.stdout)
-                ));
-            }
-
-            // make
-            let mut make_cmd = create_command("sh");
-            #[cfg(target_os = "macos")]
-            make_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
-            let output = make_cmd
-                .arg("-c")
-                .arg(format!(
-                    "cd '{}' && make -j{}",
-                    src_dir.to_string_lossy(),
-                    num_cpus::get()
-                ))
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "make 失败: {}\nSTDOUT: {}",
-                    String::from_utf8_lossy(&output.stderr),
-                    String::from_utf8_lossy(&output.stdout)
-                ));
-            }
-
-            // make install
-            let mut install_cmd = create_command("sh");
-            #[cfg(target_os = "macos")]
-            install_cmd.env("MACOSX_DEPLOYMENT_TARGET", "11.0");
-            let output = install_cmd
-                .arg("-c")
-                .arg(format!(
-                    "cd '{}' && make install",
-                    src_dir.to_string_lossy()
-                ))
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "make install 失败: {}\nSTDOUT: {}",
-                    String::from_utf8_lossy(&output.stderr),
-                    String::from_utf8_lossy(&output.stdout)
-                ));
-            }
-
-            // 清理源码与压缩包
-            let _ = std::fs::remove_dir_all(&src_dir);
+        if let Err(error) = extract_result {
+            let _ = std::fs::remove_dir_all(&temp_dir);
+            return Err(error);
         }
 
-        // 设置权限（Unix）并删除压缩包
+        self.promote_extracted_contents(&temp_dir, &install_path)?;
+        let _ = std::fs::remove_dir_all(&temp_dir);
+
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_path)?;
+
+        let nginx_bin = if cfg!(target_os = "windows") {
+            install_path.join("nginx.exe")
+        } else {
+            install_path.join("sbin").join("nginx")
+        };
+        if !nginx_bin.exists() {
+            return Err(anyhow!(
+                "安装完成后未找到 Nginx 可执行文件: {}",
+                nginx_bin.display()
+            ));
+        }
+
         if archive_path.exists() {
             let _ = std::fs::remove_file(archive_path);
         }
         Ok(())
     }
 
-    /// 解压 tar.gz 到目标目录（strip 根目录）
+    fn clear_install_directory(&self, install_dir: &PathBuf, archive_path: &PathBuf) -> Result<()> {
+        if !install_dir.exists() {
+            return Ok(());
+        }
+
+        for entry in std::fs::read_dir(install_dir)? {
+            let entry = entry?;
+            let entry_path = entry.path();
+            if entry_path == *archive_path {
+                continue;
+            }
+
+            if entry_path.is_dir() {
+                std::fs::remove_dir_all(entry_path)?;
+            } else {
+                std::fs::remove_file(entry_path)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn promote_extracted_contents(&self, extracted_dir: &PathBuf, target_dir: &PathBuf) -> Result<()> {
+        let entries: Vec<_> = std::fs::read_dir(extracted_dir)?.collect::<std::result::Result<Vec<_>, _>>()?;
+
+        if entries.is_empty() {
+            return Err(anyhow!("压缩包为空，未提取到任何文件"));
+        }
+
+        let source_dir = if entries.len() == 1 && entries[0].path().is_dir() {
+            entries[0].path()
+        } else {
+            extracted_dir.clone()
+        };
+
+        for entry in std::fs::read_dir(&source_dir)? {
+            let entry = entry?;
+            let destination = target_dir.join(entry.file_name());
+            std::fs::rename(entry.path(), destination)?;
+        }
+
+        Ok(())
+    }
+
+    /// 解压 tar.gz 到目标目录
     async fn extract_tar_to(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
         std::fs::create_dir_all(target_dir)?;
-        let output = create_command("tar")
-            .arg("-xzf")
-            .arg(archive_path)
-            .arg("-C")
-            .arg(target_dir)
-            .arg("--strip-components=1")
-            .output()?;
-        if !output.status.success() {
-            return Err(anyhow!(
-                "解压 tar.gz 失败: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ));
-        }
+        let file = File::open(archive_path)?;
+        let decoder = flate2::read::GzDecoder::new(file);
+        let mut archive = tar::Archive::new(decoder);
+        archive.unpack(target_dir)?;
         Ok(())
     }
 
     /// 解压 zip 格式文件
     async fn extract_zip(&self, archive_path: &PathBuf, target_dir: &PathBuf) -> Result<()> {
+        use zip::ZipArchive;
+
         std::fs::create_dir_all(target_dir)?;
-        let output = if cfg!(target_os = "windows") {
-            create_command("powershell")
-                .arg("-Command")
-                .arg(format!(
-                    "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
-                    archive_path.display(),
-                    target_dir.display()
-                ))
-                .output()?
-        } else {
-            create_command("unzip")
-                .arg("-o")
-                .arg(archive_path)
-                .arg("-d")
-                .arg(target_dir)
-                .output()?
-        };
-        if !output.status.success() {
-            return Err(anyhow!(
-                "解压 zip 失败: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ));
-        }
-        // 将 zip 根目录下内容提取到目标根（如果存在单一子目录）
-        #[cfg(not(target_os = "windows"))]
-        {
-            let entries: Vec<_> = std::fs::read_dir(target_dir)?
-                .filter_map(|e| e.ok())
-                .collect();
-            if entries.len() == 1 && entries[0].path().is_dir() {
-                let extracted = entries[0].path();
-                for e in std::fs::read_dir(&extracted)? {
-                    let e = e?;
-                    let dest = target_dir.join(e.file_name());
-                    std::fs::rename(e.path(), dest)?;
+
+        let file = File::open(archive_path)?;
+        let mut archive = ZipArchive::new(file)?;
+
+        for index in 0..archive.len() {
+            let mut file = archive.by_index(index)?;
+            let outpath = target_dir.join(file.mangled_name());
+
+            if file.name().ends_with('/') {
+                std::fs::create_dir_all(&outpath)?;
+                continue;
+            }
+
+            if let Some(parent) = outpath.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+
+            let mut outfile = File::create(&outpath)?;
+            copy(&mut file, &mut outfile)?;
+
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Some(mode) = file.unix_mode() {
+                    std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode))?;
                 }
-                let _ = std::fs::remove_dir_all(&extracted);
             }
         }
+
         Ok(())
     }
 
