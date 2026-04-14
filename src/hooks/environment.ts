@@ -93,10 +93,19 @@ export function useEnvironment() {
 
   const activateEnvironmentAndServices = async (environment: Environment, password?: string) => {
     const ipcRes = await ipcActivateEnvironmentAndServices(environment, password)
-    if (ipcRes.success) {
+    const nextEnvironment = ipcRes.data?.env || ipcRes.data
+
+    if (nextEnvironment) {
       setEnvironments(prev => prev.map(env => {
         if (env.id === environment.id) {
-          return ipcRes.data?.env || { ...env, status: EnvironmentStatus.Active };
+          return nextEnvironment as Environment;
+        }
+        return env;
+      }))
+    } else if (ipcRes.success) {
+      setEnvironments(prev => prev.map(env => {
+        if (env.id === environment.id) {
+          return { ...env, status: EnvironmentStatus.Active };
         }
         return env;
       }))

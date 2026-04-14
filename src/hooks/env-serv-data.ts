@@ -285,6 +285,7 @@ export function useEnvironmentServiceData() {
             setEnvActivationEvent(Date.now())
         } else {
             console.error(`激活环境失败: ${activeEnvRes.message}`)
+            toast.error(activeEnvRes.message || '激活环境失败')
         }
         return activeEnvRes;
     }
@@ -411,7 +412,15 @@ export function useEnvironmentServiceData() {
                 const filtered = currentLastUsedIds.filter(id => id !== environment.id)
                 nextLastUsedIds = [...filtered, environment.id]
             }
-            await activateEnvAndServDatas(environment, currentSelectedEnvironmentId)
+            const activateRes = await activateEnvAndServDatas(environment, currentSelectedEnvironmentId)
+            if (!activateRes.success) {
+                isActiveFinish = true;
+                if (loadingTimer) {
+                    clearTimeout(loadingTimer);
+                }
+                setIsAppLoading(false);
+                return activateRes;
+            }
             console.log('激活环境:', environment.name)
         }
 

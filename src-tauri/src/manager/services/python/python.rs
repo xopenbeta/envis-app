@@ -1207,52 +1207,6 @@ impl PythonService {
         DownloadManager::global().get_task_status(&task_id)
     }
 
-    /// 激活 Python 服务
-    pub fn activate_service(&self, service_data: &ServiceData) -> Result<()> {
-        let install_path = self.get_install_path(&service_data.version);
-
-        let paths_to_add = if cfg!(target_os = "windows") {
-            vec![
-                install_path.to_string_lossy().to_string(),
-                install_path.join("Scripts").to_string_lossy().to_string(),
-            ]
-        } else {
-            vec![install_path.join("bin").to_string_lossy().to_string()]
-        };
-
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-
-        for bin_path in paths_to_add {
-            shell_manager.add_path(&bin_path)?;
-        }
-
-        Ok(())
-    }
-
-    /// 取消激活 Python 服务
-    pub fn deactivate_service(&self, service_data: &ServiceData) -> Result<()> {
-        let install_path = self.get_install_path(&service_data.version);
-
-        let paths_to_remove = if cfg!(target_os = "windows") {
-            vec![
-                install_path.to_string_lossy().to_string(),
-                install_path.join("Scripts").to_string_lossy().to_string(),
-            ]
-        } else {
-            vec![install_path.join("bin").to_string_lossy().to_string()]
-        };
-
-        let shell_manager = ShellManager::global();
-        let shell_manager = shell_manager.lock().unwrap();
-        
-        for bin_path in paths_to_remove {
-            shell_manager.delete_path(&bin_path)?;
-        }
-
-        Ok(())
-    }
-
     /// 设置 pip 镜像源
     pub fn set_pip_index_url(&self, service_data: &ServiceData, index_url: &str) -> Result<()> {
         let shell_manager = ShellManager::global();

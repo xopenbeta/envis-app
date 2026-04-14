@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -310,6 +310,8 @@ impl EnvironmentManager {
         };
 
         let env_serv_data_manager_instance = EnvServDataManager::global();
+        let mut activation_failures = Vec::new();
+
         for service_data in &mut service_datas {
             let env_serv_data_manager = env_serv_data_manager_instance.lock().unwrap();
             if let Err(e) = env_serv_data_manager.active_service_data(
@@ -318,7 +320,20 @@ impl EnvironmentManager {
                 password.clone(),
             ) {
                 log::error!("激活服务 {} 失败: {}", service_data.name, e);
+                activation_failures.push(format!("{}: {}", service_data.name, e));
             }
+        }
+
+        if !activation_failures.is_empty() {
+            return Ok(EnvironmentResult {
+                success: false,
+                message: anyhow!(
+                    "环境已激活，但以下服务激活失败: {}",
+                    activation_failures.join("; ")
+                )
+                .to_string(),
+                data: result.data,
+            });
         }
 
         Ok(result)
