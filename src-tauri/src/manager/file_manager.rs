@@ -186,13 +186,16 @@ impl FileManager {
         #[cfg(target_os = "windows")]
         {
             // Windows: 使用 explorer 命令
+            // 将路径中的正斜杠统一替换为反斜杠，避免混合分隔符导致 explorer.exe 无法识别路径
+            // 而静默回退到用户主目录的问题（envisFolder 用反斜杠，拼接其余部分用正斜杠）
+            let path_str = target_path.to_string_lossy().replace('/', "\\");
             let mut command = Command::new("explorer");
             if target_path.is_file() {
                 // 如果是文件，选中该文件
-                command.arg("/select,").arg(target_path);
+                command.arg("/select,").arg(&path_str);
             } else {
                 // 如果是文件夹，直接打开
-                command.arg(target_path);
+                command.arg(&path_str);
             }
 
             command.status().context("在资源管理器中打开路径失败")?;
