@@ -1,6 +1,6 @@
-use crate::manager::file_manager::FileManager;
-use crate::manager::host_manager::{HostEntry, HostManager};
-use crate::types::CommandResponse;
+use envis_core::manager::file_manager::FileManager;
+use envis_core::manager::host_manager::{HostEntry, HostManager};
+use envis_core::types::CommandResponse;
 
 /// 获取所有 host 条目
 #[tauri::command]

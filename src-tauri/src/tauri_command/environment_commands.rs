@@ -1,5 +1,5 @@
-use crate::manager::environment_manager::EnvironmentManager;
-use crate::types::Environment;
+use envis_core::manager::environment_manager::EnvironmentManager;
+use envis_core::types::Environment;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -11,8 +11,8 @@ pub struct EnvironmentCommandResult {
     pub data: Option<Value>,
 }
 
-impl From<crate::manager::environment_manager::EnvironmentResult> for EnvironmentCommandResult {
-    fn from(result: crate::manager::environment_manager::EnvironmentResult) -> Self {
+impl From<envis_core::manager::environment_manager::EnvironmentResult> for EnvironmentCommandResult {
+    fn from(result: envis_core::manager::environment_manager::EnvironmentResult) -> Self {
         Self {
             success: result.success,
             message: result.message,

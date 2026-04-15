@@ -1,9 +1,9 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::manager::service_manager::ServiceManager;
-use crate::manager::system_info_manager::SystemInfoManager;
-use crate::types::ServiceType;
+use envis_core::manager::service_manager::ServiceManager;
+use envis_core::manager::system_info_manager::SystemInfoManager;
+use envis_core::types::ServiceType;
 
 /// 获取已安装的所有服务列表
 #[tauri::command]

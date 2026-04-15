@@ -1,29 +1,18 @@
-mod cli;
-mod manager;
 mod tauri_command;
 mod tray;
-mod types;
-mod utils;
 mod window;
 
-use manager::app_config_manager::initialize_config_manager;
-use manager::env_serv_data_manager::initialize_env_serv_data_manager;
-use manager::environment_manager::initialize_environment_manager;
-use manager::exit_cleanup_manager::cleanup_on_app_close;
-use manager::service_manager::initialize_service_manager;
-use manager::shell_manamger::initialize_shell_manager;
+// envis-core 提供 manager/types/utils/cli
+use envis_core::manager::app_config_manager::initialize_config_manager;
+use envis_core::manager::env_serv_data_manager::initialize_env_serv_data_manager;
+use envis_core::manager::environment_manager::initialize_environment_manager;
+use envis_core::manager::exit_cleanup_manager::cleanup_on_app_close;
+use envis_core::manager::service_manager::initialize_service_manager;
+use envis_core::manager::shell_manamger::initialize_shell_manager;
 use tauri::Manager;
 
 // 导出 CLI 相关函数供 main.rs 使用
-pub use cli::handle_cli_early;
-
-/// 初始化必要的管理器（供 CLI 模式使用）
-pub fn initialize_managers() -> Result<(), Box<dyn std::error::Error>> {
-    initialize_config_manager()?;
-    initialize_shell_manager()?;
-    initialize_environment_manager()?;
-    Ok(())
-}
+pub use envis_core::cli::handle_cli_early;
 use tauri_command::app_config_commands::{get_app_config, open_app_config_folder, set_app_config};
 use tauri_command::env_serv_data_commands::*;
 use tauri_command::environment_commands::*;

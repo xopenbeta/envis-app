@@ -1,6 +1,6 @@
-use crate::manager::env_serv_data_manager::EnvServDataManager;
-use crate::manager::services::mongodb::MongodbService;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::env_serv_data_manager::EnvServDataManager;
+use envis_core::manager::services::mongodb::MongodbService;
+use envis_core::types::{CommandResponse, ServiceData};
 use tauri::AppHandle;
 
 #[tauri::command]
@@ -178,8 +178,23 @@ pub async fn initialize_mongodb(
     let service = MongodbService::global();
     let reset = reset.unwrap_or(false);
     let enable_replica_set = enable_replica_set.unwrap_or(false);
+    // 构造进度回调：在 Tauri 层将进度 emit 到前端
+    let emit_progress = {
+        use tauri::Emitter;
+        let handle = app_handle.clone();
+        move |step: &str, message: &str| {
+            let full_message = format!("MongoDB: {}", message);
+            let _ = handle.emit(
+                "mongodb-init-progress",
+                serde_json::json!({
+                    "step": step,
+                    "message": full_message,
+                }),
+            );
+        }
+    };
     match service.initialize_mongodb(
-        &app_handle,
+        emit_progress,
         &environment_id,
         &service_data,
         admin_username,

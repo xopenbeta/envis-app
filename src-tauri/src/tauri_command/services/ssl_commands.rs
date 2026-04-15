@@ -1,5 +1,5 @@
-use crate::manager::services::ssl::{CAConfig, SslService};
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::services::ssl::{CAConfig, SslService};
+use envis_core::types::{CommandResponse, ServiceData};
 
 /// 检查 CA 是否已初始化
 #[tauri::command]

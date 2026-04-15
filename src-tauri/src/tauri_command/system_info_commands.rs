@@ -2,7 +2,7 @@ use anyhow::Result;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
-use crate::manager::system_info_manager::SystemInfoManager;
+use envis_core::manager::system_info_manager::SystemInfoManager;
 
 /// 获取系统信息
 #[tauri::command]
@@ -21,8 +21,8 @@ pub async fn get_system_info() -> Result<Value, String> {
 /// 打开终端
 #[tauri::command]
 pub async fn open_terminal() -> Result<Value, String> {
-    use crate::manager::app_config_manager::AppConfigManager;
-    use crate::manager::shell_manamger::ShellManager;
+    use envis_core::manager::app_config_manager::AppConfigManager;
+    use envis_core::manager::shell_manamger::ShellManager;
 
     // 获取配置的终端类型
     let app_config_manager = AppConfigManager::global();

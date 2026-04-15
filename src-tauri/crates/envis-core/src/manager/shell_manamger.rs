@@ -384,6 +384,16 @@ alias mise=envis
             } else {
                 format!("{}{}", base_content, block_content)
             };
+
+            // 内容未变化时跳过写入，避免每次启动都无谓地 rewrite shell 配置文件
+            if content == new_content {
+                log::debug!(
+                    "ShellManager: shell 配置文件内容未变化，跳过写入: {}",
+                    config_file_path.display()
+                );
+                continue;
+            }
+
             // 原子写入并备份原文件
             self.write_content_atomic_for_path(config_file_path, &new_content)?;
         }

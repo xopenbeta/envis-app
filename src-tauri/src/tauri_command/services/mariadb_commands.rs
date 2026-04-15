@@ -1,6 +1,6 @@
-use crate::manager::env_serv_data_manager::EnvServDataManager;
-use crate::manager::services::mariadb::MariadbService;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::env_serv_data_manager::EnvServDataManager;
+use envis_core::manager::services::mariadb::MariadbService;
+use envis_core::types::{CommandResponse, ServiceData};
 
 #[tauri::command]
 pub async fn get_mariadb_versions() -> Result<CommandResponse, String> {

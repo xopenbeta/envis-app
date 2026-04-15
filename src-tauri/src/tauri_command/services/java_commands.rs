@@ -1,6 +1,6 @@
-use crate::manager::env_serv_data_manager::EnvServDataManager;
-use crate::manager::services::java::JavaService;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::env_serv_data_manager::EnvServDataManager;
+use envis_core::manager::services::java::JavaService;
+use envis_core::types::{CommandResponse, ServiceData};
 
 /// 检查 Java 是否已安装的 Tauri 命令
 #[tauri::command]

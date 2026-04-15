@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter};
 
 /// MongoDB 版本信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1403,7 +1402,7 @@ impl MongodbService {
     /// 创建必要的配置文件、keyfile、数据目录等
     pub fn initialize_mongodb(
         &self,
-        app_handle: &AppHandle,
+        progress_callback: impl Fn(&str, &str),
         environment_id: &str,
         service_data: &ServiceData,
         admin_username: String,
@@ -1415,14 +1414,7 @@ impl MongodbService {
     ) -> Result<ServiceDataResult> {
         // 辅助函数：发送进度事件
         let emit_progress = |step: &str, message: &str| {
-            let full_message = format!("MongoDB: {}", message);
-            let _ = app_handle.emit(
-                "mongodb-init-progress",
-                serde_json::json!({
-                    "step": step,
-                    "message": full_message,
-                }),
-            );
+            progress_callback(step, message);
             log::info!("[MongoDB 初始化进度] {}: {}", step, message);
         };
 

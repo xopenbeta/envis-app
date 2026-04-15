@@ -101,7 +101,7 @@ impl DnsmasqService {
             let version_clone = version_for_callback.clone();
             let task_id = task.id.clone();
 
-            tauri::async_runtime::spawn(async move {
+            tokio::spawn(async move {
                 let download_manager = DownloadManager::global();
                 // 更新状态为 Installing
                 let _ =

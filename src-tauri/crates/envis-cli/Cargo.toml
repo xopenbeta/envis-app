@@ -1,0 +1,14 @@
+[package]
+name    = "envis-cli"
+version = "0.12.0"
+edition = "2021"
+
+[[bin]]
+name = "envis-cli"
+path = "src/main.rs"
+
+[dependencies]
+envis-core  = { workspace = true }
+anyhow      = { workspace = true }
+log         = { workspace = true }
+env_logger  = "0.11"

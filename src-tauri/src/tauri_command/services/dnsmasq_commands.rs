@@ -1,5 +1,5 @@
-use crate::manager::services::dnsmasq::DnsmasqService;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::services::dnsmasq::DnsmasqService;
+use envis_core::types::{CommandResponse, ServiceData};
 
 /// 按版本检查 Dnsmasq 是否已安装
 #[tauri::command]

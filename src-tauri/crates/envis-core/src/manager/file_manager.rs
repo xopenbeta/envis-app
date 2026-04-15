@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::OnceLock;
+#[cfg(feature = "tauri-integration")]
 use tauri::AppHandle;
 
 /// 文件管理器，提供文件和文件夹操作功能
@@ -21,6 +22,7 @@ impl FileManager {
     }
 
     /// 打开文件选择对话框，选择单个文件
+    #[cfg(feature = "tauri-integration")]
     pub async fn open_file_dialog(
         app_handle: &AppHandle,
         title: Option<&str>,
@@ -61,6 +63,7 @@ impl FileManager {
     }
 
     /// 打开文件选择对话框，选择多个文件
+    #[cfg(feature = "tauri-integration")]
     pub async fn open_files_dialog(
         app_handle: &AppHandle,
         title: Option<&str>,
@@ -106,6 +109,7 @@ impl FileManager {
     }
 
     /// 打开文件夹选择对话框
+    #[cfg(feature = "tauri-integration")]
     pub async fn open_folder_dialog(
         app_handle: &AppHandle,
         title: Option<&str>,

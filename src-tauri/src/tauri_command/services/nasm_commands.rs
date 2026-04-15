@@ -1,5 +1,5 @@
-use crate::manager::services::nasm::NasmService;
-use crate::types::CommandResponse;
+use envis_core::manager::services::nasm::NasmService;
+use envis_core::types::CommandResponse;
 
 /// 检查 NASM 是否已安装
 #[tauri::command]

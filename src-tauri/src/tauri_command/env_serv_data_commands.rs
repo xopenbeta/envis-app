@@ -1,8 +1,8 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::manager::env_serv_data_manager::EnvServDataManager;
-use crate::types::{
+use envis_core::manager::env_serv_data_manager::EnvServDataManager;
+use envis_core::types::{
     CreateServiceDataRequest, ServiceData, ServiceDataStatus, UpdateServiceDataRequest,
 };
 

@@ -1,5 +1,5 @@
-use crate::manager::shell_manamger::ShellManager;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::shell_manamger::ShellManager;
+use envis_core::types::{CommandResponse, ServiceData};
 
 /// 更新自定义服务的路径配置
 #[tauri::command]

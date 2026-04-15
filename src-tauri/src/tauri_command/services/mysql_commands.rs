@@ -1,5 +1,5 @@
-use crate::manager::services::mysql::MysqlService;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::services::mysql::MysqlService;
+use envis_core::types::{CommandResponse, ServiceData};
 
 /// 检查 MySQL 是否已安装的 Tauri 命令
 #[tauri::command]

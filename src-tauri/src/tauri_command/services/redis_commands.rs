@@ -1,5 +1,5 @@
-use crate::manager::services::redis::RedisService;
-use crate::types::{CommandResponse, ServiceData};
+use envis_core::manager::services::redis::RedisService;
+use envis_core::types::{CommandResponse, ServiceData};
 
 #[tauri::command]
 pub async fn get_redis_versions() -> Result<CommandResponse, String> {
