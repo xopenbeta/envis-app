@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChevronDown } from 'lucide-react'
 
-import { serviceCategories, ServiceData, ServiceType, serviceTypeNames } from '@/types/index'
+import { serviceCategories, ServiceData, ServiceType } from '@/types/index'
 import { useAtom } from 'jotai'
 import {
     CheckCircle,
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
+import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { useService } from '@/hooks/service'
 import {
     selectedEnvironmentIdAtom,
@@ -38,7 +38,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
 }) {
     const { t } = useTranslation()
     const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
-    const [shouldDownloadService, setShouldDownloadService] = useAtom(shouldDownloadServiceAtom)
+    const [, setShouldDownloadService] = useAtom(shouldDownloadServiceAtom)
     const { activeEnvironment } = useEnvironment()
     const { createServiceData, activateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const { getServiceVersions, checkServiceInstalled, downloadService } = useService()
@@ -124,6 +124,42 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false)
 
     if (!selectedEnvironmentId) return null
+
+    const refreshLoadedDownloadStatuses = async () => {
+        const loadedServiceTypes = Object.entries(serviceVersions).filter(([, versionState]) => versionState.availableVersions.length > 0)
+
+        if (loadedServiceTypes.length === 0) {
+            return
+        }
+
+        await Promise.all(
+            loadedServiceTypes.map(async ([serviceType, versionState]) => {
+                const nextVersions = await Promise.all(
+                    versionState.availableVersions.map(async (versionInfo) => {
+                        try {
+                            const checkResult = await checkServiceInstalled(serviceType as ServiceType, versionInfo.version)
+
+                            return {
+                                ...versionInfo,
+                                isDownloaded: Boolean(checkResult.success && checkResult.data?.installed)
+                            }
+                        } catch (error) {
+                            console.error(`[refreshLoadedDownloadStatuses] ${serviceType} ${versionInfo.version} 状态刷新异常:`, error)
+                            return versionInfo
+                        }
+                    })
+                )
+
+                setServiceVersions(prev => ({
+                    ...prev,
+                    [serviceType]: {
+                        ...prev[serviceType as ServiceType],
+                        availableVersions: nextVersions,
+                    }
+                }))
+            })
+        )
+    }
 
     // 获取服务版本列表
     const fetchVersions = async (serviceType: ServiceType) => {
@@ -287,7 +323,11 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     return (
         <>
             {/* 新增服务三级下拉菜单 */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => {
+                if (open) {
+                    void refreshLoadedDownloadStatuses()
+                }
+            }}>
                 <DropdownMenuTrigger asChild>
                     {buttonType === "icon" ? <Button
                         size="sm"
