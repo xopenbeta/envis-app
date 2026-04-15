@@ -1,5 +1,41 @@
+use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::environment_manager::EnvironmentManager;
 use crate::types::EnvironmentStatus;
+
+fn persist_last_used_environment_ids(active_environment_ids: Vec<String>) -> Result<(), String> {
+    let manager = AppConfigManager::global();
+    let mut manager = manager
+        .lock()
+        .map_err(|_| "无法获取应用配置锁".to_string())?;
+
+    let mut app_config = manager.get_app_config();
+    app_config.last_used_environment_ids = active_environment_ids;
+    manager
+        .set_app_config(app_config)
+        .map_err(|e| format!("写入应用配置失败: {}", e))
+}
+
+fn collect_active_environment_ids(
+    manager: &EnvironmentManager,
+    fallback_environment_id: &str,
+) -> Vec<String> {
+    match manager.get_all_environments() {
+        Ok(environments) => {
+            let active_environment_ids = environments
+                .into_iter()
+                .filter(|env| env.status == EnvironmentStatus::Active)
+                .map(|env| env.id)
+                .collect::<Vec<_>>();
+
+            if active_environment_ids.is_empty() {
+                vec![fallback_environment_id.to_string()]
+            } else {
+                active_environment_ids
+            }
+        }
+        Err(_) => vec![fallback_environment_id.to_string()],
+    }
+}
 
 /// 提前处理 `use` 命令（不依赖 Tauri 插件）
 pub fn handle_use_early(target_str: &str) {
@@ -43,6 +79,14 @@ pub fn handle_use_early(target_str: &str) {
         match manager.activate_environment_and_services(&mut target_env, None) {
             Ok(res) => {
                 if res.success {
+                    let active_environment_ids =
+                        collect_active_environment_ids(&manager, &target_env.id);
+                    if let Err(e) = persist_last_used_environment_ids(active_environment_ids) {
+                        eprintln!(
+                            "警告: 环境已激活，但更新上次使用环境记录失败，UI 下次启动可能无法正确恢复: {}",
+                            e
+                        );
+                    }
                     println!("✓ 成功激活环境: {}", target_env.name);
                 } else {
                     eprintln!("错误: {}", res.message);
