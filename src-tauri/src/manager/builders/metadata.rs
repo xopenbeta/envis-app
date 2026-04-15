@@ -156,33 +156,44 @@ impl MetadataBuilder {
 
         // 默认的 nginx.conf 文件路径（放在服务根目录）
         let nginx_conf_path = service_data_folder.join("nginx.conf");
+        // 确保 logs 目录存在
+        let logs_dir = service_data_folder.join("logs");
+        if !logs_dir.exists() {
+            fs::create_dir_all(&logs_dir)?;
+        }
+        let error_log_path = logs_dir.join("error.log");
+
         // 如果不存在则创建一个默认配置文件（避免覆盖用户已存在的配置）
         if !nginx_conf_path.exists() {
-            let default_conf = r#"# Auto-generated default nginx.conf by envis
+            let default_conf = format!(
+                r#"# Auto-generated default nginx.conf by envis
 worker_processes  1;
+error_log  {error_log};
 
-events {
+events {{
     worker_connections 1024;
-}
+}}
 
-http {
+http {{
     include       mime.types;
     default_type  application/octet-stream;
 
     sendfile        on;
     keepalive_timeout  65;
 
-    server {
+    server {{
         listen       80;
         server_name  localhost;
 
-        location / {
+        location / {{
             root   html;
             index  index.html index.htm;
-        }
-    }
-}
-"#;
+        }}
+    }}
+}}
+"#,
+                error_log = error_log_path.to_string_lossy()
+            );
             fs::write(&nginx_conf_path, default_conf)?;
             log::debug!(
                 "已为 Nginx 服务 {} {} (env: {}) 创建默认 nginx.conf 文件: {}",

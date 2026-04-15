@@ -20,7 +20,8 @@ import {
     Cpu,
     Play,
     Square,
-    RotateCw
+    RotateCw,
+    ScrollText
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
@@ -37,6 +38,7 @@ interface NginxConfigViewProps {
 
 interface NginxParsedConfig {
     workerProcesses?: string;
+    errorLog?: string;
     servers: Array<{
         listen: string[];
         serverName: string[];
@@ -115,18 +117,24 @@ export function NginxConfigView({
             servers: []
         }
 
+        // 移除注释
+        const cleanContent = content.replace(/#.*$/gm, '')
+
         // 提取 worker_processes
-        const workerMatch = content.match(/worker_processes\s+(\d+|auto);/)
+        const workerMatch = cleanContent.match(/worker_processes\s+(\d+|auto);/)
         if (workerMatch) {
             config.workerProcesses = workerMatch[1]
+        }
+
+        // 提取 error_log
+        const errorLogMatch = cleanContent.match(/^\s*error_log\s+([^\s;]+)/m)
+        if (errorLogMatch) {
+            config.errorLog = errorLogMatch[1].trim()
         }
 
         // 提取 server 块 (非常简化的解析，不支持嵌套大括号的完美匹配，但对标准格式有效)
         // 这里使用一个简单的状态机或正则来提取 server 块
         // 为了简化，我们只查找 server { ... } 结构
-        
-        // 移除注释
-        const cleanContent = content.replace(/#.*$/gm, '')
         
         // 查找所有 server 块
         const serverBlocks: string[] = []
@@ -390,6 +398,19 @@ export function NginxConfigView({
                         {parsedConfig && (
                             <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-white/10">
                                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置概览</Label>
+
+                                {/* 错误日志路径 */}
+                                {parsedConfig.errorLog && (
+                                    <div className="space-y-1">
+                                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <ScrollText className="h-3 w-3" />
+                                            Error Log
+                                        </div>
+                                        <div className="bg-white dark:bg-white/5 p-2 rounded border border-gray-200 dark:border-white/10 text-xs">
+                                            <span className="font-mono break-all">{parsedConfig.errorLog}</span>
+                                        </div>
+                                    </div>
+                                )}
                                 
                                 <div className="space-y-2">
                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
