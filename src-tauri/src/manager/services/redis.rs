@@ -75,7 +75,9 @@ impl RedisService {
     fn get_server_bin_path(&self, version: &str) -> PathBuf {
         let install_path = self.get_install_path(version);
         if cfg!(target_os = "windows") {
-            install_path.join("bin").join("redis-server.exe")
+            // Windows：在原位置搜索，不依赖固定的 bin 子目录
+            Self::find_binary_in_dir(&install_path, "redis-server.exe")
+                .unwrap_or_else(|| install_path.join("redis-server.exe"))
         } else {
             install_path.join("bin").join("redis-server")
         }
@@ -84,7 +86,9 @@ impl RedisService {
     fn get_cli_bin_path(&self, version: &str) -> PathBuf {
         let install_path = self.get_install_path(version);
         if cfg!(target_os = "windows") {
-            install_path.join("bin").join("redis-cli.exe")
+            // Windows：在原位置搜索，不依赖固定的 bin 子目录
+            Self::find_binary_in_dir(&install_path, "redis-cli.exe")
+                .unwrap_or_else(|| install_path.join("redis-cli.exe"))
         } else {
             install_path.join("bin").join("redis-cli")
         }
@@ -236,48 +240,67 @@ impl RedisService {
     }
 
     fn normalize_binary_layout(&self, install_dir: &Path) -> Result<()> {
-        let bin_dir = install_dir.join("bin");
-        std::fs::create_dir_all(&bin_dir)?;
-
-        let server_name = if cfg!(target_os = "windows") {
-            "redis-server.exe"
-        } else {
-            "redis-server"
-        };
-        let cli_name = if cfg!(target_os = "windows") {
-            "redis-cli.exe"
-        } else {
-            "redis-cli"
-        };
-
-        self.move_binary_if_found(install_dir, &bin_dir, server_name)?;
-        self.move_binary_if_found(install_dir, &bin_dir, cli_name)?;
+        #[cfg(target_os = "windows")]
+        {
+            // Windows：不移动到 bin 目录，在原位置验证二进制文件存在
+            if Self::find_binary_in_dir(install_dir, "redis-server.exe").is_none() {
+                return Err(anyhow!("未找到 redis-server 可执行文件"));
+            }
+            return Ok(());
+        }
 
         #[cfg(not(target_os = "windows"))]
         {
-            use std::os::unix::fs::PermissionsExt;
+            let bin_dir = install_dir.join("bin");
+            std::fs::create_dir_all(&bin_dir)?;
 
-            let server = bin_dir.join(server_name);
-            if server.exists() {
-                let mut perms = std::fs::metadata(&server)?.permissions();
-                perms.set_mode(0o755);
-                std::fs::set_permissions(&server, perms)?;
+            self.move_binary_if_found(install_dir, &bin_dir, "redis-server")?;
+            self.move_binary_if_found(install_dir, &bin_dir, "redis-cli")?;
+
+            {
+                use std::os::unix::fs::PermissionsExt;
+
+                let server = bin_dir.join("redis-server");
+                if server.exists() {
+                    let mut perms = std::fs::metadata(&server)?.permissions();
+                    perms.set_mode(0o755);
+                    std::fs::set_permissions(&server, perms)?;
+                }
+
+                let cli = bin_dir.join("redis-cli");
+                if cli.exists() {
+                    let mut perms = std::fs::metadata(&cli)?.permissions();
+                    perms.set_mode(0o755);
+                    std::fs::set_permissions(&cli, perms)?;
+                }
             }
 
-            let cli = bin_dir.join(cli_name);
-            if cli.exists() {
-                let mut perms = std::fs::metadata(&cli)?.permissions();
-                perms.set_mode(0o755);
-                std::fs::set_permissions(&cli, perms)?;
+            if !bin_dir.join("redis-server").exists() {
+                return Err(anyhow!("未找到 redis-server 可执行文件"));
             }
-        }
 
-        let server_path = bin_dir.join(server_name);
-        if !server_path.exists() {
-            return Err(anyhow!("未找到 redis-server 可执行文件"));
+            Ok(())
         }
+    }
 
-        Ok(())
+    /// 在目录树中搜索指定名称的可执行文件，返回第一个匹配的路径
+    fn find_binary_in_dir(dir: &Path, name: &str) -> Option<PathBuf> {
+        if !dir.exists() {
+            return None;
+        }
+        walkdir::WalkDir::new(dir)
+            .max_depth(5)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .find(|e| {
+                e.path().is_file()
+                    && e.path()
+                        .file_name()
+                        .and_then(|v| v.to_str())
+                        .map(|n| n == name)
+                        .unwrap_or(false)
+            })
+            .map(|e| e.path().to_path_buf())
     }
 
     fn move_binary_if_found(&self, search_root: &Path, bin_dir: &Path, name: &str) -> Result<()> {
