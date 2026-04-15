@@ -65,6 +65,12 @@ impl HostManager {
         }
     }
 
+    /// 检查是否存在 Envis 管理块
+    pub fn has_envis_block(&self) -> Result<bool> {
+        let content = self.read_hosts_file()?;
+        Ok(content.contains(ENVIS_HOSTS_BLOCK_START) && content.contains(ENVIS_HOSTS_BLOCK_END))
+    }
+
     /// 创建 Envis 管理块（不写入文件）
     fn create_envis_block(&self, content: &str) -> String {
         format!(
@@ -375,18 +381,6 @@ impl HostManager {
         }
     }
 
-    /// 检查一行是否是条目行（被注释的条目）
-    fn is_entry_line(&self, line: &str) -> bool {
-        let line = line.trim();
-        if !line.starts_with('#') {
-            return true;
-        }
-
-        let line = line.trim_start_matches('#').trim();
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        parts.len() >= 2
-    }
-
     /// 在内容中查找条目
     fn find_entry_in_content(&self, content: &str, ip: &str, hostname: &str) -> Option<HostEntry> {
         for line in content.lines() {
@@ -450,6 +444,36 @@ impl HostManager {
         }
 
         if !block_replaced {
+            anyhow::bail!("未找到 Envis hosts 管理块");
+        }
+
+        Ok(new_content)
+    }
+
+    /// 删除整个 Envis 管理块
+    fn remove_envis_block(&self, content: &str) -> Result<String> {
+        let mut new_content = String::new();
+        let mut in_block = false;
+        let mut block_removed = false;
+
+        for line in content.lines() {
+            if line.contains(ENVIS_HOSTS_BLOCK_START) {
+                in_block = true;
+                block_removed = true;
+                continue;
+            }
+
+            if in_block && line.contains(ENVIS_HOSTS_BLOCK_END) {
+                in_block = false;
+                continue;
+            }
+
+            if !in_block {
+                new_content.push_str(&format!("{}\n", line));
+            }
+        }
+
+        if !block_removed {
             anyhow::bail!("未找到 Envis hosts 管理块");
         }
 
@@ -534,7 +558,11 @@ impl HostManager {
             }
         }
 
-        let new_content = self.replace_envis_block(&content, &new_block_content)?;
+        let new_content = if new_block_content.trim().is_empty() {
+            self.remove_envis_block(&content)?
+        } else {
+            self.replace_envis_block(&content, &new_block_content)?
+        };
         self.write_hosts_file(&new_content, password)?;
 
         Ok(())
@@ -549,8 +577,8 @@ impl HostManager {
             return Ok(());
         }
 
-        // 清空 Envis 块的内容
-        let new_content = self.replace_envis_block(&content, "")?;
+        // 删除整个 Envis 块。Host 的激活状态以 block 是否存在为准。
+        let new_content = self.remove_envis_block(&content)?;
         self.write_hosts_file(&new_content, password)?;
         Ok(())
     }

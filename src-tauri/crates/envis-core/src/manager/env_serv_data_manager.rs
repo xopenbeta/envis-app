@@ -9,12 +9,11 @@ use std::sync::{Arc, Mutex, OnceLock};
 use uuid::Uuid;
 
 use crate::manager::app_config_manager::AppConfigManager;
-use crate::manager::builders::{EnvPathBuilder, EnvVarBuilder, MetadataBuilder};
-use crate::manager::host_manager::{HostEntry, HostManager};
+use crate::manager::builders::MetadataBuilder;
+use crate::manager::host_manager::HostManager;
 use crate::manager::services::{
     CustomService, HostService, JavaService, NodejsService, ServiceLifecycle, StandardService,
 };
-use crate::manager::shell_manamger::ShellManager;
 use crate::types::{ServiceData, ServiceDataStatus, ServiceType, UpdateServiceDataRequest};
 
 const ENV_SERVICE_CONFIG_FILE_NAME: &str = "service.json";
@@ -47,6 +46,29 @@ impl EnvServDataManager {
     /// 创建新的环境服务数据管理器
     fn new() -> Self {
         Self {}
+    }
+
+    fn sync_host_service_status(&self, service_data: &mut ServiceData) {
+        if service_data.service_type != ServiceType::Host {
+            return;
+        }
+
+        let host_manager = HostManager::global();
+        let host_manager = match host_manager.lock() {
+            Ok(manager) => manager,
+            Err(error) => {
+                log::warn!("获取 Host 管理器锁失败，跳过 Host 状态同步: {}", error);
+                return;
+            }
+        };
+
+        match host_manager.has_envis_block() {
+            Ok(true) => service_data.status = ServiceDataStatus::Active,
+            Ok(false) => service_data.status = ServiceDataStatus::Inactive,
+            Err(error) => {
+                log::warn!("读取 hosts block 状态失败，跳过 Host 状态同步: {}", error);
+            }
+        }
     }
 
     /// 设置（新增/更新）指定服务数据的 metadata 键值并持久化到当前环境
@@ -139,7 +161,10 @@ impl EnvServDataManager {
 
                                 if service_config_path.exists() {
                                     match self.load_service_data_from_file(&service_config_path) {
-                                        Ok(service_data) => service_datas.push(service_data),
+                                        Ok(mut service_data) => {
+                                            self.sync_host_service_status(&mut service_data);
+                                            service_datas.push(service_data)
+                                        }
                                         Err(e) => {
                                             log::error!(
                                                 "读取服务配置失败: {:?}, 错误: {}",
@@ -364,8 +389,11 @@ impl EnvServDataManager {
 
         handler.active(environment_id, service_data, password)?;
 
-        // 更新服务状态为 Active
-        service_data.status = ServiceDataStatus::Active;
+        if service_data.service_type == ServiceType::Host {
+            self.sync_host_service_status(service_data);
+        } else {
+            service_data.status = ServiceDataStatus::Active;
+        }
         service_data.updated_at = Utc::now().to_rfc3339();
         self.save_service_data(environment_id, service_data)?;
 
@@ -393,8 +421,11 @@ impl EnvServDataManager {
 
         handler.deactive(environment_id, service_data, password)?;
 
-        // 更新服务状态为 Inactive
-        service_data.status = ServiceDataStatus::Inactive;
+        if service_data.service_type == ServiceType::Host {
+            self.sync_host_service_status(service_data);
+        } else {
+            service_data.status = ServiceDataStatus::Inactive;
+        }
         service_data.updated_at = Utc::now().to_rfc3339();
         self.save_service_data(environment_id, service_data)?;
 

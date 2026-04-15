@@ -69,6 +69,11 @@ export function useEnvironmentServiceData() {
     const { updateSystemSettings, systemSettings } = useAppSettings();
     const selectedServiceData = selectedServiceDatas.find(serviceData => serviceData.id === selectedServiceDataId)
     const getSudoPassword = () => sessionStorage.getItem('envis_sudo_password') || undefined
+    const storeSudoPassword = (password?: string) => {
+        if (password) {
+            sessionStorage.setItem('envis_sudo_password', password)
+        }
+    }
 
     const getLastUsedEnvironmentIds = (settings?: SystemSettings | null): string[] => {
         if (!settings?.lastUsedEnvironmentIds || settings.lastUsedEnvironmentIds.length === 0) {
@@ -270,11 +275,12 @@ export function useEnvironmentServiceData() {
         return environments;
     }
 
-    async function activateEnvAndServDatas(environment: Environment, currentSelectedEnvironmentId?: string) {
-        const effectivePassword = getSudoPassword();
+    async function activateEnvAndServDatas(environment: Environment, currentSelectedEnvironmentId?: string, passwordOverride?: string) {
+        const effectivePassword = passwordOverride || getSudoPassword();
         // 激活环境，后端现在负责在激活环境时激活所有关联服务
         const activeEnvRes = await activateEnvironmentAndServices(environment, effectivePassword)
         if (activeEnvRes.success) {
+            storeSudoPassword(effectivePassword)
             if (currentSelectedEnvironmentId === environment.id) {
                 const serviceDatasRes = await getAllServiceDatas(environment.id)
                 if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
@@ -290,11 +296,12 @@ export function useEnvironmentServiceData() {
         return activeEnvRes;
     }
 
-    async function deactivateEnvAndServDatas(environment: Environment, currentSelectedEnvironmentId?: string) {
-        const effectivePassword = getSudoPassword();
+    async function deactivateEnvAndServDatas(environment: Environment, currentSelectedEnvironmentId?: string, passwordOverride?: string) {
+        const effectivePassword = passwordOverride || getSudoPassword();
         // 停用环境，后端现在负责在停用环境时停用所有关联服务
         const deactiveEnvRes = await deactivateEnvironmentAndServices(environment, effectivePassword)
         if (deactiveEnvRes.success) {
+            storeSudoPassword(effectivePassword)
             if (currentSelectedEnvironmentId === environment.id) {
                 const serviceDatasRes = await getAllServiceDatas(environment.id)
                 if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
@@ -309,10 +316,10 @@ export function useEnvironmentServiceData() {
         return deactiveEnvRes;
     }
 
-    async function deactivateAllEnvAndServDatas(environments: Environment[]) {
+    async function deactivateAllEnvAndServDatas(environments: Environment[], passwordOverride?: string) {
         for (const environment of environments) {
             if (environment.status === EnvironmentStatus.Active) {
-                await deactivateEnvAndServDatas(environment)
+                await deactivateEnvAndServDatas(environment, undefined, passwordOverride)
             }
         }
         // 更新UI中所有环境状态为停用
@@ -323,12 +330,17 @@ export function useEnvironmentServiceData() {
         setEnvironments(newEnvironments)
     }
 
-    async function deactivateOtherActiveEnvironments(environmentList: Environment[], currentEnvironmentId: string, currentSelectedEnvironmentId?: string) {
+    async function deactivateOtherActiveEnvironments(environmentList: Environment[], currentEnvironmentId: string, currentSelectedEnvironmentId?: string, passwordOverride?: string) {
         for (const environment of environmentList) {
             if (environment.id !== currentEnvironmentId && environment.status === EnvironmentStatus.Active) {
-                await deactivateEnvAndServDatas(environment, currentSelectedEnvironmentId)
+                const deactiveRes = await deactivateEnvAndServDatas(environment, currentSelectedEnvironmentId, passwordOverride)
+                if (!deactiveRes.success) {
+                    return deactiveRes
+                }
             }
         }
+
+        return { success: true }
     }
 
     // 启动时自动启动上次使用的环境
@@ -379,10 +391,12 @@ export function useEnvironmentServiceData() {
         environment,
         environmentsSnapshot,
         systemSettingsSnapshot,
+        passwordOverride,
     }: {
         environment: Environment
         environmentsSnapshot: Environment[]
         systemSettingsSnapshot?: SystemSettings | null
+        passwordOverride?: string
     }) {
         let loadingTimer = null;
         let isActiveFinish = false;
@@ -400,19 +414,35 @@ export function useEnvironmentServiceData() {
         let nextLastUsedIds = [...currentLastUsedIds]
 
         if (environment.status === EnvironmentStatus.Active) {
-            await deactivateEnvAndServDatas(environment, currentSelectedEnvironmentId)
+            const deactivateRes = await deactivateEnvAndServDatas(environment, currentSelectedEnvironmentId, passwordOverride)
+            if (!deactivateRes.success) {
+                isActiveFinish = true;
+                if (loadingTimer) {
+                    clearTimeout(loadingTimer);
+                }
+                setIsAppLoading(false);
+                return deactivateRes;
+            }
             console.log('停用环境:', environment.name)
             nextLastUsedIds = currentLastUsedIds.filter(id => id !== environment.id)
         } else {
             const shouldDeactivateOthers = (systemSettingsSnapshot ?? systemSettings)?.deactivateOtherEnvironmentsOnActivate ?? true;
             if (shouldDeactivateOthers) {
-                await deactivateOtherActiveEnvironments(environmentsSnapshot, environment.id, currentSelectedEnvironmentId)
+                const deactivateOthersRes = await deactivateOtherActiveEnvironments(environmentsSnapshot, environment.id, currentSelectedEnvironmentId, passwordOverride)
+                if (!deactivateOthersRes.success) {
+                    isActiveFinish = true;
+                    if (loadingTimer) {
+                        clearTimeout(loadingTimer);
+                    }
+                    setIsAppLoading(false);
+                    return deactivateOthersRes;
+                }
                 nextLastUsedIds = [environment.id]
             } else {
                 const filtered = currentLastUsedIds.filter(id => id !== environment.id)
                 nextLastUsedIds = [...filtered, environment.id]
             }
-            const activateRes = await activateEnvAndServDatas(environment, currentSelectedEnvironmentId)
+            const activateRes = await activateEnvAndServDatas(environment, currentSelectedEnvironmentId, passwordOverride)
             if (!activateRes.success) {
                 isActiveFinish = true;
                 if (loadingTimer) {
@@ -431,6 +461,8 @@ export function useEnvironmentServiceData() {
             clearTimeout(loadingTimer);
         }
         setIsAppLoading(false);
+
+        return { success: true };
     }
 
     return {
