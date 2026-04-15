@@ -47,7 +47,7 @@ import {
   MoreHorizontal,
   Hexagon
 } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { useAppSettings } from '@/hooks/appSettings'
@@ -104,6 +104,20 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [editingEnvironment, setEditingEnvironment] = useState<Environment | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [envInfoFormData, setEnvInfoFormData] = useState({ name: '' })
+  const isEnvNameComposingRef = useRef(false)
+
+  const onEnvNameInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') {
+      return
+    }
+
+    if (isEnvNameComposingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) {
+      return
+    }
+
+    e.preventDefault()
+    void onDialogSaveEnvBtnClick()
+  }
 
   // 监听来自 Welcome Fragment 的新建请求
   useEffect(() => {
@@ -556,12 +570,13 @@ export default function NavBar({ onClose }: NavBarProps) {
                 id="name"
                 value={envInfoFormData.name}
                 onChange={(e) => setEnvInfoFormData(prev => ({ ...prev, name: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    onDialogSaveEnvBtnClick();
-                  }
+                onCompositionStart={() => {
+                  isEnvNameComposingRef.current = true
                 }}
+                onCompositionEnd={() => {
+                  isEnvNameComposingRef.current = false
+                }}
+                onKeyDown={onEnvNameInputKeyDown}
                 placeholder={t('nav_bar.env_name_placeholder')}
                 className="mt-1 shadow-none"
               />
