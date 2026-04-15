@@ -5,16 +5,15 @@ import {
 } from "@/components/ui/resizable"
 import { useAtom } from 'jotai'
 import { useEffect, useRef, useState } from "react"
-import { ImperativePanelHandle, ImperativePanelGroupHandle } from "react-resizable-panels"
+import { ImperativePanelHandle } from "react-resizable-panels"
 import { EnvironmentPanel } from "./env-panel/env-panel"
 import NavBar from "./nav-bar/nav-bar"
 import { WelcomeFragment } from "./welcome-fragment"
-import { selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from '../store/environment'
+import { selectedEnvironmentIdAtom } from '../store/environment'
 import LogPanel from './log-panel/log-panel'
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
 import { isNavPanelOpenAtom, isAIPanelOpenAtom, navPanelWidthRatioAtom, aiPanelWidthRatioAtom, isEnvPanelOpenAtom, envPanelWidthRatioAtom } from "@/store"
 import { AIPanel } from "./ai-panel/ai-panel"
-import { useServiceData } from "@/hooks/env-serv-data"
 
 export default function Envis() {
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom);
@@ -38,10 +37,6 @@ export default function Envis() {
       navPanelRef.current?.collapse?.();
     }
   }, [isNavPanelOpen]);
-
-  useEffect(() => {
-    aiPanelRef.current?.collapse?.();
-  }, []);
 
   useEffect(() => {
     const adjustWindowSize = async () => {
@@ -142,7 +137,7 @@ export default function Envis() {
       {/* AI面板 */}
       <ResizablePanel
         ref={aiPanelRef}
-        defaultSize={20}
+        defaultSize={isAIPanelOpen ? aiPanelWidthRatio : 0}
         collapsedSize={0}
         collapsible={true}
         minSize={20}
