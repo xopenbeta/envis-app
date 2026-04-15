@@ -84,7 +84,13 @@ impl ServiceType {
             ServiceType::Mariadb => &["bin"], // MariaDB 可执行文件目录
             ServiceType::Mysql => &["bin"],   // MySQL 可执行文件目录
             ServiceType::Postgresql => &["bin"], // PostgreSQL 可执行文件目录
-            ServiceType::Nginx => &["sbin"],  // Nginx 可执行文件目录
+            ServiceType::Nginx => {
+                if cfg!(target_os = "windows") {
+                    &["", "sbin"]
+                } else {
+                    &["sbin"]
+                }
+            } // Nginx 可执行文件目录
             ServiceType::Python => {
                 // Windows: python.exe 位于安装根目录
                 // Unix: Python 可执行文件位于 bin 子目录

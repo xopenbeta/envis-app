@@ -7,7 +7,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::copy;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Arc, OnceLock};
 
@@ -57,11 +57,12 @@ impl NginxService {
     /// 检查 Nginx 是否已安装（判断 sbin/nginx 是否存在）
     pub fn is_installed(&self, version: &str) -> bool {
         let install_path = self.get_install_path(version);
-        let nginx_bin = if cfg!(target_os = "windows") {
-            install_path.join("nginx.exe")
-        } else {
-            install_path.join("sbin").join("nginx")
-        };
+        #[cfg(target_os = "windows")]
+        if let Err(error) = self.normalize_windows_binary_name(&install_path) {
+            log::warn!("修正 Windows Nginx 可执行文件名失败: {}", error);
+        }
+
+        let nginx_bin = self.resolve_nginx_binary(&install_path);
         let installed = nginx_bin.exists();
         // log::debug!(
         //     "检查 Nginx {} 安装状态: {}",
@@ -79,6 +80,57 @@ impl NginxService {
             std::path::PathBuf::from(app.get_services_folder())
         };
         services_folder.join("nginx").join(version)
+    }
+
+    fn nginx_binary_candidates(&self, install_path: &Path) -> Vec<PathBuf> {
+        if cfg!(target_os = "windows") {
+            vec![
+                install_path.join("nginx.exe"),
+                install_path.join("nginx"),
+                install_path.join("sbin").join("nginx.exe"),
+                install_path.join("sbin").join("nginx"),
+            ]
+        } else {
+            vec![
+                install_path.join("sbin").join("nginx"),
+                install_path.join("nginx"),
+            ]
+        }
+    }
+
+    fn resolve_nginx_binary(&self, install_path: &Path) -> PathBuf {
+        self.nginx_binary_candidates(install_path)
+            .into_iter()
+            .find(|path| path.exists())
+            .unwrap_or_else(|| {
+                if cfg!(target_os = "windows") {
+                    install_path.join("nginx.exe")
+                } else {
+                    install_path.join("sbin").join("nginx")
+                }
+            })
+    }
+
+    #[cfg(target_os = "windows")]
+    fn normalize_windows_binary_name(&self, install_path: &Path) -> Result<()> {
+        let binary_with_ext = install_path.join("nginx.exe");
+        if binary_with_ext.exists() {
+            return Ok(());
+        }
+
+        for candidate in [install_path.join("nginx"), install_path.join("sbin").join("nginx")] {
+            if candidate.exists() {
+                let renamed = candidate.with_extension("exe");
+                std::fs::rename(&candidate, &renamed)?;
+                log::info!(
+                    "Windows 下检测到无扩展名 Nginx 可执行文件，已重命名为: {}",
+                    renamed.display()
+                );
+                return Ok(());
+            }
+        }
+
+        Ok(())
     }
 
     /// 构建下载 URL 和文件名
@@ -244,14 +296,13 @@ impl NginxService {
         self.promote_extracted_contents(&temp_dir, &install_path)?;
         let _ = std::fs::remove_dir_all(&temp_dir);
 
+        #[cfg(target_os = "windows")]
+        self.normalize_windows_binary_name(&install_path)?;
+
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_path)?;
 
-        let nginx_bin = if cfg!(target_os = "windows") {
-            install_path.join("nginx.exe")
-        } else {
-            install_path.join("sbin").join("nginx")
-        };
+        let nginx_bin = self.resolve_nginx_binary(&install_path);
         if !nginx_bin.exists() {
             return Err(anyhow!(
                 "安装完成后未找到 Nginx 可执行文件: {}",
@@ -406,12 +457,12 @@ impl NginxService {
         log::info!("启动 Nginx 服务");
         let version = &service_data.version;
         let install_path = self.get_install_path(version);
+
+        #[cfg(target_os = "windows")]
+        self.normalize_windows_binary_name(&install_path)?;
+
         log::info!("安装路径: {:?}", install_path);
-        let nginx_bin = if cfg!(target_os = "windows") {
-            install_path.join("nginx.exe")
-        } else {
-            install_path.join("sbin").join("nginx")
-        };
+        let nginx_bin = self.resolve_nginx_binary(&install_path);
         log::info!("Nginx 可执行文件路径: {:?}", nginx_bin);
 
         if !nginx_bin.exists() {
@@ -492,11 +543,11 @@ impl NginxService {
         log::info!("停止 Nginx 服务");
         let version = &service_data.version;
         let install_path = self.get_install_path(version);
-        let nginx_bin = if cfg!(target_os = "windows") {
-            install_path.join("nginx.exe")
-        } else {
-            install_path.join("sbin").join("nginx")
-        };
+
+        #[cfg(target_os = "windows")]
+        self.normalize_windows_binary_name(&install_path)?;
+
+        let nginx_bin = self.resolve_nginx_binary(&install_path);
 
         if !nginx_bin.exists() {
             return Err(anyhow!("Nginx 可执行文件不存在: {:?}", nginx_bin));
@@ -537,11 +588,11 @@ impl NginxService {
         log::info!("重启 Nginx 服务");
         let version = &service_data.version;
         let install_path = self.get_install_path(version);
-        let nginx_bin = if cfg!(target_os = "windows") {
-            install_path.join("nginx.exe")
-        } else {
-            install_path.join("sbin").join("nginx")
-        };
+
+        #[cfg(target_os = "windows")]
+        self.normalize_windows_binary_name(&install_path)?;
+
+        let nginx_bin = self.resolve_nginx_binary(&install_path);
 
         if !nginx_bin.exists() {
             return Err(anyhow!("Nginx 可执行文件不存在: {:?}", nginx_bin));
