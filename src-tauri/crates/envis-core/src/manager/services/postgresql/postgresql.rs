@@ -40,26 +40,26 @@ impl PostgresqlService {
     /// 获取可用的 PostgreSQL 版本列表
     pub fn get_available_versions(&self) -> Vec<PostgresqlVersion> {
         vec![
-            PostgresqlVersion {
-                version: "16.2".to_string(),
-                date: "2024-02-08".to_string(),
-            },
-            PostgresqlVersion {
-                version: "15.6".to_string(),
-                date: "2024-02-08".to_string(),
-            },
-            PostgresqlVersion {
-                version: "14.11".to_string(),
-                date: "2024-02-08".to_string(),
-            },
-            PostgresqlVersion {
-                version: "13.14".to_string(),
-                date: "2024-02-08".to_string(),
-            },
-            PostgresqlVersion {
-                version: "12.18".to_string(),
-                date: "2024-02-08".to_string(),
-            },
+            // PostgresqlVersion {
+            //     version: "16.2".to_string(),
+            //     date: "2024-02-08".to_string(),
+            // },
+            // PostgresqlVersion {
+            //     version: "15.6".to_string(),
+            //     date: "2024-02-08".to_string(),
+            // },
+            // PostgresqlVersion {
+            //     version: "14.11".to_string(),
+            //     date: "2024-02-08".to_string(),
+            // },
+            // PostgresqlVersion {
+            //     version: "13.14".to_string(),
+            //     date: "2024-02-08".to_string(),
+            // },
+            // PostgresqlVersion {
+            //     version: "12.18".to_string(),
+            //     date: "2024-02-08".to_string(),
+            // },
         ]
     }
 
