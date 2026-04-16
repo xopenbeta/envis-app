@@ -722,12 +722,19 @@ alias mise=envis
                             .replace("%PATH%", "")
                     } else if is_ps {
                         // 清除 $env:PATH / $env:Path / + $env:PATH 等各种形式
-                        let lower = rhs.to_lowercase();
-                        let cleaned_str = lower
-                            .replace("$env:path;", "")
-                            .replace(";$env:path", "")
-                            .replace("+ $env:path", "")
-                            .replace("$env:path", "");
+                        // 注意：必须在原始 rhs 上操作而非 to_lowercase() 后的副本，
+                        // 否则 Windows 路径（如 C:\Foo）会变成全小写，导致后续
+                        // HashSet::remove() 因大小写不匹配而失败，路径永远删不掉。
+                        let cleaned_str = rhs
+                            // 兼容 Envis 写入的 $env:PATH 及旧格式 $env:Path
+                            .replace("$env:PATH;", "")
+                            .replace(";$env:PATH", "")
+                            .replace("+ $env:PATH", "")
+                            .replace("$env:PATH", "")
+                            .replace("$env:Path;", "")
+                            .replace(";$env:Path", "")
+                            .replace("+ $env:Path", "")
+                            .replace("$env:Path", "");
                         // 去掉字符串连接产生的多余符号
                         let cleaned_str = cleaned_str
                             .replace("+", "")
