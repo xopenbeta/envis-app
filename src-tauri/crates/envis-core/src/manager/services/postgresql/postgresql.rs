@@ -360,26 +360,27 @@ impl PostgresqlService {
     /// 获取 PostgreSQL 配置
     pub fn get_config(
         &self,
-        _environment_id: &str,
+        environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
+        let status_res = self.get_service_status(environment_id, service_data)?;
+        let status_data = status_res.data.unwrap_or_else(|| serde_json::json!({}));
         let data_dir = self.get_data_dir(service_data);
-        let config_path = service_data
-            .metadata
-            .as_ref()
-            .and_then(|m| m.get("POSTGRESQL_CONFIG"))
-            .and_then(|v| v.as_str())
-            .map(PathBuf::from)
-            .unwrap_or_else(|| data_dir.join("postgresql.conf"));
-        let log_path = data_dir.join("postgresql.log");
+        let config_path = self.get_config_path(service_data);
+        let log_path = self.get_log_path(service_data);
         let port = self.get_port(service_data);
         let bind_ip = self.get_host(service_data);
+        let is_running = status_data
+            .get("isRunning")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let data = serde_json::json!({
             "configPath": config_path,
             "dataPath": data_dir,
             "logPath": log_path,
             "bindIp": bind_ip,
             "port": port,
+            "isRunning": is_running,
         });
 
         Ok(ServiceDataResult {
@@ -390,20 +391,9 @@ impl PostgresqlService {
     }
 
     /// 设置数据目录
-    pub fn set_data_path(&self, service_data: &mut ServiceData, data_path: &str) -> Result<()> {
+    pub fn set_data_path(&self, _service_data: &mut ServiceData, data_path: &str) -> Result<()> {
         if data_path.trim().is_empty() {
             return Err(anyhow!("数据目录不能为空"));
-        }
-
-        if service_data.metadata.is_none() {
-            service_data.metadata = Some(HashMap::new());
-        }
-
-        if let Some(metadata) = service_data.metadata.as_mut() {
-            metadata.insert(
-                "PGDATA".to_string(),
-                serde_json::Value::String(data_path.to_string()),
-            );
         }
 
         Ok(())
@@ -415,13 +405,29 @@ impl PostgresqlService {
             return Err(anyhow!("端口必须在 1-65535 之间"));
         }
 
-        if service_data.metadata.is_none() {
-            service_data.metadata = Some(HashMap::new());
+        let config_path = self.get_config_path(service_data);
+        let bind_address = self.get_host(service_data);
+        let log_path = self.get_log_path(service_data);
+        self.update_postgresql_conf(&config_path, port as u16, &bind_address, &log_path)?;
+
+        Ok(())
+    }
+
+    /// 设置日志路径
+    pub fn set_log_path(&self, service_data: &mut ServiceData, log_path: &str) -> Result<()> {
+        if log_path.trim().is_empty() {
+            return Err(anyhow!("日志路径不能为空"));
         }
 
-        if let Some(metadata) = service_data.metadata.as_mut() {
-            metadata.insert("PGPORT".to_string(), serde_json::Value::Number(port.into()));
-        }
+        let config_path = self.get_config_path(service_data);
+        let port = self.get_port(service_data) as u16;
+        let bind_address = self.get_host(service_data);
+        self.update_postgresql_conf(
+            &config_path,
+            port,
+            &bind_address,
+            &PathBuf::from(log_path),
+        )?;
 
         Ok(())
     }
@@ -539,15 +545,19 @@ impl PostgresqlService {
             .unwrap_or_else(|| self.get_port(service_data) as u16);
         let final_bind = bind_address.unwrap_or_else(|| self.get_host(service_data));
 
-        self.update_postgresql_conf(&data_dir, final_port, &final_bind)?;
+        let config_path = self.get_config_path(service_data);
+        let final_log_path = self.get_log_path(service_data);
+        if let Some(log_dir) = final_log_path.parent() {
+            fs::create_dir_all(log_dir)?;
+        }
+
+        self.update_postgresql_conf(&config_path, final_port, &final_bind, &final_log_path)?;
 
         let start_res = self.start_service("", service_data)?;
         if !start_res.success {
             return Ok(start_res);
         }
 
-        let config_path = data_dir.join("postgresql.conf");
-        let log_path = data_dir.join("postgresql.log");
         Ok(ServiceDataResult {
             success: true,
             message: if reset {
@@ -558,7 +568,7 @@ impl PostgresqlService {
             data: Some(serde_json::json!({
                 "configPath": config_path,
                 "dataPath": data_dir,
-                "logPath": log_path,
+                "logPath": final_log_path,
                 "superPassword": super_password,
                 "port": final_port.to_string(),
                 "bindAddress": final_bind,
@@ -590,7 +600,10 @@ impl PostgresqlService {
             });
         }
 
-        let log_path = data_dir.join("postgresql.log");
+        let log_path = self.get_log_path(service_data);
+        if let Some(log_dir) = log_path.parent() {
+            fs::create_dir_all(log_dir)?;
+        }
         let output = create_command(&pg_ctl)
             .arg("-D")
             .arg(&data_dir)
@@ -1067,41 +1080,99 @@ ORDER BY r.rolname, d.datname
         self.get_data_dir(service_data).join("PG_VERSION").exists()
     }
 
-    fn get_data_dir(&self, service_data: &ServiceData) -> PathBuf {
-        if let Some(path) = service_data
-            .metadata
-            .as_ref()
-            .and_then(|m| m.get("PGDATA"))
-            .and_then(|v| v.as_str())
-        {
-            return PathBuf::from(path);
-        }
-
+    fn get_default_data_dir(&self, service_data: &ServiceData) -> PathBuf {
         self.get_install_path(&service_data.version).join("data")
     }
 
-    fn get_port(&self, service_data: &ServiceData) -> i64 {
+    fn get_config_path(&self, service_data: &ServiceData) -> PathBuf {
         service_data
             .metadata
             .as_ref()
-            .and_then(|m| m.get("PGPORT"))
-            .and_then(|v| {
-                v.as_i64().or_else(|| {
-                    v.as_str()
-                        .and_then(|s| s.parse::<i64>().ok())
-                })
-            })
+            .and_then(|m| m.get("POSTGRESQL_CONFIG"))
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| self.get_default_data_dir(service_data).join("postgresql.conf"))
+    }
+
+    fn read_config_content(&self, service_data: &ServiceData) -> Option<String> {
+        fs::read_to_string(self.get_config_path(service_data)).ok()
+    }
+
+    fn parse_config_value(content: &str, key: &str) -> Option<String> {
+        let mut result = None;
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            let candidate = trimmed.split('#').next().unwrap_or(trimmed).trim();
+            if let Some((lhs, rhs)) = candidate.split_once('=') {
+                if lhs.trim() != key {
+                    continue;
+                }
+
+                let value = rhs.trim().trim_matches('"').trim_matches('\'').trim();
+                if !value.is_empty() {
+                    result = Some(value.to_string());
+                }
+            }
+        }
+
+        result
+    }
+
+    fn get_data_dir(&self, service_data: &ServiceData) -> PathBuf {
+        let config_path = self.get_config_path(service_data);
+        if let Some(parent) = config_path.parent() {
+            return parent.to_path_buf();
+        }
+
+        self.get_default_data_dir(service_data)
+    }
+
+    fn get_port(&self, service_data: &ServiceData) -> i64 {
+        self.read_config_content(service_data)
+            .as_deref()
+            .and_then(|content| Self::parse_config_value(content, "port"))
+            .and_then(|value| value.parse::<i64>().ok())
             .unwrap_or(5432)
     }
 
     fn get_host(&self, service_data: &ServiceData) -> String {
-        service_data
-            .metadata
-            .as_ref()
-            .and_then(|m| m.get("PGHOST"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("127.0.0.1")
-            .to_string()
+        self.read_config_content(service_data)
+            .as_deref()
+            .and_then(|content| Self::parse_config_value(content, "listen_addresses"))
+            .unwrap_or_else(|| "127.0.0.1".to_string())
+    }
+
+    fn get_log_path(&self, service_data: &ServiceData) -> PathBuf {
+        let data_dir = self.get_data_dir(service_data);
+        if let Some(content) = self.read_config_content(service_data) {
+            let log_directory = Self::parse_config_value(&content, "log_directory");
+            let log_filename = Self::parse_config_value(&content, "log_filename")
+                .unwrap_or_else(|| "postgresql.log".to_string());
+
+            if let Some(directory) = log_directory {
+                let directory_path = PathBuf::from(&directory);
+                let resolved_dir = if directory_path.is_absolute() {
+                    directory_path
+                } else {
+                    data_dir.join(directory)
+                };
+                return resolved_dir.join(log_filename);
+            }
+
+            let log_filename_path = PathBuf::from(&log_filename);
+            if log_filename_path.is_absolute() {
+                return log_filename_path;
+            }
+
+            return data_dir.join(log_filename);
+        }
+
+        data_dir.join("postgresql.log")
     }
 
     fn get_super_password(&self, service_data: &ServiceData) -> String {
@@ -1141,18 +1212,37 @@ ORDER BY r.rolname, d.datname
         }
     }
 
-    fn update_postgresql_conf(&self, data_dir: &PathBuf, port: u16, bind_address: &str) -> Result<()> {
-        let conf_path = data_dir.join("postgresql.conf");
-        let log_path = data_dir.join("postgresql.log");
+    fn update_postgresql_conf(
+        &self,
+        config_path: &PathBuf,
+        port: u16,
+        bind_address: &str,
+        log_path: &PathBuf,
+    ) -> Result<()> {
+        let default_dir = config_path
+            .parent()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("."));
+        let conf_path = config_path.clone();
+        let log_dir = log_path
+            .parent()
+            .unwrap_or(&default_dir)
+            .to_string_lossy()
+            .replace('\'', "");
         let conf_patch = format!(
-            "\n# Envis managed settings\nlisten_addresses = '{}'\nport = {}\nlog_destination = 'stderr'\nlogging_collector = on\nlog_filename = '{}'\n",
+            "\n# Envis managed settings\nlisten_addresses = '{}'\nport = {}\nlog_destination = 'stderr'\nlogging_collector = on\nlog_directory = '{}'\nlog_filename = '{}'\n",
             bind_address.replace('\'', ""),
             port,
+            log_dir,
             log_path
                 .file_name()
                 .and_then(|v| v.to_str())
                 .unwrap_or("postgresql.log")
         );
+
+        if let Some(parent) = conf_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
 
         let mut file = OpenOptions::new()
             .create(true)

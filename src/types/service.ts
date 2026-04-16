@@ -66,9 +66,6 @@ export interface MySQLUser {
 export interface PostgreSQLMetadata {
     "POSTGRESQL_CONFIG"?: string
     "POSTGRESQL_SUPER_PASSWORD"?: string
-    "PGDATA"?: string
-    "PGPORT"?: string | number
-    "PGHOST"?: string
 }
 
 export interface PostgreSQLGrant {

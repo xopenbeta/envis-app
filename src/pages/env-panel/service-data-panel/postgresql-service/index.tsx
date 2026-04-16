@@ -171,7 +171,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
-      loadDatabases()
+      void loadDatabases()
       const timer = setInterval(() => {
         void loadDatabases()
       }, 3000)
@@ -184,7 +184,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
-      loadRoles()
+      void loadRoles()
       const timer = setInterval(() => {
         void loadRoles()
       }, 3000)
@@ -496,9 +496,6 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         const newMetadata: PostgreSQLMetadata = { ...(serviceData.metadata || {}) }
         newMetadata.POSTGRESQL_CONFIG = data.configPath
         newMetadata.POSTGRESQL_SUPER_PASSWORD = data.superPassword
-        newMetadata.PGDATA = data.dataPath
-        newMetadata.PGPORT = data.port
-        newMetadata.PGHOST = data.bindAddress
 
         await updateServiceData({
           environmentId: selectedEnvironmentId,
