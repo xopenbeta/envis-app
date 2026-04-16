@@ -1,6 +1,45 @@
 use envis_core::manager::env_serv_data_manager::EnvServDataManager;
 use envis_core::manager::services::postgresql::PostgresqlService;
 use envis_core::types::{CommandResponse, ServiceData};
+use chrono::Utc;
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+fn persist_postgresql_metadata(
+    environment_id: &str,
+    service_data: &mut ServiceData,
+    config_path: Option<String>,
+    super_password: Option<String>,
+) -> Result<(), String> {
+    let env_serv_data_manager = EnvServDataManager::global();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+
+    let metadata = service_data.metadata.get_or_insert_with(HashMap::new);
+
+    if let Some(config_path) = config_path {
+        metadata.insert(
+            "POSTGRESQL_CONFIG".to_string(),
+            serde_json::Value::String(config_path),
+        );
+    }
+
+    if let Some(super_password) = super_password {
+        metadata.insert(
+            "POSTGRESQL_SUPER_PASSWORD".to_string(),
+            serde_json::Value::String(super_password),
+        );
+    }
+
+    if metadata.is_empty() {
+        service_data.metadata = None;
+    }
+
+    service_data.updated_at = Utc::now().to_rfc3339();
+    env_serv_data_manager
+        .save_service_data(environment_id, service_data)
+        .map(|_| ())
+        .map_err(|e| format!("保存 PostgreSQL metadata 失败: {}", e))
+}
 
 /// 检查 PostgreSQL 是否已安装的 Tauri 命令
 #[tauri::command]
@@ -122,15 +161,16 @@ pub async fn set_postgresql_data_path(
     let postgresql_service = PostgresqlService::global();
     match postgresql_service.set_data_path(&mut service_data, &data_path) {
         Ok(_) => {
-            // 更新到配置文件
-            let env_serv_data_manager = EnvServDataManager::global();
-            let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
-            let _ = env_serv_data_manager.set_metadata(
+            let config_path = PathBuf::from(&data_path)
+                .join("postgresql.conf")
+                .to_string_lossy()
+                .to_string();
+            persist_postgresql_metadata(
                 &environment_id,
                 &mut service_data,
-                "PGDATA",
-                serde_json::Value::String(data_path.clone()),
-            );
+                Some(config_path),
+                None,
+            )?;
 
             let data = serde_json::json!({
                 "dataPath": data_path,
@@ -157,15 +197,7 @@ pub async fn set_postgresql_port(
     let postgresql_service = PostgresqlService::global();
     match postgresql_service.set_port(&mut service_data, port) {
         Ok(_) => {
-            // 更新到配置文件
-            let env_serv_data_manager = EnvServDataManager::global();
-            let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
-            let _ = env_serv_data_manager.set_metadata(
-                &environment_id,
-                &mut service_data,
-                "PGPORT",
-                serde_json::Value::Number(port.into()),
-            );
+            persist_postgresql_metadata(&environment_id, &mut service_data, None, None)?;
 
             let data = serde_json::json!({
                 "port": port,
@@ -177,6 +209,33 @@ pub async fn set_postgresql_port(
         }
         Err(e) => Ok(CommandResponse::error(format!(
             "设置 PostgreSQL 端口失败: {}",
+            e
+        ))),
+    }
+}
+
+/// 设置 PostgreSQL 日志路径的 Tauri 命令
+#[tauri::command]
+pub async fn set_postgresql_log_path(
+    environment_id: String,
+    mut service_data: ServiceData,
+    log_path: String,
+) -> Result<CommandResponse, String> {
+    let postgresql_service = PostgresqlService::global();
+    match postgresql_service.set_log_path(&mut service_data, &log_path) {
+        Ok(_) => {
+            persist_postgresql_metadata(&environment_id, &mut service_data, None, None)?;
+
+            let data = serde_json::json!({
+                "logPath": log_path,
+            });
+            Ok(CommandResponse::success(
+                "设置 PostgreSQL 日志路径成功".to_string(),
+                Some(data),
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!(
+            "设置 PostgreSQL 日志路径失败: {}",
             e
         ))),
     }
@@ -292,53 +351,20 @@ pub async fn initialize_postgresql(
         Ok(result) => {
             if result.success {
                 if let Some(data) = result.data.as_ref() {
-                    let env_serv_data_manager = EnvServDataManager::global();
-                    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
-
-                    if let Some(config_path) = data.get("configPath").and_then(|v| v.as_str()) {
-                        let _ = env_serv_data_manager.set_metadata(
-                            &environment_id,
-                            &mut service_data,
-                            "POSTGRESQL_CONFIG",
-                            serde_json::Value::String(config_path.to_string()),
-                        );
-                    }
-                    if let Some(data_path) = data.get("dataPath").and_then(|v| v.as_str()) {
-                        let _ = env_serv_data_manager.set_metadata(
-                            &environment_id,
-                            &mut service_data,
-                            "PGDATA",
-                            serde_json::Value::String(data_path.to_string()),
-                        );
-                    }
-                    if let Some(port_value) = data.get("port").and_then(|v| v.as_str()) {
-                        let _ = env_serv_data_manager.set_metadata(
-                            &environment_id,
-                            &mut service_data,
-                            "PGPORT",
-                            serde_json::Value::String(port_value.to_string()),
-                        );
-                    }
-                    if let Some(bind_address_value) =
-                        data.get("bindAddress").and_then(|v| v.as_str())
-                    {
-                        let _ = env_serv_data_manager.set_metadata(
-                            &environment_id,
-                            &mut service_data,
-                            "PGHOST",
-                            serde_json::Value::String(bind_address_value.to_string()),
-                        );
-                    }
-                    if let Some(super_password_value) =
-                        data.get("superPassword").and_then(|v| v.as_str())
-                    {
-                        let _ = env_serv_data_manager.set_metadata(
-                            &environment_id,
-                            &mut service_data,
-                            "POSTGRESQL_SUPER_PASSWORD",
-                            serde_json::Value::String(super_password_value.to_string()),
-                        );
-                    }
+                    let config_path = data
+                        .get("configPath")
+                        .and_then(|v| v.as_str())
+                        .map(ToString::to_string);
+                    let super_password = data
+                        .get("superPassword")
+                        .and_then(|v| v.as_str())
+                        .map(ToString::to_string);
+                    persist_postgresql_metadata(
+                        &environment_id,
+                        &mut service_data,
+                        config_path,
+                        super_password,
+                    )?;
                 }
                 Ok(CommandResponse::success(result.message, result.data))
             } else {

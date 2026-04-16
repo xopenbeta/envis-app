@@ -2,6 +2,7 @@ import { ServiceData } from "@/types/index";
 import { 
     ipcGetPostgresqlConfig,
     ipcSetPostgresqlDataPath,
+    ipcSetPostgresqlLogPath,
     ipcSetPostgresqlPort,
     ipcGetPostgresqlServiceStatus,
     ipcStartPostgresqlService,
@@ -99,6 +100,31 @@ export async function setPostgresqlDataPath(
             message: '设置失败'
         };
     }
+}
+
+/**
+ * 设置 PostgreSQL 日志路径
+ */
+export async function setPostgresqlLogPath(
+    environmentId: string,
+    serviceData: ServiceData,
+    logPath: string
+): Promise<{ success: boolean; message: string }> {
+    const res = { success: false, message: '设置 PostgreSQL 日志路径失败' };
+
+    try {
+        const ipcRes = await ipcSetPostgresqlLogPath(environmentId, serviceData, logPath);
+        if (ipcRes.success) {
+            res.success = true;
+            res.message = '设置 PostgreSQL 日志路径成功';
+        } else {
+            res.message = ipcRes.message || '设置 PostgreSQL 日志路径失败';
+        }
+    } catch (error) {
+        res.message = `设置 PostgreSQL 日志路径失败: ${error}`;
+    }
+
+    return res;
 }
 
 /**
@@ -330,6 +356,7 @@ export function usePostgresqlService() {
     return {
         getPostgresqlConfig,
         setPostgresqlDataPath,
+        setPostgresqlLogPath,
         setPostgresqlPort,
         getPostgresqlServiceStatus,
         startPostgresqlService,

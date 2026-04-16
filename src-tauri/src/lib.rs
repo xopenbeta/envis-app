@@ -307,6 +307,7 @@ pub fn run() {
             restart_postgresql_service,
             get_postgresql_service_status,
             set_postgresql_data_path,
+            set_postgresql_log_path,
             set_postgresql_port,
             initialize_postgresql,
             check_postgresql_initialized,

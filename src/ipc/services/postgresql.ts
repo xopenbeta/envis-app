@@ -43,6 +43,10 @@ export const ipcSetPostgresqlDataPath = ipcLogFunc('设置 PostgreSQL 数据目�
     return invokeCommand('set_postgresql_data_path', { environmentId, serviceData, dataPath })
 })
 
+export const ipcSetPostgresqlLogPath = ipcLogFunc('设置 PostgreSQL 日志路径', async (environmentId: string, serviceData: ServiceData, logPath: string): Promise<IPCResult> => {
+    return invokeCommand('set_postgresql_log_path', { environmentId, serviceData, logPath })
+})
+
 export const ipcSetPostgresqlPort = ipcLogFunc('设置 PostgreSQL 端口', async (environmentId: string, serviceData: ServiceData, port: number): Promise<IPCResult> => {
     return invokeCommand('set_postgresql_port', { environmentId, serviceData, port })
 })

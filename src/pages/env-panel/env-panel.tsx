@@ -48,7 +48,7 @@ function ServiceDetailRouter() {
     case ServiceType.Mongodb:
       return <MongoDBService serviceData={selectedServiceData} />
     case ServiceType.Postgresql:
-      return <PostgreSQLService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
+      return <PostgreSQLService serviceData={selectedServiceData} />
     case ServiceType.Python:
       return <PythonService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Java:
