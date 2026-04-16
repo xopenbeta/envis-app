@@ -29,36 +29,37 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Environment, ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
+import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
 import { useState, useEffect } from 'react'
+import { useAtom } from 'jotai'
+import { selectedEnvironmentIdAtom } from '../../../../store/environment'
 import { usePostgresqlService, PostgreSQLConfig, PostgreSQLRole, PostgreSQLGrant } from '@/hooks/services/postgresql'
 import { useFileOperations } from "@/hooks/file-operations"
 import { PostgreSQLMetadata } from "@/types/service"
-import { useEnvironmentServiceData } from "@/hooks/env-serv-data"
+import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
 
 interface PostgreSQLServiceProps {
   serviceData: ServiceData
-  selectedEnvironment: Environment
 }
 
-export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreSQLServiceProps) {
+export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
   const { openFolderInFinder } = useFileOperations()
+  const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
+
+  const isServiceActive = [ServiceDataStatus.Active].includes(serviceData.status)
 
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
   const [showInitDialog, setShowInitDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
 
-  const { serviceDataStatus } = useServiceDataStatus(selectedEnvironment.id, serviceData.id, {
-    enabled: true,
+  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
+    enabled: isServiceActive && Boolean(isInitialized),
     interval: 500,
   })
-
-  const isServiceActive = serviceDataStatus === ServiceDataStatus.Active
-
-  const { status: serviceStatus, refresh: refreshServiceStatus } = useServiceStatus(selectedEnvironment.id, serviceData, {
-    enabled: isServiceActive && Boolean(isInitialized),
+  const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+    enabled: true,
     interval: 500,
   })
 
@@ -83,6 +84,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     showTables?: boolean,
     showAllTables?: boolean,
   }>>([])
+  const [isLoadingDatabases, setIsLoadingDatabases] = useState(false)
   const [showAllDatabases, setShowAllDatabases] = useState(false)
   const [showCreateDbDialog, setShowCreateDbDialog] = useState(false)
   const [newDbName, setNewDbName] = useState('')
@@ -108,9 +110,6 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
   const {
     getPostgresqlConfig,
-    startPostgresqlService,
-    stopPostgresqlService,
-    restartPostgresqlService,
     initializePostgresql,
     checkPostgresqlInitialized,
     listPostgresqlDatabases,
@@ -124,6 +123,12 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
   } = usePostgresqlService()
 
   const {
+    startServiceData,
+    stopServiceData,
+    restartServiceData,
+  } = useServiceData()
+
+  const {
     updateServiceData,
     selectedServiceDatas,
   } = useEnvironmentServiceData()
@@ -134,7 +139,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     }
 
     updateServiceData({
-      environmentId: selectedEnvironment.id,
+      environmentId: selectedEnvironmentId,
       serviceId: serviceData.id,
       updates: { status: serviceDataStatus },
       serviceDatasSnapshot: selectedServiceDatas,
@@ -143,7 +148,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     })
   }, [
     serviceDataStatus,
-    selectedEnvironment.id,
+    selectedEnvironmentId,
     serviceData.id,
     serviceData.status,
     selectedServiceDatas,
@@ -192,7 +197,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
   const checkInitialized = async () => {
     try {
-      const result = await checkPostgresqlInitialized(selectedEnvironment.id, serviceData)
+      const result = await checkPostgresqlInitialized(selectedEnvironmentId, serviceData)
       if (result.success && result.data) {
         setIsInitialized(result.data.initialized)
       }
@@ -203,7 +208,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
   const loadPostgresqlConfig = async () => {
     try {
-      const result = await getPostgresqlConfig(selectedEnvironment.id, serviceData)
+      const result = await getPostgresqlConfig(selectedEnvironmentId, serviceData)
       if (result.success && result.config) {
         setPostgresqlConfig(result.config)
       }
@@ -218,8 +223,9 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
       return
     }
 
+    setIsLoadingDatabases(true)
     try {
-      const result = await listPostgresqlDatabases(selectedEnvironment.id, serviceData)
+      const result = await listPostgresqlDatabases(selectedEnvironmentId, serviceData)
       if (result.success && result.data?.databases) {
         setDatabases(prev => {
           const newDatabases = result.data!.databases.map((name: string) => {
@@ -237,6 +243,8 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
       }
     } catch (error) {
       console.error('加载 PostgreSQL 数据库列表失败:', error)
+    } finally {
+      setIsLoadingDatabases(false)
     }
   }
 
@@ -246,7 +254,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     ))
 
     try {
-      const result = await listPostgresqlTables(selectedEnvironment.id, serviceData, databaseName)
+      const result = await listPostgresqlTables(selectedEnvironmentId, serviceData, databaseName)
       if (result.success && result.data?.tables) {
         setDatabases(prev => prev.map(db =>
           db.name === databaseName
@@ -269,7 +277,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     }
 
     try {
-      const result = await listPostgresqlRoles(selectedEnvironment.id, serviceData)
+      const result = await listPostgresqlRoles(selectedEnvironmentId, serviceData)
       if (result.success && result.data?.roles) {
         setRoles(result.data.roles as PostgreSQLRole[])
       }
@@ -309,7 +317,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
     setIsCreatingDb(true)
     try {
-      const result = await createPostgresqlDatabase(selectedEnvironment.id, serviceData, newDbName)
+      const result = await createPostgresqlDatabase(selectedEnvironmentId, serviceData, newDbName)
       if (result.success) {
         toast.success('数据库创建成功')
         setShowCreateDbDialog(false)
@@ -334,7 +342,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
         database,
         privilege,
       }))
-      const result = await createPostgresqlRole(selectedEnvironment.id, serviceData, roleForm.roleName, roleForm.password, grants)
+      const result = await createPostgresqlRole(selectedEnvironmentId, serviceData, roleForm.roleName, roleForm.password, grants)
       if (result.success) {
         toast.success(`角色 '${roleForm.roleName}' 创建成功`)
         setShowCreateRoleDialog(false)
@@ -369,7 +377,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
         database,
         privilege,
       }))
-      const result = await updatePostgresqlRoleGrants(selectedEnvironment.id, serviceData, selectedRoleName, grants)
+      const result = await updatePostgresqlRoleGrants(selectedEnvironmentId, serviceData, selectedRoleName, grants)
       if (result.success) {
         toast.success(`角色 '${selectedRoleName}' 权限更新成功`)
         setShowEditRoleDialog(false)
@@ -389,7 +397,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
     setIsSubmittingRole(true)
     try {
-      const result = await deletePostgresqlRole(selectedEnvironment.id, serviceData, selectedRoleName)
+      const result = await deletePostgresqlRole(selectedEnvironmentId, serviceData, selectedRoleName)
       if (result.success) {
         toast.success(`角色 '${selectedRoleName}' 删除成功`)
         setShowDeleteRoleDialog(false)
@@ -409,7 +417,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
     setIsStarting(true)
     try {
-      const result = await startPostgresqlService(selectedEnvironment.id, serviceData)
+      const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务启动成功')
         void refreshServiceStatus()
@@ -428,7 +436,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
     setIsStopping(true)
     try {
-      const result = await stopPostgresqlService(selectedEnvironment.id, serviceData)
+      const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务已停止')
         void refreshServiceStatus()
@@ -447,7 +455,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
 
     setIsRestarting(true)
     try {
-      const result = await restartPostgresqlService(selectedEnvironment.id, serviceData)
+      const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务重启成功')
         void refreshServiceStatus()
@@ -475,7 +483,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
     setIsInitializing(true)
     try {
       const result = await initializePostgresql(
-        selectedEnvironment.id,
+        selectedEnvironmentId,
         serviceData,
         dialogData.superPassword,
         dialogData.port,
@@ -493,7 +501,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
         newMetadata.PGHOST = data.bindAddress
 
         await updateServiceData({
-          environmentId: selectedEnvironment.id,
+          environmentId: selectedEnvironmentId,
           serviceId: serviceData.id,
           updates: { metadata: newMetadata },
           serviceDatasSnapshot: selectedServiceDatas,
@@ -869,6 +877,32 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
                 </div>
               </div>
 
+              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">超级用户密码</Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={serviceData.metadata?.POSTGRESQL_SUPER_PASSWORD || '未设置'}
+                    readOnly
+                    className="h-8 text-xs shadow-none bg-muted cursor-not-allowed pr-10 border-gray-200 dark:border-white/10"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={!serviceData.metadata?.POSTGRESQL_SUPER_PASSWORD}
+                    className="absolute right-1 top-0 h-8 w-8 p-0 hover:bg-transparent"
+                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-3 w-3 text-gray-500" />
+                    ) : (
+                      <Eye className="h-3 w-3 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
               <div>
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
                 <div className="flex items-center gap-2 mt-1">
@@ -877,7 +911,7 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
                     size="sm"
                     onClick={async () => {
                       try {
-                        const result = await openPostgresqlClient(selectedEnvironment.id, serviceData)
+                        const result = await openPostgresqlClient(selectedEnvironmentId, serviceData)
                         if (result.success) {
                           toast.success('PostgreSQL 客户端已打开')
                         } else {
@@ -1026,7 +1060,9 @@ export function PostgreSQLService({ serviceData, selectedEnvironment }: PostgreS
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
-                  暂无数据库
+                  {isLoadingDatabases ? (
+                    <RefreshCw className="h-4 w-4 animate-spin mx-auto" />
+                  ) : '暂无数据库'}
                 </div>
               )}
             </div>
