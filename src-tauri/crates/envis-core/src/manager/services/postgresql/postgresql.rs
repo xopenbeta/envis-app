@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
-use std::path::PathBuf;
+use std::process::Command;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 /// PostgreSQL 版本信息
@@ -41,24 +42,16 @@ impl PostgresqlService {
     pub fn get_available_versions(&self) -> Vec<PostgresqlVersion> {
         vec![
             PostgresqlVersion {
-                version: "16.2".to_string(),
-                date: "2024-02-08".to_string(),
+                version: "17.4".to_string(),
+                date: "2026-04-17".to_string(),
             },
             PostgresqlVersion {
-                version: "15.6".to_string(),
-                date: "2024-02-08".to_string(),
+                version: "16.8".to_string(),
+                date: "2026-04-17".to_string(),
             },
             PostgresqlVersion {
-                version: "14.11".to_string(),
-                date: "2024-02-08".to_string(),
-            },
-            PostgresqlVersion {
-                version: "13.14".to_string(),
-                date: "2024-02-08".to_string(),
-            },
-            PostgresqlVersion {
-                version: "12.18".to_string(),
-                date: "2024-02-08".to_string(),
+                version: "15.12".to_string(),
+                date: "2026-04-17".to_string(),
             },
         ]
     }
@@ -66,12 +59,15 @@ impl PostgresqlService {
     /// 检查 PostgreSQL 是否已安装（判断 bin/postgres 是否存在）
     pub fn is_installed(&self, version: &str) -> bool {
         let install_path = self.get_install_path(version);
-        let postgres_binary = if cfg!(target_os = "windows") {
-            install_path.join("bin").join("postgres.exe")
-        } else {
-            install_path.join("bin").join("postgres")
-        };
-        postgres_binary.exists()
+        let bin_dir = install_path.join("bin");
+        [
+            Self::platform_binary_name("postgres"),
+            Self::platform_binary_name("initdb"),
+            Self::platform_binary_name("pg_ctl"),
+            Self::platform_binary_name("psql"),
+        ]
+        .iter()
+        .all(|name| bin_dir.join(name).exists())
     }
 
     fn get_install_path(&self, version: &str) -> PathBuf {
@@ -87,48 +83,70 @@ impl PostgresqlService {
         version.split('.').next().unwrap_or(version)
     }
 
+    fn apply_runtime_lib_env(cmd: &mut Command, install_path: &Path) {
+        let lib_dir = install_path.join("lib");
+        if !lib_dir.exists() {
+            return;
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            let key = "DYLD_LIBRARY_PATH";
+            let mut value = lib_dir.to_string_lossy().to_string();
+            if let Ok(existing) = std::env::var(key) {
+                if !existing.is_empty() {
+                    value.push(':');
+                    value.push_str(&existing);
+                }
+            }
+            cmd.env(key, value);
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            let key = "LD_LIBRARY_PATH";
+            let mut value = lib_dir.to_string_lossy().to_string();
+            if let Ok(existing) = std::env::var(key) {
+                if !existing.is_empty() {
+                    value.push(':');
+                    value.push_str(&existing);
+                }
+            }
+            cmd.env(key, value);
+        }
+    }
+
     /// 构建下载 URL 和文件名
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
-        let major_version = Self::major_version(version);
 
-        let (filename, mut urls) = match platform {
-            "macos" => {
-                let filename = format!("Postgres-2.9.4-{}.dmg", major_version);
-                let urls = vec![format!(
-                    "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.4/{}",
-                    filename
-                )];
-                (filename, urls)
-            }
-            "linux" => {
-                let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
-                let filename = format!("postgresql-{}-linux-{}.tar.gz", version, arch_str);
-                let urls = vec![format!(
-                    "https://get.enterprisedb.com/postgresql/postgresql-{}-linux-{}.tar.gz",
-                    version, arch_str
-                )];
-                (filename, urls)
-            }
-            "windows" => {
-                let arch_str = if arch == "x86_64" { "x64" } else { "x86" };
-                let filename = format!("postgresql-{}-windows-{}.zip", version, arch_str);
-                let urls = vec![format!(
-                    "https://get.enterprisedb.com/postgresql/postgresql-{}-windows-{}.zip",
-                    version, arch_str
-                )];
-                (filename, urls)
-            }
+        let platform_str = match platform {
+            "macos" => "macos",
+            "linux" => "linux",
+            "windows" => "windows",
             _ => return Err(anyhow!("不支持的操作系统: {}", platform)),
         };
 
-        if platform != "macos" {
-            urls.push(format!(
-                "https://mirrors.tuna.tsinghua.edu.cn/postgresql/binary/v{}/{}",
+        let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
+        let ext = if platform == "windows" { "zip" } else { "tar.gz" };
+        let filename = format!("postgresql-{}-{}-{}.{}", version, platform_str, arch_str, ext);
+        // 该仓库 release tag 可能不是语义版本号（例如时间戳），
+        // 优先使用 latest/download，避免因 tag 命名变化导致 404。
+        let urls = vec![
+            format!(
+                "https://github.com/xopenbeta/postgre-archive/releases/latest/download/{}",
+                filename
+            ),
+            format!(
+                "https://github.com/xopenbeta/postgre-archive/releases/download/{}/{}",
                 version, filename
-            ));
-        }
+            ),
+            format!(
+                "https://github.com/xopenbeta/postgre-archive/releases/download/v{}/{}",
+                version, filename
+            ),
+        ];
 
         Ok((urls, filename))
     }
@@ -227,8 +245,37 @@ impl PostgresqlService {
 
     /// 解压并安装 PostgreSQL
     pub async fn extract_and_install(&self, task: &DownloadTask, version: &str) -> Result<()> {
-        let archive_path = &task.target_path;
+        let mut archive_path = task.target_path.clone();
         let install_dir = self.get_install_path(version);
+
+        if !archive_path.exists() {
+            return Err(anyhow!("安装包不存在: {}", archive_path.to_string_lossy()));
+        }
+
+        // 下载文件与安装目录同级时，先转移安装包，避免清理安装目录时误删安装包。
+        if archive_path.starts_with(&install_dir) {
+            let temp_archive_path = std::env::temp_dir().join(format!(
+                "envis-postgresql-{}-{}-{}",
+                version,
+                std::process::id(),
+                task.filename
+            ));
+
+            if temp_archive_path.exists() {
+                let _ = std::fs::remove_file(&temp_archive_path);
+            }
+
+            match std::fs::rename(&archive_path, &temp_archive_path) {
+                Ok(_) => {}
+                Err(_) => {
+                    std::fs::copy(&archive_path, &temp_archive_path)?;
+                    std::fs::remove_file(&archive_path)?;
+                }
+            }
+
+            archive_path = temp_archive_path;
+        }
+
         if install_dir.exists() {
             std::fs::remove_dir_all(&install_dir)?;
         }
@@ -357,53 +404,10 @@ impl PostgresqlService {
             }
         }
 
-        // 查找 postgres 可执行文件并确保在 bin 目录
-        let mut found_postgres: Option<PathBuf> = None;
-        let candidate = install_dir
-            .join("bin")
-            .join(if cfg!(target_os = "windows") {
-                "postgres.exe"
-            } else {
-                "postgres"
-            });
-        if candidate.exists() {
-            found_postgres = Some(candidate);
-        } else {
-            for entry in walkdir::WalkDir::new(&install_dir)
-                .max_depth(4)
-                .into_iter()
-                .filter_map(|e| e.ok())
-            {
-                let p = entry.path();
-                if p.is_file() {
-                    if let Some(name) = p.file_name().and_then(|s| s.to_str()) {
-                        if name == "postgres" || name == "postgres.exe" {
-                            found_postgres = Some(p.to_path_buf());
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if let Some(postgres_path) = found_postgres {
-            let expected_bin = install_dir.join("bin");
-            std::fs::create_dir_all(&expected_bin)?;
-            let dest = expected_bin.join(postgres_path.file_name().unwrap());
-            if postgres_path != dest {
-                std::fs::rename(&postgres_path, &dest)?;
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                let mut perms = std::fs::metadata(&dest)?.permissions();
-                perms.set_mode(0o755);
-                std::fs::set_permissions(&dest, perms)?;
-            }
-        }
+        self.normalize_install_layout(&install_dir)?;
 
         if archive_path.exists() {
-            std::fs::remove_file(archive_path)?;
+            std::fs::remove_file(&archive_path)?;
         }
 
         Ok(())
@@ -543,11 +547,9 @@ impl PostgresqlService {
         }
 
         let data_dir = self.get_data_dir(service_data);
-        let output = create_command(&pg_ctl)
-            .arg("-D")
-            .arg(&data_dir)
-            .arg("status")
-            .output();
+        let mut cmd = create_command(&pg_ctl);
+        Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
+        let output = cmd.arg("-D").arg(&data_dir).arg("status").output();
 
         let running = match output {
             Ok(o) => o.status.success(),
@@ -608,13 +610,29 @@ impl PostgresqlService {
         if !self.is_initialized(service_data) {
             let initdb = self.get_initdb_bin(service_data);
             if !initdb.exists() {
-                return Err(anyhow!("initdb 可执行文件不存在"));
+                let bin_entries = self.list_bin_entries(service_data);
+                let details = if bin_entries.is_empty() {
+                    "(bin 目录为空或不存在)".to_string()
+                } else {
+                    bin_entries.join(", ")
+                };
+                return Err(anyhow!(
+                    "initdb 可执行文件不存在: {}，当前 bin 内容: {}",
+                    initdb.to_string_lossy(),
+                    details
+                ));
             }
 
-            let pw_file = data_dir.join(".postgresql_super_password");
+            let pw_file = std::env::temp_dir().join(format!(
+                "envis-postgresql-super-password-{}-{}",
+                std::process::id(),
+                chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+            ));
             fs::write(&pw_file, format!("{}\n", super_password))?;
 
-            let output = create_command(&initdb)
+            let mut cmd = create_command(&initdb);
+            Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
+            let output = cmd
                 .arg("-D")
                 .arg(&data_dir)
                 .arg("-U")
@@ -699,7 +717,9 @@ impl PostgresqlService {
         if let Some(log_dir) = log_path.parent() {
             fs::create_dir_all(log_dir)?;
         }
-        let output = create_command(&pg_ctl)
+        let mut cmd = create_command(&pg_ctl);
+        Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
+        let output = cmd
             .arg("-D")
             .arg(&data_dir)
             .arg("-l")
@@ -735,7 +755,9 @@ impl PostgresqlService {
         let data_dir = self.get_data_dir(service_data);
 
         if pg_ctl.exists() && data_dir.exists() {
-            let output = create_command(&pg_ctl)
+            let mut cmd = create_command(&pg_ctl);
+            Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
+            let output = cmd
                 .arg("-D")
                 .arg(&data_dir)
                 .arg("stop")
@@ -1280,6 +1302,130 @@ ORDER BY r.rolname, d.datname
             .to_string()
     }
 
+    fn platform_binary_name(base_name: &str) -> String {
+        if cfg!(target_os = "windows") {
+            format!("{}.exe", base_name)
+        } else {
+            base_name.to_string()
+        }
+    }
+
+    fn discover_bin_dir(install_dir: &Path) -> Option<PathBuf> {
+        let postgres_name = Self::platform_binary_name("postgres");
+        walkdir::WalkDir::new(install_dir)
+            .max_depth(6)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .find_map(|entry| {
+                let path = entry.path();
+                if !path.is_file() {
+                    return None;
+                }
+
+                let file_name = path.file_name().and_then(|v| v.to_str())?;
+                if file_name != postgres_name {
+                    return None;
+                }
+
+                path.parent().map(Path::to_path_buf)
+            })
+    }
+
+    fn copy_dir_recursive(from: &Path, to: &Path) -> Result<()> {
+        fs::create_dir_all(to)?;
+
+        for entry in walkdir::WalkDir::new(from)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            let src_path = entry.path();
+            let rel = src_path
+                .strip_prefix(from)
+                .map_err(|e| anyhow!("计算目录相对路径失败: {}", e))?;
+            let target = to.join(rel);
+
+            if src_path.is_dir() {
+                fs::create_dir_all(&target)?;
+                continue;
+            }
+
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::copy(src_path, &target)?;
+        }
+
+        Ok(())
+    }
+
+    fn ensure_bin_permissions(bin_dir: &Path) -> Result<()> {
+        #[cfg(not(target_os = "windows"))]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            for base in ["postgres", "initdb", "pg_ctl", "psql"] {
+                let file_path = bin_dir.join(base);
+                if !file_path.exists() {
+                    continue;
+                }
+
+                let mut perms = fs::metadata(&file_path)?.permissions();
+                perms.set_mode(0o755);
+                fs::set_permissions(&file_path, perms)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn normalize_install_layout(&self, install_dir: &Path) -> Result<()> {
+        let expected_bin = install_dir.join("bin");
+        if !expected_bin.exists() {
+            if let Some(found_bin) = Self::discover_bin_dir(install_dir) {
+                if found_bin != expected_bin {
+                    match fs::rename(&found_bin, &expected_bin) {
+                        Ok(_) => {}
+                        Err(_) => {
+                            Self::copy_dir_recursive(&found_bin, &expected_bin)?;
+                            fs::remove_dir_all(&found_bin)?;
+                        }
+                    }
+                }
+            }
+        }
+
+        fs::create_dir_all(&expected_bin)?;
+        Self::ensure_bin_permissions(&expected_bin)?;
+
+        let missing: Vec<String> = ["postgres", "initdb", "pg_ctl", "psql"]
+            .iter()
+            .map(|base| Self::platform_binary_name(base))
+            .filter(|name| !expected_bin.join(name).exists())
+            .collect();
+
+        if !missing.is_empty() {
+            return Err(anyhow!(
+                "PostgreSQL 安装不完整，缺少关键文件: {}",
+                missing.join(", ")
+            ));
+        }
+
+        Ok(())
+    }
+
+    fn list_bin_entries(&self, service_data: &ServiceData) -> Vec<String> {
+        let bin_dir = self.get_install_path(&service_data.version).join("bin");
+        let mut entries: Vec<String> = fs::read_dir(bin_dir)
+            .ok()
+            .into_iter()
+            .flatten()
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| entry.file_name().to_str().map(|v| v.to_string()))
+            .collect();
+        entries.sort();
+        entries
+    }
+
     fn get_initdb_bin(&self, service_data: &ServiceData) -> PathBuf {
         let install_path = self.get_install_path(&service_data.version);
         if cfg!(target_os = "windows") {
@@ -1363,6 +1509,7 @@ ORDER BY r.rolname, d.datname
         let super_password = self.get_super_password(service_data);
 
         let mut cmd = create_command(&psql);
+        Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
         cmd.arg("-h")
             .arg(&host)
             .arg("-p")

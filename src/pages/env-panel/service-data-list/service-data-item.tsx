@@ -175,7 +175,7 @@ export function SortableServiceItem({
 
   // 删除服务
   const onDeleteBtnClick = async (serviceData: ServiceData) => {
-    if ([ServiceDataStatus.Active].includes(serviceDataStatus)) {
+    if (serviceDataStatus === ServiceDataStatus.Active) {
       toast.error(t('service_item.delete_active_error'))
       return
     }
@@ -474,7 +474,7 @@ export function SortableServiceItem({
                 <span className="text-xs text-muted-foreground ml-2">{serviceData.version}</span>
               )}
             </span>
-            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", serviceData.status === 'active' ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
+            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", serviceDataStatus === ServiceDataStatus.Active ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
               {/* 服务状态 */}
               <StatusView />
               {/* 下载进度展示区域 */}

@@ -40,6 +40,12 @@ impl ServiceLifecycle for HostService {
             .transpose()?
             .unwrap_or_default();
 
+        // 如果 hosts 列表为空，说明当前环境没有配置 host 服务，不执行任何操作
+        if hosts.is_empty() {
+            log::info!("环境未配置 host 服务，跳过 host 管理操作");
+            return Ok(());
+        }
+
         let host_manager = HostManager::global();
         let host_manager = host_manager
             .lock()
@@ -47,13 +53,9 @@ impl ServiceLifecycle for HostService {
 
         #[cfg(target_os = "windows")]
         {
-            if hosts.is_empty() {
-                host_manager.clear_hosts("").context("清空 hosts 失败")?;
-            } else {
-                host_manager
-                    .add_hosts(hosts.clone(), "")
-                    .context("添加 hosts 失败")?;
-            }
+            host_manager
+                .add_hosts(hosts.clone(), "")
+                .context("添加 hosts 失败")?;
         }
 
         #[cfg(not(target_os = "windows"))]
@@ -62,13 +64,9 @@ impl ServiceLifecycle for HostService {
                 .as_deref()
                 .ok_or_else(|| anyhow!("needAdminPasswordToModifyHosts"))?;
 
-            if hosts.is_empty() {
-                host_manager.clear_hosts(pwd).context("清空 hosts 失败")?;
-            } else {
-                host_manager
-                    .add_hosts(hosts.clone(), pwd)
-                    .context("添加 hosts 失败")?;
-            }
+            host_manager
+                .add_hosts(hosts.clone(), pwd)
+                .context("添加 hosts 失败")?;
         }
 
         log::info!("Host 服务已应用，条目数: {}", hosts.len());
@@ -79,11 +77,24 @@ impl ServiceLifecycle for HostService {
     fn deactive(
         &self,
         _environment_id: &str,
-        _service_data: &ServiceData,
+        service_data: &ServiceData,
         password: Option<String>,
     ) -> Result<()> {
         #[cfg(target_os = "windows")]
         let _ = &password;
+
+        // 检查当前环境是否配置了 host 服务
+        let has_host_service = service_data
+            .metadata
+            .as_ref()
+            .and_then(|metadata| metadata.get("hosts"))
+            .is_some();
+
+        // 如果当前环境没有配置 host 服务，不执行清空操作
+        if !has_host_service {
+            log::info!("环境未配置 host 服务，跳过 host 清空操作");
+            return Ok(());
+        }
 
         let host_manager = HostManager::global();
         let host_manager = host_manager

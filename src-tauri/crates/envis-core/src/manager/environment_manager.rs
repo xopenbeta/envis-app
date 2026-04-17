@@ -338,7 +338,8 @@ impl EnvironmentManager {
         {
             if let Err(e) = self.clear_hosts_block(password.clone()) {
                 log::error!("激活环境时清理遗留 hosts 失败: {}", e);
-                activation_failures.push(format!("Hosts 管理: {}", e));
+                // host修改可能需要权限，因此即使失败了就不展示信息了
+                // activation_failures.push(format!("Hosts 管理: {}", e));
             }
         }
 
