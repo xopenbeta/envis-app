@@ -40,26 +40,26 @@ impl PostgresqlService {
     /// 获取可用的 PostgreSQL 版本列表
     pub fn get_available_versions(&self) -> Vec<PostgresqlVersion> {
         vec![
-            // PostgresqlVersion {
-            //     version: "16.2".to_string(),
-            //     date: "2024-02-08".to_string(),
-            // },
-            // PostgresqlVersion {
-            //     version: "15.6".to_string(),
-            //     date: "2024-02-08".to_string(),
-            // },
-            // PostgresqlVersion {
-            //     version: "14.11".to_string(),
-            //     date: "2024-02-08".to_string(),
-            // },
-            // PostgresqlVersion {
-            //     version: "13.14".to_string(),
-            //     date: "2024-02-08".to_string(),
-            // },
-            // PostgresqlVersion {
-            //     version: "12.18".to_string(),
-            //     date: "2024-02-08".to_string(),
-            // },
+            PostgresqlVersion {
+                version: "16.2".to_string(),
+                date: "2024-02-08".to_string(),
+            },
+            PostgresqlVersion {
+                version: "15.6".to_string(),
+                date: "2024-02-08".to_string(),
+            },
+            PostgresqlVersion {
+                version: "14.11".to_string(),
+                date: "2024-02-08".to_string(),
+            },
+            PostgresqlVersion {
+                version: "13.14".to_string(),
+                date: "2024-02-08".to_string(),
+            },
+            PostgresqlVersion {
+                version: "12.18".to_string(),
+                date: "2024-02-08".to_string(),
+            },
         ]
     }
 
@@ -83,21 +83,22 @@ impl PostgresqlService {
         services_folder.join("postgresql").join(version)
     }
 
+    fn major_version(version: &str) -> &str {
+        version.split('.').next().unwrap_or(version)
+    }
+
     /// 构建下载 URL 和文件名
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
+        let major_version = Self::major_version(version);
 
-        // PostgreSQL 官方提供二进制包，通常从 https://www.postgresql.org/download/ 或 EDB 获取
-        // 这里简化处理，使用常见的命名约定
         let (filename, mut urls) = match platform {
             "macos" => {
-                // macOS 通常使用 .dmg 或 .zip，这里假设使用 tar.gz
-                let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
-                let filename = format!("postgresql-{}-macos-{}.tar.gz", version, arch_str);
+                let filename = format!("Postgres-2.9.4-{}.dmg", major_version);
                 let urls = vec![format!(
-                    "https://get.enterprisedb.com/postgresql/postgresql-{}-macos-{}.tar.gz",
-                    version, arch_str
+                    "https://github.com/PostgresApp/PostgresApp/releases/download/v2.9.4/{}",
+                    filename
                 )];
                 (filename, urls)
             }
@@ -122,11 +123,12 @@ impl PostgresqlService {
             _ => return Err(anyhow!("不支持的操作系统: {}", platform)),
         };
 
-        // 添加镜像源
-        urls.push(format!(
-            "https://mirrors.tuna.tsinghua.edu.cn/postgresql/binary/v{}/{}",
-            version, filename
-        ));
+        if platform != "macos" {
+            urls.push(format!(
+                "https://mirrors.tuna.tsinghua.edu.cn/postgresql/binary/v{}/{}",
+                version, filename
+            ));
+        }
 
         Ok((urls, filename))
     }
@@ -227,6 +229,9 @@ impl PostgresqlService {
     pub async fn extract_and_install(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);
+        if install_dir.exists() {
+            std::fs::remove_dir_all(&install_dir)?;
+        }
         std::fs::create_dir_all(&install_dir)?;
 
         if task.filename.ends_with(".tar.gz") || task.filename.ends_with(".tgz") {
@@ -259,6 +264,96 @@ impl PostgresqlService {
                     "解压失败: {}",
                     String::from_utf8_lossy(&output.stderr)
                 ));
+            }
+        } else if task.filename.ends_with(".dmg") {
+            #[cfg(target_os = "macos")]
+            {
+                let mount_dir = std::env::temp_dir().join(format!(
+                    "envis-postgresql-{}-mount-{}",
+                    version,
+                    std::process::id()
+                ));
+                if mount_dir.exists() {
+                    std::fs::remove_dir_all(&mount_dir)?;
+                }
+                std::fs::create_dir_all(&mount_dir)?;
+
+                let attach_output = create_command("hdiutil")
+                    .args(&[
+                        "attach",
+                        "-nobrowse",
+                        "-readonly",
+                        "-mountpoint",
+                        &mount_dir.to_string_lossy(),
+                        &archive_path.to_string_lossy(),
+                    ])
+                    .output()?;
+
+                if !attach_output.status.success() {
+                    let _ = std::fs::remove_dir_all(&mount_dir);
+                    return Err(anyhow!(
+                        "挂载 dmg 失败: {}",
+                        String::from_utf8_lossy(&attach_output.stderr)
+                    ));
+                }
+
+                let copy_result = (|| -> Result<()> {
+                    let app_path = walkdir::WalkDir::new(&mount_dir)
+                        .max_depth(2)
+                        .into_iter()
+                        .filter_map(|entry| entry.ok())
+                        .find_map(|entry| {
+                            let path = entry.path();
+                            (path.is_dir()
+                                && path.file_name().and_then(|name| name.to_str()) == Some("Postgres.app"))
+                                .then(|| path.to_path_buf())
+                        })
+                        .ok_or_else(|| anyhow!("dmg 中未找到 Postgres.app"))?;
+
+                    let version_dir = app_path
+                        .join("Contents")
+                        .join("Versions")
+                        .join(Self::major_version(version));
+
+                    if !version_dir.exists() {
+                        return Err(anyhow!(
+                            "Postgres.app 中未找到 PostgreSQL {} 二进制目录",
+                            Self::major_version(version)
+                        ));
+                    }
+
+                    let copy_output = create_command("ditto")
+                        .arg(&version_dir)
+                        .arg(&install_dir)
+                        .output()?;
+
+                    if !copy_output.status.success() {
+                        return Err(anyhow!(
+                            "复制 PostgreSQL 文件失败: {}",
+                            String::from_utf8_lossy(&copy_output.stderr)
+                        ));
+                    }
+
+                    Ok(())
+                })();
+
+                let detach_output = create_command("hdiutil")
+                    .args(&["detach", &mount_dir.to_string_lossy(), "-force"])
+                    .output()?;
+                if !detach_output.status.success() {
+                    log::warn!(
+                        "卸载 PostgreSQL dmg 失败: {}",
+                        String::from_utf8_lossy(&detach_output.stderr)
+                    );
+                }
+                let _ = std::fs::remove_dir_all(&mount_dir);
+
+                copy_result?;
+            }
+
+            #[cfg(not(target_os = "macos"))]
+            {
+                return Err(anyhow!("当前平台不支持安装 dmg 包"));
             }
         }
 

@@ -47,19 +47,37 @@ export function WelcomeFragment({ onOpen }: {
     const [networkError, setNetworkError] = useState(false);
 
     useEffect(() => {
-        // 只检测一次
-        fetch("https://www.google.com/generate_204", { method: "GET", mode: "no-cors" })
+        let isActive = true;
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => {
+            if (!isActive) return;
+            setNetworkError(true);
+            controller.abort();
+        }, 5000);
+
+        fetch("https://www.google.com/generate_204", {
+            method: "GET",
+            mode: "no-cors",
+            signal: controller.signal,
+        })
             .then(() => {
+                if (!isActive) return;
                 setNetworkError(false);
             })
-            .catch(() => {
+            .catch((error: unknown) => {
+                if (!isActive) return;
+                if (error instanceof Error && error.name === "AbortError") return;
                 setNetworkError(true);
+            })
+            .finally(() => {
+                window.clearTimeout(timeoutId);
             });
-        // 兼容部分网络环境下fetch不抛异常但依然无法访问google的情况
-        setTimeout(() => {
-            // 如果5秒后依然没有响应，判定为网络不畅通
-            setNetworkError((prev) => prev || true);
-        }, 5000);
+
+        return () => {
+            isActive = false;
+            window.clearTimeout(timeoutId);
+            controller.abort();
+        };
     }, []);
 
     return (
