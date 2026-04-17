@@ -131,6 +131,11 @@ impl ServiceType {
         }
     }
 
+    /// 判断该服务类型是否需要下载安装（Custom、Host、SSL 不需要）
+    pub fn needs_download(&self) -> bool {
+        !matches!(self, ServiceType::Custom | ServiceType::Host | ServiceType::SSL)
+    }
+
     pub fn default_name(&self) -> String {
         match self {
             ServiceType::Redis => "Redis".to_string(),

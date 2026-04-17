@@ -379,6 +379,34 @@ impl EnvServDataManager {
         service_data: &mut ServiceData,
         password: Option<String>,
     ) -> Result<ServiceDataResult> {
+        // 需要下载安装的服务，若安装目录不存在则静默跳过，保持 Inactive 状态
+        if service_data.service_type.needs_download() {
+            let app_config_manager = AppConfigManager::global();
+            let services_folder = {
+                let manager = app_config_manager.lock().unwrap();
+                manager.get_services_folder()
+            };
+            let service_folder = Path::new(&services_folder)
+                .join(service_data.service_type.dir_name())
+                .join(&service_data.version);
+            if !service_folder.exists() {
+                log::info!(
+                    "服务 {} {} 未安装（目录不存在: {:?}），跳过激活",
+                    service_data.name,
+                    service_data.version,
+                    service_folder
+                );
+                return Ok(ServiceDataResult {
+                    success: true,
+                    message: format!(
+                        "服务 {} {} 未安装，已跳过激活",
+                        service_data.name, service_data.version
+                    ),
+                    data: None,
+                });
+            }
+        }
+
         let handler: Arc<dyn ServiceLifecycle> = match service_data.service_type {
             ServiceType::Host => HostService::global(),
             ServiceType::Custom => CustomService::global(),

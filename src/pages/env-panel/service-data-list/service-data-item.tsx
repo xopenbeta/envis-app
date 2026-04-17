@@ -175,6 +175,7 @@ export function SortableServiceItem({
 
   // 删除服务
   const onDeleteBtnClick = async (serviceData: ServiceData) => {
+    console.log('zws 删除服务:', serviceDataStatus)
     if (serviceDataStatus === ServiceDataStatus.Active) {
       toast.error(t('service_item.delete_active_error'))
       return
