@@ -40,12 +40,6 @@ impl ServiceLifecycle for HostService {
             .transpose()?
             .unwrap_or_default();
 
-        // 如果 hosts 列表为空，说明当前环境没有配置 host 服务，不执行任何操作
-        if hosts.is_empty() {
-            log::info!("环境未配置 host 服务，跳过 host 管理操作");
-            return Ok(());
-        }
-
         let host_manager = HostManager::global();
         let host_manager = host_manager
             .lock()
@@ -62,7 +56,7 @@ impl ServiceLifecycle for HostService {
         {
             let pwd = password
                 .as_deref()
-                .ok_or_else(|| anyhow!("needAdminPasswordToModifyHosts"))?;
+                .ok_or_else(|| anyhow!("密码错误"))?;
 
             host_manager
                 .add_hosts(hosts.clone(), pwd)
@@ -108,7 +102,7 @@ impl ServiceLifecycle for HostService {
         {
             let pwd = password
                 .as_deref()
-                .ok_or_else(|| anyhow!("needAdminPasswordToModifyHosts"))?;
+                .ok_or_else(|| anyhow!("密码错误"))?;
             host_manager.clear_hosts(pwd).context("清空 hosts 失败")?;
         }
 

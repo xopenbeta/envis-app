@@ -54,25 +54,6 @@ impl EnvironmentManager {
         Self {}
     }
 
-    fn clear_hosts_block(&self, password: Option<String>) -> Result<()> {
-        let host_manager = HostManager::global();
-        let host_manager = host_manager.lock().unwrap();
-
-        #[cfg(target_os = "windows")]
-        {
-            let _ = &password;
-            host_manager.clear_hosts("")
-        }
-
-        #[cfg(not(target_os = "windows"))]
-        {
-            let pwd = password
-                .as_deref()
-                .ok_or_else(|| anyhow!("needAdminPasswordToModifyHosts"))?;
-            host_manager.clear_hosts(pwd)
-        }
-    }
-
     /// 获取所有环境
     pub fn get_all_environments(&self) -> Result<Vec<Environment>> {
         let envs_folder = {
@@ -332,17 +313,6 @@ impl EnvironmentManager {
         let env_serv_data_manager_instance = EnvServDataManager::global();
         let mut activation_failures = Vec::new();
 
-        if !service_datas
-            .iter()
-            .any(|service_data| service_data.service_type == ServiceType::Host)
-        {
-            if let Err(e) = self.clear_hosts_block(password.clone()) {
-                log::error!("激活环境时清理遗留 hosts 失败: {}", e);
-                // host修改可能需要权限，因此即使失败了就不展示信息了
-                // activation_failures.push(format!("Hosts 管理: {}", e));
-            }
-        }
-
         for service_data in &mut service_datas {
             let env_serv_data_manager = env_serv_data_manager_instance.lock().unwrap();
             if let Err(e) = env_serv_data_manager.active_service_data(
@@ -429,16 +399,6 @@ impl EnvironmentManager {
             ) {
                 log::error!("停用服务 {} 失败: {}", service_data.name, e);
                 deactivation_failures.push(format!("{}: {}", service_data.name, e));
-            }
-        }
-
-        if !service_datas
-            .iter()
-            .any(|service_data| service_data.service_type == ServiceType::Host)
-        {
-            if let Err(e) = self.clear_hosts_block(password.clone()) {
-                log::error!("停用环境时清理遗留 hosts 失败: {}", e);
-                deactivation_failures.push(format!("Hosts 管理: {}", e));
             }
         }
 

@@ -101,10 +101,7 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
   const [editingEnvironment, setEditingEnvironment] = useState<Environment | null>(null)
-  const [pendingEnvironment, setPendingEnvironment] = useState<Environment | null>(null)
-  const [password, setPassword] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [envInfoFormData, setEnvInfoFormData] = useState({ name: '' })
   const isEnvNameComposingRef = useRef(false)
@@ -141,51 +138,18 @@ export default function NavBar({ onClose }: NavBarProps) {
     await switchEnvAndServDatas(environment)
   }
 
-  const executeEnvironmentToggle = async (environment: Environment, passwordOverride?: string) => {
+  // 激活/停用环境
+  const onActiveEnvBtnClick = async (environment: Environment) => {
     const res = await switchEnvAndServDatasWithActive({
       environment,
       environmentsSnapshot: [...environments],
-      passwordOverride,
+      passwordOverride: '',
     })
 
     if (res?.success === false) {
-      if (res.message?.includes('密码错误')) {
-        setPendingEnvironment(environment)
-        setPassword('')
-        setIsPasswordDialogOpen(true)
-        toast.error('密码错误，请重新输入')
-        return
-      }
-
-      if (res.message?.includes('needAdminPasswordToModifyHosts')) {
-        setPendingEnvironment(environment)
-        setPassword('')
-        setIsPasswordDialogOpen(true)
-        return
-      }
-
       toast.error(res.message || '环境切换失败')
       return
     }
-
-    setPendingEnvironment(null)
-    setPassword('')
-  }
-
-  // 激活/停用环境
-  const onActiveEnvBtnClick = async (environment: Environment) => {
-    await executeEnvironmentToggle(environment)
-  }
-
-  const handlePasswordConfirm = async () => {
-    if (!password.trim() || !pendingEnvironment) {
-      toast.error('请输入密码')
-      return
-    }
-
-    const targetEnvironment = pendingEnvironment
-    setIsPasswordDialogOpen(false)
-    await executeEnvironmentToggle(targetEnvironment, password.trim())
   }
 
   // 删除环境
@@ -631,52 +595,6 @@ export default function NavBar({ onClose }: NavBarProps) {
             </Button>
             <Button onClick={onDialogSaveEnvBtnClick}>
               {editingEnvironment ? t('nav_bar.save') : t('nav_bar.create')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>需要管理员权限</DialogTitle>
-            <DialogDescription>
-              当前环境切换需要修改系统 hosts 文件，请输入管理员密码。
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <Label htmlFor="environment-password">密码</Label>
-            <Input
-              id="environment-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  void handlePasswordConfirm()
-                }
-              }}
-              placeholder="输入系统密码"
-              className="shadow-none"
-              autoFocus
-            />
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className='shadow-none'
-              onClick={() => {
-                setIsPasswordDialogOpen(false)
-                setPassword('')
-                setPendingEnvironment(null)
-              }}
-            >
-              {t('nav_bar.cancel')}
-            </Button>
-            <Button onClick={() => void handlePasswordConfirm()}>
-              确认
             </Button>
           </DialogFooter>
         </DialogContent>

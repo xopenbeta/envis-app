@@ -57,6 +57,13 @@ import { useFileOperations } from '@/hooks/file-operations'
 import { useEnvironment } from '@/hooks/environment'
 import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/service-pollers'
 
+type PasswordProtectedActionResult = {
+  success?: boolean
+  message?: string
+}
+
+type PasswordProtectedAction = (password: string) => Promise<PasswordProtectedActionResult | undefined>
+
 export interface ServiceDownloadProgress {
   serviceType: ServiceType;
   version: string;
@@ -122,6 +129,8 @@ export function SortableServiceItem({
   const [renameLoading, setRenameLoading] = useState(false)
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [password, setPassword] = useState('')
+  // 记录密码输入，pendingPasswordAction 这东西是一个函数。。。
+  const [pendingPasswordAction, setPendingPasswordAction] = useState<PasswordProtectedAction | null>(null)
   const { systemSettings } = useAppSettings();
   const { openFolderInFinder } = useFileOperations();
   const {
@@ -135,22 +144,6 @@ export function SortableServiceItem({
     id: serviceData.id,
     disabled: !isDragEnabled
   });
-
-  // 激活环境并启动所有服务
-  const handleActivateEnvironmentAndStartServices = async () => {
-    if (!selectedEnvironment) return
-    try {
-      await switchEnvAndServDatasWithActive({
-        environment: selectedEnvironment,
-        environmentsSnapshot: [...environments],
-      });
-    } catch (error) {
-      console.error('环境操作失败:', error)
-      toast.error(t('service_item.env_op_error'))
-    } finally {
-      setShowEnvironmentActivationDialog(false)
-    }
-  }
 
   // 打开服务文件夹
   const handleOpenFolder = () => {
@@ -200,92 +193,102 @@ export function SortableServiceItem({
       return
     }
 
-    // 乐观更新：先保存当前状态
-    const previousStatus = serviceDataStatus;
     const isCurrentlyActive = serviceDataStatus === ServiceDataStatus.Active;
 
-    try {
-      // 乐观更新：立即切换状态，让用户感觉响应快
-      setServiceDataStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
+    const password = sessionStorage.getItem('envis_sudo_password') || '';
+    await toggleServiceData(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active, password)
+  }
 
-      if (isCurrentlyActive) {
-        // 停用服务
-        const res = await deactivateServiceData(selectedEnvironment.id, serviceData)
-        
-        if (!res?.success) {
-          // 回滚状态
-          setServiceDataStatus(previousStatus);
-          // 严格根据后端返回的错误信息判断是否是权限问题
-          if (serviceData.type === ServiceType.Host && res?.message?.includes('needAdminPasswordToModifyHosts')) {
-            setShowPasswordDialog(true)
-            return
-          }
-          toast.error(t('service_item.stop_error', { message: res?.message || t('common.unknown_error') }))
-        } else {
-          toast.success(t('service_item.stop_success'))
+  const toggleServiceData = async (targetStatus: ServiceDataStatus, passwordOverride?: string) => {
+    if (!selectedEnvironment) {
+      return { success: false, message: t('service_item.toggle_error') }
+    }
+
+    const previousStatus = serviceDataStatus;
+    const isTargetActive = targetStatus === ServiceDataStatus.Active;
+
+    try {
+      setServiceDataStatus(targetStatus);
+
+      const res = isTargetActive
+        ? await activateServiceData(selectedEnvironment.id, serviceData, passwordOverride)
+        : await deactivateServiceData(selectedEnvironment.id, serviceData, passwordOverride)
+
+      if (!res?.success) {
+        setServiceDataStatus(previousStatus);
+
+        if (serviceData.type === ServiceType.Host && res?.message?.includes('密码错误')) {
+          showPasswordDialogWithData((nextPassword) => toggleServiceData(targetStatus, nextPassword))
+          return res
         }
-      } else {
-        // 激活/启动服务
-        const res = await activateServiceData(selectedEnvironment.id, serviceData)
-        
-        if (!res?.success) {
-          // 回滚状态
-          setServiceDataStatus(previousStatus);
-          // 严格根据后端返回的错误信息判断是否是权限问题
-          if (serviceData.type === ServiceType.Host && res?.message?.includes('needAdminPasswordToModifyHosts')) {
-            setShowPasswordDialog(true)
-            return
-          }
-          toast.error(t('service_item.start_error', { message: res?.message || t('common.unknown_error') }))
-        } else {
-          toast.success(t('service_item.start_success'))
-        }
+
+        toast.error(t(isTargetActive ? 'service_item.start_error' : 'service_item.stop_error', {
+          message: res?.message || t('common.unknown_error')
+        }))
+        return res
       }
+
+      if (passwordOverride) {
+        sessionStorage.setItem('envis_sudo_password', passwordOverride)
+      }
+
+      setPendingPasswordAction(null)
+      setPassword('')
+      toast.success(t(isTargetActive ? 'service_item.start_success' : 'service_item.stop_success'))
+      return res
     } catch (err) {
-      // 回滚状态
       setServiceDataStatus(previousStatus);
       console.error('切换服务状态失败:', err)
       toast.error(t('service_item.toggle_error'))
+      return { success: false, message: t('service_item.toggle_error') }
     }
   }
 
-  const handlePasswordConfirm = async () => {
-    if (!password.trim() || !selectedEnvironment) return;
-    
-    // 乐观更新：先保存当前状态
-    const previousStatus = serviceDataStatus;
-    const isCurrentlyActive = serviceDataStatus === ServiceDataStatus.Active;
-    
-    setShowPasswordDialog(false);
-    
-    try {
-      // 乐观更新：立即切换状态
-      setServiceDataStatus(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active);
-      
-      const res = isCurrentlyActive
-        ? await deactivateServiceData(selectedEnvironment.id, serviceData, password)
-        : await activateServiceData(selectedEnvironment.id, serviceData, password);
+  // 激活环境并启动所有服务
+  const showPasswordDialogWithData = (action: PasswordProtectedAction) => {
+    setPendingPasswordAction(() => action)
+    setPassword('')
+    setShowPasswordDialog(true)
+  }
 
-      if (res?.success) {
-        sessionStorage.setItem('envis_sudo_password', password);
-        toast.success(isCurrentlyActive ? t('service_item.stop_success') : t('service_item.start_success'));
-      } else {
-        // 回滚状态
-        setServiceDataStatus(previousStatus);
-        toast.error(t(isCurrentlyActive ? 'service_item.stop_error' : 'service_item.start_error', { message: res?.message || t('common.unknown_error') }));
-        // 如果是因为密码错误，可能需要再次弹窗，这里暂时只提示错误
-        if (res?.message?.includes('密码')) {
-             // 可以选择再次打开弹窗
-             // setShowPasswordDialog(true);
-        }
-      }
+  const handlePasswordConfirm = async () => {
+    if (!password.trim() || !pendingPasswordAction) {
+      toast.error('请输入密码')
+      return
+    }
+
+    const currentAction = pendingPasswordAction
+    setShowPasswordDialog(false)
+
+    try {
+      await currentAction(password.trim())
     } catch (err) {
-      // 回滚状态
-      setServiceDataStatus(previousStatus);
-      console.error('带密码操作服务失败:', err);
-      toast.error(t('service_item.operation_error'));
+      console.error('带密码操作服务失败:', err)
+      toast.error(t('service_item.operation_error'))
     } finally {
-      setPassword('');
+      setPassword('')
+    }
+  }
+
+  const activeEnvironmentAndStartServices = async () => {
+    if (!selectedEnvironment) return
+    const passwordOverride = sessionStorage.getItem('envis_sudo_password') || '';
+    try {
+      const result = await switchEnvAndServDatasWithActive({
+        environment: selectedEnvironment,
+        environmentsSnapshot: [...environments],
+        passwordOverride,
+      })
+
+      if (result?.success === false) {
+        toast.error(result.message || t('service_item.env_op_error'))
+        return result
+      }
+    } catch (error) {
+      console.error('环境操作失败:', error)
+      toast.error(t('service_item.env_op_error'))
+    } finally {
+      setShowEnvironmentActivationDialog(false)
     }
   }
 
@@ -357,7 +360,7 @@ export function SortableServiceItem({
           downloadStr = t('service_item.download_status.unknown');
           break;
       }
-      
+
       return (
         <span
           className={cn(
@@ -622,7 +625,7 @@ export function SortableServiceItem({
             }}>
               {t('common.cancel')}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleActivateEnvironmentAndStartServices}>
+            <AlertDialogAction onClick={activeEnvironmentAndStartServices}>
               {t('service_item.activate_env_confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -698,6 +701,7 @@ export function SortableServiceItem({
             <AlertDialogCancel onClick={() => {
               setShowPasswordDialog(false);
               setPassword('');
+              setPendingPasswordAction(null)
             }}>
               {t('common.cancel')}
             </AlertDialogCancel>
