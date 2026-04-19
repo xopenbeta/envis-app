@@ -94,6 +94,22 @@ pub fn run() {
                                                   // Host 管理器延迟初始化，在第一次调用时自动创建
                                                   // let _ = initialize_host_manager();
 
+            // Windows: 在后台线程将 .envis 和 PowerShell profile 目录加入 Defender 排除列表
+            // 避免 Windows Defender 扫描文件读写导致 IPC 调用阻塞数秒
+            #[cfg(target_os = "windows")]
+            {
+                use envis_core::manager::app_config_manager::AppConfigManager;
+                // 读取 envis_folder 路径（克隆字符串，避免借用问题）
+                let envis_folder = AppConfigManager::global()
+                    .lock()
+                    .ok()
+                    .map(|m| m.get_app_config().envis_folder)
+                    .unwrap_or_default();
+                std::thread::spawn(move || {
+                    setup_windows_defender_exclusions(&envis_folder);
+                });
+            }
+
             log::info!("GUI 模式启动成功");
 
             // 设置系统托盘
@@ -411,4 +427,57 @@ pub fn run() {
         }
         _ => {}
     });
+}
+
+/// Windows 专用：将 .envis 目录及 PowerShell profile 目录加入 Defender 排除列表。
+/// 在后台线程调用，不影响启动速度。
+/// Add-MpPreference 是幂等的，重复添加同一路径无副作用。
+#[cfg(target_os = "windows")]
+fn setup_windows_defender_exclusions(envis_folder: &str) {
+    use std::process::Command;
+
+    let mut paths: Vec<String> = vec![];
+
+    // .envis 目录
+    if !envis_folder.is_empty() {
+        paths.push(envis_folder.to_string());
+    }
+
+    // PowerShell 5（Windows PowerShell）profile 目录
+    if let Some(docs) = dirs::document_dir() {
+        paths.push(docs.join("WindowsPowerShell").to_string_lossy().to_string());
+        // PowerShell 7+ profile 目录
+        paths.push(docs.join("PowerShell").to_string_lossy().to_string());
+    }
+
+    // 用单条 PowerShell 命令一次性添加所有路径
+    let exclusion_cmds: Vec<String> = paths
+        .iter()
+        .filter(|p| !p.is_empty())
+        .map(|p| format!("Add-MpPreference -ExclusionPath '{}'", p.replace('\'', "''")))
+        .collect();
+
+    if exclusion_cmds.is_empty() {
+        return;
+    }
+
+    let script = exclusion_cmds.join("; ");
+    log::info!("【Defender】正在添加排除项: {:?}", paths);
+
+    match Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script])
+        .output()
+    {
+        Ok(output) if output.status.success() => {
+            log::info!("【Defender】排除项添加成功，文件读写不再被扫描");
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            // 权限不足时静默跳过（非管理员用户无法修改 Defender 设置）
+            log::warn!("【Defender】添加排除项失败（可能需要管理员权限）: {}", stderr.trim());
+        }
+        Err(e) => {
+            log::warn!("【Defender】执行 PowerShell 失败: {}", e);
+        }
+    }
 }
