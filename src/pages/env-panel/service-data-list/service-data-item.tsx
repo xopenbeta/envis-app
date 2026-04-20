@@ -168,8 +168,9 @@ export function SortableServiceItem({
 
   // 删除服务
   const onDeleteBtnClick = async (serviceData: ServiceData) => {
-    console.log('zws 删除服务:', serviceDataStatus)
-    if (serviceDataStatus === ServiceDataStatus.Active) {
+    // 需要下载但尚未安装的服务，可以直接删除，无需检查激活状态
+    const isNotInstalled = isNeedDownload && downloadStatus !== DownloadStatus.Installed;
+    if (!isNotInstalled && serviceDataStatus === ServiceDataStatus.Active) {
       toast.error(t('service_item.delete_active_error'))
       return
     }

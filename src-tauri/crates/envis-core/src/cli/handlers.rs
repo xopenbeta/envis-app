@@ -78,7 +78,13 @@ pub fn handle_use_early(target_str: &str) {
         // 4. 激活目标环境
         match manager.activate_environment_and_services(&mut target_env, None) {
             Ok(res) => {
-                if res.success {
+                // 环境本身已激活（即使部分服务启动失败），均视为成功并持久化记录
+                // 这样 shell wrapper 能正常执行 source，刷新环境变量
+                let activated = res.success || res.message.contains("环境已激活");
+                if activated {
+                    if !res.success {
+                        eprintln!("警告: {}", res.message);
+                    }
                     let active_environment_ids =
                         collect_active_environment_ids(&manager, &target_env.id);
                     if let Err(e) = persist_last_used_environment_ids(active_environment_ids) {
