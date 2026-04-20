@@ -252,23 +252,23 @@ pub struct UpdateServiceDataRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandResponse {
     pub success: bool,
-    pub msg: String,
+    pub message: String,
     pub data: Option<Value>,
 }
 
 impl CommandResponse {
-    pub fn success(msg: String, data: Option<Value>) -> Self {
+    pub fn success(message: String, data: Option<Value>) -> Self {
         Self {
             success: true,
-            msg,
+            message,
             data,
         }
     }
 
-    pub fn error(msg: String) -> Self {
+    pub fn error(message: String) -> Self {
         Self {
             success: false,
-            msg,
+            message,
             data: None,
         }
     }

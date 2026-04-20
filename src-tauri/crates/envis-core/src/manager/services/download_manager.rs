@@ -454,8 +454,8 @@ impl DownloadManager {
 
         if let Some(task) = tasks.get_mut(id) {
             task.status = status;
-            if let Some(msg) = error_message {
-                task.error_message = Some(msg);
+            if let Some(message) = error_message {
+                task.error_message = Some(message);
             }
             Ok(())
         } else {

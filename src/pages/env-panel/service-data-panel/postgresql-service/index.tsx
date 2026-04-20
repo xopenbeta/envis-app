@@ -157,9 +157,10 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
   useEffect(() => {
     if (isServiceActive) {
-      checkInitialized()
+      void checkInitialized()
+      return
     }
-  }, [isServiceActive])
+  }, [isServiceActive, selectedEnvironmentId, serviceData.id, serviceData.version])
 
   useEffect(() => {
     if (isServiceActive && isInitialized) {
@@ -200,9 +201,14 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       const result = await checkPostgresqlInitialized(selectedEnvironmentId, serviceData)
       if (result.success && result.data) {
         setIsInitialized(result.data.initialized)
+        return
       }
+
+      // 检查失败或返回空数据时，按未初始化处理，避免首屏无法出现初始化卡片。
+      setIsInitialized(false)
     } catch (error) {
       console.error('检查 PostgreSQL 初始化状态失败:', error)
+      setIsInitialized(false)
     }
   }
 
@@ -512,7 +518,19 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         toast.error(result.message || 'PostgreSQL 初始化失败')
       }
     } catch (error) {
-      toast.error('初始化失败: ' + error)
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message?: unknown }).message || '未知错误')
+            : String(error)
+
+      console.error('初始化 PostgreSQL 失败:', {
+        environmentId: selectedEnvironmentId,
+        serviceId: serviceData.id,
+        error,
+      })
+      toast.error('初始化失败: ' + errorMessage)
     } finally {
       setIsInitializing(false)
     }

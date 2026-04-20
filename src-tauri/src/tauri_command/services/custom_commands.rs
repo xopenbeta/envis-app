@@ -158,7 +158,7 @@ pub async fn execute_custom_service_alias(
                 );
                 Ok(CommandResponse {
                     success: false,
-                    msg: format!("命令执行失败 ({}): 退出码 {}", alias_name, exit_code),
+                    message: format!("命令执行失败 ({}): 退出码 {}", alias_name, exit_code),
                     data: Some(serde_json::json!({
                         "stdout": stdout,
                         "stderr": stderr,

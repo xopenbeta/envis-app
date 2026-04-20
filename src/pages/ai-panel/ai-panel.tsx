@@ -256,9 +256,9 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       // 准备消息历史
       const messages = [
         { role: 'system', content: systemPrompt },
-        ...chatMessages.map(msg => ({
-          role: msg.role,
-          content: msg.content
+        ...chatMessages.map(message => ({
+          role: message.role,
+          content: message.content
         })),
         { role: 'user', content: userMessage }
       ]

@@ -464,11 +464,11 @@ impl PostgresqlService {
     ) -> Result<ServiceDataResult> {
         let status_res = self.get_service_status(environment_id, service_data)?;
         let status_data = status_res.data.unwrap_or_else(|| serde_json::json!({}));
-        let data_dir = self.get_data_dir(service_data);
-        let config_path = self.get_config_path(service_data);
-        let log_path = self.get_log_path(service_data);
-        let port = self.get_port(service_data);
-        let bind_ip = self.get_host(service_data);
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
+        let config_path = self.get_config_path_with_env(environment_id, service_data);
+        let log_path = self.get_log_path_with_env(environment_id, service_data);
+        let port = self.get_port_with_env(environment_id, service_data);
+        let bind_ip = self.get_host_with_env(environment_id, service_data);
         let is_running = status_data
             .get("isRunning")
             .and_then(|v| v.as_bool())
@@ -534,7 +534,7 @@ impl PostgresqlService {
     /// 获取 PostgreSQL 服务运行状态
     pub fn get_service_status(
         &self,
-        _environment_id: &str,
+        environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let pg_ctl = self.get_pg_ctl_bin(service_data);
@@ -546,7 +546,7 @@ impl PostgresqlService {
             });
         }
 
-        let data_dir = self.get_data_dir(service_data);
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
         let mut cmd = create_command(&pg_ctl);
         Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
         let output = cmd.arg("-D").arg(&data_dir).arg("status").output();
@@ -567,10 +567,10 @@ impl PostgresqlService {
     /// 检查 PostgreSQL 是否已初始化
     pub fn check_initialized(
         &self,
-        _environment_id: &str,
+        environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
-        let initialized = self.is_initialized(service_data);
+        let initialized = self.is_initialized_with_env(environment_id, service_data);
         Ok(ServiceDataResult {
             success: true,
             message: if initialized {
@@ -585,7 +585,7 @@ impl PostgresqlService {
     /// 初始化 PostgreSQL（支持 reset）
     pub fn initialize_service(
         &self,
-        _environment_id: &str,
+        environment_id: &str,
         service_data: &ServiceData,
         super_password: String,
         port: Option<String>,
@@ -596,18 +596,30 @@ impl PostgresqlService {
             return Err(anyhow!("超级用户密码不能为空"));
         }
 
-        let data_dir = self.get_data_dir(service_data);
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
+        let config_path = self.get_config_path_with_env(environment_id, service_data);
+
+        log::info!(
+            "开始初始化 PostgreSQL: env={}, service_id={}, version={}, reset={}, data_dir={}, config_path={}",
+            environment_id,
+            service_data.id,
+            service_data.version,
+            reset,
+            data_dir.to_string_lossy(),
+            config_path.to_string_lossy()
+        );
 
         if reset {
             let _ = self.stop_service("", service_data);
             if data_dir.exists() {
+                log::info!("重置模式清理数据目录: {}", data_dir.to_string_lossy());
                 fs::remove_dir_all(&data_dir)?;
             }
         }
 
         fs::create_dir_all(&data_dir)?;
 
-        if !self.is_initialized(service_data) {
+        if !self.is_initialized_with_env(environment_id, service_data) {
             let initdb = self.get_initdb_bin(service_data);
             if !initdb.exists() {
                 let bin_entries = self.list_bin_entries(service_data);
@@ -646,30 +658,59 @@ impl PostgresqlService {
             let _ = fs::remove_file(&pw_file);
 
             if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                log::error!(
+                    "PostgreSQL initdb 失败: env={}, version={}, data_dir={}, stdout={}, stderr={}",
+                    environment_id,
+                    service_data.version,
+                    data_dir.to_string_lossy(),
+                    stdout,
+                    stderr
+                );
                 return Err(anyhow!(
                     "初始化 PostgreSQL 失败: {}",
-                    String::from_utf8_lossy(&output.stderr)
+                    stderr
                 ));
             }
+
+            log::info!(
+                "PostgreSQL initdb 完成: env={}, version={}, data_dir={}",
+                environment_id,
+                service_data.version,
+                data_dir.to_string_lossy()
+            );
         }
 
         let final_port = port
             .and_then(|v| v.parse::<u16>().ok())
-            .unwrap_or_else(|| self.get_port(service_data) as u16);
-        let final_bind = bind_address.unwrap_or_else(|| self.get_host(service_data));
+            .unwrap_or_else(|| self.get_port_with_env(environment_id, service_data) as u16);
+        let final_bind = bind_address.unwrap_or_else(|| self.get_host_with_env(environment_id, service_data));
 
-        let config_path = self.get_config_path(service_data);
-        let final_log_path = self.get_log_path(service_data);
+        let final_log_path = self.get_log_path_with_env(environment_id, service_data);
         if let Some(log_dir) = final_log_path.parent() {
             fs::create_dir_all(log_dir)?;
         }
 
         self.update_postgresql_conf(&config_path, final_port, &final_bind, &final_log_path)?;
 
-        let start_res = self.start_service("", service_data)?;
+        let start_res = self.start_service(environment_id, service_data)?;
         if !start_res.success {
+            log::error!(
+                "PostgreSQL 初始化后启动失败: env={}, version={}, message={}",
+                environment_id,
+                service_data.version,
+                start_res.message
+            );
             return Ok(start_res);
         }
+
+        log::info!(
+            "PostgreSQL 初始化成功: env={}, version={}, data_dir={}",
+            environment_id,
+            service_data.version,
+            data_dir.to_string_lossy()
+        );
 
         Ok(ServiceDataResult {
             success: true,
@@ -692,7 +733,7 @@ impl PostgresqlService {
     /// 启动 PostgreSQL 服务
     pub fn start_service(
         &self,
-        _environment_id: &str,
+        environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let pg_ctl = self.get_pg_ctl_bin(service_data);
@@ -704,8 +745,8 @@ impl PostgresqlService {
             });
         }
 
-        let data_dir = self.get_data_dir(service_data);
-        if !self.is_initialized(service_data) {
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
+        if !self.is_initialized_with_env(environment_id, service_data) {
             return Ok(ServiceDataResult {
                 success: false,
                 message: "PostgreSQL 尚未初始化，请先初始化".to_string(),
@@ -713,7 +754,7 @@ impl PostgresqlService {
             });
         }
 
-        let log_path = self.get_log_path(service_data);
+        let log_path = self.get_log_path_with_env(environment_id, service_data);
         if let Some(log_dir) = log_path.parent() {
             fs::create_dir_all(log_dir)?;
         }
@@ -748,11 +789,11 @@ impl PostgresqlService {
     /// 停止 PostgreSQL 服务
     pub fn stop_service(
         &self,
-        _environment_id: &str,
+        environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let pg_ctl = self.get_pg_ctl_bin(service_data);
-        let data_dir = self.get_data_dir(service_data);
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
 
         if pg_ctl.exists() && data_dir.exists() {
             let mut cmd = create_command(&pg_ctl);
@@ -1193,27 +1234,49 @@ ORDER BY r.rolname, d.datname
         })
     }
 
-    fn is_initialized(&self, service_data: &ServiceData) -> bool {
-        self.get_data_dir(service_data).join("PG_VERSION").exists()
+    fn get_service_data_folder(&self, environment_id: &str, service_data: &ServiceData) -> PathBuf {
+        if environment_id.trim().is_empty() {
+            return self.get_install_path(&service_data.version);
+        }
+
+        let app_config_manager = AppConfigManager::global();
+        let app_config_manager = app_config_manager.lock().unwrap();
+        let envs_folder = app_config_manager.get_envs_folder();
+
+        PathBuf::from(envs_folder)
+            .join(environment_id)
+            .join("postgresql")
+            .join(&service_data.version)
     }
 
-    fn get_default_data_dir(&self, service_data: &ServiceData) -> PathBuf {
-        self.get_install_path(&service_data.version).join("data")
+    fn is_initialized_with_env(&self, environment_id: &str, service_data: &ServiceData) -> bool {
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
+        let config_path = self.get_config_path_with_env(environment_id, service_data);
+        data_dir.join("PG_VERSION").exists() && config_path.exists()
     }
 
-    fn get_config_path(&self, service_data: &ServiceData) -> PathBuf {
+    fn get_default_data_dir_with_env(&self, environment_id: &str, service_data: &ServiceData) -> PathBuf {
+        self.get_service_data_folder(environment_id, service_data).join("data")
+    }
+
+    fn get_config_path_with_env(&self, environment_id: &str, service_data: &ServiceData) -> PathBuf {
         service_data
             .metadata
             .as_ref()
             .and_then(|m| m.get("POSTGRESQL_CONFIG"))
             .and_then(|v| v.as_str())
             .map(PathBuf::from)
-            .unwrap_or_else(|| self.get_default_data_dir(service_data).join("postgresql.conf"))
+            .unwrap_or_else(|| self.get_default_data_dir_with_env(environment_id, service_data).join("postgresql.conf"))
     }
 
-    fn read_config_content(&self, service_data: &ServiceData) -> Option<String> {
-        fs::read_to_string(self.get_config_path(service_data)).ok()
+    fn get_config_path(&self, service_data: &ServiceData) -> PathBuf {
+        self.get_config_path_with_env("", service_data)
     }
+
+    fn read_config_content_with_env(&self, environment_id: &str, service_data: &ServiceData) -> Option<String> {
+        fs::read_to_string(self.get_config_path_with_env(environment_id, service_data)).ok()
+    }
+
 
     fn parse_config_value(content: &str, key: &str) -> Option<String> {
         let mut result = None;
@@ -1240,33 +1303,41 @@ ORDER BY r.rolname, d.datname
         result
     }
 
-    fn get_data_dir(&self, service_data: &ServiceData) -> PathBuf {
-        let config_path = self.get_config_path(service_data);
+    fn get_data_dir_with_env(&self, environment_id: &str, service_data: &ServiceData) -> PathBuf {
+        let config_path = self.get_config_path_with_env(environment_id, service_data);
         if let Some(parent) = config_path.parent() {
             return parent.to_path_buf();
         }
 
-        self.get_default_data_dir(service_data)
+        self.get_default_data_dir_with_env(environment_id, service_data)
     }
 
-    fn get_port(&self, service_data: &ServiceData) -> i64 {
-        self.read_config_content(service_data)
+    fn get_port_with_env(&self, environment_id: &str, service_data: &ServiceData) -> i64 {
+        self.read_config_content_with_env(environment_id, service_data)
             .as_deref()
             .and_then(|content| Self::parse_config_value(content, "port"))
             .and_then(|value| value.parse::<i64>().ok())
             .unwrap_or(5432)
     }
 
-    fn get_host(&self, service_data: &ServiceData) -> String {
-        self.read_config_content(service_data)
+    fn get_port(&self, service_data: &ServiceData) -> i64 {
+        self.get_port_with_env("", service_data)
+    }
+
+    fn get_host_with_env(&self, environment_id: &str, service_data: &ServiceData) -> String {
+        self.read_config_content_with_env(environment_id, service_data)
             .as_deref()
             .and_then(|content| Self::parse_config_value(content, "listen_addresses"))
             .unwrap_or_else(|| "127.0.0.1".to_string())
     }
 
-    fn get_log_path(&self, service_data: &ServiceData) -> PathBuf {
-        let data_dir = self.get_data_dir(service_data);
-        if let Some(content) = self.read_config_content(service_data) {
+    fn get_host(&self, service_data: &ServiceData) -> String {
+        self.get_host_with_env("", service_data)
+    }
+
+    fn get_log_path_with_env(&self, environment_id: &str, service_data: &ServiceData) -> PathBuf {
+        let data_dir = self.get_data_dir_with_env(environment_id, service_data);
+        if let Some(content) = self.read_config_content_with_env(environment_id, service_data) {
             let log_directory = Self::parse_config_value(&content, "log_directory");
             let log_filename = Self::parse_config_value(&content, "log_filename")
                 .unwrap_or_else(|| "postgresql.log".to_string());
@@ -1290,6 +1361,10 @@ ORDER BY r.rolname, d.datname
         }
 
         data_dir.join("postgresql.log")
+    }
+
+    fn get_log_path(&self, service_data: &ServiceData) -> PathBuf {
+        self.get_log_path_with_env("", service_data)
     }
 
     fn get_super_password(&self, service_data: &ServiceData) -> String {
