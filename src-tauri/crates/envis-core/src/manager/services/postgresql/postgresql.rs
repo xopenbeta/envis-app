@@ -7,8 +7,8 @@ use anyhow::{anyhow, Result};
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs::{self, File, OpenOptions};
+use std::io::{copy, Write};
 use std::process::Command;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
@@ -298,19 +298,34 @@ impl PostgresqlService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = create_command("unzip")
-                .args(&[
-                    "-q",
-                    &archive_path.to_string_lossy(),
-                    "-d",
-                    &install_dir.to_string_lossy(),
-                ])
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "解压失败: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                ));
+            use zip::ZipArchive;
+
+            let file = File::open(&archive_path)?;
+            let mut archive = ZipArchive::new(file)?;
+
+            for index in 0..archive.len() {
+                let mut entry = archive.by_index(index)?;
+                let out_path = install_dir.join(entry.mangled_name());
+
+                if entry.name().ends_with('/') {
+                    fs::create_dir_all(&out_path)?;
+                    continue;
+                }
+
+                if let Some(parent) = out_path.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+
+                let mut out_file = File::create(&out_path)?;
+                copy(&mut entry, &mut out_file)?;
+
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    if let Some(mode) = entry.unix_mode() {
+                        fs::set_permissions(&out_path, fs::Permissions::from_mode(mode))?;
+                    }
+                }
             }
         } else if task.filename.ends_with(".dmg") {
             #[cfg(target_os = "macos")]
@@ -490,10 +505,21 @@ impl PostgresqlService {
     }
 
     /// 设置数据目录
-    pub fn set_data_path(&self, _service_data: &mut ServiceData, data_path: &str) -> Result<()> {
-        if data_path.trim().is_empty() {
+    pub fn set_data_path(&self, service_data: &mut ServiceData, data_path: &str) -> Result<()> {
+        let data_path = data_path.trim();
+        if data_path.is_empty() {
             return Err(anyhow!("数据目录不能为空"));
         }
+
+        let data_dir = PathBuf::from(data_path);
+        fs::create_dir_all(&data_dir)?;
+
+        let config_path = data_dir.join("postgresql.conf");
+        let metadata = service_data.metadata.get_or_insert_with(HashMap::new);
+        metadata.insert(
+            "POSTGRESQL_CONFIG".to_string(),
+            Value::String(config_path.to_string_lossy().to_string()),
+        );
 
         Ok(())
     }
@@ -506,7 +532,7 @@ impl PostgresqlService {
 
         let config_path = self.get_config_path(service_data);
         let bind_address = self.get_host(service_data);
-        let log_path = self.get_log_path(service_data);
+        let log_path = self.get_log_path("", service_data);
         self.update_postgresql_conf(&config_path, port as u16, &bind_address, &log_path)?;
 
         Ok(())
@@ -610,7 +636,7 @@ impl PostgresqlService {
         );
 
         if reset {
-            let _ = self.stop_service("", service_data);
+            let _ = self.stop_service(environment_id, service_data);
             if data_dir.exists() {
                 log::info!("重置模式清理数据目录: {}", data_dir.to_string_lossy());
                 fs::remove_dir_all(&data_dir)?;
@@ -1573,8 +1599,8 @@ ORDER BY r.rolname, d.datname
             .unwrap_or(&default_dir)
             .to_string_lossy()
             .replace('\'', "");
-        let conf_patch = format!(
-            "\n# Envis managed settings\nlisten_addresses = '{}'\nport = {}\nlog_destination = 'stderr'\nlogging_collector = on\nlog_directory = '{}'\nlog_filename = '{}'\n",
+        let managed_block = format!(
+            "# Envis managed settings\nlisten_addresses = '{}'\nport = {}\nlog_destination = 'stderr'\nlogging_collector = on\nlog_directory = '{}'\nlog_filename = '{}'\n",
             bind_address.replace('\'', ""),
             port,
             log_dir,
@@ -1588,11 +1614,75 @@ ORDER BY r.rolname, d.datname
             fs::create_dir_all(parent)?;
         }
 
+        let existing = fs::read_to_string(&conf_path).unwrap_or_default();
+        let managed_marker = "# Envis managed settings";
+        let mut retained_lines: Vec<String> = Vec::new();
+        let mut skip_managed = false;
+
+        for line in existing.lines() {
+            let trimmed = line.trim_start();
+            if trimmed.starts_with(managed_marker) {
+                skip_managed = true;
+                continue;
+            }
+
+            if skip_managed {
+                if trimmed.is_empty() {
+                    skip_managed = false;
+                    continue;
+                }
+
+                if trimmed.starts_with('#') {
+                    skip_managed = false;
+                    retained_lines.push(line.to_string());
+                    continue;
+                }
+
+                if let Some((lhs, _)) = trimmed.split_once('=') {
+                    let key = lhs.trim();
+                    let managed_keys = [
+                        "listen_addresses",
+                        "port",
+                        "log_destination",
+                        "logging_collector",
+                        "log_directory",
+                        "log_filename",
+                    ];
+
+                    if managed_keys.contains(&key) {
+                        continue;
+                    }
+                }
+
+                skip_managed = false;
+                retained_lines.push(line.to_string());
+                continue;
+            }
+
+            retained_lines.push(line.to_string());
+        }
+
+        while retained_lines.last().is_some_and(|line| line.trim().is_empty()) {
+            retained_lines.pop();
+        }
+
+        let mut next_content = if retained_lines.is_empty() {
+            String::new()
+        } else {
+            retained_lines.join("\n")
+        };
+
+        if !next_content.is_empty() {
+            next_content.push_str("\n\n");
+        }
+        next_content.push_str(&managed_block);
+
         let mut file = OpenOptions::new()
             .create(true)
-            .append(true)
+            .write(true)
+            .truncate(true)
             .open(conf_path)?;
-        file.write_all(conf_patch.as_bytes())?;
+        file.write_all(next_content.as_bytes())?;
         Ok(())
     }
 

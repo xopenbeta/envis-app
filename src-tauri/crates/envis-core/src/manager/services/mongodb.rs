@@ -587,7 +587,7 @@ impl MongodbService {
         Ok(())
     }
 
-    /// 解压并安装 MongoDB，示例实现：对 tgz 使用 tar 解压，对 zip 使用 unzip
+    /// 解压并安装 MongoDB，示例实现：对 tgz 使用 tar 解压，对 zip 使用 Rust zip 库
     pub async fn extract_and_install(&self, task: &DownloadTask, version: &str) -> Result<()> {
         let archive_path = &task.target_path;
         let install_dir = self.get_install_path(version);

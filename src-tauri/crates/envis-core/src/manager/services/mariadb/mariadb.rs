@@ -5,6 +5,8 @@ use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::copy;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
@@ -278,19 +280,37 @@ impl MariadbService {
                 ));
             }
         } else if task.filename.ends_with(".zip") {
-            let output = create_command("unzip")
-                .args(&[
-                    "-q",
-                    &archive_path.to_string_lossy(),
-                    "-d",
-                    &install_dir.to_string_lossy(),
-                ])
-                .output()?;
-            if !output.status.success() {
-                return Err(anyhow!(
-                    "解压失败: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                ));
+            use zip::ZipArchive;
+
+            let file = File::open(archive_path)?;
+            let mut archive = ZipArchive::new(file)?;
+
+            for index in 0..archive.len() {
+                let mut entry = archive.by_index(index)?;
+                let outpath = install_dir.join(entry.mangled_name());
+
+                if entry.name().ends_with('/') {
+                    std::fs::create_dir_all(&outpath)?;
+                    continue;
+                }
+
+                if let Some(parent) = outpath.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+
+                let mut outfile = File::create(&outpath)?;
+                copy(&mut entry, &mut outfile)?;
+
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    if let Some(mode) = entry.unix_mode() {
+                        std::fs::set_permissions(
+                            &outpath,
+                            std::fs::Permissions::from_mode(mode),
+                        )?;
+                    }
+                }
             }
         }
 
