@@ -582,7 +582,16 @@ impl PostgresqlService {
             Err(_) => false,
         };
 
-        let data = serde_json::json!({ "isRunning": running });
+        let status = if running {
+            crate::types::ServiceStatus::Running
+        } else {
+            crate::types::ServiceStatus::Stopped
+        };
+
+        let data = serde_json::json!({ 
+            "isRunning": running,
+            "status": status
+        });
         Ok(ServiceDataResult {
             success: true,
             message: "获取状态成功".to_string(),

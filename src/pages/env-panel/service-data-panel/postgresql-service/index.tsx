@@ -892,32 +892,6 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">超级用户密码</Label>
-                <div className="relative mt-1">
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    value={serviceData.metadata?.POSTGRESQL_SUPER_PASSWORD || '未设置'}
-                    readOnly
-                    className="h-8 text-xs shadow-none bg-muted cursor-not-allowed pr-10 border-gray-200 dark:border-white/10"
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={!serviceData.metadata?.POSTGRESQL_SUPER_PASSWORD}
-                    className="absolute right-1 top-0 h-8 w-8 p-0 hover:bg-transparent"
-                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-3 w-3 text-gray-500" />
-                    ) : (
-                      <Eye className="h-3 w-3 text-gray-500" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
               <div>
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
                 <div className="flex items-center gap-2 mt-1">
