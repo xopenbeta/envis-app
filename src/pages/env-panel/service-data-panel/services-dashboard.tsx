@@ -183,7 +183,7 @@ export function ServicesDashboard() {
               {customServiceAliases.map((alias, index) => (
                 <div
                   key={`${alias.serviceName}-${alias.aliasName}-${index}`}
-                  className="group relative rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 transition-all duration-200"
+                  className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
                 >
                   <TooltipProvider>
                     <Tooltip>
