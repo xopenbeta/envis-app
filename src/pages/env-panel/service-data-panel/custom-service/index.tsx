@@ -9,6 +9,7 @@ import { PathConfigView } from './PathConfigView'
 import { EnvironmentVariablesView } from './EnvironmentVariablesView'
 import { AliasesConfigView } from './AliasesConfigView'
 import { AutoChdirView } from './AutoChdirView'
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 
 interface CustomServiceProps {
     serviceData: ServiceData
@@ -16,8 +17,11 @@ interface CustomServiceProps {
 }
 
 export function CustomService({ serviceData, selectedEnvironment }: CustomServiceProps) {
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
-
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironment.id, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    
     return (
         <div className="w-full p-3 space-y-4">
             {/* Path Configuration */}
