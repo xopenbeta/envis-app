@@ -39,10 +39,11 @@ interface NodeServiceCardProps {
 
 function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCardProps) {
     const { t } = useTranslation()
-    const { setNpmRegistry, setConfigPrefix, getGlobalPackages, installGlobalPackage, checkVersionManagers } = useNodejsService()
+    const { setNpmRegistry, setConfigPrefix, setPnpmHome, getGlobalPackages, installGlobalPackage, checkVersionManagers } = useNodejsService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const [registry, setRegistry] = useState('')
     const [prefix, setPrefix] = useState('')
+    const [pnpmHome, setPnpmHomeState] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [globalPackages, setGlobalPackages] = useState<Array<{ name: string, version: string }>>([])
     const [isLoadingPackages, setIsLoadingPackages] = useState(false)
@@ -56,6 +57,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     useEffect(() => {
         setRegistry(serviceData.metadata?.NPM_CONFIG_REGISTRY || '')
         setPrefix(serviceData.metadata?.NPM_CONFIG_PREFIX || '')
+        setPnpmHomeState(serviceData.metadata?.PNPM_HOME || '')
 
         // 如果服务激活，自动加载全局包列表
         if (isServiceDataActive) {
@@ -153,6 +155,29 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 toast.success(t('node_service.prefix_set_success'))
             } else {
                 toast.error(t('node_service.prefix_set_failed'))
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const applyPnpmHome = async (val: string) => {
+        try {
+            setIsLoading(true)
+            const res = await setPnpmHome(selectedEnvironmentId, serviceData, val)
+            if (res && (res as any).success) {
+                const newMetadata = { ...(serviceData.metadata || {}) }
+                newMetadata['PNPM_HOME'] = val
+                await updateServiceData({
+                    environmentId: selectedEnvironmentId,
+                    serviceId: serviceData.id,
+                    updates: { metadata: newMetadata },
+                    serviceDatasSnapshot: selectedServiceDatas,
+                })
+                setPnpmHomeState(val)
+                toast.success(t('node_service.pnpm_home_set_success'))
+            } else {
+                toast.error(t('node_service.pnpm_home_set_failed'))
             }
         } finally {
             setIsLoading(false)
@@ -296,6 +321,47 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             size="sm"
                             variant="outline"
                             onClick={() => applyPrefix(prefix)}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        >
+                            {t('node_service.apply')}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* PNPM_HOME Configuration */}
+                <div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    PNPM_HOME
+                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                </Label>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                    <div>{t('node_service.pnpm_home_current')}</div>
+                                    <div>{t('node_service.pnpm_home_set')}</div>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                        {t('node_service.pnpm_home_tooltip')}
+                    </p>
+                    <div className="flex items-center space-x-2">
+                        <Input
+                            value={pnpmHome}
+                            onChange={(e) => setPnpmHomeState(e.target.value)}
+                            placeholder={t('node_service.pnpm_home_placeholder')}
+                            disabled={isLoading || !isServiceDataActive}
+                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        />
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => applyPnpmHome(pnpmHome)}
                             disabled={isLoading || !isServiceDataActive}
                             className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >

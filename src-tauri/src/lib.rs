@@ -174,6 +174,7 @@ pub fn run() {
             // npm 配置命令
             set_npm_registry,
             set_npm_config_prefix,
+            set_pnpm_home,
             get_global_npm_packages,
             install_global_npm_package,
             // Java 服务命令

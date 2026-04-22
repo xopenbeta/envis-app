@@ -1,5 +1,5 @@
 import { ServiceData } from "@/types/index";
-import { ipcCheckPackageManagers, ipcCheckVersionManagers, ipcGetNpmConfig, ipcSetNpmConfigPrefix, ipcSetNpmRegistry, ipcGetGlobalNpmPackages, ipcInstallGlobalNpmPackage } from "../../ipc/services/nodejs";
+import { ipcCheckPackageManagers, ipcCheckVersionManagers, ipcGetNpmConfig, ipcSetNpmConfigPrefix, ipcSetNpmRegistry, ipcGetGlobalNpmPackages, ipcInstallGlobalNpmPackage, ipcSetPnpmHome } from "../../ipc/services/nodejs";
 
 export function useNodejsService() {
     async function checkVersionManagers() {
@@ -20,6 +20,12 @@ export function useNodejsService() {
         return ipcRes;
     }
 
+    async function setPnpmHome(environmentId: string, serviceData: ServiceData, pnpmHome: string) {
+        const ipcRes = await ipcSetPnpmHome(environmentId, serviceData, pnpmHome);
+        console.log(`[hooks/nodejs] setPnpmHome IPC 响应:`, ipcRes);
+        return ipcRes;
+    }
+
     async function getGlobalPackages(serviceData: ServiceData) {
         const ipcRes = await ipcGetGlobalNpmPackages(serviceData);
         console.log(`[hooks/nodejs] getGlobalPackages IPC 响应:`, ipcRes);
@@ -36,6 +42,7 @@ export function useNodejsService() {
         checkVersionManagers,
         setNpmRegistry,
         setConfigPrefix,
+        setPnpmHome,
         getGlobalPackages,
         installGlobalPackage
     }

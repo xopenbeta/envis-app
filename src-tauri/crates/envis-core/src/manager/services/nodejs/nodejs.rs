@@ -593,6 +593,30 @@ impl NodejsService {
             shell_manager.add_export("NPM_CONFIG_REGISTRY", registry)?;
         }
 
+        // 添加 PNPM_HOME 环境变量和 PATH (如果有)
+        if let Some(pnpm_home) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("PNPM_HOME"))
+            .and_then(|v| v.as_str())
+        {
+            if !pnpm_home.is_empty() {
+                // 确保 PNPM_HOME 目录存在
+                let pnpm_home_path = PathBuf::from(pnpm_home);
+                if !pnpm_home_path.exists() {
+                    if let Err(e) = std::fs::create_dir_all(&pnpm_home_path) {
+                        log::warn!("创建 PNPM_HOME 目录失败: {}", e);
+                    }
+                }
+
+                // 设置环境变量
+                shell_manager.add_export("PNPM_HOME", pnpm_home)?;
+                
+                // 添加到 PATH
+                shell_manager.add_path(pnpm_home)?;
+            }
+        }
+
         Ok(())
     }
 
@@ -631,6 +655,22 @@ impl NodejsService {
         shell_manager.delete_export("NPM_CONFIG_PREFIX")?;
         // 移除 NPM_CONFIG_REGISTRY 环境变量
         shell_manager.delete_export("NPM_CONFIG_REGISTRY")?;
+
+        // 从 PATH 中移除 PNPM_HOME (如果 PNPM_HOME 不是空值)
+        if let Some(pnpm_home) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("PNPM_HOME"))
+            .and_then(|v| v.as_str())
+        {
+            if !pnpm_home.is_empty() {
+                shell_manager.delete_path(pnpm_home)?;
+            }
+        }
+
+        // 移除 PNPM_HOME 环境变量
+        shell_manager.delete_export("PNPM_HOME")?;
+
         Ok(())
     }
 
@@ -668,6 +708,34 @@ impl NodejsService {
         // 添加新的 prefix/bin 到 PATH
         let new_prefix_bin = format!("{}/bin", config_prefix);
         shell_manager.add_path(&new_prefix_bin)?;
+
+        Ok(())
+    }
+
+    /// 设置 PNPM_HOME
+    pub fn set_pnpm_home(
+        &self,
+        service_data: &mut ServiceData,
+        pnpm_home: &str,
+    ) -> Result<()> {
+        let shell_manager = ShellManager::global();
+        let shell_manager = shell_manager.lock().unwrap();
+
+        // 如果之前有 PNPM_HOME，先从 PATH 中移除旧的 PNPM_HOME
+        if let Some(old_pnpm_home) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("PNPM_HOME"))
+            .and_then(|v| v.as_str())
+        {
+            let _ = shell_manager.delete_path(old_pnpm_home);
+        }
+
+        // 设置新的 PNPM_HOME 环境变量
+        shell_manager.add_export("PNPM_HOME", pnpm_home)?;
+
+        // 添加 PNPM_HOME 到 PATH
+        shell_manager.add_path(pnpm_home)?;
 
         Ok(())
     }

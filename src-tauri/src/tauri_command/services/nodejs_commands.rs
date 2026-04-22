@@ -170,6 +170,42 @@ pub async fn set_npm_config_prefix(
     }
 }
 
+/// 设置 PNPM_HOME 的 Tauri 命令
+#[tauri::command]
+pub async fn set_pnpm_home(
+    environment_id: String,
+    mut service_data: ServiceData,
+    pnpm_home: String,
+) -> Result<CommandResponse, String> {
+    // 先写入 metadata
+    let env_serv_data_manager = EnvServDataManager::global();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let _ = env_serv_data_manager.set_metadata(
+        &environment_id,
+        &mut service_data,
+        "PNPM_HOME",
+        serde_json::Value::String(pnpm_home.clone()),
+    );
+
+    // 将配置写入终端（导出环境变量）
+    let nodejs_service = NodejsService::global();
+    match nodejs_service.set_pnpm_home(&mut service_data, &pnpm_home) {
+        Ok(_) => {
+            let data = serde_json::json!({
+                "pnpmHome": pnpm_home,
+            });
+            Ok(CommandResponse::success(
+                "设置 PNPM_HOME 成功".to_string(),
+                Some(data),
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!(
+            "设置 PNPM_HOME 失败: {}",
+            e
+        ))),
+    }
+}
+
 /// 获取全局安装的 npm 包列表
 #[tauri::command]
 pub async fn get_global_npm_packages(service_data: ServiceData) -> Result<CommandResponse, String> {
