@@ -165,6 +165,9 @@ export function WelcomeFragment({ onOpen }: {
                     {/* CMD Warning (Windows only) */}
                     <CmdWarningBanner />
 
+                    {/* Windows Defender Warning (Windows only) */}
+                    <DefenderWarningBanner />
+
                     {/* Quick Actions */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <ActionCard
@@ -362,6 +365,70 @@ function Step({ number, title, desc }: { number: string, title: string, desc: st
 }
 
 const DISMISS_KEY = 'envis_cmd_warning_dismissed'
+const DEFENDER_DISMISS_KEY = 'envis_defender_warning_dismissed'
+
+function DefenderWarningBanner() {
+    const { t } = useTranslation();
+    const isWindows = navigator.userAgent.toLowerCase().includes('windows')
+    const [dismissed, setDismissed] = useState(() => {
+        try { return localStorage.getItem(DEFENDER_DISMISS_KEY) === '1' } catch { return false }
+    })
+
+    if (!isWindows || dismissed) return null
+
+    const handleDismiss = () => {
+        try { localStorage.setItem(DEFENDER_DISMISS_KEY, '1') } catch {}
+        setDismissed(true)
+    }
+
+    return (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-1">
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">{t('welcome.defender_warning_title', '性能优化建议')}</p>
+                    <p className="text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed whitespace-pre-line">
+                        {t('welcome.defender_warning_desc', 'Windows Defender 实时保护会显著拖慢文件读写速度，建议将 Envis 的工作目录添加到排除列表以获得更好的性能。')}
+                    </p>
+                </div>
+                <button
+                    onClick={handleDismiss}
+                    className="shrink-0 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 transition-colors"
+                    aria-label="dismiss"
+                >
+                    <X className="w-3.5 h-3.5" />
+                </button>
+            </div>
+            <details className="text-[11px] text-blue-700 dark:text-blue-400">
+                <summary className="cursor-pointer select-none font-medium hover:text-blue-900 dark:hover:text-blue-200 transition-colors">
+                    {t('welcome.defender_warning_steps', '查看设置步骤')}
+                </summary>
+                <div className="mt-2 p-3 rounded-lg bg-blue-100/60 dark:bg-black/30 text-blue-900 dark:text-blue-200 text-[10px] space-y-2 leading-relaxed">
+                    <p className="font-semibold">{t('welcome.defender_exclude_steps_title', '添加排除项步骤：')}</p>
+                    <ol className="list-decimal list-inside space-y-1.5 ml-1">
+                        <li>{t('welcome.defender_step_1', '打开 Windows 设置 → 隐私和安全性 → Windows 安全中心')}</li>
+                        <li>{t('welcome.defender_step_2', '点击"病毒和威胁防护"')}</li>
+                        <li>{t('welcome.defender_step_3', '滚动到"病毒和威胁防护设置"，点击"管理设置"')}</li>
+                        <li>{t('welcome.defender_step_4', '滚动到"排除项"，点击"添加或删除排除项"')}</li>
+                        <li>{t('welcome.defender_step_5', '点击"添加排除项" → "文件夹"')}</li>
+                        <li>{t('welcome.defender_step_6', '选择 Envis 的数据目录（通常在用户目录下的 .envis 文件夹）')}</li>
+                    </ol>
+                    <p className="mt-2 pt-2 border-t border-blue-200/50 dark:border-blue-400/20 text-blue-600 dark:text-blue-300">
+                        💡 {t('welcome.defender_tip', '提示：排除后，文件操作速度可能提升 2-10 倍')}
+                    </p>
+                </div>
+            </details>
+            <div className="flex justify-end">
+                <button
+                    onClick={handleDismiss}
+                    className="text-[10px] text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                >
+                    {t('welcome.cmd_warning_dismiss')}
+                </button>
+            </div>
+        </div>
+    )
+}
 
 function CmdWarningBanner() {
     const { t } = useTranslation();
