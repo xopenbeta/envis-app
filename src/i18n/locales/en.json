@@ -434,6 +434,10 @@
     "col_memory": "Memory",
     "col_disk": "Disk I/O"
   },
+  "alias": {
+    "title": "Quick Commands",
+    "execute": "Execute"
+  },
   "welcome": {
     "github_star": "Star on GitHub",
     "subtitle": "A powerful, easy-to-use environment management tool for developers.",

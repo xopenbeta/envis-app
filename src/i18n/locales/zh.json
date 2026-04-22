@@ -437,6 +437,10 @@
     "col_memory": "内存",
     "col_disk": "磁盘 I/O"
   },
+  "alias": {
+    "title": "快捷命令",
+    "execute": "执行命令"
+  },
   "node_service": {
     "enter_package_name": "请输入包名",
     "install_success": "安装成功",

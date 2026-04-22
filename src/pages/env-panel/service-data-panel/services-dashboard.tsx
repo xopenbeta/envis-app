@@ -2,7 +2,7 @@ import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { environmentsAtom, selectedEnvironmentIdAtom } from '../../../store/environment'
-import { Bot } from 'lucide-react'
+import { Bot, Play } from 'lucide-react'
 import { ServiceData, ServiceDataStatus, ServiceType } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { isAIPanelOpenAtom } from "@/store";
@@ -11,6 +11,8 @@ import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useService } from '@/hooks/service'
 import { ProcessStatData } from '@/ipc/service'
+import { ipcExecuteCustomServiceAlias } from '@/ipc/services/custom'
+import { toast } from 'sonner'
 
 // 服务类型 → 负责监控的进程名列表
 function getServiceProcessNames(type: ServiceType): string[] {
@@ -101,6 +103,43 @@ export function ServicesDashboard() {
     }))
   }
 
+  // 提取所有自定义服务的 aliases
+  const customServiceAliases = services
+    .filter(s => s.type === ServiceType.Custom && s.metadata?.aliases)
+    .flatMap(s => {
+      const aliases = s.metadata?.aliases as Record<string, string> || {}
+      return Object.entries(aliases).map(([name, command]) => ({
+        serviceName: s.name,
+        aliasName: name,
+        command
+      }))
+    })
+
+  // 执行 alias 命令
+  const executeAlias = async (aliasName: string, command: string) => {
+    try {
+      toast.info(`正在执行命令: ${command}`)
+      const result = await ipcExecuteCustomServiceAlias(aliasName, command)
+      
+      if (result.success) {
+        const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
+        toast.success(`命令执行成功 (${aliasName})`, {
+          description: data.stdout ? data.stdout.substring(0, 200) : '执行完成'
+        })
+      } else {
+        const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
+        toast.error(`命令执行失败 (${aliasName})`, {
+          description: data?.stderr || result.message || '未知错误'
+        })
+      }
+    } catch (error) {
+      console.error('执行命令失败:', error)
+      toast.error('执行命令失败', {
+        description: String(error)
+      })
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br backdrop-blur-xl overflow-y-auto">
       {/* Header */}
@@ -135,6 +174,52 @@ export function ServicesDashboard() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4 bg-gradient-to-br from-background/50 to-content1/30 backdrop-blur-xl">
+
+        {/* Custom Service Aliases */}
+        {customServiceAliases.length > 0 && (
+          <div className="w-full space-y-3">
+            <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
+              {t('alias.title', '快捷命令')}
+            </h2>
+            <div className="rounded-lg border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] p-3">
+              <div className="space-y-2">
+                {customServiceAliases.map((alias, index) => (
+                  <div
+                    key={`${alias.serviceName}-${alias.aliasName}-${index}`}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="text-xs font-medium text-foreground truncate cursor-help">
+                              {alias.aliasName}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-xs space-y-1">
+                              <div className="font-medium">{alias.serviceName}</div>
+                              <div className="text-muted-foreground">{alias.command}</div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => executeAlias(alias.aliasName, alias.command)}
+                      className="h-6 w-6 flex-shrink-0 text-muted-foreground hover:text-green-600 dark:hover:text-green-400 opacity-70 group-hover:opacity-100 transition-opacity"
+                      title={t('alias.execute', '执行命令')}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* System Monitor */}
         <SystemMonitor systemInfo={systemInfo} />
