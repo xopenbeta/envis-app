@@ -1,5 +1,15 @@
 # 更新日志 / Changelog
 
+## [0.12.3] - 2026-04-22
+
+### 新增 / Added
+- ✨ Node.js 服务新增 PNPM_HOME 环境变量管理能力：支持在服务配置界面设置 PNPM_HOME 路径，激活服务时自动导出 PNPM_HOME 环境变量并添加到 PATH，提升 pnpm 全局包管理体验
+
+### 改进 / Improved
+- ♻️ 增强 PostgreSQL 服务启动过程的日志记录：补充 pg_ctl 执行路径、数据目录、日志路径、环境变量等详细信息，便于启动问题排查
+- ♻️ 优化 PostgreSQL 服务状态检查逻辑：状态查询接口增加 status 字段（Running/Stopped），提升状态展示的准确性
+- ♻️ 优化 PostgreSQL 服务配置界面：移除超级用户密码显示区域，提升安全性
+
 ## [0.12.2] - 2026-04-21
 
 ### 修复 / Fixed
