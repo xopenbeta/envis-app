@@ -720,17 +720,6 @@ impl PostgresqlService {
 
         self.update_postgresql_conf(&config_path, final_port, &final_bind, &final_log_path)?;
 
-        let start_res = self.start_service(environment_id, service_data)?;
-        if !start_res.success {
-            log::error!(
-                "PostgreSQL 初始化后启动失败: env={}, version={}, message={}",
-                environment_id,
-                service_data.version,
-                start_res.message
-            );
-            return Ok(start_res);
-        }
-
         log::info!(
             "PostgreSQL 初始化成功: env={}, version={}, data_dir={}",
             environment_id,
@@ -763,7 +752,25 @@ impl PostgresqlService {
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
         let pg_ctl = self.get_pg_ctl_bin(service_data);
+        let data_dir = self.get_data_dir(environment_id, service_data);
+        let log_path = self.get_log_path(environment_id, service_data);
+        let install_path = self.get_install_path(&service_data.version);
+
+        log::info!(
+            "开始启动 PostgreSQL: env={}, service_id={}, version={}, pg_ctl={}, data_dir={}, log_path={}",
+            environment_id,
+            service_data.id,
+            service_data.version,
+            pg_ctl.to_string_lossy(),
+            data_dir.to_string_lossy(),
+            log_path.to_string_lossy()
+        );
+
         if !pg_ctl.exists() {
+            log::error!(
+                "PostgreSQL 启动失败: pg_ctl 可执行文件不存在: {}",
+                pg_ctl.to_string_lossy()
+            );
             return Ok(ServiceDataResult {
                 success: false,
                 message: "pg_ctl 可执行文件不存在".to_string(),
@@ -771,8 +778,12 @@ impl PostgresqlService {
             });
         }
 
-        let data_dir = self.get_data_dir(environment_id, service_data);
         if !self.is_initialized(environment_id, service_data) {
+            log::error!(
+                "PostgreSQL 启动失败: 尚未初始化, env={}, data_dir={}",
+                environment_id,
+                data_dir.to_string_lossy()
+            );
             return Ok(ServiceDataResult {
                 success: false,
                 message: "PostgreSQL 尚未初始化，请先初始化".to_string(),
@@ -780,28 +791,80 @@ impl PostgresqlService {
             });
         }
 
-        let log_path = self.get_log_path(environment_id, service_data);
         if let Some(log_dir) = log_path.parent() {
             fs::create_dir_all(log_dir)?;
         }
+
         let mut cmd = create_command(&pg_ctl);
-        Self::apply_runtime_lib_env(&mut cmd, &self.get_install_path(&service_data.version));
-        let output = cmd
-            .arg("-D")
+        Self::apply_runtime_lib_env(&mut cmd, &install_path);
+        
+        cmd.arg("-D")
             .arg(&data_dir)
             .arg("-l")
             .arg(&log_path)
-            .arg("start")
-            .output()?;
+            .arg("start");
+
+        // 记录完整命令
+        let cmd_str = format!(
+            "{} -D {} -l {} start",
+            pg_ctl.to_string_lossy(),
+            data_dir.to_string_lossy(),
+            log_path.to_string_lossy()
+        );
+
+        // 记录环境变量
+        let lib_dir = install_path.join("lib");
+        #[cfg(target_os = "macos")]
+        let env_key = "DYLD_LIBRARY_PATH";
+        #[cfg(target_os = "linux")]
+        let env_key = "LD_LIBRARY_PATH";
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        let env_key = "LIBRARY_PATH";
+
+        if lib_dir.exists() {
+            log::info!(
+                "PostgreSQL 启动命令: {}, {}={}",
+                cmd_str,
+                env_key,
+                lib_dir.to_string_lossy()
+            );
+        } else {
+            log::info!("PostgreSQL 启动命令: {}", cmd_str);
+        }
+
+        let output = cmd.output()?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        log::info!(
+            "PostgreSQL pg_ctl 执行完成: env={}, exit_code={}, stdout={}, stderr={}",
+            environment_id,
+            output.status.code().unwrap_or(-1),
+            stdout.trim(),
+            stderr.trim()
+        );
 
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            let stderr_trimmed = stderr.trim().to_string();
+            log::error!(
+                "PostgreSQL 启动失败: env={}, version={}, stderr={}",
+                environment_id,
+                service_data.version,
+                stderr_trimmed
+            );
             return Ok(ServiceDataResult {
                 success: false,
-                message: format!("PostgreSQL 启动失败: {}", Self::build_start_failure_detail(&stderr, &log_path)),
+                message: format!("PostgreSQL 启动失败: {}", Self::build_start_failure_detail(&stderr_trimmed, &log_path)),
                 data: None,
             });
         }
+
+        log::info!(
+            "PostgreSQL 服务启动成功: env={}, version={}",
+            environment_id,
+            service_data.version
+        );
 
         Ok(ServiceDataResult {
             success: true,
