@@ -213,7 +213,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             environmentId: selectedEnvironmentId,
             serviceType,
             version,
-            serviceDatasSnapshot: selectedServiceDatas,
+            serviceDatas: selectedServiceDatas,
         })
         if (newServiceData) {
             // 自定义服务不需要下载，直接创建
@@ -239,6 +239,8 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                     dialogOpen: true
                 })
             }
+        } else {
+            toast.error(`创建 ${serviceType} 服务失败`)
         }
     }
 

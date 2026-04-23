@@ -111,7 +111,7 @@ export function SortableServiceItem({
 
   const { selectedEnvironment, activeEnvironment } = useEnvironment();
   const { cancelServiceDownload, downloadService } = useService();
-  const { switchEnvAndServDatasWithActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
+  const { switchEnvAndServDatasThenActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
   const { status: serviceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: CanRunServices.includes(serviceData.type),
     interval: 500,
@@ -275,7 +275,7 @@ export function SortableServiceItem({
     if (!selectedEnvironment) return
     const passwordOverride = sessionStorage.getItem('envis_sudo_password') || '';
     try {
-      const result = await switchEnvAndServDatasWithActive({
+      const result = await switchEnvAndServDatasThenActive({
         environment: selectedEnvironment,
         environmentsSnapshot: [...environments],
         passwordOverride,
@@ -632,6 +632,7 @@ export function SortableServiceItem({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       {/* 重命名服务对话框 */}
       <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
         <DialogContent>
@@ -676,6 +677,7 @@ export function SortableServiceItem({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* 密码输入弹窗 */}
       <AlertDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <AlertDialogContent>

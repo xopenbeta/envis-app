@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   DownloadStatus,
+  EnvironmentStatus,
   NeedDownloadServices,
   ServiceData,
   ServiceDataStatus,
@@ -9,6 +10,7 @@ import {
 } from '@/types/index'
 import { useEnvironmentServiceData, useServiceData } from './env-serv-data'
 import { useService } from './service'
+import { useEnvironment } from './environment'
 import { setImmediateInterval } from '@/utils/patch'
 
 interface PollingOptions {
@@ -18,6 +20,51 @@ interface PollingOptions {
 }
 
 const DEFAULT_INTERVAL = 500
+
+export function useEnvironmentStatus(
+  environmentId: string,
+  options: PollingOptions = {}
+) {
+  const { getEnvironment } = useEnvironment()
+  const enabled = options.enabled ?? true
+  const interval = options.interval ?? DEFAULT_INTERVAL
+  const immediate = options.immediate ?? true
+  const [status, setStatus] = useState<EnvironmentStatus>(EnvironmentStatus.Inactive)
+
+  const refresh = async () => {
+    if (!enabled) return
+    try {
+      const result = await getEnvironment(environmentId)
+      if (result.success && result.data?.environment) {
+        setStatus(result.data.environment.status)
+      }
+    } catch (error) {
+      console.error('轮询环境状态失败:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (!enabled) {
+      setStatus(EnvironmentStatus.Inactive)
+      return
+    }
+
+    const timer = immediate
+      ? setImmediateInterval(() => {
+          void refresh()
+        }, interval)
+      : setInterval(() => {
+          void refresh()
+        }, interval)
+
+    return () => clearInterval(timer)
+  }, [enabled, interval, immediate, environmentId])
+
+  return {
+    status,
+    refresh,
+  }
+}
 
 export function useServiceStatus(
   environmentId: string,

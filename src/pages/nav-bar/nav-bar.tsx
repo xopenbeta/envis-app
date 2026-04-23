@@ -92,7 +92,8 @@ export default function NavBar({ onClose }: NavBarProps) {
     updateEnvironmentsOrder,
   } = useEnvironment()
   const { 
-    switchEnvAndServDatasWithActive,
+    deactivateEnvAndServDatas,
+    switchEnvAndServDatasThenActive,
     switchEnvAndServDatas
   } = useEnvironmentServiceData()
   const { openTerminal: openTerminalFunc } = useSystemInfo()
@@ -130,7 +131,7 @@ export default function NavBar({ onClose }: NavBarProps) {
   }, [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen]);
 
   // 处理环境选择
-  const onEnvItemClick = async (environment: Environment) => {
+  const onSelectEnvClick = async (environment: Environment) => {
     if (selectedEnvironmentId === environment.id) {
       setSelectedServiceDataId('') // 再次点击已选环境则取消选中服务，展示环境信息页
       return
@@ -139,22 +140,29 @@ export default function NavBar({ onClose }: NavBarProps) {
   }
 
   // 激活/停用环境
-  const onActiveEnvBtnClick = async (environment: Environment) => {
-    const res = await switchEnvAndServDatasWithActive({
-      environment,
-      environmentsSnapshot: [...environments],
-      passwordOverride: '',
-    })
-
-    if (res?.success === false) {
-      toast.error(res.message || '环境切换失败')
-      return
+  const onToogleEnvStatusBtnClick = async (environment: Environment) => {
+    if (environment.status === EnvironmentStatus.Active) {
+      const res = await deactivateEnvAndServDatas(environment)
+      if (res?.success === false) {
+        toast.error(res.message || '环境停用失败')
+        return
+      }
+    } else {
+      const res = await switchEnvAndServDatasThenActive({
+        environment,
+        environmentsSnapshot: [...environments],
+        passwordOverride: '',
+      })
+      if (res?.success === false) {
+        toast.error(res.message || '环境切换失败')
+        return
+      }
     }
   }
 
   // 删除环境
   const onDeleteEnvBtnClick = async (environment: Environment) => {
-    if (environment.status === 'active') {
+    if (environment.status === EnvironmentStatus.Active) {
       toast.error(t('nav_bar.delete_active_env_error'))
       logError(t('nav_bar.delete_env_error_active', { name: environment.name }))
       return
@@ -489,8 +497,8 @@ export default function NavBar({ onClose }: NavBarProps) {
                     environment={environment}
                     isSelected={selectedEnvironmentId === environment.id}
                     isDragEnabled={isDragEnabled}
-                    onSelect={onEnvItemClick}
-                    onToggle={onActiveEnvBtnClick}
+                    onSelect={onSelectEnvClick}
+                    onToggle={onToogleEnvStatusBtnClick}
                     onEdit={onOpenNewDialogBtnClick}
                     onDelete={onDeleteEnvBtnClick}
                   />

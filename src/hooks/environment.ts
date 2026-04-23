@@ -1,7 +1,7 @@
 import { Environment, EnvironmentStatus } from "@/types/index"
 import { useAtom } from "jotai"
 import { useMemo } from "react"
-import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeactivateEnvironmentAndServices, ipcDeleteEnvironment, ipcGetEnvironment, ipcSaveEnvironment } from "../ipc/environment"
+import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeleteEnvironment, ipcGetEnvironment, ipcSaveEnvironment } from "../ipc/environment"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from "../store/environment"
 import { sortEnvironments } from "../utils/sort"
 import { useAppSettings } from "./appSettings"
@@ -135,24 +135,6 @@ export function useEnvironment() {
     return ipcRes;
   }
 
-  const deactivateEnvironmentAndServices = async (environment: Environment, password?: string) => {
-    const ipcRes = await ipcDeactivateEnvironmentAndServices(environment, password)
-    if (ipcRes.success) {
-      setEnvironments(prev => prev.map(env => {
-        if (env.id === environment.id) {
-          return ipcRes.data?.env || { ...env, status: EnvironmentStatus.Inactive };
-        }
-        return env;
-      }))
-      if (selectedEnvironmentId && selectedEnvironmentId === environment.id) {
-        setSelectedServiceDataId('')
-      }
-    } else {
-      console.error('停用环境及服务失败:', ipcRes.message)
-    }
-    return ipcRes;
-  }
-
   const updateEnvironmentsOrder = async (environments: Environment[]) => {
     // 修改sort属性
     const updatedEnvironments = environments.map((env, index) => ({
@@ -183,7 +165,6 @@ export function useEnvironment() {
     activateEnvironment,
     activateEnvironmentAndServices,
     deactivateEnvironment,
-    deactivateEnvironmentAndServices,
     updateEnvironmentsOrder,
     getEnvironment,
   }

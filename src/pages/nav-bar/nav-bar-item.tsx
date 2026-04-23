@@ -27,9 +27,7 @@ import { useTranslation } from 'react-i18next'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useAppSettings } from '@/hooks/appSettings'
 import { toast } from 'sonner'
-import { useEnvironment } from '@/hooks/environment'
-import { useEffect, useState } from 'react'
-import { setImmediateInterval } from '@/utils/patch'
+import { useEnvironmentStatus } from '@/hooks/service-pollers'
 
 interface SortableEnvironmentItemProps {
   environment: Environment;
@@ -53,8 +51,7 @@ export function SortableEnvironmentItem({
   const { t } = useTranslation()
   const { openFolderInFinder } = useFileOperations()
   const { systemSettings } = useAppSettings()
-  const { getEnvironment } = useEnvironment()
-  const [currentStatus, setCurrentStatus] = useState<EnvironmentStatus>(environment.status)
+  const { status: currentStatus } = useEnvironmentStatus(environment.id)
 
   const {
     attributes,
@@ -67,17 +64,6 @@ export function SortableEnvironmentItem({
     id: environment.id,
     disabled: !isDragEnabled
   });
-
-  // 轮询获取环境最新状态
-  useEffect(() => {
-    const timer = setImmediateInterval(async () => {
-      const res = await getEnvironment(environment.id);
-      if (res.success && res.data?.environment) {
-        setCurrentStatus(res.data.environment.status);
-      }
-    }, 500);
-    return () => clearInterval(timer);
-  }, [environment.id, getEnvironment]);
 
   // 打开环境文件夹
   const handleOpenFolder = () => {
@@ -142,7 +128,10 @@ export function SortableEnvironmentItem({
           <Button
             size="sm"
             variant="ghost"
-            onClick={(e) => { e.stopPropagation(); onToggle(environment); }}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onToggle({ ...environment, status: currentStatus }); 
+            }}
             className="h-7 w-7 p-0"
           >
             {currentStatus === EnvironmentStatus.Active ? (
@@ -170,7 +159,7 @@ export function SortableEnvironmentItem({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={(e) => { e.stopPropagation(); onDelete(environment) }}
+                onClick={(e) => { e.stopPropagation(); onDelete({ ...environment, status: currentStatus }) }}
                 className="text-danger"
               >
                 <Trash className="h-4 w-4 mr-2" />
