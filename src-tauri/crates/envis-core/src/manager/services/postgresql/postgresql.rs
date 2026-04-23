@@ -1024,6 +1024,8 @@ impl PostgresqlService {
         _environment_id: &str,
         service_data: &ServiceData,
     ) -> Result<ServiceDataResult> {
+        let install_path = self.get_install_path(&service_data.version);
+        let lib_dir = install_path.join("lib");
         let psql_bin = self.get_psql_bin(service_data);
         let cli_cmd = if psql_bin.exists() {
             psql_bin.to_string_lossy().to_string()
@@ -1047,15 +1049,34 @@ impl PostgresqlService {
             "postgres".to_string(),
         ];
 
+        let mut env_prefixes: Vec<String> = Vec::new();
+        if !super_password.is_empty() {
+            env_prefixes.push(format!(
+                "PGPASSWORD={}",
+                Self::shell_quote(&super_password)
+            ));
+        }
+        #[cfg(target_os = "macos")]
+        if lib_dir.exists() {
+            env_prefixes.push(format!(
+                "DYLD_LIBRARY_PATH={}",
+                Self::shell_quote(&lib_dir.to_string_lossy())
+            ));
+        }
+        #[cfg(target_os = "linux")]
+        if lib_dir.exists() {
+            env_prefixes.push(format!(
+                "LD_LIBRARY_PATH={}",
+                Self::shell_quote(&lib_dir.to_string_lossy())
+            ));
+        }
+
         let result = if cfg!(target_os = "macos") {
-            let shell_cmd = if super_password.is_empty() {
-                Self::build_terminal_command(&cli_cmd, &args)
+            let terminal_cmd = Self::build_terminal_command(&cli_cmd, &args);
+            let shell_cmd = if env_prefixes.is_empty() {
+                terminal_cmd
             } else {
-                format!(
-                    "PGPASSWORD={} {}",
-                    Self::shell_quote(&super_password),
-                    Self::build_terminal_command(&cli_cmd, &args)
-                )
+                format!("{} {}", env_prefixes.join(" "), terminal_cmd)
             };
             create_command("osascript")
                 .arg("-e")
@@ -1080,14 +1101,11 @@ impl PostgresqlService {
             cmd_args.append(&mut args);
             create_command("cmd").args(&cmd_args).spawn()
         } else {
-            let shell_cmd = if super_password.is_empty() {
-                Self::build_terminal_command(&cli_cmd, &args)
+            let terminal_cmd = Self::build_terminal_command(&cli_cmd, &args);
+            let shell_cmd = if env_prefixes.is_empty() {
+                terminal_cmd
             } else {
-                format!(
-                    "PGPASSWORD={} {}",
-                    Self::shell_quote(&super_password),
-                    Self::build_terminal_command(&cli_cmd, &args)
-                )
+                format!("{} {}", env_prefixes.join(" "), terminal_cmd)
             };
             create_command("gnome-terminal")
                 .arg("--")

@@ -120,7 +120,7 @@ export function ServicesDashboard() {
     try {
       toast.info(`正在执行命令: ${command}`)
       const result = await ipcExecuteCustomServiceAlias(aliasName, command)
-      
+
       if (result.success) {
         const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
         toast.success(`命令执行成功 (${aliasName})`, {
@@ -175,6 +175,9 @@ export function ServicesDashboard() {
 
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4 bg-gradient-to-br from-background/50 to-content1/30 backdrop-blur-xl">
 
+        {/* System Monitor */}
+        <SystemMonitor systemInfo={systemInfo} />
+
         {/* Custom Service Aliases */}
         {customServiceAliases.length > 0 && (
           <div className="w-full space-y-3">
@@ -185,51 +188,33 @@ export function ServicesDashboard() {
                   key={`${alias.serviceName}-${alias.aliasName}-${index}`}
                   className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
                 >
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-3 p-3 cursor-help">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-semibold text-foreground truncate">
-                              {alias.aliasName}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                              {alias.command}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              executeAlias(alias.aliasName, alias.command)
-                            }}
-                            className="h-7 w-7 flex-shrink-0 rounded-md bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-400/30 transition-all duration-200"
-                            title={t('alias.execute', '执行命令')}
-                          >
-                            <Play className="h-3.5 w-3.5 fill-current" />
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-md">
-                        <div className="text-xs space-y-1.5">
-                          <div className="font-semibold text-foreground">{alias.aliasName}</div>
-                          <div className="text-muted-foreground text-[10px]">服务: {alias.serviceName}</div>
-                          <div className="text-muted-foreground text-[10px] font-mono bg-black/5 dark:bg-white/5 px-2 py-1 rounded mt-1">
-                            {alias.command}
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex items-center gap-3 p-3 cursor-help">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-foreground truncate">
+                        {alias.aliasName}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        {alias.command}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        executeAlias(alias.aliasName, alias.command)
+                      }}
+                      className="h-7 w-7 flex-shrink-0 rounded-md bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-400/30 transition-all duration-200"
+                      title={t('alias.execute', '执行命令')}
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-
-        {/* System Monitor */}
-        <SystemMonitor systemInfo={systemInfo} />
 
         {/* Service Resource Monitor */}
         {services.length > 0 && (

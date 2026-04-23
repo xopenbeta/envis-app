@@ -310,8 +310,6 @@ envis() {{
     return $exit_code
 }}
 alias ev=envis
-alias asdf=envis
-alias mise=envis
 "#,
                 reload_cmd
             )
