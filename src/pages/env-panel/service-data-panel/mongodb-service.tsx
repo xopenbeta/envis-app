@@ -645,7 +645,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           environmentId: selectedEnvironmentId,
           serviceId: serviceData.id,
           updates: { metadata: newMetadata },
-          serviceDatasSnapshot: selectedServiceDatas,
+          serviceDatas: selectedServiceDatas,
         });
         if (updatedServiceData) {
           // 重新加载配置
@@ -687,7 +687,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         environmentId: selectedEnvironmentId,
         serviceId: serviceData.id,
         updates: { metadata: newMetadata },
-        serviceDatasSnapshot: selectedServiceDatas,
+        serviceDatas: selectedServiceDatas,
       })
       if (updatedServiceData) {
         toast.success('配置文件路径设置成功')

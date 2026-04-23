@@ -229,7 +229,7 @@ export function HostManagementView({
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: { ...serviceData.metadata, hosts: newHosts } },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
 
                 setHosts(newHosts)
@@ -277,7 +277,7 @@ export function HostManagementView({
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: { ...serviceData.metadata, hosts: newHosts } },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setHosts(newHosts)
 
@@ -324,7 +324,7 @@ export function HostManagementView({
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: { ...serviceData.metadata, hosts: newHosts } },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setHosts(newHosts)
 

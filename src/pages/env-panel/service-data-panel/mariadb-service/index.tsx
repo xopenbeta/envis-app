@@ -151,7 +151,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       environmentId: selectedEnvironmentId,
       serviceId: serviceData.id,
       updates: { status: serviceDataStatus },
-      serviceDatasSnapshot: selectedServiceDatas,
+      serviceDatas: selectedServiceDatas,
     }).catch((error) => {
       console.error('回写 MariaDB 激活状态失败:', error)
     })
@@ -510,7 +510,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           environmentId: selectedEnvironmentId,
           serviceId: serviceData.id,
           updates: { metadata: newMetadata },
-          serviceDatasSnapshot: selectedServiceDatas,
+          serviceDatas: selectedServiceDatas,
         })
         toast.success('MariaDB 初始化成功')
         setShowInitDialog(false)

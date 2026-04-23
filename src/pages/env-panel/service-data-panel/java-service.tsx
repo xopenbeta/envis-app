@@ -230,7 +230,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setMavenHomeState(path)
                 if (showToastMessage) {
@@ -265,7 +265,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setJavaOptsState(opts)
                 toast.success(t('java_service.java_opts_set_success'))
@@ -296,7 +296,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                 environmentId: selectedEnvironmentId,
                 serviceId: serviceData.id,
                 updates: { metadata: newMetadata },
-                serviceDatasSnapshot: selectedServiceDatas,
+                serviceDatas: selectedServiceDatas,
             })
             setMavenRepositoryState(value)
             toast.success(t('java_service.maven_repo_applied'))
@@ -384,7 +384,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setGradleHomeState(path)
                 toast.success(t('java_service.gradle_home_set_success'))
@@ -407,7 +407,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setGradleUserHomeState(path)
                 toast.success(t('java_service.gradle_user_home_set_success'))
@@ -436,7 +436,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setMavenLocalRepoState(value)
                 toast.success(t('java_service.maven_local_repo_applied'))
@@ -479,7 +479,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setGradleHomeState(path)
                 if (showToastMessage) {

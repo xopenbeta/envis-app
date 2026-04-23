@@ -60,7 +60,7 @@ export function useCustomService() {
                 environmentId,
                 serviceId,
                 updates: { metadata },
-                serviceDatasSnapshot: selectedServiceDatas,
+                serviceDatas: selectedServiceDatas,
             });
             return { success: true };
         } catch (err) {

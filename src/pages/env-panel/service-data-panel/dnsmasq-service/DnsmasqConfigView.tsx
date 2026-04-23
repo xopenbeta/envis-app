@@ -107,7 +107,7 @@ export function DnsmasqConfigView({
                 environmentId: selectedEnvironmentId,
                 serviceId: serviceData.id,
                 updates: updatedServiceData,
-                serviceDatasSnapshot: selectedServiceDatas,
+                serviceDatas: selectedServiceDatas,
             })
             toast.success('配置文件路径已更新')
         } catch (error) {

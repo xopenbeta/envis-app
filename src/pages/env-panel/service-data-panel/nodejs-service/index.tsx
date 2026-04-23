@@ -126,7 +126,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setRegistry(val)
                 toast.success(t('node_service.registry_set_success'))
@@ -149,7 +149,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setPrefix(val)
                 toast.success(t('node_service.prefix_set_success'))
@@ -172,7 +172,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     environmentId: selectedEnvironmentId,
                     serviceId: serviceData.id,
                     updates: { metadata: newMetadata },
-                    serviceDatasSnapshot: selectedServiceDatas,
+                    serviceDatas: selectedServiceDatas,
                 })
                 setPnpmHomeState(val)
                 toast.success(t('node_service.pnpm_home_set_success'))

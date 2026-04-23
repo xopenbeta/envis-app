@@ -165,7 +165,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       environmentId: selectedEnvironmentId,
       serviceId: serviceData.id,
       updates: { metadata: newMetadata },
-      serviceDatasSnapshot: selectedServiceDatas,
+      serviceDatas: selectedServiceDatas,
     })
     return updated ?? { ...serviceData, metadata: newMetadata }
   }

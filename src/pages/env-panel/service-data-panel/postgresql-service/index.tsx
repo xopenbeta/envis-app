@@ -142,7 +142,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       environmentId: selectedEnvironmentId,
       serviceId: serviceData.id,
       updates: { status: serviceDataStatus },
-      serviceDatasSnapshot: selectedServiceDatas,
+      serviceDatas: selectedServiceDatas,
     }).catch((error) => {
       console.error('回写 PostgreSQL 激活状态失败:', error)
     })
@@ -507,7 +507,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
           environmentId: selectedEnvironmentId,
           serviceId: serviceData.id,
           updates: { metadata: newMetadata },
-          serviceDatasSnapshot: selectedServiceDatas,
+          serviceDatas: selectedServiceDatas,
         })
 
         toast.success('PostgreSQL 初始化成功')

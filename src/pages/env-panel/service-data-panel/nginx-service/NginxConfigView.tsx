@@ -210,7 +210,7 @@ export function NginxConfigView({
                 environmentId: selectedEnvironmentId,
                 serviceId: serviceData.id,
                 updates: { metadata: newMetadata },
-                serviceDatasSnapshot: selectedServiceDatas,
+                serviceDatas: selectedServiceDatas,
             })
             if (updated) {
                 toast.success('配置文件路径设置成功')
