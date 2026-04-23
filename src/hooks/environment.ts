@@ -1,7 +1,7 @@
 import { Environment, EnvironmentStatus } from "@/types/index"
 import { useAtom } from "jotai"
 import { useMemo } from "react"
-import { ipcActivateEnvironment, ipcActivateEnvironmentAndServices, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeleteEnvironment, ipcGetEnvironment, ipcSaveEnvironment } from "../ipc/environment"
+import { ipcActivateEnvironment, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeleteEnvironment, ipcGetEnvironment, ipcSaveEnvironment } from "../ipc/environment"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from "../store/environment"
 import { sortEnvironments } from "../utils/sort"
 import { useAppSettings } from "./appSettings"
@@ -91,28 +91,6 @@ export function useEnvironment() {
     return ipcRes;
   }
 
-  const activateEnvironmentAndServices = async (environment: Environment, password?: string) => {
-    const ipcRes = await ipcActivateEnvironmentAndServices(environment, password)
-    const nextEnvironment = ipcRes.data?.env || ipcRes.data
-
-    if (nextEnvironment) {
-      setEnvironments(prev => prev.map(env => {
-        if (env.id === environment.id) {
-          return nextEnvironment as Environment;
-        }
-        return env;
-      }))
-    } else if (ipcRes.success) {
-      setEnvironments(prev => prev.map(env => {
-        if (env.id === environment.id) {
-          return { ...env, status: EnvironmentStatus.Active };
-        }
-        return env;
-      }))
-    }
-    return ipcRes;
-  }
-
   const deactivateEnvironment = async (environment: Environment) => {
     const ipcRes = await ipcDeactivateEnvironment(environment)
     if (ipcRes.success) {
@@ -163,7 +141,6 @@ export function useEnvironment() {
     updateEnvironment,
     createEnvironment,
     activateEnvironment,
-    activateEnvironmentAndServices,
     deactivateEnvironment,
     updateEnvironmentsOrder,
     getEnvironment,

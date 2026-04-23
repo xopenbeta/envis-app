@@ -178,8 +178,8 @@ export function SortableServiceItem({
     await deleteServiceData({
       environmentId: selectedEnvironmentId,
       serviceData,
-      serviceDatasSnapshot: selectedServiceDatas,
-      selectedServiceDataIdSnapshot: selectedServiceDataId,
+      serviceDatas: selectedServiceDatas,
+      isSelectedServiceData: serviceData.id === selectedServiceDataId,
     })
   }
 
@@ -200,7 +200,7 @@ export function SortableServiceItem({
     await toggleServiceData(isCurrentlyActive ? ServiceDataStatus.Inactive : ServiceDataStatus.Active, password)
   }
 
-  const toggleServiceData = async (targetStatus: ServiceDataStatus, passwordOverride?: string) => {
+  const toggleServiceData = async (targetStatus: ServiceDataStatus, passwordOverride: string) => {
     if (!selectedEnvironment) {
       return { success: false, message: t('service_item.toggle_error') }
     }
@@ -272,17 +272,18 @@ export function SortableServiceItem({
   }
 
   const activeEnvironmentAndStartServices = async () => {
-    if (!selectedEnvironment) return
+    if (!selectedEnvironment || !systemSettings) return
     const passwordOverride = sessionStorage.getItem('envis_sudo_password') || '';
     try {
       const result = await switchEnvAndServDatasThenActive({
         environment: selectedEnvironment,
-        environmentsSnapshot: [...environments],
+        environments: [...environments],
+        settings: systemSettings,
         passwordOverride,
       })
 
       if (result?.success === false) {
-        toast.error(result.message || t('service_item.env_op_error'))
+        toast.error(t('service_item.env_op_error'))
         return result
       }
     } catch (error) {
@@ -663,7 +664,7 @@ export function SortableServiceItem({
                   environmentId: selectedEnvironmentId,
                   serviceId: serviceData.id,
                   updates: { name: renameValue.trim() },
-                  serviceDatasSnapshot: selectedServiceDatas,
+                  serviceDatas: selectedServiceDatas,
                 })
                 toast.success(t('service_item.rename_success'))
                 setShowRenameDialog(false)
