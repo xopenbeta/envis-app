@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { check, Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { useAtom } from 'jotai'
-import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/appSettings'
+import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/app'
 import { useTranslation } from 'react-i18next'
 import { Download, Loader2 } from 'lucide-react'
 

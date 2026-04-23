@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { UpdateDialog } from '@/pages/update-dialog';
 import { useInitEnvis } from '@/hooks';
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data';
-import { isAppLoadingAtom } from "@/store/appSettings";
+import { isAppLoadingAtom } from "@/store/app";
 import { useAtom } from "jotai";
 import Envis from "./pages";
 import { useAppTheme } from "./hooks/useTheme";
@@ -13,12 +13,12 @@ import { useEffect } from "react";
 import { useI18n } from "./hooks/useI18n";
 
 function App(): JSX.Element {
+  useRustLogger(); // 附加 Rust 日志到浏览器控制台
   const { isEnvisInited } = useInitEnvis();
   const [isAppLoading] = useAtom(isAppLoadingAtom);
   useI18n();
   useAppTheme();
   useAppTitleVersion();
-  useRustLogger(); // 附加 Rust 日志到浏览器控制台
 
   return (
     <>

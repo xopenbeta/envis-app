@@ -1,7 +1,7 @@
 import { setAppTheme } from '@/utils/theme';
 import { useEffect } from 'react';
 import { useAtom } from "jotai";
-import { defaultAppSettings } from "@/store/appSettings";
+import { defaultAppSettings } from "@/store/app";
 import { useSettings } from './appSettings';
 
 export function useAppTheme() {

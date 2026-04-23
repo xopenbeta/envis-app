@@ -7,13 +7,14 @@ import { useAtom } from 'jotai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { autoScrollLogAtom, isLogPanelOpenAtom, logEntriesAtom, LogEntry } from '@/store/log'
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
-import { appSettingsAtom, isAppLoadingAtom, systemSettingsAtom } from '@/store/appSettings'
+import { isAppLoadingAtom } from '@/store/app'
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom } from '@/store/environment'
 import { chatMessagesAtom, isAIResponseLoadingAtom } from '@/store/ai'
 import { X, Trash2, Copy, ChevronDown, Pause, RefreshCcw, ChevronRight } from 'lucide-react'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { isAIPanelOpenAtom, isNavPanelOpenAtom } from '@/store'
 import { useTranslation } from 'react-i18next'
+import { useSettings } from '@/hooks/appSettings'
 
 function formatTime(ts: number) {
   const d = new Date(ts)
@@ -76,8 +77,7 @@ export default function LogPanel() {
   const [dragging, setDragging] = useState(false)
   const virtuosoRef = useRef<VirtuosoHandle>(null)
   // state atoms
-  const [appSettings] = useAtom(appSettingsAtom)
-  const [systemSettings] = useAtom(systemSettingsAtom)
+  const { appSettings, systemSettings } = useSettings()
   const [isNavPanelOpen] = useAtom(isNavPanelOpenAtom)
   const [isAppLoading] = useAtom(isAppLoadingAtom)
   const [envs] = useAtom(environmentsAtom)

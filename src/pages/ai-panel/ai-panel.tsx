@@ -7,7 +7,7 @@ import { Bot, ChevronLeft, Send, Trash2, Square, X } from 'lucide-react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { toast } from "sonner"
 import { chatMessagesAtom, addChatMessageAtom, clearChatMessagesAtom, isAIResponseLoadingAtom } from "@/store/ai"
-import { appSettingsAtom } from "@/store/appSettings"
+import { useSettings } from "@/hooks/appSettings"
 
 // 优化的Markdown渲染函数 - 更好支持中文
 const renderMarkdown = (content: string) => {
@@ -47,7 +47,7 @@ const renderMarkdown = (content: string) => {
 }
 
 export function AIPanel({ onClose }: { onClose: () => void }) {
-  const [appSettings] = useAtom(appSettingsAtom)
+  const {appSettings} = useSettings()
   const [chatMessages] = useAtom(chatMessagesAtom)
   const [, addChatMessage] = useAtom(addChatMessageAtom)
   const [, clearChatMessages] = useAtom(clearChatMessagesAtom)

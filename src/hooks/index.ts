@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useSettings } from "./appSettings"
 import { useEnvironmentServiceData } from "./env-serv-data";
 import { useAtom } from "jotai";
-import { isAppLoadingAtom } from "@/store/appSettings";
+import { isAppLoadingAtom } from "@/store/app";
 import { useLogger } from "./log";
 import { Environment } from "@/types";
 export {

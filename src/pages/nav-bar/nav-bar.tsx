@@ -53,7 +53,7 @@ import { toast } from 'sonner'
 import { useSettings } from '@/hooks/appSettings'
 import { useEnvironment } from '@/hooks/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
-import { isAppLoadingAtom, updateAvailableAtom } from '../../store/appSettings'
+import { isAppLoadingAtom, updateAvailableAtom } from '../../store/app'
 import {
   environmentsAtom,
   selectedEnvironmentIdAtom,
@@ -108,16 +108,12 @@ export default function NavBar({ onClose }: NavBarProps) {
   const isEnvNameComposingRef = useRef(false)
 
   const onEnvNameInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') {
-      return
-    }
+    if (e.key !== 'Enter') return
 
-    if (isEnvNameComposingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) {
-      return
-    }
+    if (isEnvNameComposingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) return
 
     e.preventDefault()
-    void onDialogSaveEnvBtnClick()
+    onDialogSaveEnvBtnClick()
   }
 
   // 监听来自 Welcome Fragment 的新建请求

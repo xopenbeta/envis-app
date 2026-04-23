@@ -3,7 +3,7 @@ import { useAtom } from "jotai"
 import { toast } from 'sonner'
 import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcGetServiceData, ipcRestartServiceData, ipcUpdateServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
 import { ipcGetAllEnvironments, ipcActivateEnvironmentAndServices, ipcDeactivateEnvironmentAndServices } from "../ipc/environment"
-import { isAppLoadingAtom } from "../store/appSettings"
+import { isAppLoadingAtom } from "../store/app"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDatasAtom, selectedServiceDataIdAtom, envActivationEventAtom } from "../store/environment"
 import { useSettings } from "./appSettings"
 import { useEnvironment } from "./environment"

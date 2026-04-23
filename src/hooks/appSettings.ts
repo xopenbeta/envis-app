@@ -1,5 +1,5 @@
 import { atom, useAtom } from "jotai";
-import { defaultAppSettings } from "../store/appSettings";
+import { defaultAppSettings } from "../store/app";
 import { AppSettings, SystemSettings } from "@/types/index";
 import { ipcGetSystemSettings, ipcUpdateSystemSettings, ipcOpenAppConfigFolder } from "../ipc/systemSettings";
 import { toast } from "sonner";
