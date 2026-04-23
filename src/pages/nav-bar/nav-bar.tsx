@@ -53,7 +53,7 @@ import { toast } from 'sonner'
 import { useAppSettings } from '@/hooks/appSettings'
 import { useEnvironment } from '@/hooks/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
-import { appSettingsAtom, isAppLoadingAtom, updateAvailableAtom } from '../../store/appSettings'
+import { appSettingsAtom, isAppLoadingAtom, systemSettingsAtom, updateAvailableAtom } from '../../store/appSettings'
 import {
   environmentsAtom,
   selectedEnvironmentIdAtom,
@@ -80,6 +80,7 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   const [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom)
   const [appSettings] = useAtom(appSettingsAtom)
+  const [systemSettings] = useAtom(systemSettingsAtom);
   const [updateAvailable] = useAtom(updateAvailableAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
   const [, setIsLogOpen] = useAtom(isLogPanelOpenAtom)
@@ -141,8 +142,9 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 激活/停用环境
   const onToogleEnvStatusBtnClick = async (environment: Environment) => {
+    if (!systemSettings) return
     if (environment.status === EnvironmentStatus.Active) {
-      const res = await deactivateEnvAndServDatas(environment)
+      const res = await deactivateEnvAndServDatas(environment, '')
       if (res?.success === false) {
         toast.error(res.message || '环境停用失败')
         return
@@ -150,13 +152,10 @@ export default function NavBar({ onClose }: NavBarProps) {
     } else {
       const res = await switchEnvAndServDatasThenActive({
         environment,
-        environmentsSnapshot: [...environments],
+        environments: [...environments],
+        settings: systemSettings,
         passwordOverride: '',
       })
-      if (res?.success === false) {
-        toast.error(res.message || '环境切换失败')
-        return
-      }
     }
   }
 

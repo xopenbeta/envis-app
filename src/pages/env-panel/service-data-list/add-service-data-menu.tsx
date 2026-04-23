@@ -228,7 +228,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                 // 已下载，尝试激活服务
                 // 如果当前激活的环境就是所创建服务的环境
                 if (selectedEnvironmentId === activeEnvironment?.id) {
-                    await activateServiceData(selectedEnvironmentId, newServiceData)
+                    await activateServiceData(selectedEnvironmentId, newServiceData, '')
                 }
             } else {
                 // 显示下载确认对话框
@@ -250,7 +250,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             environmentId: selectedEnvironmentId,
             serviceType: ServiceType.Custom,
             version: '1.0.0',
-            serviceDatasSnapshot: selectedServiceDatas,
+            serviceDatas: selectedServiceDatas,
         })
     }
 
@@ -260,7 +260,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             environmentId: selectedEnvironmentId,
             serviceType: ServiceType.Host,
             version: '1.0.0',
-            serviceDatasSnapshot: selectedServiceDatas,
+            serviceDatas: selectedServiceDatas,
         })
     }
 
@@ -270,7 +270,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             environmentId: selectedEnvironmentId,
             serviceType: ServiceType.SSL,
             version: '1.0.0',
-            serviceDatasSnapshot: selectedServiceDatas,
+            serviceDatas: selectedServiceDatas,
         })
     }
 
@@ -281,7 +281,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             environmentId: selectedEnvironmentId,
             serviceType: ServiceType.Nginx,
             version: 'system',
-            serviceDatasSnapshot: selectedServiceDatas,
+            serviceDatas: selectedServiceDatas,
         })
     }
 

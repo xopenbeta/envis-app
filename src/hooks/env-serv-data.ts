@@ -323,13 +323,15 @@ export function useEnvironmentServiceData() {
     }
 
     // 切换 selected 环境
-    const switchEnvAndServDatas = async (environment: Environment) => {
-        const newEnvId = environment.id;
+    const switchEnvAndServDatas = async (environment: Environment | null) => {
+        const newEnvId = environment?.id || '';
         setSelectedEnvironmentId(newEnvId)
-        const serviceDatasRes = await getAllServiceDatas(newEnvId)
-        if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
-            setSelectedServiceDatas(serviceDatasRes.data.serviceDatas)
-            return;
+        if (newEnvId) {
+            const serviceDatasRes = await getAllServiceDatas(newEnvId)
+            if (serviceDatasRes.success && serviceDatasRes.data?.serviceDatas) {
+                setSelectedServiceDatas(serviceDatasRes.data.serviceDatas)
+                return;
+            }
         }
         setSelectedServiceDataId('')
         setSelectedServiceDatas([])
