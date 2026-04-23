@@ -16,7 +16,7 @@ import _ from 'lodash'
 import { toast } from 'sonner'
 import { AppSettings, AppTheme, Service, ServiceData, EnvironmentStatus } from "@/types/index"
 import { appSettingsAtom, systemSettingsAtom } from "../../store/appSettings"
-import { useAppSettings } from "@/hooks/appSettings"
+import { useSettings } from "@/hooks/appSettings"
 import { useService } from "@/hooks/service"
 import { useServiceData } from "@/hooks/env-serv-data"
 import { useSystemInfo } from "@/hooks/system-info"
@@ -174,7 +174,7 @@ export default function SettingsDialog(props: {
 
   const [appSettings] = useAtom(appSettingsAtom)
   const [systemSettings] = useAtom(systemSettingsAtom)
-  const { updateAppSettings, updateSystemSettings, openAppConfigFolder } = useAppSettings()
+  const { updateAppSettings, updateSystemSettings, openAppConfigFolder } = useSettings()
   const [environments] = useAtom(environmentsAtom)
   const { toggleDevTools, quitApp, getSystemInfo, openSystemEnvSettings } = useSystemInfo()
   const { getAllServiceDatas } = useServiceData()

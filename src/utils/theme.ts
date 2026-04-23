@@ -23,7 +23,6 @@ export const setAppTheme = (theme: AppSettings['theme']) => {
         systemThemeListener = (event: MediaQueryListEvent) => {
             root.classList.remove('light', 'dark')
             root.classList.add(event.matches ? 'dark' : 'light')
-            console.log('系统主题已自动切换到:', event.matches ? 'dark' : 'light')
         }
         
         mediaQuery.addEventListener('change', systemThemeListener)

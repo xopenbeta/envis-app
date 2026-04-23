@@ -52,7 +52,7 @@ import { toast } from 'sonner'
 import { selectedServiceDataIdAtom, environmentsAtom } from '@/store/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { Input } from '@/components/ui/input'
-import { useAppSettings } from '@/hooks/appSettings'
+import { useSettings } from '@/hooks/appSettings'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useEnvironment } from '@/hooks/environment'
 import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/service-pollers'
@@ -131,7 +131,7 @@ export function SortableServiceItem({
   const [password, setPassword] = useState('')
   // 记录密码输入，pendingPasswordAction 这东西是一个函数。。。
   const [pendingPasswordAction, setPendingPasswordAction] = useState<PasswordProtectedAction | null>(null)
-  const { systemSettings } = useAppSettings();
+  const { systemSettings } = useSettings();
   const { openFolderInFinder } = useFileOperations();
   const {
     attributes,

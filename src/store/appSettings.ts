@@ -14,8 +14,6 @@ export const defaultAppSettings: AppSettings = {
   }
 }
 
-export const appSettingsAtom = atom<AppSettings | undefined>(undefined)
-export const systemSettingsAtom = atom<SystemSettings | undefined>(undefined)
 export const isAppLoadingAtom = atom(true)
 export const updateAvailableAtom = atom(false)
 export const isUpdateDialogOpenAtom = atom(false)

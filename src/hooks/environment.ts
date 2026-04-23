@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { ipcActivateEnvironment, ipcCreateEnvironment, ipcDeactivateEnvironment, ipcDeleteEnvironment, ipcGetEnvironment, ipcSaveEnvironment } from "../ipc/environment"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDataIdAtom, selectedServiceDatasAtom } from "../store/environment"
 import { sortEnvironments } from "../utils/sort"
-import { useAppSettings } from "./appSettings"
+import { useSettings } from "./appSettings"
 
 export function useEnvironment() {
   const [environments, setEnvironments] = useAtom(environmentsAtom)

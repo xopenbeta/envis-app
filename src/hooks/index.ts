@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useAppSettings } from "./appSettings"
+import { useSettings } from "./appSettings"
 import { useEnvironmentServiceData } from "./env-serv-data";
 import { useAtom } from "jotai";
 import { isAppLoadingAtom } from "@/store/appSettings";
@@ -13,7 +13,7 @@ export {
 
 // 初始化整个Envis应用
 export function useInitEnvis() {
-    const { initAppSettings, initSystemSettings } = useAppSettings();
+    const { initAppSettings, initSystemSettings } = useSettings();
     const { initEnvironments, deactivateAllEnvAndServDatas, autoStartEnvironment } = useEnvironmentServiceData();
     const [isEnvisInited, setisEnvisInited] = useState(false);
     const [, setIsAppLoading] = useAtom(isAppLoadingAtom)

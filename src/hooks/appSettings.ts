@@ -1,24 +1,17 @@
-import { useAtom } from "jotai";
-import { defaultAppSettings, appSettingsAtom, systemSettingsAtom } from "../store/appSettings";
+import { atom, useAtom } from "jotai";
+import { defaultAppSettings } from "../store/appSettings";
 import { AppSettings, SystemSettings } from "@/types/index";
-import { setAppTheme } from "../utils/theme";
 import { ipcGetSystemSettings, ipcUpdateSystemSettings, ipcOpenAppConfigFolder } from "../ipc/systemSettings";
 import { toast } from "sonner";
 import { useLogger } from "./log";
-import i18n from '@/i18n/config'
 
-// appConfig的数据不重要，用不着放在文件里
+const appSettingsAtom = atom<AppSettings | undefined>(undefined)
+const systemSettingsAtom = atom<SystemSettings | undefined>(undefined)
+
+// appSettings 的数据不重要，用不着放在文件里
 const APP_SETTINGS_STORAGE_KEY = 'envis-app-settings'
 
-const normalizeLanguage = (language?: string) => {
-  if (!language) return 'en'
-  const value = language.toLowerCase()
-  if (value.startsWith('zh')) return 'zh'
-  if (value.startsWith('en')) return 'en'
-  return 'en'
-}
-
-// 从localStorage读取应用设置数据
+// 从 localStorage 读取应用设置数据
 export const loadAppSettingsFromStorage = (): AppSettings => {
   try {
     const settingsStr = localStorage.getItem(APP_SETTINGS_STORAGE_KEY)
@@ -29,12 +22,12 @@ export const loadAppSettingsFromStorage = (): AppSettings => {
   }
 }
 
-// 保存应用设置数据到localStorage
+// 保存应用设置数据到 localStorage
 export const saveAppSettingsToStorage = (settings: AppSettings) => {
   localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
 }
 
-export function useAppSettings() {
+export function useSettings() {
   const [appSettings, setAppSettings] = useAtom(appSettingsAtom);
   const [systemSettings, setSystemSettings] = useAtom(systemSettingsAtom);
   const { logInfo, logError } = useLogger();
@@ -43,9 +36,7 @@ export function useAppSettings() {
     // 从localStorage读取应用设置
     let appSettings = loadAppSettingsFromStorage();
     setAppSettings(appSettings);
-    setAppTheme(appSettings.theme);
-    void i18n.changeLanguage(normalizeLanguage(appSettings.language));
-    logInfo('【init】初始化应用设置完成');
+    logInfo('【init】初始化 appSettings 完成');
     return appSettings;
   }
 
@@ -53,12 +44,6 @@ export function useAppSettings() {
     setAppSettings((currentSettings) => {
       const updatedSettings = { ...(currentSettings ?? defaultAppSettings), ...updates };
       saveAppSettingsToStorage(updatedSettings);
-      if (updates.theme) { // 如果theme有改动
-        setAppTheme(updates.theme);
-      }
-      if (updates.language) {
-        void i18n.changeLanguage(normalizeLanguage(updates.language));
-      }
       return updatedSettings;
     });
   }
@@ -66,7 +51,6 @@ export function useAppSettings() {
   function resetAppSettings() {
     setAppSettings(defaultAppSettings);
     saveAppSettingsToStorage(defaultAppSettings);
-    setAppTheme(defaultAppSettings.theme);
   }
 
   async function initSystemSettings() {
@@ -74,10 +58,10 @@ export function useAppSettings() {
     if (ipcRes.success && ipcRes.data?.appConfig) {
       const systemSettings: SystemSettings = ipcRes.data.appConfig;
       setSystemSettings(systemSettings);
-      logInfo('【init】初始化系统设置完成');
+      logInfo('【init】初始化 systemSettings 完成');
       return systemSettings;
     } else {
-      logError('【init】初始化系统设置失败');
+      logError('【init】初始化 systemSettings 失败');
       return null;
     }
   }

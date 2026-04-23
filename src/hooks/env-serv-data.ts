@@ -5,7 +5,7 @@ import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData,
 import { ipcGetAllEnvironments, ipcActivateEnvironmentAndServices, ipcDeactivateEnvironmentAndServices } from "../ipc/environment"
 import { isAppLoadingAtom } from "../store/appSettings"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDatasAtom, selectedServiceDataIdAtom, envActivationEventAtom } from "../store/environment"
-import { useAppSettings } from "./appSettings"
+import { useSettings } from "./appSettings"
 import { useEnvironment } from "./environment"
 import { useService } from "./service"
 import { ipcGetServiceStatus } from "@/ipc/service"
@@ -66,7 +66,7 @@ export function useEnvironmentServiceData() {
     const { } = useEnvironment();
     const { getAllServiceDatas } = useServiceData();
     const { checkServiceInstalled } = useService();
-    const { updateSystemSettings, systemSettings } = useAppSettings();
+    const { updateSystemSettings, systemSettings } = useSettings();
     const selectedServiceData = selectedServiceDatas.find(serviceData => serviceData.id === selectedServiceDataId)
     const getSudoPassword = () => sessionStorage.getItem('envis_sudo_password') || undefined
 

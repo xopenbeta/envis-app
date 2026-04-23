@@ -10,10 +10,12 @@ import { Loading } from "./Loading";
 import { useAppTitleVersion } from "./hooks/useAppVersion";
 import { useRustLogger } from "./hooks/useRustLogger";
 import { useEffect } from "react";
+import { useI18n } from "./hooks/useI18n";
 
 function App(): JSX.Element {
   const { isEnvisInited } = useInitEnvis();
   const [isAppLoading] = useAtom(isAppLoadingAtom);
+  useI18n();
   useAppTheme();
   useAppTitleVersion();
   useRustLogger(); // 附加 Rust 日志到浏览器控制台

@@ -50,10 +50,10 @@ import {
 import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import { useAppSettings } from '@/hooks/appSettings'
+import { useSettings } from '@/hooks/appSettings'
 import { useEnvironment } from '@/hooks/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
-import { appSettingsAtom, isAppLoadingAtom, systemSettingsAtom, updateAvailableAtom } from '../../store/appSettings'
+import { isAppLoadingAtom, updateAvailableAtom } from '../../store/appSettings'
 import {
   environmentsAtom,
   selectedEnvironmentIdAtom,
@@ -79,13 +79,12 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [environments] = useAtom(environmentsAtom)
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   const [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom)
-  const [appSettings] = useAtom(appSettingsAtom)
-  const [systemSettings] = useAtom(systemSettingsAtom);
+  const { appSettings, systemSettings } = useSettings()
   const [updateAvailable] = useAtom(updateAvailableAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
   const [, setIsLogOpen] = useAtom(isLogPanelOpenAtom)
   const [, setIsAIPanelOpen] = useAtom(isAIPanelOpenAtom)
-  const { updateAppSettings } = useAppSettings()
+  const { updateAppSettings } = useSettings()
   const {
     createEnvironment,
     updateEnvironment,
