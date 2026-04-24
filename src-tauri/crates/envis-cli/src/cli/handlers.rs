@@ -1,6 +1,6 @@
-use crate::manager::app_config_manager::AppConfigManager;
-use crate::manager::environment_manager::EnvironmentManager;
-use crate::types::EnvironmentStatus;
+use envis_core::manager::app_config_manager::AppConfigManager;
+use envis_core::manager::environment_manager::EnvironmentManager;
+use envis_core::types::EnvironmentStatus;
 
 fn persist_last_used_environment_ids(active_environment_ids: Vec<String>) -> Result<(), String> {
     let manager = AppConfigManager::global();

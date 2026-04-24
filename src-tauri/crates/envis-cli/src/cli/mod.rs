@@ -1,9 +1,8 @@
-
 mod handlers;
 
-use crate::manager::app_config_manager::initialize_config_manager;
-use crate::manager::environment_manager::initialize_environment_manager;
-use crate::manager::shell_manamger::initialize_shell_manager;
+use envis_core::manager::app_config_manager::initialize_config_manager;
+use envis_core::manager::environment_manager::initialize_environment_manager;
+use envis_core::manager::shell_manamger::initialize_shell_manager;
 
 /// 提前处理 CLI 参数（不依赖 Tauri 应用）
 /// args: 来自 std::env::args().collect()，由 main.rs 传入，避免重复收集
