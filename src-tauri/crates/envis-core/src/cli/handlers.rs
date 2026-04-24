@@ -112,21 +112,27 @@ pub fn handle_use_early(target_str: &str) {
 
 /// 处理 `list` 命令
 pub fn handle_list() {
-    println!("环境列表:");
     let manager = EnvironmentManager::global();
     let manager = manager.lock().unwrap();
     match manager.get_all_environments() {
         Ok(envs) => {
             if envs.is_empty() {
-                println!("  (无环境)");
+                println!("(无环境)");
             } else {
+                let name_width = envs
+                    .iter()
+                    .map(|env| env.name.chars().count())
+                    .max()
+                    .unwrap_or(0);
+
                 for env in envs {
-                    let active = if env.status == EnvironmentStatus::Active {
-                        "[Active] "
+                    let marker = if env.status == EnvironmentStatus::Active {
+                        "*"
                     } else {
-                        "         "
+                        " "
                     };
-                    println!("{}{} ({})", active, env.name, env.id);
+                    let short_id: String = env.id.chars().take(8).collect();
+                    println!("{} {:<width$}\t{}", marker, env.name, short_id, width = name_width);
                 }
             }
         }
