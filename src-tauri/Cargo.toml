@@ -29,6 +29,7 @@ num_cpus     = "1.17.0"
 dirs         = "5.0"
 sysinfo      = "0.30"
 envis-core   = { path = "crates/envis-core" }
+envis-cli    = { path = "crates/envis-cli" }
 
 # ── envis-app (Tauri GUI 主包) ─────────────────────────────────────────
 
@@ -51,6 +52,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 envis-core           = { workspace = true, features = ["tauri-integration"] }
+envis-cli            = { workspace = true }
 tauri                = { version = "2", features = ["devtools", "tray-icon"] }
 tauri-plugin-opener  = "2.5.0"
 tauri-plugin-dialog  = "2"

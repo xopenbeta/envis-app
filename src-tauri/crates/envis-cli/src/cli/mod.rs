@@ -52,6 +52,14 @@ pub fn handle_cli_early(args: &[String]) -> Result<(), Box<dyn std::error::Error
         std::process::exit(0);
     }
 
+    // ── --complete-use：输出环境名供 shell tab 补全使用（静默，不报错）─
+    if args[1] == "--complete-use" {
+        let _ = initialize_config_manager();
+        let _ = initialize_environment_manager();
+        handlers::handle_complete_use();
+        std::process::exit(0);
+    }
+
     eprintln!("未知命令: {}", args[1]);
     eprintln!("运行 'envis --help' 查看可用命令");
     std::process::exit(1);

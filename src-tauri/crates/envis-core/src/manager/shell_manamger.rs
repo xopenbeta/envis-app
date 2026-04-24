@@ -309,7 +309,35 @@ envis() {{
     fi
     return $exit_code
 }}
-alias ev=envis
+ev() {{ envis "$@"; }}
+
+# Tab 补全
+if [ -n "$ZSH_VERSION" ]; then
+    _envis_completions() {{
+        local -a subcmds envs
+        subcmds=('list:列出所有环境' 'ls:列出所有环境' 'use:激活环境' 'refresh:刷新Shell配置')
+        if (( CURRENT == 2 )); then
+            _describe 'command' subcmds
+        elif (( CURRENT == 3 )) && [[ ${{words[2]}} == use ]]; then
+            envs=(${{(f)"$(command envis --complete-use 2>/dev/null)"}})
+            _describe 'environment' envs
+        fi
+    }}
+    compdef _envis_completions envis
+    compdef _envis_completions ev
+elif [ -n "$BASH_VERSION" ]; then
+    _envis_bash_complete() {{
+        local cur="${{COMP_WORDS[COMP_CWORD]}}"
+        local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
+        if [ $COMP_CWORD -eq 1 ]; then
+            COMPREPLY=($(compgen -W "list ls use refresh" -- "$cur"))
+        elif [ "$prev" = "use" ]; then
+            COMPREPLY=($(compgen -W "$(command envis --complete-use 2>/dev/null)" -- "$cur"))
+        fi
+    }}
+    complete -F _envis_bash_complete envis
+    complete -F _envis_bash_complete ev
+fi
 "#,
                 reload_cmd
             )

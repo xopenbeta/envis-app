@@ -1352,6 +1352,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "dirs 5.0.1",
+ "envis-cli",
  "envis-core",
  "image",
  "log",

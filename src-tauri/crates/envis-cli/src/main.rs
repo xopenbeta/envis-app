@@ -1,5 +1,3 @@
-mod cli;
-
 fn main() {
     // 初始化日志（输出到 stderr，不污染 stdout 的命令输出）
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn"))
@@ -8,7 +6,7 @@ fn main() {
 
     let args: Vec<String> = std::env::args().collect();
 
-    if let Err(e) = cli::handle_cli_early(&args) {
+    if let Err(e) = envis_cli::cli::handle_cli_early(&args) {
         eprintln!("CLI 处理失败: {}", e);
         std::process::exit(1);
     }

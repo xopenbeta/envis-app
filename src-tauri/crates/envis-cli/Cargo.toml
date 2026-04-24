@@ -3,6 +3,10 @@ name    = "envis-cli"
 version = "0.12.0"
 edition = "2021"
 
+[lib]
+name = "envis_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "envis-cli"
 path = "src/main.rs"

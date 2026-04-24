@@ -148,3 +148,17 @@ pub fn handle_refresh() {
     // 什么都不做，直接成功退出
     // shell wrapper 中检测到 refresh 命令且退出码为 0 时，会自动执行 source
 }
+
+/// 处理 `--complete-use` 隐式命令: 输出所有环境名称，每行一个，供 shell 补全使用
+pub fn handle_complete_use() {
+    let manager = EnvironmentManager::global();
+    let manager = match manager.lock() {
+        Ok(m) => m,
+        Err(_) => return,
+    };
+    if let Ok(envs) = manager.get_all_environments() {
+        for env in envs {
+            println!("{}", env.name);
+        }
+    }
+}
