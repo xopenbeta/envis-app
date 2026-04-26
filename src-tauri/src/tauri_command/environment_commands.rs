@@ -3,6 +3,7 @@ use envis_core::types::Environment;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::time::Instant;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EnvironmentCommandResult {
@@ -24,11 +25,25 @@ impl From<envis_core::manager::environment_manager::EnvironmentResult> for Envir
 /// 获取所有环境
 #[tauri::command]
 pub async fn get_all_environments() -> Result<EnvironmentCommandResult, String> {
+    let cmd_start = Instant::now();
     let manager = EnvironmentManager::global();
+
+    let lock_wait_start = Instant::now();
     let manager = manager.lock().unwrap();
+    let lock_wait_elapsed = lock_wait_start.elapsed();
+
+    log::debug!(
+        "IPC get_all_environments 等待 EnvironmentManager 锁耗时: {:?}",
+        lock_wait_elapsed
+    );
 
     match manager.get_all_environments() {
         Ok(environments) => {
+            let total_elapsed = cmd_start.elapsed();
+            log::debug!(
+                "IPC get_all_environments 总耗时(含锁等待): {:?}",
+                total_elapsed
+            );
             let data = serde_json::json!({ "environments": environments });
             Ok(EnvironmentCommandResult {
                 success: true,
@@ -36,11 +51,19 @@ pub async fn get_all_environments() -> Result<EnvironmentCommandResult, String> 
                 data: Some(data),
             })
         }
-        Err(e) => Ok(EnvironmentCommandResult {
-            success: false,
-            message: e.to_string(),
-            data: None,
-        }),
+        Err(e) => {
+            let total_elapsed = cmd_start.elapsed();
+            log::error!(
+                "IPC get_all_environments 失败，总耗时(含锁等待): {:?}, 错误: {}",
+                total_elapsed,
+                e
+            );
+            Ok(EnvironmentCommandResult {
+                success: false,
+                message: e.to_string(),
+                data: None,
+            })
+        }
     }
 }
 
