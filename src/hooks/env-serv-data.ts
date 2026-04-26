@@ -349,6 +349,9 @@ export function useEnvironmentServiceData() {
         settings: SystemSettings
         passwordOverride: string
     }) {
+        let t = Date.now();
+        console.log("zws switchEnvAndServDatasThenActive 切换环境状态1:", Date.now() - t);
+        t = Date.now();
         let loadingTimer = null;
         let isActiveFinish = false;
         const currentSelectedEnvironmentId = environment.id;
@@ -358,10 +361,12 @@ export function useEnvironmentServiceData() {
                 setIsAppLoading(true);
             }
         }, 300);
-
+        console.log("zws switchEnvAndServDatasThenActive 切换环境状态2:", Date.now() - t);
+        t = Date.now();
         // 切换环境数据显示
         await switchEnvAndServDatas(environment);
-
+        console.log("zws switchEnvAndServDatasThenActive 切换环境状态3:", Date.now() - t);
+        t = Date.now();
         const currentLastUsedIds = getLastUsedEnvironmentIds(settings)
         let nextLastUsedIds = [...currentLastUsedIds]
 
@@ -379,9 +384,12 @@ export function useEnvironmentServiceData() {
             nextLastUsedIds = [...filtered, environment.id]
         }
         await setLastUsedEnvironmentIds(nextLastUsedIds, settings)
-
+        console.log("zws switchEnvAndServDatasThenActive 切换环境状态4:", Date.now() - t);
+        t = Date.now();
         // 激活环境
         await activateEnvAndServDatas(environment, passwordOverride)
+        console.log("zws switchEnvAndServDatasThenActive 切换环境状态5:", Date.now() - t);
+        t = Date.now();
         console.log('激活环境:', environment.name)
 
 

@@ -138,6 +138,7 @@ export default function NavBar({ onClose }: NavBarProps) {
   // 激活/停用环境
   const onToogleEnvStatusBtnClick = async (environment: Environment) => {
     if (!systemSettings) return
+    console.log("zws 切换环境状态:", environment)
     if (environment.status === EnvironmentStatus.Active) {
       const res = await deactivateEnvAndServDatas(environment, '')
       if (res?.success === false) {

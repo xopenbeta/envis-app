@@ -56,22 +56,32 @@ impl EnvironmentManager {
 
     /// 获取所有环境
     pub fn get_all_environments(&self) -> Result<Vec<Environment>> {
+        let start_time = std::time::Instant::now();
+        log::debug!("开始获取所有环境: get_all_environments");
+
         let envs_folder = {
+            let config_start = std::time::Instant::now();
             let app_config_manager = AppConfigManager::global();
             let app_config_manager = app_config_manager.lock().unwrap();
-            app_config_manager.get_envs_folder()
+            let folder = app_config_manager.get_envs_folder();
+            log::debug!("获取 envs_folder 耗时: {:?}", config_start.elapsed());
+            folder
         };
 
         let mut environments = Vec::new();
         let envs_path = Path::new(&envs_folder);
 
         if !envs_path.exists() {
+            log::debug!("环境文件夹不存在, 提前返回, 总耗时: {:?}", start_time.elapsed());
             // 理论上在软件开启时设置了，如果还没有证明未知错误
             return Ok(environments);
         }
 
+        let read_dir_start = std::time::Instant::now();
         let entries = fs::read_dir(envs_path).context("读取环境文件夹失败")?;
+        log::debug!("fs::read_dir 耗时: {:?}", read_dir_start.elapsed());
 
+        let loop_start = std::time::Instant::now();
         for entry in entries {
             let entry = entry.context("读取目录项失败")?;
             let env_path = entry.path();
@@ -79,16 +89,22 @@ impl EnvironmentManager {
             if env_path.is_dir() {
                 let env_config_path = env_path.join(ENV_CONFIG_FILE_NAME);
                 if env_config_path.exists() {
+                    let load_start = std::time::Instant::now();
                     match self.load_environment_from_file(&env_config_path) {
-                        Ok(environment) => environments.push(environment),
+                        Ok(environment) => {
+                            environments.push(environment);
+                            log::debug!("读取单个环境配置耗时 {:?}: {:?}", load_start.elapsed(), env_config_path);
+                        }
                         Err(e) => {
-                            log::error!("读取环境配置失败: {:?}, 错误: {}", env_path, e);
+                            log::error!("读取环境配置失败: {:?}, 错误: {}, 耗时: {:?}", env_path, e, load_start.elapsed());
                         }
                     }
                 }
             }
         }
+        log::debug!("遍历读取所有环境目录总耗时: {:?}", loop_start.elapsed());
 
+        let sort_start = std::time::Instant::now();
         // 按 sort 属性排序（如果有），否则按创建时间排序
         environments.sort_by(|a, b| match (a.sort, b.sort) {
             (Some(sa), Some(sb)) => sa.cmp(&sb),
@@ -96,6 +112,9 @@ impl EnvironmentManager {
             (None, Some(_)) => std::cmp::Ordering::Greater,
             (None, None) => a.created_at.cmp(&b.created_at),
         });
+        log::debug!("排序耗时: {:?}", sort_start.elapsed());
+        log::debug!("get_all_environments 完整流程总耗时: {:?}", start_time.elapsed());
+        
         Ok(environments)
     }
 

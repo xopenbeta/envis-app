@@ -5,7 +5,13 @@ import { IPCResult } from "@/types/ipc"
 import { closeTooManyLogs } from "@/utils/const"
 
 export const ipcGetAllEnvironments = ipcLogFunc('获取所有环境', async (): Promise<IPCResult<{ environments: Environment[] }>> => {
-    return invokeCommand('get_all_environments')
+    let  t= Date.now();
+    console.log('zws ipcGetAllEnvironments called', new Date().toLocaleString());
+    t = Date.now();
+    const res = await invokeCommand('get_all_environments')
+    console.log('zws ipcGetAllEnvironments result:', Date.now() - t);
+    t = Date.now();
+    return res
 })
 
 export const ipcGetEnvironment = ipcLogFunc('获取单个环境', async (environmentId: string): Promise<IPCResult<{ environment: Environment }>> => {

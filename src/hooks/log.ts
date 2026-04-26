@@ -6,7 +6,7 @@ export function useLogger() {
   const setOpen = useSetAtom(isLogPanelOpenAtom)
 
   const addLog = (level: LogLevel, message: string, meta?: Record<string, any>) => {
-    append({ level, message, meta })
+    // append({ level, message, meta })
     console.log(`[${level}]`, message, meta)
   }
 
