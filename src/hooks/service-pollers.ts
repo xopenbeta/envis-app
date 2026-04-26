@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   DownloadStatus,
   EnvironmentStatus,
@@ -30,9 +30,11 @@ export function useEnvironmentStatus(
   const interval = options.interval ?? DEFAULT_INTERVAL
   const immediate = options.immediate ?? true
   const [status, setStatus] = useState<EnvironmentStatus>(EnvironmentStatus.Inactive)
+  const isRefreshingRef = useRef(false)
 
   const refresh = async () => {
-    if (!enabled) return
+    if (!enabled || isRefreshingRef.current) return
+    isRefreshingRef.current = true
     try {
       const result = await getEnvironment(environmentId)
       if (result.success && result.data?.environment) {
@@ -40,6 +42,8 @@ export function useEnvironmentStatus(
       }
     } catch (error) {
       console.error('轮询环境状态失败:', error)
+    } finally {
+      isRefreshingRef.current = false
     }
   }
 
@@ -76,9 +80,11 @@ export function useServiceStatus(
   const interval = options.interval ?? DEFAULT_INTERVAL
   const immediate = options.immediate ?? true
   const [status, setStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
+  const isRefreshingRef = useRef(false)
 
   const refresh = async () => {
-    if (!enabled) return
+    if (!enabled || isRefreshingRef.current) return
+    isRefreshingRef.current = true
     try {
       const result = await getServiceStatus(environmentId, serviceData)
       if (result.success && result.data) {
@@ -86,6 +92,8 @@ export function useServiceStatus(
       }
     } catch (error) {
       console.error('轮询服务程序状态失败:', error)
+    } finally {
+      isRefreshingRef.current = false
     }
   }
 
@@ -122,9 +130,11 @@ export function useServiceDataStatus(
   const interval = options.interval ?? DEFAULT_INTERVAL
   const immediate = options.immediate ?? true
   const [serviceDataStatus, setServiceDataStatus] = useState<ServiceDataStatus>(ServiceDataStatus.Unknown)
+  const isRefreshingRef = useRef(false)
 
   const refresh = async () => {
-    if (!enabled) return
+    if (!enabled || isRefreshingRef.current) return
+    isRefreshingRef.current = true
     try {
       const result = await getServiceData(environmentId, serviceId)
       if (result.success && result.data?.serviceData) {
@@ -132,6 +142,8 @@ export function useServiceDataStatus(
       }
     } catch (error) {
       console.error('轮询服务激活状态失败:', error)
+    } finally {
+      isRefreshingRef.current = false
     }
   }
 
@@ -170,13 +182,16 @@ export function useServiceDownloadStatus(
   const immediate = options.immediate ?? true
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(DownloadStatus.Unknown)
   const [downloadProgress, setDownloadProgress] = useState(0)
+  const isRefreshingRef = useRef(false)
 
   const refresh = async () => {
-    if (!enabled) return
+    if (!enabled || isRefreshingRef.current) return
+    isRefreshingRef.current = true
 
     if (!NeedDownloadServices.includes(serviceType)) {
       setDownloadStatus(DownloadStatus.Installed)
       setDownloadProgress(100)
+      isRefreshingRef.current = false
       return
     }
 
@@ -200,6 +215,8 @@ export function useServiceDownloadStatus(
       setDownloadProgress(nextProgress)
     } catch (error) {
       console.error('轮询服务下载状态失败:', error)
+    } finally {
+      isRefreshingRef.current = false
     }
   }
 
