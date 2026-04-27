@@ -35,7 +35,7 @@ envis-cli    = { path = "crates/envis-cli" }
 
 [package]
 name = "envis"
-version = "0.12.5"
+version = "0.12.6"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"

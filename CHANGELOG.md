@@ -1,5 +1,20 @@
 # 更新日志 / Changelog
 
+## [0.12.6] - 2026-04-27
+
+### 新增 / Added
+- ✨ Shell 命令行 Tab 补全支持：`envis` 与 `ev` 命令现支持 zsh 和 bash 的 Tab 补全，子命令（list/ls/use/refresh）与环境名称均可自动补全，提升命令行使用体验
+- ✨ CLI 新增 `list`/`ls` 命令：在终端中执行 `envis list` 可列出所有环境及当前激活状态，活跃环境以 `*` 标记展示
+
+### 修复 / Fixed
+- 🐛 修复 macOS / Linux 下打开 PostgreSQL 客户端（psql）时因动态库路径缺失导致的启动失败：打开客户端时自动注入 `DYLD_LIBRARY_PATH`（macOS）或 `LD_LIBRARY_PATH`（Linux），确保 PostgreSQL 自带的动态库能被正确加载
+- 🐛 修复环境状态、服务状态与服务数据轮询器在高频场景下产生重复并发请求的问题：新增请求锁（`isRefreshingRef`），轮询任务执行期间跳过后续触发，降低后端压力与状态竞争
+
+### 改进 / Improved
+- ♻️ 服务总览页面将系统监控面板上移至最顶部，优先展示资源使用概况，提升信息层级清晰度
+- ♻️ 服务快捷命令卡片移除 Tooltip 外层包裹，简化 DOM 层级，优化渲染性能
+- ♻️ 后端 `get_all_environments` 与环境切换链路新增分阶段性能日志，便于排查启动与切换慢的根因
+
 ## [0.12.5] - 2026-04-23
 
 ### 新增 / Added
