@@ -2,6 +2,7 @@ pub mod custom_commands;
 pub mod dnsmasq_commands;
 pub mod host_commands;
 pub mod java_commands;
+pub mod rust_commands;
 pub mod mariadb_commands;
 pub mod mongodb_commands;
 pub mod mysql_commands;

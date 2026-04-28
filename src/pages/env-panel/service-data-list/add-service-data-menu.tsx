@@ -103,6 +103,10 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             isLoading: false,
             availableVersions: [],
         },
+        [ServiceType.Rust]: {
+            isLoading: false,
+            availableVersions: [],
+        },
         [ServiceType.Nasm]: {
             isLoading: false,
             availableVersions: [],

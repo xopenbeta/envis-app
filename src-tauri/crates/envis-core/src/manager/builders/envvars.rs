@@ -42,6 +42,9 @@ impl EnvVarBuilder {
             ServiceType::Java => {
                 // Java 服务由其自身的服务管理器负责环境变量
             }
+            ServiceType::Rust => {
+                // Rust 服务由其自身的服务管理器负责环境变量
+            }
             ServiceType::Custom => {
                 // 自定义服务由用户配置，不需要默认环境变量
             }

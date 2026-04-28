@@ -647,6 +647,19 @@
     "maven_local_repo_applied": "Maven local repository path applied",
     "maven_local_repo_apply_failed": "Failed to set Maven local repository path"
   },
+  "rust_service": {
+    "rust_home_label": "RUST_HOME",
+    "rust_home_desc": "Rust toolchain installation path, automatically set when the service is activated",
+    "cargo_home_label": "CARGO_HOME (Optional)",
+    "cargo_home_desc": "Cargo's home directory used to store registry indexes, downloaded packages, and binaries",
+    "cargo_home_placeholder": "Leave blank to use default ~/.cargo",
+    "cargo_home_tip": "Leave blank to use the default path (~/.cargo). Changes take effect after re-activating the service.",
+    "rust_info_label": "Rust Version Info",
+    "rustc_version": "rustc Version",
+    "cargo_version": "Cargo Version",
+    "checking": "Loading Rust info...",
+    "apply": "Apply"
+  },
   "nasm_service": {
     "title": "NASM Assembler Tool",
     "description": "NASM is an assembler toolchain. Choose and install a NASM version in Add Service, then activate it to append binary paths into the current environment.",

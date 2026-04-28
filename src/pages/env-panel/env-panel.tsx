@@ -17,6 +17,7 @@ import { CustomService } from './service-data-panel/custom-service'
 import { HostService } from './service-data-panel/host-service'
 import { PythonService } from './service-data-panel/python-service'
 import { JavaService } from './service-data-panel/java-service'
+import { RustService } from './service-data-panel/rust-service'
 import { SSLService } from './service-data-panel/ssl-service'
 import { DnsmasqService } from './service-data-panel/dnsmasq-service'
 import { NasmService } from './service-data-panel/nasm-service'
@@ -53,6 +54,8 @@ function ServiceDetailRouter() {
       return <PythonService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Java:
       return <JavaService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
+    case ServiceType.Rust:
+      return <RustService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Nasm:
       return <NasmService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Redis:

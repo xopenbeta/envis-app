@@ -22,6 +22,7 @@ use tauri_command::services::custom_commands::*;
 use tauri_command::services::dnsmasq_commands::*;
 use tauri_command::services::host_commands::*;
 use tauri_command::services::java_commands::*;
+use tauri_command::services::rust_commands::*;
 use tauri_command::services::mariadb_commands::*;
 use tauri_command::services::mongodb_commands::*;
 use tauri_command::services::mysql_commands::*;
@@ -196,6 +197,14 @@ pub fn run() {
             initialize_gradle,
             get_gradle_download_progress,
             set_maven_local_repository,
+            // Rust 服务命令
+            check_rust_installed,
+            get_rust_versions,
+            download_rust,
+            cancel_download_rust,
+            get_rust_download_progress,
+            get_rust_info,
+            set_cargo_home,
             // Nginx 服务命令
             check_nginx_installed,
             get_nginx_versions,

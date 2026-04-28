@@ -4,6 +4,7 @@ pub mod download_manager;
 pub mod host;
 pub mod java;
 pub mod mariadb;
+pub mod rust;
 pub mod mingw;
 pub mod mongodb;
 pub mod mysql;
@@ -23,6 +24,7 @@ pub use download_manager::{DownloadManager, DownloadResult, DownloadStatus, Down
 pub use host::HostService;
 pub use java::JavaService;
 pub use mariadb::MariadbService;
+pub use rust::RustService;
 pub use mingw::MinGWService;
 pub use mongodb::MongodbService;
 pub use mysql::MysqlService;

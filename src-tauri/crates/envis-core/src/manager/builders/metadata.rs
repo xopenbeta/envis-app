@@ -62,6 +62,10 @@ impl MetadataBuilder {
                 // 为 Java 服务创建默认配置
                 Self::build_java_default_metadata(environment_id, service_data, &mut metadata)?;
             }
+            ServiceType::Rust => {
+                // 为 Rust 服务创建默认配置
+                Self::build_rust_default_metadata(service_data, &mut metadata)?;
+            }
             ServiceType::Custom => {
                 // 为自定义服务创建默认配置
                 Self::build_custom_default_metadata(environment_id, service_data, &mut metadata)?;
@@ -313,6 +317,35 @@ http {{
     }
 
     /// 构建 Java 服务的默认 metadata
+    fn build_rust_default_metadata(
+        service_data: &ServiceData,
+        metadata: &mut HashMap<String, serde_json::Value>,
+    ) -> Result<()> {
+        let services_folder = {
+            let app_config_manager = AppConfigManager::global();
+            let app_config_manager = app_config_manager.lock().unwrap();
+            app_config_manager.get_services_folder()
+        };
+        let install_path = PathBuf::from(services_folder)
+            .join("rust")
+            .join(&service_data.version);
+
+        // RUST_HOME = 工具链安装目录
+        metadata.insert(
+            "RUST_HOME".to_string(),
+            serde_json::Value::String(install_path.to_string_lossy().to_string()),
+        );
+
+        // CARGO_HOME = 安装目录下的 cargo 子文件夹
+        let cargo_home = install_path.join("cargo");
+        metadata.insert(
+            "CARGO_HOME".to_string(),
+            serde_json::Value::String(cargo_home.to_string_lossy().to_string()),
+        );
+
+        Ok(())
+    }
+
     fn build_java_default_metadata(
         environment_id: &str,
         service_data: &ServiceData,

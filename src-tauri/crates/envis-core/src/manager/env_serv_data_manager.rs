@@ -12,7 +12,7 @@ use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::builders::MetadataBuilder;
 use crate::manager::host_manager::HostManager;
 use crate::manager::services::{
-    CustomService, HostService, JavaService, NodejsService, ServiceLifecycle, StandardService,
+    CustomService, HostService, JavaService, NodejsService, RustService, ServiceLifecycle, StandardService,
 };
 use crate::types::{ServiceData, ServiceDataStatus, ServiceType, UpdateServiceDataRequest};
 
@@ -412,6 +412,7 @@ impl EnvServDataManager {
             ServiceType::Custom => CustomService::global(),
             ServiceType::Nodejs => NodejsService::global(),
             ServiceType::Java => JavaService::global(),
+            ServiceType::Rust => RustService::global(),
             _ => StandardService::global(),
         };
 
@@ -444,6 +445,7 @@ impl EnvServDataManager {
             ServiceType::Custom => CustomService::global(),
             ServiceType::Nodejs => NodejsService::global(),
             ServiceType::Java => JavaService::global(),
+            ServiceType::Rust => RustService::global(),
             _ => StandardService::global(),
         };
 

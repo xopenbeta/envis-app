@@ -613,6 +613,19 @@
     "maven_local_repo_applied": "Maven 本地仓库路径已应用",
     "maven_local_repo_apply_failed": "设置 Maven 本地仓库路径失败"
   },
+  "rust_service": {
+    "rust_home_label": "RUST_HOME",
+    "rust_home_desc": "Rust 工具链安装路径，激活服务时自动设置",
+    "cargo_home_label": "CARGO_HOME（可选）",
+    "cargo_home_desc": "Cargo 主目录，用于存储注册表索引、已下载的包和二进制文件",
+    "cargo_home_placeholder": "留空则使用默认路径 ~/.cargo",
+    "cargo_home_tip": "留空则使用默认路径（~/.cargo），修改后需重新激活服务才能生效。",
+    "rust_info_label": "Rust 版本信息",
+    "rustc_version": "rustc 版本",
+    "cargo_version": "Cargo 版本",
+    "checking": "正在加载 Rust 信息...",
+    "apply": "应用"
+  },
   "nasm_service": {
     "title": "NASM 汇编工具",
     "description": "NASM 是汇编语言工具链，版本下载请在添加服务时选择对应版本并安装，激活后会把可执行路径加入当前环境。",
