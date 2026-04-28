@@ -1,5 +1,13 @@
 # 更新日志 / Changelog
 
+## [0.13.0] - 2026-04-28
+
+### 新增 / Added
+- ✨ 新增 Rust 服务支持：可在环境面板中添加并管理 Rust 工具链，支持配置 RUST_HOME 与 CARGO_HOME 路径，激活后自动注入 `RUST_HOME`、`CARGO_HOME` 环境变量并追加 `~/.cargo/bin` 到 PATH，实现多环境 Rust 版本隔离
+
+### 修复 / Fixed
+- 🐛 修复 Host、Java、Node.js、Python（pip）、SSL 等多个服务面板的激活状态判断依赖 prop 快照而非实时轮询的问题：统一接入 `useServiceDataStatus` 轮询 Hook，确保服务状态变更后面板 UI 实时联动
+
 ## [0.12.6] - 2026-04-27
 
 ### 新增 / Added
