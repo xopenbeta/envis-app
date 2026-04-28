@@ -1,4 +1,4 @@
-import { Environment, ServiceData } from '@/types/index'
+import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
 import {
     RefreshCw,
     FolderOpen,
@@ -38,6 +38,7 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
     const [rustHome, setRustHomeState] = useState('')
     const [cargoHome, setCargoHomeState] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const isActive = serviceData.status === ServiceDataStatus.Active
 
     useEffect(() => {
         setRustHomeState(serviceData.metadata?.RUST_HOME || '')
@@ -129,13 +130,14 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                             value={cargoHome}
                             onChange={(e) => setCargoHomeState(e.target.value)}
                             placeholder={t('rust_service.cargo_home_placeholder')}
+                            disabled={!isActive}
                             className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         />
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={handleApplyCargoHome}
-                            disabled={isLoading}
+                            disabled={isLoading || !isActive}
                             className="h-8 text-xs shadow-none shrink-0"
                         >
                             {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
