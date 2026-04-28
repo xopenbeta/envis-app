@@ -1,4 +1,4 @@
-import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
+import { Environment, ServiceData } from '@/types/index'
 import { HostManagementView } from './HostManagementView'
 
 interface HostServiceProps {
@@ -7,8 +7,6 @@ interface HostServiceProps {
 }
 
 export function HostService({ serviceData, selectedEnvironment }: HostServiceProps) {
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
-
     return (
         <HostManagementView
             selectedEnvironmentId={selectedEnvironment.id}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { ServiceData, ServiceDataStatus } from "@/types"
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 import { usePythonService } from "@/hooks/services/python"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +46,11 @@ interface VenvViewProps {
 export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) {
     const { t } = useTranslation()
     const { checkVenvSupport, getVenvs, createVenv, removeVenv, openVenvTerminal } = usePythonService()
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    const isServiceActive = serviceDataStatus === ServiceDataStatus.Active
 
     // null: checking, true: supported, false: not supported
     const [isSupported, setIsSupported] = useState<boolean | null>(null)
@@ -55,8 +61,6 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
     const [activatingVenvName, setActivatingVenvName] = useState<string | null>(null)
     const [newVenvName, setNewVenvName] = useState("")
     const [showCreateDialog, setShowCreateDialog] = useState(false)
-
-    const isServiceActive = serviceData.status === ServiceDataStatus.Active
 
     useEffect(() => {
         checkSupport()

@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ServiceData, ServiceDataStatus } from '@/types/index'
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 import {
     Info
 } from 'lucide-react'
@@ -23,10 +24,14 @@ export function PipConfigView({
 }: PipConfigViewProps) {
     const { t } = useTranslation()
     const { setPipIndexUrl, setPython3AsPython } = usePythonService()
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    const isServiceDataActive = serviceDataStatus === ServiceDataStatus.Active
     const [config, setConfig] = useState<{ indexUrl: string; trustedHost: string } | null>(null)
     const [python3AsPython, setPython3AsPythonState] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
     // 加载配置
     useEffect(() => {

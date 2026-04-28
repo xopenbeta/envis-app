@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ServiceData, ServiceDataStatus, HostEntry } from '@/types/index'
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,6 +42,11 @@ export function HostManagementView({
 }: HostManagementViewProps) {
     const { addHost, updateHost, deleteHost, toggleHost, openHostsFile } = useHostService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    const isServiceDataActive = serviceDataStatus === ServiceDataStatus.Active
     const [hosts, setHosts] = useState<HostEntry[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [editingHost, setEditingHost] = useState<HostEntry | null>(null)
@@ -48,7 +54,6 @@ export function HostManagementView({
     const [showPasswordDialog, setShowPasswordDialog] = useState(false)
     const [password, setPassword] = useState('')
     const [pendingAction, setPendingAction] = useState<((pwd: string) => Promise<void>) | null>(null)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
 
     // 新增/编辑表单状态
     const [formData, setFormData] = useState({

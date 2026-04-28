@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 import {
     Hexagon,
     Info,
@@ -41,6 +42,11 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     const { t } = useTranslation()
     const { setNpmRegistry, setConfigPrefix, setPnpmHome, getGlobalPackages, installGlobalPackage, checkVersionManagers } = useNodejsService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    const isServiceDataActive = serviceDataStatus === ServiceDataStatus.Active
     const [registry, setRegistry] = useState('')
     const [prefix, setPrefix] = useState('')
     const [pnpmHome, setPnpmHomeState] = useState('')
@@ -51,8 +57,6 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     const [packageToInstall, setPackageToInstall] = useState('')
     const [isInstalling, setIsInstalling] = useState(false)
     const [conflictManagers, setConflictManagers] = useState<string[]>([])
-
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active;
 
     useEffect(() => {
         setRegistry(serviceData.metadata?.NPM_CONFIG_REGISTRY || '')

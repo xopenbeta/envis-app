@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label"
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 import { CAInitDialog } from './ca-init-dialog'
 import { CertificateList } from './certificate-list'
 import { IssueCertificateDialog } from './issue-certificate-dialog'
@@ -31,7 +32,11 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
     const { openFolderInFinder } = useFileOperations()
 
     // 服务是否激活
-    const isServiceActive = serviceData.status === ServiceDataStatus.Active
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironment.id, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    const isServiceActive = serviceDataStatus === ServiceDataStatus.Active
 
     // CA 初始化状态
     const [isCAInitialized, setIsCAInitialized] = useState<boolean>(false)

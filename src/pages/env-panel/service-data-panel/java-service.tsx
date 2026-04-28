@@ -1,4 +1,5 @@
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
+import { useServiceDataStatus } from '@/hooks/service-pollers'
 import {
     Coffee,
     Package,
@@ -86,7 +87,11 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         home: string
     } | null>(null)
 
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
+        enabled: true,
+        interval: 500,
+    })
+    const isServiceDataActive = serviceDataStatus === ServiceDataStatus.Active
 
     useEffect(() => {
         const metadataMavenHome = (serviceData.metadata?.MAVEN_HOME || '').trim()
