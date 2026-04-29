@@ -113,12 +113,19 @@ pub async fn set_cargo_home(
         "CARGO_HOME",
         serde_json::Value::String(cargo_home.clone()),
     );
+    drop(env_serv_data_manager);
 
-    let data = serde_json::json!({
-        "cargoHome": cargo_home,
-    });
-    Ok(CommandResponse::success(
-        "CARGO_HOME 设置成功".to_string(),
-        Some(data),
-    ))
+    let rust_service = RustService::global();
+    match rust_service.set_cargo_home(&mut service_data, &cargo_home) {
+        Ok(_) => {
+            let data = serde_json::json!({
+                "cargoHome": cargo_home,
+            });
+            Ok(CommandResponse::success(
+                "CARGO_HOME 设置成功".to_string(),
+                Some(data),
+            ))
+        }
+        Err(e) => Ok(CommandResponse::error(format!("设置 CARGO_HOME 失败: {}", e))),
+    }
 }
