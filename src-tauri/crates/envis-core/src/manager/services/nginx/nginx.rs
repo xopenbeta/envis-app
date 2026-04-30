@@ -517,6 +517,9 @@ impl NginxService {
             }
         }
 
+        // 修复未加引号的 error_log 路径
+        self.quote_error_log_path_in_conf(&conf_path)?;
+
         // 执行 {nginx_bin} -c {config_path} 启动服务
         let output = self
             .create_runtime_command(&nginx_bin, &install_path, &conf_path)
@@ -676,5 +679,56 @@ impl NginxService {
                 Ok(ServiceStatus::Unknown)
             }
         }
+    }
+
+    /// 修复未加引号的 error_log 路径
+    fn quote_error_log_path_in_conf(&self, conf_path: &PathBuf) -> Result<()> {
+        let content = std::fs::read_to_string(conf_path)?;
+        let mut updated = false;
+        let levels = ["debug", "info", "notice", "warn", "error", "crit", "alert", "emerg"];
+
+        let modified = content
+            .lines()
+            .map(|line| {
+                let trimmed = line.trim_start();
+                if !trimmed.starts_with("error_log") || trimmed.contains('"') || trimmed.contains('\'') {
+                    return line.to_string();
+                }
+
+                let directive = trimmed.splitn(2, '#').next().unwrap_or(trimmed).trim_end();
+                if !directive.ends_with(';') {
+                    return line.to_string();
+                }
+
+                let directive = directive[..directive.len() - 1].trim();
+                let tokens: Vec<&str> = directive.split_whitespace().collect();
+                if tokens.len() <= 2 {
+                    return line.to_string();
+                }
+
+                let (path_parts, level_suffix) = if levels.contains(&tokens.last().unwrap()) && tokens.len() > 2 {
+                    (tokens[1..tokens.len() - 1].to_vec(), Some(tokens.last().unwrap()))
+                } else {
+                    (tokens[1..].to_vec(), None)
+                };
+
+                let path = path_parts.join(" ");
+                if !path.contains(' ') {
+                    return line.to_string();
+                }
+
+                updated = true;
+                let indent = &line[..line.len() - trimmed.len()];
+                let level_extension = level_suffix.map_or(String::new(), |lvl| format!(" {}", lvl));
+                format!("{indent}error_log \"{path}\"{level_extension};")
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        if updated {
+            std::fs::write(conf_path, modified)?;
+        }
+
+        Ok(())
     }
 }

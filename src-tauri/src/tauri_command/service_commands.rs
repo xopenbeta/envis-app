@@ -49,9 +49,7 @@ pub async fn delete_service(service_type: ServiceType, version: String) -> Resul
 
 /// 按服务类型列表查询进程资源统计（CPU + 内存）
 #[tauri::command]
-pub async fn get_services_process_stats(
-    service_types: Vec<ServiceType>,
-) -> Result<Value, String> {
+pub async fn get_services_process_stats(service_types: Vec<ServiceType>) -> Result<Value, String> {
     fn service_type_to_process_names(service_type: &ServiceType) -> &'static [&'static str] {
         match service_type {
             ServiceType::Nginx => &["nginx"],

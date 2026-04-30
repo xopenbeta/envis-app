@@ -1,7 +1,7 @@
+use chrono::Utc;
 use envis_core::manager::env_serv_data_manager::EnvServDataManager;
 use envis_core::manager::services::postgresql::PostgresqlService;
 use envis_core::types::{CommandResponse, ServiceData};
-use chrono::Utc;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -371,7 +371,10 @@ pub async fn initialize_postgresql(
                 Ok(CommandResponse::error(result.message))
             }
         }
-        Err(e) => Ok(CommandResponse::error(format!("初始化 PostgreSQL 失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "初始化 PostgreSQL 失败: {}",
+            e
+        ))),
     }
 }
 
@@ -468,8 +471,13 @@ pub async fn create_postgresql_role(
     grants: Vec<serde_json::Value>,
 ) -> Result<CommandResponse, String> {
     let postgresql_service = PostgresqlService::global();
-    match postgresql_service.create_role(&environment_id, &service_data, role_name, password, grants)
-    {
+    match postgresql_service.create_role(
+        &environment_id,
+        &service_data,
+        role_name,
+        password,
+        grants,
+    ) {
         Ok(result) => Ok(CommandResponse::success(result.message, result.data)),
         Err(e) => Ok(CommandResponse::error(format!("创建角色失败: {}", e))),
     }

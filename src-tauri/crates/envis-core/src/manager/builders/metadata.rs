@@ -172,7 +172,7 @@ impl MetadataBuilder {
             let default_conf = format!(
                 r#"# Auto-generated default nginx.conf by envis
 worker_processes  1;
-error_log  {error_log};
+error_log  "{error_log}";
 
 events {{
     worker_connections 1024;
