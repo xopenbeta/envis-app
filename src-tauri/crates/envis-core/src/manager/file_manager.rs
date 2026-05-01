@@ -1,4 +1,6 @@
 use anyhow::{Context, Result};
+#[cfg(target_os = "windows")]
+use crate::utils::path::to_windows_path_string;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::OnceLock;
@@ -192,7 +194,7 @@ impl FileManager {
             // Windows: 使用 explorer 命令
             // 将路径中的正斜杠统一替换为反斜杠，避免混合分隔符导致 explorer.exe 无法识别路径
             // 而静默回退到用户主目录的问题（envisFolder 用反斜杠，拼接其余部分用正斜杠）
-            let path_str = target_path.to_string_lossy().replace('/', "\\");
+            let path_str = to_windows_path_string(target_path);
             let mut command = Command::new("explorer");
             if target_path.is_file() {
                 // 如果是文件，选中该文件

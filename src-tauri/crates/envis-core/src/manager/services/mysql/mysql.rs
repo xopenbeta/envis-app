@@ -71,7 +71,7 @@ impl MysqlService {
             let app_config_manager = app_config_manager.lock().unwrap();
             std::path::PathBuf::from(app_config_manager.get_services_folder())
         };
-        services_folder.join("mysql").join(version)
+        services_folder.join("mysql").join(version).join("data")
     }
 
     fn series_from_version(version: &str) -> String {

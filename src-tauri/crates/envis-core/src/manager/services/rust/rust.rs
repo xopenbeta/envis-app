@@ -19,6 +19,8 @@ pub struct RustVersion {
 /// 全局 Rust 服务管理器单例
 static GLOBAL_RUST_SERVICE: OnceLock<Arc<RustService>> = OnceLock::new();
 
+const EDITION_2024_MIN_MINOR: u64 = 85;
+
 /// Rust 服务管理器
 pub struct RustService {}
 
@@ -38,21 +40,6 @@ impl RustService {
     /// 获取可用的 Rust 版本列表
     pub fn get_available_versions(&self) -> Vec<RustVersion> {
         vec![
-            RustVersion {
-                version: "1.70.0".to_string(),
-                stable: true,
-                date: "2023-06-01".to_string(),
-            },
-            RustVersion {
-                version: "1.75.0".to_string(),
-                stable: true,
-                date: "2023-12-28".to_string(),
-            },
-            RustVersion {
-                version: "1.80.0".to_string(),
-                stable: true,
-                date: "2024-07-25".to_string(),
-            },
             RustVersion {
                 version: "1.85.0".to_string(),
                 stable: true,
@@ -104,7 +91,7 @@ impl RustService {
 
         // 验证 Rust 版本是否支持
         match version {
-            "1.70.0" | "1.75.0" | "1.80.0" | "1.85.0" | "1.86.0" => {}
+            "1.85.0" | "1.86.0" => {}
             _ => return Err(anyhow!("不支持的 Rust 版本: {}", version)),
         };
 
@@ -250,6 +237,13 @@ impl RustService {
     pub fn activate_service(&self, service_data: &ServiceData) -> Result<()> {
         let install_path = self.get_install_path(&service_data.version);
 
+        if !supports_edition_2024(&service_data.version) {
+            return Err(anyhow!(
+                "Rust {} 过低，无法解析 edition2024 依赖。请升级到 Rust >= 1.85.0 后再激活。",
+                service_data.version
+            ));
+        }
+
         if !self.is_installed(&service_data.version) {
             return Err(anyhow!("Rust {} 未安装", service_data.version));
         }
@@ -281,6 +275,10 @@ impl RustService {
 
         shell_manager.add_export("CARGO_HOME", &cargo_home)?;
 
+        // 将 CARGO_HOME/bin 加入 PATH
+        let cargo_bin = PathBuf::from(&cargo_home).join("bin").to_string_lossy().to_string();
+        shell_manager.add_path(&cargo_bin)?;
+
         log::info!("Rust {} 服务已激活", service_data.version);
         Ok(())
     }
@@ -296,9 +294,53 @@ impl RustService {
 
         shell_manager.delete_path(&bin_path)?;
         shell_manager.delete_export("RUST_HOME")?;
+
+        // 移除 CARGO_HOME/bin
+        let cargo_home = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("CARGO_HOME"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| install_path.join("cargo").to_string_lossy().to_string());
+        let cargo_bin = PathBuf::from(&cargo_home).join("bin").to_string_lossy().to_string();
+        let _ = shell_manager.delete_path(&cargo_bin);
+
         shell_manager.delete_export("CARGO_HOME")?;
 
         log::info!("Rust {} 服务已取消激活", service_data.version);
+        Ok(())
+    }
+
+    /// 设置 CARGO_HOME 并更新 PATH
+    pub fn set_cargo_home(
+        &self,
+        service_data: &mut ServiceData,
+        cargo_home: &str,
+    ) -> Result<()> {
+        let shell_manager = ShellManager::global();
+        let shell_manager = shell_manager.lock().unwrap();
+
+        // 移除旧的 CARGO_HOME/bin
+        if let Some(old_cargo_home) = service_data
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("CARGO_HOME"))
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+        {
+            let old_cargo_bin = PathBuf::from(old_cargo_home).join("bin").to_string_lossy().to_string();
+            let _ = shell_manager.delete_path(&old_cargo_bin);
+        }
+
+        // 设置新的 CARGO_HOME 环境变量
+        shell_manager.add_export("CARGO_HOME", cargo_home)?;
+
+        // 添加新的 CARGO_HOME/bin 到 PATH
+        let cargo_bin = PathBuf::from(cargo_home).join("bin").to_string_lossy().to_string();
+        shell_manager.add_path(&cargo_bin)?;
+
         Ok(())
     }
 
@@ -349,6 +391,14 @@ impl RustService {
             "home": install_path.to_string_lossy(),
         }))
     }
+}
+
+fn supports_edition_2024(version: &str) -> bool {
+    let mut parts = version.split('.');
+    let major = parts.next().and_then(|p| p.parse::<u64>().ok()).unwrap_or(0);
+    let minor = parts.next().and_then(|p| p.parse::<u64>().ok()).unwrap_or(0);
+
+    major > 1 || (major == 1 && minor >= EDITION_2024_MIN_MINOR)
 }
 
 impl ServiceLifecycle for RustService {

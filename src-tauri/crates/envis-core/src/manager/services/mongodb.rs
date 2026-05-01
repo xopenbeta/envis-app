@@ -3,6 +3,7 @@ use crate::manager::env_serv_data_manager::ServiceDataResult;
 use crate::manager::services::{DownloadManager, DownloadResult, DownloadTask};
 use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
+use crate::utils::path::to_forward_slash_path_string;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -1684,11 +1685,11 @@ security:
 replication:
   replSetName: rs0
 "#,
-                data_dir.to_string_lossy().replace('\\', "/"),
-                log_file.to_string_lossy().replace('\\', "/"),
+                to_forward_slash_path_string(data_dir),
+                to_forward_slash_path_string(&log_file),
                 port,
                 bind_ip,
-                keyfile_path.to_string_lossy().replace('\\', "/")
+                to_forward_slash_path_string(keyfile_path)
             )
         } else {
             // 单机模式：不需要 keyFile 和副本集配置
@@ -1714,8 +1715,8 @@ net:
 security:
   authorization: enabled
 "#,
-                data_dir.to_string_lossy().replace('\\', "/"),
-                log_file.to_string_lossy().replace('\\', "/"),
+                to_forward_slash_path_string(data_dir),
+                to_forward_slash_path_string(&log_file),
                 port,
                 bind_ip
             )
