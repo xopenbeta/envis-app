@@ -681,6 +681,11 @@ impl NginxService {
         }
     }
 
+    fn format_path_for_nginx_conf<P: AsRef<Path>>(path: P) -> String {
+        // Nginx 配置文件中应统一使用 / 作为路径分隔符，Windows 也能识别。
+        path.as_ref().to_string_lossy().replace('\\', "/")
+    }
+
     /// 修复未加引号的 error_log 路径
     fn quote_error_log_path_in_conf(&self, conf_path: &PathBuf) -> Result<()> {
         let content = std::fs::read_to_string(conf_path)?;
@@ -691,7 +696,7 @@ impl NginxService {
             .lines()
             .map(|line| {
                 let trimmed = line.trim_start();
-                if !trimmed.starts_with("error_log") || trimmed.contains('"') || trimmed.contains('\'') {
+                if !trimmed.starts_with("error_log") {
                     return line.to_string();
                 }
 
@@ -713,14 +718,17 @@ impl NginxService {
                 };
 
                 let path = path_parts.join(" ");
-                if !path.contains(' ') {
-                    return line.to_string();
-                }
-
-                updated = true;
+                let normalized_path = Self::format_path_for_nginx_conf(PathBuf::from(&path));
+                let requires_quote = trimmed.contains('"') || trimmed.contains('\'');
                 let indent = &line[..line.len() - trimmed.len()];
                 let level_extension = level_suffix.map_or(String::new(), |lvl| format!(" {}", lvl));
-                format!("{indent}error_log \"{path}\"{level_extension};")
+
+                if !requires_quote || path.contains('\\') {
+                    updated = true;
+                    return format!("{indent}error_log \"{normalized_path}\"{level_extension};");
+                }
+
+                line.to_string()
             })
             .collect::<Vec<_>>()
             .join("\n");

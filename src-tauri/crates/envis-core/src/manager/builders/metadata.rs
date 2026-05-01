@@ -196,7 +196,7 @@ http {{
     }}
 }}
 "#,
-                error_log = error_log_path.to_string_lossy()
+                error_log = error_log_path.to_string_lossy().replace('\\', "/")
             );
             fs::write(&nginx_conf_path, default_conf)?;
             log::debug!(
