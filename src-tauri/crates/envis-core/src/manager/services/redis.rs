@@ -6,7 +6,7 @@ use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use crate::utils::path::to_forward_slash_path_string;
+use crate::utils::path::to_unix_path_string;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -754,8 +754,8 @@ impl RedisService {
         rdb_enabled: bool,
         aof_enabled: bool,
     ) -> Result<()> {
-        let dir = to_forward_slash_path_string(data_dir);
-        let logfile = to_forward_slash_path_string(log_path);
+        let dir = to_unix_path_string(data_dir);
+        let logfile = to_unix_path_string(log_path);
         let mut lines = vec![
             "protected-mode yes".to_string(),
             format!("bind {}", bind_ip),

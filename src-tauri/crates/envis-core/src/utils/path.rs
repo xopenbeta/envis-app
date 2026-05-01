@@ -11,6 +11,6 @@ pub fn to_windows_path_string(path: &Path) -> String {
 /// 将路径转换为统一的 `/` 分隔符字符串。
 ///
 /// 适用于配置文件中需要稳定跨平台表示路径的场景。
-pub fn to_forward_slash_path_string(path: &Path) -> String {
+pub fn to_unix_path_string(path: &Path) -> String {
     path.to_string_lossy().replace('\\', "/")
 }
