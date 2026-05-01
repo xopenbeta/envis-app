@@ -302,6 +302,15 @@ impl NginxService {
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_path)?;
 
+        // 确保 logs 是一个目录，如果是文件则删除
+        let logs_path = install_path.join("logs");
+        if logs_path.exists() && logs_path.is_file() {
+            let _ = std::fs::remove_file(&logs_path);
+        }
+        if (!logs_path.exists()) {
+            let _ = std::fs::create_dir_all(&logs_path);
+        }
+
         let nginx_bin = self.resolve_nginx_binary(&install_path);
         if !nginx_bin.exists() {
             return Err(anyhow!(
@@ -476,6 +485,11 @@ impl NginxService {
 
         // 确保 logs 目录存在
         let logs_dir = install_path.join("logs");
+        if logs_dir.exists() && logs_dir.is_file() {
+            if let Err(e) = std::fs::remove_file(&logs_dir) {
+                log::warn!("删除 logs 文件失败: {}", e);
+            }
+        }
         if !logs_dir.exists() {
             if let Err(e) = std::fs::create_dir_all(&logs_dir) {
                 log::warn!("创建 logs 目录失败: {}", e);
