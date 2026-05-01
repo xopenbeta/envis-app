@@ -535,15 +535,11 @@ impl NginxService {
         self.quote_error_log_path_in_conf(&conf_path)?;
 
         // 执行 {nginx_bin} -c {config_path} 启动服务
-        let output = self
-            .create_runtime_command(&nginx_bin, &install_path, &conf_path)
-            .output()
+        self.create_runtime_command(&nginx_bin, &install_path, &conf_path)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
             .map_err(|e| anyhow!("启动 Nginx 失败: {}", e))?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(anyhow!("启动 Nginx 失败: {}", stderr));
-        }
 
         log::info!("Nginx 服务启动成功");
         Ok(ServiceDataResult {
@@ -648,18 +644,19 @@ impl NginxService {
     pub fn get_service_status(&self, service_data: &ServiceData) -> Result<ServiceStatus> {
         // log::info!("获取 Nginx 服务状态");
 
+        let version = &service_data.version;
+        let install_path = self.get_install_path(version);
+
         // 获取配置文件路径
         let conf_path = service_data
             .metadata
             .as_ref()
             .and_then(|m| m.get("NGINX_CONF"))
-            .and_then(|v| v.as_str());
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| install_path.join("conf").join("nginx.conf"));
 
-        if conf_path.is_none() {
-            return Ok(ServiceStatus::Unknown);
-        }
-
-        let conf_path = conf_path.unwrap();
+        let conf_path_str = conf_path.to_string_lossy();
 
         // 使用 ps 命令检查 nginx 进程
         let output = if cfg!(target_os = "windows") {
@@ -672,7 +669,7 @@ impl NginxService {
                 .arg("-c")
                 .arg(format!(
                     "ps aux | grep '[n]ginx: master process' | grep '{}'",
-                    conf_path
+                    conf_path_str
                 ))
                 .output()
         };
