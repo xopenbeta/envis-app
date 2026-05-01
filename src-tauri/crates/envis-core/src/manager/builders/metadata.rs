@@ -1,9 +1,7 @@
 use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::services::java::{JavaService, MavenService};
-use crate::manager::services::mingw::MinGWService;
-use crate::manager::services::postgresql::PostgresqlService;
-use crate::manager::services::python::PythonService;
 use crate::types::{ServiceData, ServiceType};
+use crate::utils::path::to_forward_slash_path_string;
 use anyhow::Result;
 use std::collections::HashMap;
 use std::fs;
@@ -196,7 +194,7 @@ http {{
     }}
 }}
 "#,
-                error_log = error_log_path.to_string_lossy()
+                error_log = to_forward_slash_path_string(&error_log_path)
             );
             fs::write(&nginx_conf_path, default_conf)?;
             log::debug!(

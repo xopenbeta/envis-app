@@ -7,6 +7,7 @@ use anyhow::{anyhow, Result};
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::utils::path::to_forward_slash_path_string;
 use std::fs::{self, File, OpenOptions};
 use std::io::{copy, Write};
 use std::process::Command;
@@ -1684,11 +1685,9 @@ ORDER BY r.rolname, d.datname
             .map(PathBuf::from)
             .unwrap_or_else(|| PathBuf::from("."));
         let conf_path = config_path.clone();
-        let log_dir = log_path
-            .parent()
-            .unwrap_or(&default_dir)
-            .to_string_lossy()
-            .replace('\'', "");
+        let log_dir = to_forward_slash_path_string(
+            log_path.parent().unwrap_or(&default_dir)
+        ).replace('\'', "");
         let managed_block = format!(
             "# Envis managed settings\nlisten_addresses = '{}'\nport = {}\nlog_destination = 'stderr'\nlogging_collector = on\nlog_directory = '{}'\nlog_filename = '{}'\n",
             bind_address.replace('\'', ""),

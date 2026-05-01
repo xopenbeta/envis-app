@@ -19,6 +19,8 @@ pub struct RustVersion {
 /// 全局 Rust 服务管理器单例
 static GLOBAL_RUST_SERVICE: OnceLock<Arc<RustService>> = OnceLock::new();
 
+const EDITION_2024_MIN_MINOR: u64 = 85;
+
 /// Rust 服务管理器
 pub struct RustService {}
 
@@ -38,21 +40,6 @@ impl RustService {
     /// 获取可用的 Rust 版本列表
     pub fn get_available_versions(&self) -> Vec<RustVersion> {
         vec![
-            RustVersion {
-                version: "1.70.0".to_string(),
-                stable: true,
-                date: "2023-06-01".to_string(),
-            },
-            RustVersion {
-                version: "1.75.0".to_string(),
-                stable: true,
-                date: "2023-12-28".to_string(),
-            },
-            RustVersion {
-                version: "1.80.0".to_string(),
-                stable: true,
-                date: "2024-07-25".to_string(),
-            },
             RustVersion {
                 version: "1.85.0".to_string(),
                 stable: true,
@@ -104,7 +91,7 @@ impl RustService {
 
         // 验证 Rust 版本是否支持
         match version {
-            "1.70.0" | "1.75.0" | "1.80.0" | "1.85.0" | "1.86.0" => {}
+            "1.85.0" | "1.86.0" => {}
             _ => return Err(anyhow!("不支持的 Rust 版本: {}", version)),
         };
 
@@ -249,6 +236,13 @@ impl RustService {
     /// 激活服务
     pub fn activate_service(&self, service_data: &ServiceData) -> Result<()> {
         let install_path = self.get_install_path(&service_data.version);
+
+        if !supports_edition_2024(&service_data.version) {
+            return Err(anyhow!(
+                "Rust {} 过低，无法解析 edition2024 依赖。请升级到 Rust >= 1.85.0 后再激活。",
+                service_data.version
+            ));
+        }
 
         if !self.is_installed(&service_data.version) {
             return Err(anyhow!("Rust {} 未安装", service_data.version));
@@ -397,6 +391,14 @@ impl RustService {
             "home": install_path.to_string_lossy(),
         }))
     }
+}
+
+fn supports_edition_2024(version: &str) -> bool {
+    let mut parts = version.split('.');
+    let major = parts.next().and_then(|p| p.parse::<u64>().ok()).unwrap_or(0);
+    let minor = parts.next().and_then(|p| p.parse::<u64>().ok()).unwrap_or(0);
+
+    major > 1 || (major == 1 && minor >= EDITION_2024_MIN_MINOR)
 }
 
 impl ServiceLifecycle for RustService {
