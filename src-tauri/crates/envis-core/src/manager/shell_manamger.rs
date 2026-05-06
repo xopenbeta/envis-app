@@ -302,7 +302,7 @@ impl ShellManager {
 envis() {{
     command envis "$@"
     local exit_code=$?
-    if [ "$1" = "use" ] || [ "$1" = "refresh" ]; then
+    if [ "$1" = "use" ] || [ "$1" = "refresh" ] || [ "$1" = "rs" ]; then
         if [ $exit_code -eq 0 ]; then
             {}
         fi
@@ -315,7 +315,7 @@ ev() {{ envis "$@"; }}
 if [ -n "$ZSH_VERSION" ]; then
     _envis_completions() {{
         local -a subcmds envs
-        subcmds=('list:列出所有环境' 'ls:列出所有环境' 'use:激活环境' 'refresh:刷新Shell配置')
+        subcmds=('list:列出所有环境' 'ls:列出所有环境' 'use:激活环境' 'refresh:刷新Shell配置' 'rs:刷新Shell配置（refresh 缩写）')
         if (( CURRENT == 2 )); then
             _describe 'command' subcmds
         elif (( CURRENT == 3 )) && [[ ${{words[2]}} == use ]]; then
@@ -330,7 +330,7 @@ elif [ -n "$BASH_VERSION" ]; then
         local cur="${{COMP_WORDS[COMP_CWORD]}}"
         local prev="${{COMP_WORDS[COMP_CWORD-1]}}"
         if [ $COMP_CWORD -eq 1 ]; then
-            COMPREPLY=($(compgen -W "list ls use refresh" -- "$cur"))
+            COMPREPLY=($(compgen -W "list ls use refresh rs" -- "$cur"))
         elif [ "$prev" = "use" ]; then
             COMPREPLY=($(compgen -W "$(command envis --complete-use 2>/dev/null)" -- "$cur"))
         fi

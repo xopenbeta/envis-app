@@ -22,8 +22,8 @@ pub fn handle_cli_early(args: &[String]) -> Result<(), Box<dyn std::error::Error
             println!("Envis version {}", env!("CARGO_PKG_VERSION"));
             std::process::exit(0);
         }
-        // refresh 是 no-op，由 shell wrapper 负责 source
-        "refresh" => {
+        // refresh / rs 是 no-op，由 shell wrapper 负责 source
+        "refresh" | "rs" => {
             handlers::handle_refresh();
             std::process::exit(0);
         }
@@ -81,6 +81,7 @@ SUBCOMMANDS:
     list             List all environments
     ls               List all environments
     use              Activate an environment
+    rs               Reload shell configuration (alias of refresh)
     refresh          Reload shell configuration (source ~/.zshrc or ~/.bash_profile)
 
 EXAMPLES:
