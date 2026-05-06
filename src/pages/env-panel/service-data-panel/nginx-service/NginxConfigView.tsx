@@ -227,9 +227,11 @@ export function NginxConfigView({
 
     // 启动服务
     const handleStartService = async () => {
+        console.log('zws nginx start')
         try {
             setIsStarting(true)
             const res = await startServiceData(selectedEnvironmentId, serviceData)
+            console.log('zws startServiceData result:', res)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务启动成功')
                 await refreshServiceStatus()
@@ -240,6 +242,7 @@ export function NginxConfigView({
             console.error('启动 Nginx 服务失败:', error)
             toast.error('启动失败')
         } finally {
+            console.log('zws nginx start finally')
             setIsStarting(false)
         }
     }

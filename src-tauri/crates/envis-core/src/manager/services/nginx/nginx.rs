@@ -302,6 +302,15 @@ impl NginxService {
         #[cfg(not(target_os = "windows"))]
         self.set_executable_permissions(&install_path)?;
 
+        // 确保 logs 是一个目录，如果是文件则删除
+        let logs_path = install_path.join("logs");
+        if logs_path.exists() && logs_path.is_file() {
+            let _ = std::fs::remove_file(&logs_path);
+        }
+        if (!logs_path.exists()) {
+            let _ = std::fs::create_dir_all(&logs_path);
+        }
+
         let nginx_bin = self.resolve_nginx_binary(&install_path);
         if !nginx_bin.exists() {
             return Err(anyhow!(
@@ -476,6 +485,11 @@ impl NginxService {
 
         // 确保 logs 目录存在
         let logs_dir = install_path.join("logs");
+        if logs_dir.exists() && logs_dir.is_file() {
+            if let Err(e) = std::fs::remove_file(&logs_dir) {
+                log::warn!("删除 logs 文件失败: {}", e);
+            }
+        }
         if !logs_dir.exists() {
             if let Err(e) = std::fs::create_dir_all(&logs_dir) {
                 log::warn!("创建 logs 目录失败: {}", e);
@@ -517,16 +531,15 @@ impl NginxService {
             }
         }
 
-        // 执行 {nginx_bin} -c {config_path} 启动服务
-        let output = self
-            .create_runtime_command(&nginx_bin, &install_path, &conf_path)
-            .output()
-            .map_err(|e| anyhow!("启动 Nginx 失败: {}", e))?;
+        // 修复未加引号的 error_log 路径
+        self.quote_error_log_path_in_conf(&conf_path)?;
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(anyhow!("启动 Nginx 失败: {}", stderr));
-        }
+        // 执行 {nginx_bin} -c {config_path} 启动服务
+        self.create_runtime_command(&nginx_bin, &install_path, &conf_path)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .map_err(|e| anyhow!("启动 Nginx 失败: {}", e))?;
 
         log::info!("Nginx 服务启动成功");
         Ok(ServiceDataResult {
@@ -631,18 +644,19 @@ impl NginxService {
     pub fn get_service_status(&self, service_data: &ServiceData) -> Result<ServiceStatus> {
         // log::info!("获取 Nginx 服务状态");
 
+        let version = &service_data.version;
+        let install_path = self.get_install_path(version);
+
         // 获取配置文件路径
         let conf_path = service_data
             .metadata
             .as_ref()
             .and_then(|m| m.get("NGINX_CONF"))
-            .and_then(|v| v.as_str());
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| install_path.join("conf").join("nginx.conf"));
 
-        if conf_path.is_none() {
-            return Ok(ServiceStatus::Unknown);
-        }
-
-        let conf_path = conf_path.unwrap();
+        let conf_path_str = conf_path.to_string_lossy();
 
         // 使用 ps 命令检查 nginx 进程
         let output = if cfg!(target_os = "windows") {
@@ -655,7 +669,7 @@ impl NginxService {
                 .arg("-c")
                 .arg(format!(
                     "ps aux | grep '[n]ginx: master process' | grep '{}'",
-                    conf_path
+                    conf_path_str
                 ))
                 .output()
         };
@@ -676,5 +690,64 @@ impl NginxService {
                 Ok(ServiceStatus::Unknown)
             }
         }
+    }
+
+    fn format_path_for_nginx_conf<P: AsRef<Path>>(path: P) -> String {
+        // Nginx 配置文件中应统一使用 / 作为路径分隔符，Windows 也能识别。
+        path.as_ref().to_string_lossy().replace('\\', "/")
+    }
+
+    /// 修复未加引号的 error_log 路径
+    fn quote_error_log_path_in_conf(&self, conf_path: &PathBuf) -> Result<()> {
+        let content = std::fs::read_to_string(conf_path)?;
+        let mut updated = false;
+        let levels = ["debug", "info", "notice", "warn", "error", "crit", "alert", "emerg"];
+
+        let modified = content
+            .lines()
+            .map(|line| {
+                let trimmed = line.trim_start();
+                if !trimmed.starts_with("error_log") {
+                    return line.to_string();
+                }
+
+                let directive = trimmed.splitn(2, '#').next().unwrap_or(trimmed).trim_end();
+                if !directive.ends_with(';') {
+                    return line.to_string();
+                }
+
+                let directive = directive[..directive.len() - 1].trim();
+                let tokens: Vec<&str> = directive.split_whitespace().collect();
+                if tokens.len() <= 2 {
+                    return line.to_string();
+                }
+
+                let (path_parts, level_suffix) = if levels.contains(&tokens.last().unwrap()) && tokens.len() > 2 {
+                    (tokens[1..tokens.len() - 1].to_vec(), Some(tokens.last().unwrap()))
+                } else {
+                    (tokens[1..].to_vec(), None)
+                };
+
+                let path = path_parts.join(" ");
+                let normalized_path = Self::format_path_for_nginx_conf(PathBuf::from(&path));
+                let requires_quote = trimmed.contains('"') || trimmed.contains('\'');
+                let indent = &line[..line.len() - trimmed.len()];
+                let level_extension = level_suffix.map_or(String::new(), |lvl| format!(" {}", lvl));
+
+                if !requires_quote || path.contains('\\') {
+                    updated = true;
+                    return format!("{indent}error_log \"{normalized_path}\"{level_extension};");
+                }
+
+                line.to_string()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        if updated {
+            std::fs::write(conf_path, modified)?;
+        }
+
+        Ok(())
     }
 }

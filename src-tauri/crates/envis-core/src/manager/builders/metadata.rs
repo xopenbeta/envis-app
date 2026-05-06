@@ -1,7 +1,7 @@
 use crate::manager::app_config_manager::AppConfigManager;
 use crate::manager::services::java::{JavaService, MavenService};
 use crate::types::{ServiceData, ServiceType};
-use crate::utils::path::to_forward_slash_path_string;
+use crate::utils::path::to_unix_path_string;
 use anyhow::Result;
 use std::collections::HashMap;
 use std::fs;
@@ -170,7 +170,7 @@ impl MetadataBuilder {
             let default_conf = format!(
                 r#"# Auto-generated default nginx.conf by envis
 worker_processes  1;
-error_log  {error_log};
+error_log  "{error_log}";
 
 events {{
     worker_connections 1024;
@@ -194,7 +194,7 @@ http {{
     }}
 }}
 "#,
-                error_log = to_forward_slash_path_string(&error_log_path)
+                error_log = to_unix_path_string(&error_log_path)
             );
             fs::write(&nginx_conf_path, default_conf)?;
             log::debug!(

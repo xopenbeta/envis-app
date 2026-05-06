@@ -36,7 +36,10 @@ pub async fn cancel_download_redis(version: String) -> Result<CommandResponse, S
             "Redis 下载已取消".to_string(),
             Some(serde_json::json!({ "cancelled": true })),
         )),
-        Err(e) => Ok(CommandResponse::error(format!("取消 Redis 下载失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "取消 Redis 下载失败: {}",
+            e
+        ))),
     }
 }
 
@@ -68,7 +71,10 @@ pub async fn get_redis_config(
     let service = RedisService::global();
     match service.get_redis_config(&environment_id, &service_data) {
         Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
-        Err(e) => Ok(CommandResponse::error(format!("获取 Redis 配置失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "获取 Redis 配置失败: {}",
+            e
+        ))),
     }
 }
 
@@ -116,7 +122,10 @@ pub async fn get_redis_service_status(
     let service = RedisService::global();
     match service.get_service_status(&environment_id, &service_data) {
         Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
-        Err(e) => Ok(CommandResponse::error(format!("获取 Redis 状态失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "获取 Redis 状态失败: {}",
+            e
+        ))),
     }
 }
 
@@ -173,6 +182,9 @@ pub async fn open_redis_client(
     let service = RedisService::global();
     match service.open_client(&environment_id, &service_data) {
         Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
-        Err(e) => Ok(CommandResponse::error(format!("打开 Redis CLI 失败: {}", e))),
+        Err(e) => Ok(CommandResponse::error(format!(
+            "打开 Redis CLI 失败: {}",
+            e
+        ))),
     }
 }

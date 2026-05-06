@@ -1,6 +1,6 @@
+use anyhow::Result;
 use envis_core::manager::environment_manager::EnvironmentManager;
 use envis_core::types::Environment;
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Instant;
@@ -12,7 +12,9 @@ pub struct EnvironmentCommandResult {
     pub data: Option<Value>,
 }
 
-impl From<envis_core::manager::environment_manager::EnvironmentResult> for EnvironmentCommandResult {
+impl From<envis_core::manager::environment_manager::EnvironmentResult>
+    for EnvironmentCommandResult
+{
     fn from(result: envis_core::manager::environment_manager::EnvironmentResult) -> Self {
         Self {
             success: result.success,
@@ -124,9 +126,7 @@ pub async fn delete_environment(
 
 /// 获取单个环境
 #[tauri::command]
-pub async fn get_environment(
-    environment_id: String,
-) -> Result<EnvironmentCommandResult, String> {
+pub async fn get_environment(environment_id: String) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
     let manager = manager.lock().unwrap();
 

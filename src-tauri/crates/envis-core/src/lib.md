@@ -13,11 +13,6 @@
 已在 `src-tauri/crates/envis-core/src/utils/path.rs` 提供：
 
 1. `to_windows_path_string(path)`：将路径转成 Windows 友好的 `\\` 分隔符字符串。
-2. `to_forward_slash_path_string(path)`：将路径转成统一 `/` 分隔符字符串，适合写入配置文件。
-
-### 已落地的典型场景
-
-1. 在 Windows 中调用 `explorer` 打开路径时，使用 `to_windows_path_string`。
-2. 生成 MongoDB 配置文件路径时，使用 `to_forward_slash_path_string`。
+2. `to_unix_path_string(path)`：将路径转成统一 `/` 分隔符字符串，适合写入配置文件。
 
 后续新增服务时，若涉及路径字符串输出，优先复用上述工具函数，保持跨平台行为一致。

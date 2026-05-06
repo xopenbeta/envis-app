@@ -22,7 +22,6 @@ use tauri_command::services::custom_commands::*;
 use tauri_command::services::dnsmasq_commands::*;
 use tauri_command::services::host_commands::*;
 use tauri_command::services::java_commands::*;
-use tauri_command::services::rust_commands::*;
 use tauri_command::services::mariadb_commands::*;
 use tauri_command::services::mongodb_commands::*;
 use tauri_command::services::mysql_commands::*;
@@ -32,6 +31,7 @@ use tauri_command::services::nodejs_commands::*;
 use tauri_command::services::postgresql_commands::*;
 use tauri_command::services::python_commands::*;
 use tauri_command::services::redis_commands::*;
+use tauri_command::services::rust_commands::*;
 use tauri_command::services::ssl_commands::*;
 use tauri_command::system_info_commands::*;
 use tauri_plugin_log::{Target, TargetKind};
@@ -464,7 +464,12 @@ fn setup_windows_defender_exclusions(envis_folder: &str) {
     let exclusion_cmds: Vec<String> = paths
         .iter()
         .filter(|p| !p.is_empty())
-        .map(|p| format!("Add-MpPreference -ExclusionPath '{}'", p.replace('\'', "''")))
+        .map(|p| {
+            format!(
+                "Add-MpPreference -ExclusionPath '{}'",
+                p.replace('\'', "''")
+            )
+        })
         .collect();
 
     if exclusion_cmds.is_empty() {
@@ -475,7 +480,14 @@ fn setup_windows_defender_exclusions(envis_folder: &str) {
     log::info!("【Defender】正在添加排除项: {:?}", paths);
 
     match Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script])
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle",
+            "Hidden",
+            "-Command",
+            &script,
+        ])
         .output()
     {
         Ok(output) if output.status.success() => {
@@ -484,7 +496,10 @@ fn setup_windows_defender_exclusions(envis_folder: &str) {
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             // 权限不足时静默跳过（非管理员用户无法修改 Defender 设置）
-            log::warn!("【Defender】添加排除项失败（可能需要管理员权限）: {}", stderr.trim());
+            log::warn!(
+                "【Defender】添加排除项失败（可能需要管理员权限）: {}",
+                stderr.trim()
+            );
         }
         Err(e) => {
             log::warn!("【Defender】执行 PowerShell 失败: {}", e);

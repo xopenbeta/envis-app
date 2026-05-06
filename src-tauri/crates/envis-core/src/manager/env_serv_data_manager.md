@@ -1,0 +1,2 @@
+* 获取的 serviceData，一般不直接用其里面的status，而是有专门的接口轮询status，因此获取所有服务数据这里就不用设置sync_host_service_status了
+* 获取所有service data，一般是通过读取 service data 文件获取的
