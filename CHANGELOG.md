@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## [0.13.1] - 2026-05-06
+
+### 新增 / Added
+- ✨ CLI 新增 `rs` 子命令（`refresh` 缩写），并补齐 zsh/bash 补全与 shell wrapper 联动，支持更快捷地刷新 Shell 配置
+
+### 修复 / Fixed
+- 🐛 修复 Nginx 启动链路在后台进程场景下可能阻塞的问题：启动改为非阻塞 `spawn` 并关闭 stdout/stderr 捕获，避免前端启动流程卡死
+- 🐛 修复 Nginx `error_log` 路径在含空格或 Windows 路径分隔符场景下的兼容性问题：自动规范化路径并补齐引号，提升跨平台启动稳定性
+- 🐛 修复 Nginx `logs` 路径异常（同名文件占位）导致目录创建与启动异常的问题：启动前自动清理并重建日志目录
+- 🐛 修复 Rust 服务激活与 CARGO_HOME 配置的环境变量联动问题：激活/更新时同步维护 `CARGO_HOME/bin` 的 PATH 注入与清理
+- 🐛 修复 MySQL 数据目录解析错误：数据目录回归到安装目录下 `data` 子目录
+
+### 改进 / Improved
+- ♻️ 强化跨平台路径处理：新增统一路径转换工具并在 MongoDB/Redis/PostgreSQL/Nginx/FileManager 等模块复用，减少手工分隔符替换导致的路径风险
+- ♻️ Rust 服务可用版本策略收敛到 `1.85.0+`，并在激活时增加 edition2024 最低版本校验，降低低版本工具链带来的兼容性问题
+
 ## [0.13.0] - 2026-04-28
 
 ### 新增 / Added
