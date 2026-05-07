@@ -174,3 +174,180 @@ pub async fn execute_custom_service_alias(
         }
     }
 }
+
+/// 用 VSCode 打开项目目录
+#[tauri::command]
+pub async fn open_project_in_vscode(
+    path: String,
+    _environment_id: String,
+) -> Result<CommandResponse, String> {
+    use std::process::Command;
+    
+    let path_obj = std::path::Path::new(&path);
+    if !path_obj.exists() {
+        return Ok(CommandResponse::error(format!(
+            "目录不存在: {}",
+            path
+        )));
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Err(e) = Command::new("open")
+            .args(&["-a", "Visual Studio Code", &path])
+            .spawn()
+        {
+            log::error!("用 VSCode 打开项目失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "用 VSCode 打开项目失败: {}",
+                e
+            )));
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Err(e) = Command::new("cmd")
+            .args(&["/C", &format!("code \"{}\"", path)])
+            .spawn()
+        {
+            log::error!("用 VSCode 打开项目失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "用 VSCode 打开项目失败: {}",
+                e
+            )));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Err(e) = Command::new("code").arg(&path).spawn() {
+            log::error!("用 VSCode 打开项目失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "用 VSCode 打开项目失败: {}",
+                e
+            )));
+        }
+    }
+
+    log::info!("已用 VSCode 打开项目: {}", path);
+    Ok(CommandResponse::success("已用 VSCode 打开项目".to_string(), None))
+}
+
+/// 用文件管理器打开文件夹
+#[tauri::command]
+pub async fn open_folder_in_finder(path: String) -> Result<CommandResponse, String> {
+    use std::process::Command;
+    
+    let path_obj = std::path::Path::new(&path);
+    if !path_obj.exists() {
+        return Ok(CommandResponse::error(format!(
+            "目录不存在: {}",
+            path
+        )));
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Err(e) = Command::new("open").arg(&path).spawn() {
+            log::error!("打开文件夹失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "打开文件夹失败: {}",
+                e
+            )));
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Err(e) = Command::new("explorer").arg(&path).spawn() {
+            log::error!("打开文件夹失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "打开文件夹失败: {}",
+                e
+            )));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Err(e) = Command::new("xdg-open").arg(&path).spawn() {
+            log::error!("打开文件夹失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "打开文件夹失败: {}",
+                e
+            )));
+        }
+    }
+
+    log::info!("已打开文件夹: {}", path);
+    Ok(CommandResponse::success("已打开文件夹".to_string(), None))
+}
+
+/// 在终端中打开指定目录
+#[tauri::command]
+pub async fn open_terminal_in_folder(path: String) -> Result<CommandResponse, String> {
+    use std::process::Command;
+    
+    let path_obj = std::path::Path::new(&path);
+    if !path_obj.exists() {
+        return Ok(CommandResponse::error(format!(
+            "目录不存在: {}",
+            path
+        )));
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        // 使用 osascript 在 Terminal 中打开指定目录
+        let script = format!(
+            "tell application \"Terminal\"\n  activate\n  do script \"cd '{}'\"\nend tell",
+            path.replace("'", "'\\''")
+        );
+        if let Err(e) = Command::new("osascript")
+            .arg("-e")
+            .arg(&script)
+            .spawn()
+        {
+            log::error!("打开终端失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "打开终端失败: {}",
+                e
+            )));
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Err(e) = Command::new("cmd")
+            .args(&["/C", &format!("start cmd /K \"cd /d {}\"", path)])
+            .spawn()
+        {
+            log::error!("打开终端失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "打开终端失败: {}",
+                e
+            )));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Err(e) = Command::new("x-terminal-emulator")
+            .arg("-e")
+            .arg("bash")
+            .arg("-c")
+            .arg(format!("cd '{}' && exec bash", path))
+            .spawn()
+        {
+            log::error!("打开终端失败: {}", e);
+            return Ok(CommandResponse::error(format!(
+                "打开终端失败: {}",
+                e
+            )));
+        }
+    }
+
+    log::info!("已在终端中打开目录: {}", path);
+    Ok(CommandResponse::success("已在终端中打开目录".to_string(), None))
+}

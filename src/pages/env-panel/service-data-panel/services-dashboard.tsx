@@ -2,7 +2,7 @@ import { useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { environmentsAtom, selectedEnvironmentIdAtom } from '../../../store/environment'
-import { Bot, Play } from 'lucide-react'
+import { Bot, Play, Code2, FolderOpen, Terminal } from 'lucide-react'
 import { ServiceData, ServiceDataStatus, ServiceType } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { isAIPanelOpenAtom } from "@/store";
@@ -11,7 +11,7 @@ import { SystemMonitor, useSystemMonitorData } from '@/pages/system-monitor'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useService } from '@/hooks/service'
 import { ProcessStatData } from '@/ipc/service'
-import { ipcExecuteCustomServiceAlias } from '@/ipc/services/custom'
+import { ipcExecuteCustomServiceAlias, ipcOpenProjectInVSCode, ipcOpenFolderInFinder, ipcOpenTerminalInFolder } from '@/ipc/services/custom'
 import { toast } from 'sonner'
 
 // 服务类型 → 负责监控的进程名列表
@@ -103,6 +103,15 @@ export function ServicesDashboard() {
     }))
   }
 
+  // 提取所有自定义服务的快捷目录
+  const customServiceDirectories = services
+    .filter(s => s.type === ServiceType.Custom && s.metadata?.autoChdirPath)
+    .map(s => ({
+      serviceId: s.id,
+      serviceName: s.name,
+      path: (s.metadata?.autoChdirPath as string) || ''
+    }))
+
   // 提取所有自定义服务的 aliases
   const customServiceAliases = services
     .filter(s => s.type === ServiceType.Custom && s.metadata?.aliases)
@@ -137,6 +146,39 @@ export function ServicesDashboard() {
       toast.error('执行命令失败', {
         description: String(error)
       })
+    }
+  }
+
+  // 用 VSCode 打开项目目录
+  const handleOpenVSCode = async (path: string, serviceName: string) => {
+    try {
+      await ipcOpenProjectInVSCode(path, selectedEnvironmentId)
+      toast.success(`正在用 VSCode 打开 "${serviceName}"...`)
+    } catch (error) {
+      console.error('打开 VSCode 失败:', error)
+      toast.error('打开 VSCode 失败')
+    }
+  }
+
+  // 打开文件夹
+  const handleOpenFolder = async (path: string, serviceName: string) => {
+    try {
+      await ipcOpenFolderInFinder(path)
+      toast.success(`正在打开 "${serviceName}" 文件夹...`)
+    } catch (error) {
+      console.error('打开文件夹失败:', error)
+      toast.error('打开文件夹失败')
+    }
+  }
+
+  // 打开终端
+  const handleOpenTerminal = async (path: string, serviceName: string) => {
+    try {
+      await ipcOpenTerminalInFolder(path)
+      toast.success(`正在终端中打开 "${serviceName}"...`)
+    } catch (error) {
+      console.error('打开终端失败:', error)
+      toast.error('打开终端失败')
     }
   }
 
@@ -178,42 +220,112 @@ export function ServicesDashboard() {
         {/* System Monitor */}
         <SystemMonitor systemInfo={systemInfo} />
 
-        {/* Custom Service Aliases */}
-        {customServiceAliases.length > 0 && (
-          <div className="w-full space-y-3">
-            <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">快捷指令</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {customServiceAliases.map((alias, index) => (
-                <div
-                  key={`${alias.serviceName}-${alias.aliasName}-${index}`}
-                  className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
-                >
-                  <div className="flex items-center gap-3 p-3 cursor-help">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-foreground truncate">
-                        {alias.aliasName}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                        {alias.command}
+        {/* Custom Service Aliases and Directories */}
+        {(customServiceDirectories.length > 0 || customServiceAliases.length > 0) && (
+          <TooltipProvider>
+            <div className="w-full space-y-3">
+              <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">快捷指令</h2>
+
+              {customServiceDirectories.length > 0 && (
+                <div className="space-y-2.5">
+                  {customServiceDirectories.map((dir) => (
+                    <div
+                      key={`${dir.serviceId}-directory`}
+                      className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between p-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold text-foreground truncate">
+                            Project
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {dir.path}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenVSCode(dir.path, dir.serviceName)}
+                                className="h-7 w-7 rounded-md bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-400 border border-blue-200/50 dark:border-blue-400/30 transition-all duration-200"
+                              >
+                                <Code2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>用 VSCode 打开</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenFolder(dir.path, dir.serviceName)}
+                                className="h-7 w-7 rounded-md bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-400/30 transition-all duration-200"
+                              >
+                                <FolderOpen className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>打开文件夹</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenTerminal(dir.path, dir.serviceName)}
+                                className="h-7 w-7 rounded-md bg-purple-500/10 hover:bg-purple-500/20 dark:bg-purple-500/20 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-400 border border-purple-200/50 dark:border-purple-400/30 transition-all duration-200"
+                              >
+                                <Terminal className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>打开终端</TooltipContent>
+                          </Tooltip>
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        executeAlias(alias.aliasName, alias.command)
-                      }}
-                      className="h-7 w-7 flex-shrink-0 rounded-md bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-400/30 transition-all duration-200"
-                      title={t('alias.execute', '执行命令')}
-                    >
-                      <Play className="h-3.5 w-3.5 fill-current" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {customServiceAliases.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {customServiceAliases.map((alias, index) => (
+                    <div
+                      key={`${alias.serviceName}-${alias.aliasName}-${index}`}
+                      className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
+                    >
+                      <div className="flex items-center gap-3 p-3 cursor-help">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold text-foreground truncate">
+                            {alias.aliasName}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {alias.command}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            executeAlias(alias.aliasName, alias.command)
+                          }}
+                          className="h-7 w-7 flex-shrink-0 rounded-md bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-400/30 transition-all duration-200"
+                          title={t('alias.execute', '执行命令')}
+                        >
+                          <Play className="h-3.5 w-3.5 fill-current" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          </TooltipProvider>
         )}
 
         {/* Service Resource Monitor */}

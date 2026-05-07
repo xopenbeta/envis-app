@@ -45,3 +45,22 @@ export const ipcExecuteCustomServiceAlias = ipcLogFunc('执行自定义服务 Al
 ): Promise<IPCResult> => {
     return invokeCommand(`execute_custom_service_alias`, { aliasName, command })
 })
+
+export const ipcOpenProjectInVSCode = ipcLogFunc('用 VSCode 打开项目', async (
+    path: string,
+    environmentId: string
+): Promise<IPCResult> => {
+    return invokeCommand(`open_project_in_vscode`, { path, environmentId })
+})
+
+export const ipcOpenFolderInFinder = ipcLogFunc('打开文件夹', async (
+    path: string
+): Promise<IPCResult> => {
+    return invokeCommand(`open_folder_in_finder`, { path })
+})
+
+export const ipcOpenTerminalInFolder = ipcLogFunc('在终端中打开文件夹', async (
+    path: string
+): Promise<IPCResult> => {
+    return invokeCommand(`open_terminal_in_folder`, { path })
+})

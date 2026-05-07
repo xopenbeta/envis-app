@@ -224,6 +224,9 @@ pub fn run() {
             update_custom_service_aliases,
             update_custom_service_chdir,
             execute_custom_service_alias,
+            open_project_in_vscode,
+            open_folder_in_finder,
+            open_terminal_in_folder,
             // Host 服务命令
             get_hosts,
             add_host,

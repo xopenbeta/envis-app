@@ -8,7 +8,7 @@ import {
 import { PathConfigView } from './PathConfigView'
 import { EnvironmentVariablesView } from './EnvironmentVariablesView'
 import { AliasesConfigView } from './AliasesConfigView'
-import { AutoChdirView } from './AutoChdirView'
+import { ProjectDirectoryView } from './ProjectDirectoryView'
 import { useServiceDataStatus } from '@/hooks/service-pollers'
 
 interface CustomServiceProps {
@@ -42,8 +42,8 @@ export function CustomService({ serviceData, selectedEnvironment }: CustomServic
                 serviceData={serviceData}
             />
             
-            {/* Auto Chdir Configuration */}
-            <AutoChdirView
+            {/* Project Directory Configuration */}
+            <ProjectDirectoryView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
             />
