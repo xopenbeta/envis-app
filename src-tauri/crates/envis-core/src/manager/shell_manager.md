@@ -1,0 +1,1 @@
+* compinit 是 Zsh（Z shell）中用于初始化可编程补全系统（completion system）的一个函数。但这些高级补全功能默认是不启用的。要使用它们，就需要运行 compinit 来加载并初始化 Zsh 的补全系统。

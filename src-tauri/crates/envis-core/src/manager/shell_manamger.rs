@@ -313,6 +313,11 @@ ev() {{ envis "$@"; }}
 
 # Tab 补全
 if [ -n "$ZSH_VERSION" ]; then
+    if ! command -v compdef >/dev/null 2>&1; then
+        autoload -Uz compinit
+        compinit
+    fi
+
     _envis_completions() {{
         local -a subcmds envs
         subcmds=('list:列出所有环境' 'ls:列出所有环境' 'use:激活环境' 'refresh:刷新Shell配置' 'rs:刷新Shell配置（refresh 缩写）')
