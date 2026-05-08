@@ -14,15 +14,16 @@ import { ipcOpenProjectInVSCode, ipcOpenFolderInFinder, ipcOpenTerminalInFolder 
 interface ProjectDirectoryViewProps {
     selectedEnvironmentId: string
     serviceData: ServiceData
+    status: ServiceDataStatus
 }
 
-export function ProjectDirectoryView({ selectedEnvironmentId, serviceData }: ProjectDirectoryViewProps) {
+export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, status }: ProjectDirectoryViewProps) {
     const { updateCustomServiceChdir, applyServiceMetadata } = useCustomService()
     const [path, setPath] = useState('')
     const [enabled, setEnabled] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isServiceDataActive = status === ServiceDataStatus.Active
 
     // 从 metadata 加载配置
     useEffect(() => {

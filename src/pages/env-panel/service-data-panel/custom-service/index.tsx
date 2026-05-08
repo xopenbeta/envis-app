@@ -28,24 +28,28 @@ export function CustomService({ serviceData, selectedEnvironment }: CustomServic
             <PathConfigView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
+                status={serviceDataStatus}
             />
 
             {/* Environment Variables Configuration */}
             <EnvironmentVariablesView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
+                status={serviceDataStatus}
             />
 
             {/* Aliases Configuration */}
             <AliasesConfigView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
+                status={serviceDataStatus}
             />
             
             {/* Project Directory Configuration */}
             <ProjectDirectoryView
                 selectedEnvironmentId={selectedEnvironment.id}
                 serviceData={serviceData}
+                status={serviceDataStatus}
             />
         </div>
     )

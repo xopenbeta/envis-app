@@ -12,16 +12,18 @@ import { toast } from 'sonner'
 interface PathConfigViewProps {
     selectedEnvironmentId: string
     serviceData: ServiceData
+    status: ServiceDataStatus
 }
 
 export function PathConfigView({
     selectedEnvironmentId,
     serviceData,
+    status,
 }: PathConfigViewProps) {
     const { updateCustomServicePaths, applyServiceMetadata } = useCustomService()
     const [paths, setPaths] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isServiceDataActive = status === ServiceDataStatus.Active
     const isWindows = typeof navigator !== 'undefined' && navigator.platform.includes('Win')
 
     // 从服务数据加载路径配置

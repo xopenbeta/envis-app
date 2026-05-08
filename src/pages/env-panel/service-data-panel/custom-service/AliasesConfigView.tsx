@@ -17,16 +17,18 @@ interface AliasItem {
 interface AliasesConfigViewProps {
     selectedEnvironmentId: string
     serviceData: ServiceData
+    status: ServiceDataStatus
 }
 
 export function AliasesConfigView({
     selectedEnvironmentId,
     serviceData,
+    status,
 }: AliasesConfigViewProps) {
     const { updateCustomServiceAliases, applyServiceMetadata } = useCustomService()
     const [aliases, setAliases] = useState<AliasItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isServiceDataActive = status === ServiceDataStatus.Active
     const isWindows = typeof navigator !== 'undefined' && navigator.platform.includes('Win')
 
     // 从服务数据加载 Alias 配置

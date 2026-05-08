@@ -17,16 +17,18 @@ interface EnvironmentVariable {
 interface EnvironmentVariablesViewProps {
     selectedEnvironmentId: string
     serviceData: ServiceData
+    status: ServiceDataStatus
 }
 
 export function EnvironmentVariablesView({
     selectedEnvironmentId,
     serviceData,
+    status,
 }: EnvironmentVariablesViewProps) {
     const { updateCustomServiceEnvVars, applyServiceMetadata } = useCustomService()
     const [envVars, setEnvVars] = useState<EnvironmentVariable[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isServiceDataActive = status === ServiceDataStatus.Active
     const isWindows = typeof navigator !== 'undefined' && navigator.platform.includes('Win')
 
     // 从服务数据加载环境变量配置
