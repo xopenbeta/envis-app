@@ -251,7 +251,7 @@ export function WelcomeFragment({ onOpen }: {
                         <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('welcome.feedback')}</h2>
                         <div className="flex flex-col rounded-lg border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] overflow-hidden">
                             <a
-                                href="https://github.com/xopenbeta/daji-app"
+                                href="https://github.com/xopenbeta/envis-app"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
