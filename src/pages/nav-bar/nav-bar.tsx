@@ -199,7 +199,11 @@ export default function NavBar({ onClose }: NavBarProps) {
         return // 用户取消
       }
 
-      const writeRes = await ipcWriteFileContent(dialogRes.data.path, exportRes.data.json)
+      const savePath = dialogRes.data.path.endsWith('.json')
+        ? dialogRes.data.path
+        : `${dialogRes.data.path}.json`
+
+      const writeRes = await ipcWriteFileContent(savePath, exportRes.data.json)
       if (writeRes?.success) {
         toast.success(t('nav_bar.export_success', { name: environment.name }))
         logInfo(t('nav_bar.export_success', { name: environment.name }))
