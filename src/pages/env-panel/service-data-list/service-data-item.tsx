@@ -55,7 +55,7 @@ import { Input } from '@/components/ui/input'
 import { useSettings } from '@/hooks/appSettings'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useEnvironment } from '@/hooks/environment'
-import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/useStatus'
 
 type PasswordProtectedActionResult = {
   success?: boolean

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ServiceData, ServiceDataStatus } from '@/types/index'
-import { useServiceDataStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus } from '@/hooks/useStatus'
 import {
     Info
 } from 'lucide-react'

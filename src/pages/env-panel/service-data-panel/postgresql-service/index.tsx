@@ -37,7 +37,7 @@ import { usePostgresqlService, PostgreSQLConfig, PostgreSQLRole, PostgreSQLGrant
 import { useFileOperations } from "@/hooks/file-operations"
 import { PostgreSQLMetadata } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
 
 interface PostgreSQLServiceProps {
   serviceData: ServiceData

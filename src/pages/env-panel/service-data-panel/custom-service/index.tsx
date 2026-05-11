@@ -9,7 +9,7 @@ import { PathConfigView } from './PathConfigView'
 import { EnvironmentVariablesView } from './EnvironmentVariablesView'
 import { AliasesConfigView } from './AliasesConfigView'
 import { ProjectDirectoryView } from './ProjectDirectoryView'
-import { useServiceDataStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus } from '@/hooks/useStatus'
 
 interface CustomServiceProps {
     serviceData: ServiceData

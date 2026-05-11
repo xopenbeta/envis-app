@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { ServiceData, ServiceDataStatus } from "@/types"
-import { useServiceDataStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus } from '@/hooks/useStatus'
 import { usePythonService } from "@/hooks/services/python"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

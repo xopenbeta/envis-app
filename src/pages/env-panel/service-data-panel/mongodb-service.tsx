@@ -53,7 +53,7 @@ import { MongoDBConfig, MongoDBMetadata } from "@/types/service"
 import { useMongodb } from "@/hooks/services/mongodb"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
 import { useService } from "@/hooks/service"
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
 
 interface MongoDBServiceProps {
   serviceData: ServiceData

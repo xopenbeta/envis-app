@@ -28,7 +28,7 @@ import { useTranslation } from 'react-i18next'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useSettings } from '@/hooks/appSettings'
 import { toast } from 'sonner'
-import { useEnvironmentStatus } from '@/hooks/service-pollers'
+import { useEnvironmentStatus } from '@/hooks/useStatus'
 
 interface SortableEnvironmentItemProps {
   environment: Environment;

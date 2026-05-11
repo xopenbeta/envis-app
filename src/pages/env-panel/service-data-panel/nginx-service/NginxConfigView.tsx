@@ -29,7 +29,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useNginxService } from '@/hooks/services/nginx'
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
 
 interface NginxConfigViewProps {
     selectedEnvironmentId: string

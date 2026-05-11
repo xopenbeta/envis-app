@@ -37,7 +37,7 @@ import { useMariadb, MariaDBConfig } from '@/hooks/services/mariadb'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MariaDBMetadata, MariaDBUser, MariaDBGrant } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
 
 interface MariaDBServiceProps {
   serviceData: ServiceData

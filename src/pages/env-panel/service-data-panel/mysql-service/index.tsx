@@ -37,7 +37,7 @@ import { useMysql, MySQLConfig } from '@/hooks/services/mysql'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MySQLMetadata, MySQLUser, MySQLGrant } from '@/types/service'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
 
 interface MySQLServiceProps {
   serviceData: ServiceData

@@ -15,7 +15,7 @@ import { useRedis } from '@/hooks/services/redis'
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
 import { useFileOperations } from '@/hooks/file-operations'
 import { ipcOpenSelectDialog } from '@/ipc/file-operations'
-import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/useStatus'
 
 interface RedisServiceProps {
   serviceData: ServiceData

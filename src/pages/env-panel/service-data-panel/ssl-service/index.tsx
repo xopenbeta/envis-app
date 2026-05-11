@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label"
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
-import { useServiceDataStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus } from '@/hooks/useStatus'
 import { CAInitDialog } from './ca-init-dialog'
 import { CertificateList } from './certificate-list'
 import { IssueCertificateDialog } from './issue-certificate-dialog'

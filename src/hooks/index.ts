@@ -9,7 +9,7 @@ export {
     useServiceStatus,
     useServiceDataStatus,
     useServiceDownloadStatus,
-} from './service-pollers'
+} from './useStatus'
 
 // 初始化整个Envis应用
 export function useInitEnvis() {

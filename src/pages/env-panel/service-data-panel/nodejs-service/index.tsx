@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
-import { useServiceDataStatus } from '@/hooks/service-pollers'
+import { useServiceDataStatus } from '@/hooks/useStatus'
 import {
     Hexagon,
     Info,
