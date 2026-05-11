@@ -1,5 +1,6 @@
 use anyhow::Result;
 use envis_core::manager::environment_manager::EnvironmentManager;
+use envis_core::manager::export_import;
 use envis_core::types::Environment;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -234,6 +235,49 @@ pub async fn deactivate_environment_and_services(
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,
             message: e.to_string(),
+            data: None,
+        }),
+    }
+}
+
+/// 导出环境为 JSON 字符串
+/// 仅保留可跨机器迁移的配置（远程仓库地址、镜像源等），排除本地路径和初始化数据。
+#[tauri::command]
+pub async fn export_environment_data(
+    environment_id: String,
+) -> Result<EnvironmentCommandResult, String> {
+    match export_import::export_environment(&environment_id) {
+        Ok(json) => Ok(EnvironmentCommandResult {
+            success: true,
+            message: "环境导出成功".to_string(),
+            data: Some(serde_json::json!({ "json": json })),
+        }),
+        Err(e) => Ok(EnvironmentCommandResult {
+            success: false,
+            message: format!("环境导出失败: {}", e),
+            data: None,
+        }),
+    }
+}
+
+/// 从 JSON 字符串导入环境（创建新环境和服务数据，不触发下载/初始化）
+#[tauri::command]
+pub async fn import_environment_data(
+    json_content: String,
+) -> Result<EnvironmentCommandResult, String> {
+    match export_import::import_environment(&json_content) {
+        Ok(result) => Ok(EnvironmentCommandResult {
+            success: true,
+            message: format!("环境 '{}' 导入成功", result.environment_name),
+            data: Some(serde_json::json!({
+                "environmentId": result.environment_id,
+                "environmentName": result.environment_name,
+                "services": result.services,
+            })),
+        }),
+        Err(e) => Ok(EnvironmentCommandResult {
+            success: false,
+            message: format!("环境导入失败: {}", e),
             data: None,
         }),
     }

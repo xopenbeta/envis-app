@@ -173,3 +173,97 @@ pub async fn open_in_file_manager(path: String) -> Result<FileCommandResult, Str
         }),
     }
 }
+
+/// 打开保存文件对话框
+#[tauri::command]
+pub async fn save_file_dialog(
+    app_handle: AppHandle,
+    title: Option<String>,
+    filters: Option<Vec<FileFilter>>,
+    default_path: Option<String>,
+    default_name: Option<String>,
+) -> Result<FileCommandResult, String> {
+    let converted_filters: Option<Vec<(&str, Vec<&str>)>> = filters.as_ref().map(|f| {
+        f.iter()
+            .map(|filter| {
+                let name = filter.name.as_str();
+                let extensions: Vec<&str> = filter.extensions.iter().map(|s| s.as_str()).collect();
+                (name, extensions)
+            })
+            .collect()
+    });
+
+    let filters_ref = converted_filters.as_ref().map(|f| {
+        f.iter()
+            .map(|(name, exts)| (*name, exts.as_slice()))
+            .collect::<Vec<(&str, &[&str])>>()
+    });
+
+    let default_path = default_path.map(PathBuf::from);
+
+    match FileManager::save_file_dialog(
+        &app_handle,
+        title.as_deref(),
+        filters_ref,
+        default_path,
+        default_name.as_deref(),
+    )
+    .await
+    {
+        Ok(Some(path)) => {
+            let data = serde_json::json!({ "path": path.to_string_lossy().to_string() });
+            Ok(FileCommandResult {
+                success: true,
+                message: "选择保存路径成功".to_string(),
+                data: Some(data),
+            })
+        }
+        Ok(None) => Ok(FileCommandResult {
+            success: false,
+            message: "用户取消保存".to_string(),
+            data: None,
+        }),
+        Err(e) => Ok(FileCommandResult {
+            success: false,
+            message: format!("打开保存对话框失败: {}", e),
+            data: None,
+        }),
+    }
+}
+
+/// 读取文件内容（文本）
+#[tauri::command]
+pub async fn read_file_content(file_path: String) -> Result<FileCommandResult, String> {
+    match FileManager::read_text_file(&file_path) {
+        Ok(content) => {
+            let data = serde_json::json!({ "content": content });
+            Ok(FileCommandResult {
+                success: true,
+                message: "读取文件成功".to_string(),
+                data: Some(data),
+            })
+        }
+        Err(e) => Ok(FileCommandResult {
+            success: false,
+            message: format!("读取文件失败: {}", e),
+            data: None,
+        }),
+    }
+}
+
+/// 写入文件内容（文本）
+#[tauri::command]
+pub async fn write_file_content(file_path: String, content: String) -> Result<FileCommandResult, String> {
+    match FileManager::write_text_file(&file_path, &content) {
+        Ok(()) => Ok(FileCommandResult {
+            success: true,
+            message: "写入文件成功".to_string(),
+            data: None,
+        }),
+        Err(e) => Ok(FileCommandResult {
+            success: false,
+            message: format!("写入文件失败: {}", e),
+            data: None,
+        }),
+    }
+}

@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/utilities'
 import { Environment, EnvironmentStatus } from '@/types/index'
 import {
+  Download,
   Folder,
   GripVertical,
   MoreHorizontal,
@@ -37,6 +38,7 @@ interface SortableEnvironmentItemProps {
   onToggle: (environment: Environment) => void;
   onEdit: (environment: Environment) => void;
   onDelete: (environment: Environment) => void;
+  onExport: (environment: Environment) => void;
 }
 
 export function SortableEnvironmentItem({
@@ -46,7 +48,8 @@ export function SortableEnvironmentItem({
   onSelect,
   onToggle,
   onEdit,
-  onDelete
+  onDelete,
+  onExport
 }: SortableEnvironmentItemProps) {
   const { t } = useTranslation()
   const { openFolderInFinder } = useFileOperations()
@@ -157,8 +160,12 @@ export function SortableEnvironmentItem({
                 <Settings className="h-4 w-4 mr-2" />
                 {t('nav_bar_item.edit')}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
+              <DropdownMenuSeparator />              
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExport(environment) }}>
+                <Download className="h-4 w-4 mr-2" />
+                {t('nav_bar_item.export')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />              <DropdownMenuItem
                 onClick={(e) => { e.stopPropagation(); onDelete({ ...environment, status: currentStatus }) }}
                 className="text-danger"
               >

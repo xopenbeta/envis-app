@@ -172,13 +172,25 @@
     "cancel": "取消",
     "save": "保存",
     "create": "创建",
-    "env_order_changed": "环境排序变更: {{id}} -> 索引 {{index}}"
+    "env_order_changed": "环境排序变更: {{id}} -> 索引 {{index}}",
+    "export_dialog_title": "导出环境",
+    "export_success": "环境 {{name}} 导出成功",
+    "export_error": "导出环境失败",
+    "import_env": "导入环境",
+    "import_dialog_title": "导入环境文件",
+    "import_success": "环境 {{name}} 导入成功",
+    "import_error": "导入环境失败",
+    "import_read_error": "读取文件失败",
+    "import_parse_error": "JSON 格式无效",
+    "import_invalid_format": "文件格式不正确，缺少环境名称",
+    "import_create_env_error": "创建环境失败"
   },
   "nav_bar_item": {
     "drag_to_sort": "拖动排序",
     "active": "运行中",
     "inactive": "未运行",
     "edit": "编辑",
+    "export": "导出",
     "delete": "删除",
     "open_folder": "打开文件夹",
     "no_env_folder": "无法获取环境文件夹路径"

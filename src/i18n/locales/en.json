@@ -172,13 +172,25 @@
     "cancel": "Cancel",
     "save": "Save",
     "create": "Create",
-    "env_order_changed": "Environment order changed: {{id}} -> index {{index}}"
+    "env_order_changed": "Environment order changed: {{id}} -> index {{index}}",
+    "export_dialog_title": "Export Environment",
+    "export_success": "Environment {{name}} exported successfully",
+    "export_error": "Failed to export environment",
+    "import_env": "Import",
+    "import_dialog_title": "Import Environment File",
+    "import_success": "Environment {{name}} imported successfully",
+    "import_error": "Failed to import environment",
+    "import_read_error": "Failed to read file",
+    "import_parse_error": "Invalid JSON format",
+    "import_invalid_format": "Invalid file format: missing environment name",
+    "import_create_env_error": "Failed to create environment"
   },
   "nav_bar_item": {
     "drag_to_sort": "Drag to sort",
     "active": "Active",
     "inactive": "Inactive",
     "edit": "Edit",
+    "export": "Export",
     "delete": "Delete",
     "open_folder": "Open Folder",
     "no_env_folder": "Cannot get environment folder path"

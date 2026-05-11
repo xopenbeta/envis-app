@@ -45,7 +45,8 @@ import {
   MessageSquareText,
   FlaskConical,
   MoreHorizontal,
-  Hexagon
+  Hexagon,
+  Upload,
 } from 'lucide-react'
 import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -69,6 +70,8 @@ import { eventLogFunc } from '@/utils/logger'
 import { useSystemInfo } from '@/hooks/system-info'
 import { isAIPanelOpenAtom } from '@/store'
 import { useTranslation } from 'react-i18next'
+import { ipcSaveFileDialog, ipcWriteFileContent, ipcOpenFileDialog, ipcReadFileContent } from '@/ipc/file-operations'
+import { ipcExportEnvironmentData, ipcImportEnvironmentData, ipcGetAllEnvironments } from '@/ipc/environment'
 
 interface NavBarProps {
   onClose?: () => void
@@ -76,7 +79,7 @@ interface NavBarProps {
 
 export default function NavBar({ onClose }: NavBarProps) {
   const { t } = useTranslation()
-  const [environments] = useAtom(environmentsAtom)
+  const [environments, setEnvironments] = useAtom(environmentsAtom)
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
   const [isCreateEnvDialogOpen, setIsCreateEnvDialogOpen] = useAtom(isCreateEnvDialogOpenAtom)
   const { appSettings, systemSettings } = useSettings()
@@ -171,6 +174,83 @@ export default function NavBar({ onClose }: NavBarProps) {
     } else {
       toast.error(t('nav_bar.delete_env_error_msg', { message: res.message }))
       logError(t('nav_bar.delete_env_error_full', { name: environment.name, message: res.message }))
+    }
+  }
+
+  // 导出环境
+  const onExportEnvBtnClick = async (environment: Environment) => {
+    try {
+      // 通过 core 层生成导出 JSON（只保留远程仓库/镜像源等可移植配置）
+      const exportRes = await ipcExportEnvironmentData(environment.id)
+      if (!exportRes?.success || !exportRes?.data?.json) {
+        toast.error(t('nav_bar.export_error') + (exportRes?.message ? `: ${exportRes.message}` : ''))
+        return
+      }
+
+      const safeName = environment.name.replace(/[^\w\u4e00-\u9fa5-]/g, '_')
+
+      const dialogRes = await ipcSaveFileDialog({
+        title: t('nav_bar.export_dialog_title'),
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+        defaultName: `${safeName}.json`,
+      })
+
+      if (!dialogRes?.success || !dialogRes?.data?.path) {
+        return // 用户取消
+      }
+
+      const writeRes = await ipcWriteFileContent(dialogRes.data.path, exportRes.data.json)
+      if (writeRes?.success) {
+        toast.success(t('nav_bar.export_success', { name: environment.name }))
+        logInfo(t('nav_bar.export_success', { name: environment.name }))
+      } else {
+        toast.error(t('nav_bar.export_error') + (writeRes?.message ? `: ${writeRes.message}` : ''))
+      }
+    } catch (e) {
+      toast.error(t('nav_bar.export_error'))
+      logError(`${t('nav_bar.export_error')}: ${e}`)
+    }
+  }
+
+  // 导入环境
+  const onImportEnvBtnClick = async () => {
+    try {
+      const dialogRes = await ipcOpenFileDialog({
+        title: t('nav_bar.import_dialog_title'),
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      })
+
+      if (!dialogRes?.success || !dialogRes?.data?.path) {
+        return // 用户取消
+      }
+
+      const readRes = await ipcReadFileContent(dialogRes.data.path)
+      if (!readRes?.success || !readRes?.data?.content) {
+        toast.error(t('nav_bar.import_read_error'))
+        return
+      }
+
+      // 通过 core 层解析并导入（metadata 过滤、同名处理、服务创建均在 Rust 侧完成）
+      const importRes = await ipcImportEnvironmentData(readRes.data.content)
+      if (!importRes?.success || !importRes?.data) {
+        toast.error(t('nav_bar.import_error') + (importRes?.message ? `: ${importRes.message}` : ''))
+        return
+      }
+
+      const envName = importRes.data.environmentName
+
+      // 刷新环境列表（创建已在 core 侧完成，前端重新拉取并更新 atom）
+      const refreshRes = await ipcGetAllEnvironments()
+      if (refreshRes?.data?.environments) {
+        setEnvironments(sortEnvironments(refreshRes.data.environments))
+      }
+
+      toast.success(t('nav_bar.import_success', { name: envName }))
+      logInfo(t('nav_bar.import_success', { name: envName }))
+      setIsCreateEnvDialogOpen(false)
+    } catch (e) {
+      toast.error(t('nav_bar.import_error'))
+      logError(`${t('nav_bar.import_error')}: ${e}`)
     }
   }
 
@@ -496,6 +576,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                     onToggle={onToogleEnvStatusBtnClick}
                     onEdit={onOpenNewDialogBtnClick}
                     onDelete={onDeleteEnvBtnClick}
+                    onExport={onExportEnvBtnClick}
                   />
                 ))}
               </SortableContext>
@@ -593,12 +674,26 @@ export default function NavBar({ onClose }: NavBarProps) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className='shadow-none' onClick={() => setIsNewDialogOpen(false)}>
-              {t('nav_bar.cancel')}
-            </Button>
-            <Button onClick={onDialogSaveEnvBtnClick}>
-              {editingEnvironment ? t('nav_bar.save') : t('nav_bar.create')}
-            </Button>
+            <div className="flex w-full items-center justify-between">
+              <Button
+                variant="outline"
+                className="shadow-none"
+                onClick={onImportEnvBtnClick}
+                disabled={!!editingEnvironment}
+                title={t('nav_bar.import_env')}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {t('nav_bar.import_env')}
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className='shadow-none' onClick={() => setIsNewDialogOpen(false)}>
+                  {t('nav_bar.cancel')}
+                </Button>
+                <Button onClick={onDialogSaveEnvBtnClick}>
+                  {editingEnvironment ? t('nav_bar.save') : t('nav_bar.create')}
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

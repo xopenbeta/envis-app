@@ -135,6 +135,9 @@ pub fn run() {
             open_files_dialog,
             open_folder_dialog,
             open_in_file_manager,
+            save_file_dialog,
+            read_file_content,
+            write_file_content,
             // 环境相关命令
             get_all_environments,
             get_environment,
@@ -146,6 +149,8 @@ pub fn run() {
             activate_environment_and_services,
             deactivate_environment,
             deactivate_environment_and_services,
+            export_environment_data,
+            import_environment_data,
             // 环境服务数据相关命令
             get_environment_all_service_datas,
             get_service_data,

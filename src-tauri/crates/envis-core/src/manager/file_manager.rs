@@ -229,6 +229,65 @@ impl FileManager {
         Ok(())
     }
 
+    /// 打开保存文件对话框
+    #[cfg(feature = "tauri-integration")]
+    pub async fn save_file_dialog(
+        app_handle: &AppHandle,
+        title: Option<&str>,
+        filters: Option<Vec<(&str, &[&str])>>,
+        default_path: Option<PathBuf>,
+        default_name: Option<&str>,
+    ) -> Result<Option<PathBuf>> {
+        use tauri_plugin_dialog::DialogExt;
+        use tokio::sync::oneshot;
+
+        let mut dialog = app_handle.dialog().file();
+
+        if let Some(title) = title {
+            dialog = dialog.set_title(title);
+        }
+
+        if let Some(filters) = filters {
+            for (name, extensions) in filters {
+                dialog = dialog.add_filter(name, extensions);
+            }
+        }
+
+        if let Some(default_path) = default_path {
+            dialog = dialog.set_directory(default_path);
+        }
+
+        if let Some(name) = default_name {
+            dialog = dialog.set_file_name(name);
+        }
+
+        let (tx, rx) = oneshot::channel();
+        dialog.save_file(move |file_path| {
+            let _ = tx.send(file_path);
+        });
+
+        let file_path = rx
+            .await
+            .map_err(|_| anyhow::anyhow!("Failed to receive file path"))?;
+        Ok(file_path.and_then(|f| f.as_path().map(|p| p.to_owned())))
+    }
+
+    /// 读取文件内容为字符串
+    pub fn read_text_file<P: AsRef<std::path::Path>>(path: P) -> Result<String> {
+        std::fs::read_to_string(path.as_ref())
+            .context(format!("读取文件失败: {}", path.as_ref().display()))
+    }
+
+    /// 将字符串内容写入文件
+    pub fn write_text_file<P: AsRef<std::path::Path>>(path: P, content: &str) -> Result<()> {
+        if let Some(parent) = path.as_ref().parent() {
+            std::fs::create_dir_all(parent)
+                .context(format!("创建目录失败: {}", parent.display()))?;
+        }
+        std::fs::write(path.as_ref(), content)
+            .context(format!("写入文件失败: {}", path.as_ref().display()))
+    }
+
     /// 在 Finder 中显示文件（macOS 专用）
     #[cfg(target_os = "macos")]
     pub fn reveal_in_finder<P: AsRef<std::path::Path>>(path: P) -> Result<()> {

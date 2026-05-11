@@ -195,6 +195,34 @@ impl ServiceType {
             ServiceType::Nasm => vec![],
         }
     }
+
+    /// 可导出的 metadata 键列表：
+    /// 仅包含远程仓库地址、镜像源等跨机器有意义的配置。
+    /// 排除：本地路径（data/log/config 路径）、需初始化的信息（密码/用户名）。
+    pub fn export_metadata_keys(&self) -> Vec<&'static str> {
+        match self {
+            // npm 镜像源（URL，跨机器有意义）
+            ServiceType::Nodejs => vec!["NPM_CONFIG_REGISTRY"],
+            // Maven 仓库地址（URL）、JVM 选项（非路径选项）
+            ServiceType::Java => vec!["MAVEN_REPO_URL", "JAVA_OPTS"],
+            // pip 镜像源（URL）、信任主机、python3 别名标志
+            ServiceType::Python => vec!["PIP_INDEX_URL", "PIP_TRUSTED_HOST", "PYTHON3_AS_PYTHON"],
+            // Host 条目（域名映射，跨机器有意义）
+            ServiceType::Host => vec!["hosts"],
+            // 以下服务无可导出的远程配置项
+            ServiceType::Redis => vec![],
+            ServiceType::Mongodb => vec![],
+            ServiceType::Mariadb => vec![],
+            ServiceType::Mysql => vec![],
+            ServiceType::Postgresql => vec![],
+            ServiceType::Nginx => vec![],
+            ServiceType::Rust => vec![],
+            ServiceType::Custom => vec![],
+            ServiceType::SSL => vec![],
+            ServiceType::Dnsmasq => vec![],
+            ServiceType::Nasm => vec![],
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
