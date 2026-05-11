@@ -66,9 +66,19 @@ impl NodejsService {
                 date: "2024-10-03".to_string(),
             },
             NodejsVersion {
+                version: "v21.7.3".to_string(),
+                lts: false,
+                date: "2024-04-10".to_string(),
+            },
+            NodejsVersion {
                 version: "v22.14.0".to_string(),
                 lts: false,
                 date: "2024-12-03".to_string(),
+            },
+            NodejsVersion {
+                version: "v23.11.1".to_string(),
+                lts: false,
+                date: "2025-05-14".to_string(),
             },
         ]
     }
