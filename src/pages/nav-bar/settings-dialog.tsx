@@ -178,10 +178,11 @@ export default function SettingsDialog(props: {
   const { getAllServiceDatas } = useServiceData()
   const { openFolderInFinder, selectFolder } = useFileOperations()
   const { getAllInstalledServices, getServiceSize, deleteService } = useService()
-  const currentTheme = appSettings?.theme as AppTheme
-
-  const [newFontSize, setNewFontSize] = useState(14)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
+
+  // General 设置 pending state
+  const [newTheme, setNewTheme] = useState<AppTheme>('system')
+  const [newLanguage, setNewLanguage] = useState('')
 
   // AI设置相关状态
   const [newAIProvider, setNewAIProvider] = useState<AIProvider>('openai')
@@ -190,19 +191,45 @@ export default function SettingsDialog(props: {
   const [newAIModel, setNewAIModel] = useState('')
   const [newAIEnabled, setNewAIEnabled] = useState(false)
 
+  // System 设置 pending state
+  const [newAutoStart, setNewAutoStart] = useState(false)
+  const [newDeactivateOthers, setNewDeactivateOthers] = useState(true)
+  const [newStopOnExit, setNewStopOnExit] = useState(false)
+  const [newStartLastEnv, setNewStartLastEnv] = useState(false)
+  const [newTerminalTool, setNewTerminalTool] = useState('')
+  const [newShowEnvName, setNewShowEnvName] = useState(true)
+  const [newShowServiceInfo, setNewShowServiceInfo] = useState(false)
+  const [newEnvisFolder, setNewEnvisFolder] = useState('')
+
   // 服务管理相关状态
   const [installedServices, setInstalledServices] = useState<any[]>([])
   const [servicesLoading, setServicesLoading] = useState(false)
   const [osName, setOsName] = useState('')
 
-  useEffect(() => {
-    // 初始化AI设置，添加安全检查
+  const initPendingSettings = () => {
+    // General
+    setNewTheme((appSettings?.theme as AppTheme) || 'system')
+    setNewLanguage(appSettings?.language || 'zh-CN')
+    // AI
     setNewAIProvider(appSettings?.ai?.provider || 'openai')
     setNewAIApiKey(appSettings?.ai?.apiKey || '')
     setNewAIBaseUrl(appSettings?.ai?.baseUrl || 'https://api.openai.com/v1')
     setNewAIModel(appSettings?.ai?.model || 'gpt-3.5-turbo')
     setNewAIEnabled(appSettings?.ai?.enabled || false)
-  }, [isSettingDialogOpen, appSettings])
+    // System
+    setNewAutoStart(systemSettings?.autoStartAppOnLogin ?? false)
+    setNewDeactivateOthers(systemSettings?.deactivateOtherEnvironmentsOnActivate ?? true)
+    setNewStopOnExit(systemSettings?.stopAllServicesOnExit ?? false)
+    setNewStartLastEnv(systemSettings?.autoActivateLastUsedEnvironmentOnAppStart ?? false)
+    setNewTerminalTool(systemSettings?.terminalTool || '')
+    setNewShowEnvName(systemSettings?.showEnvironmentNameOnTerminalOpen ?? true)
+    setNewShowServiceInfo(systemSettings?.showServiceInfoOnTerminalOpen ?? false)
+    setNewEnvisFolder(systemSettings?.envisFolder || '')
+  }
+
+  useEffect(() => {
+    initPendingSettings()
+  }, [isSettingDialogOpen, appSettings, systemSettings])
 
   useEffect(() => {
     if (isSettingDialogOpen) {
@@ -303,10 +330,24 @@ export default function SettingsDialog(props: {
     }
   }, [isSettingDialogOpen])
 
-  const onSaveBtnClick = () => {
+  const onSaveBtnClick = async () => {
     if (appSettings) {
+      // 检查 envisFolder 是否有变化，若变化需先检查活跃环境
+      const folderChanged = newEnvisFolder !== systemSettings?.envisFolder
+      if (folderChanged) {
+        const activeEnvironments = environments.filter(env => env.status === EnvironmentStatus.Active)
+        if (activeEnvironments.length > 0) {
+          const activeEnvNames = activeEnvironments.map(env => env.name).join(', ')
+          toast.error(t('settings.cannot_migrate_data', { names: activeEnvNames }))
+          return
+        }
+        toast.info(t('settings.migrating_data'))
+      }
+
       const newAppSettings: AppSettings = {
         ...appSettings,
+        theme: newTheme,
+        language: newLanguage,
         ai: {
           provider: newAIProvider,
           apiKey: newAIApiKey,
@@ -315,19 +356,28 @@ export default function SettingsDialog(props: {
           enabled: newAIEnabled
         }
       };
-      updateAppSettings(newAppSettings);
-      toast.success(t('settings.settings_saved'))
+      await updateAppSettings(newAppSettings);
+      await updateSystemSettings({
+        autoStartAppOnLogin: newAutoStart,
+        deactivateOtherEnvironmentsOnActivate: newDeactivateOthers,
+        stopAllServicesOnExit: newStopOnExit,
+        autoActivateLastUsedEnvironmentOnAppStart: newStartLastEnv,
+        terminalTool: newTerminalTool,
+        showEnvironmentNameOnTerminalOpen: newShowEnvName,
+        showServiceInfoOnTerminalOpen: newShowServiceInfo,
+        envisFolder: newEnvisFolder,
+      });
+      if (folderChanged) {
+        toast.success(t('settings.data_migrated'))
+      } else {
+        toast.success(t('settings.settings_saved'))
+      }
       setIsSettingDialogOpen(false)
     }
   }
 
   const onRevertBtnClick = () => {
-    // 还原AI设置，添加安全检查
-    setNewAIProvider(appSettings?.ai?.provider || 'openai')
-    setNewAIApiKey(appSettings?.ai?.apiKey || '')
-    setNewAIBaseUrl(appSettings?.ai?.baseUrl || 'https://api.openai.com/v1')
-    setNewAIModel(appSettings?.ai?.model || 'gpt-3.5-turbo')
-    setNewAIEnabled(appSettings?.ai?.enabled || false)
+    initPendingSettings()
   }
 
   const onToggleDevTools = async () => {
@@ -353,7 +403,7 @@ export default function SettingsDialog(props: {
   // 选择文件夹
   const onSelectFolder = async () => {
     try {
-      const currentPath = systemSettings?.envisFolder
+      const currentPath = newEnvisFolder || systemSettings?.envisFolder
       const result = await selectFolder({
         title: t('settings.select_data_folder'),
         defaultPath: currentPath
@@ -362,8 +412,8 @@ export default function SettingsDialog(props: {
       if (result.success && result.data?.path) {
         const selectedPath = result.data.path
         
-        // 如果路径有变化，需要检查环境状态并迁移数据
-        if (selectedPath !== currentPath) {
+        // 如果路径有变化，需要检查环境状态
+        if (selectedPath !== systemSettings?.envisFolder) {
           // 检查是否有活跃的环境
           const activeEnvironments = environments.filter(env => env.status === EnvironmentStatus.Active)
           if (activeEnvironments.length > 0) {
@@ -371,17 +421,10 @@ export default function SettingsDialog(props: {
             toast.error(t('settings.cannot_migrate_data', { names: activeEnvNames }))
             return
           }
-          
-          toast.info(t('settings.migrating_data'))
         }
         
-        await updateSystemSettings({ envisFolder: selectedPath })
-        
-        if (selectedPath !== currentPath) {
-          toast.success(t('settings.data_migrated'))
-        } else {
-          toast.success(t('settings.folder_confirmed'))
-        }
+        setNewEnvisFolder(selectedPath)
+        toast.success(t('settings.folder_confirmed'))
       }
     } catch (error) {
       console.error(t('settings.select_folder_failed') + ':', error)
@@ -392,7 +435,7 @@ export default function SettingsDialog(props: {
   // 在Finder中打开文件夹
   const onOpenFolder = async () => {
     try {
-      const folderPath = systemSettings?.envisFolder
+      const folderPath = newEnvisFolder || systemSettings?.envisFolder
       if (!folderPath) {
         toast.error(t('settings.set_folder_first'))
         return
@@ -454,7 +497,7 @@ export default function SettingsDialog(props: {
             <div className="space-y-4 py-2 pb-4">
               <div className="space-y-2">
                 <Label htmlFor="theme" className="text-sm font-medium text-foreground">{t('settings.theme_mode')}</Label>
-                <Select value={currentTheme} onValueChange={(value: 'light' | 'dark' | 'system') => updateAppSettings({ theme: value })}>
+                <Select value={newTheme} onValueChange={(value: 'light' | 'dark' | 'system') => setNewTheme(value)}>
                   <SelectTrigger className="bg-content2 dark:bg-content3 border-divider focus:border-primary heroui-transition shadow-none">
                     <SelectValue placeholder={t('settings.select_theme')} />
                   </SelectTrigger>
@@ -486,10 +529,8 @@ export default function SettingsDialog(props: {
                 <div className="space-y-2">
                   <Label htmlFor="language">{t('settings.interface_language')}</Label>
                   <Select
-                    value={appSettings?.language}
-                    onValueChange={(value) =>
-                      updateAppSettings({ language: value })
-                    }
+                    value={newLanguage}
+                    onValueChange={(value) => setNewLanguage(value)}
                   >
                     <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
                       <SelectValue placeholder={t('settings.select_language')} />
@@ -588,14 +629,8 @@ export default function SettingsDialog(props: {
                     </div>
                     <Switch
                       id="autoStart"
-                      checked={systemSettings?.autoStartAppOnLogin}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ autoStartAppOnLogin: checked });
-                        } catch (e) {
-                          toast.error(t('settings.auto_start_failed'));
-                        }
-                      }}
+                      checked={newAutoStart}
+                      onCheckedChange={setNewAutoStart}
                     />
                   </div>
 
@@ -606,14 +641,8 @@ export default function SettingsDialog(props: {
                     </div>
                     <Switch
                       id="deactivateOthers"
-                      checked={systemSettings?.deactivateOtherEnvironmentsOnActivate ?? true}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ deactivateOtherEnvironmentsOnActivate: checked });
-                        } catch (e) {
-                          toast.error(t('settings.setting_failed'));
-                        }
-                      }}
+                      checked={newDeactivateOthers}
+                      onCheckedChange={setNewDeactivateOthers}
                     />
                   </div>
 
@@ -624,15 +653,8 @@ export default function SettingsDialog(props: {
                     </div>
                     <Switch
                       id="stopOnExit"
-                      checked={systemSettings?.stopAllServicesOnExit}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ stopAllServicesOnExit: checked });
-                          toast.success(checked ? t('settings.stop_on_exit_enabled') : t('settings.stop_on_exit_disabled'));
-                        } catch (e) {
-                          toast.error(t('settings.setting_failed'));
-                        }
-                      }}
+                      checked={newStopOnExit}
+                      onCheckedChange={setNewStopOnExit}
                     />
                   </div>
                   
@@ -643,14 +665,8 @@ export default function SettingsDialog(props: {
                     </div>
                     <Switch
                       id="startLastEnv"
-                      checked={systemSettings?.autoActivateLastUsedEnvironmentOnAppStart}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ autoActivateLastUsedEnvironmentOnAppStart: checked });
-                        } catch (e) {
-                          toast.error(t('settings.setting_failed'));
-                        }
-                      }}
+                      checked={newStartLastEnv}
+                      onCheckedChange={setNewStartLastEnv}
                     />
                   </div>
 
@@ -669,10 +685,8 @@ export default function SettingsDialog(props: {
                     <Label htmlFor="terminal">{t('settings.terminal_program')}</Label>
                     <Input
                       id="terminal"
-                      value={systemSettings?.terminalTool || ''}
-                      onChange={(e) =>
-                        updateSystemSettings({ terminalTool: e.target.value })
-                      }
+                      value={newTerminalTool}
+                      onChange={(e) => setNewTerminalTool(e.target.value)}
                       placeholder={t('settings.system_default')}
                       className="shadow-none bg-content2 dark:bg-content3"
                     />
@@ -688,14 +702,8 @@ export default function SettingsDialog(props: {
                     </div>
                     <Switch
                       id="showEnvName"
-                      checked={systemSettings?.showEnvironmentNameOnTerminalOpen ?? true}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ showEnvironmentNameOnTerminalOpen: checked });
-                        } catch (e) {
-                          toast.error(t('settings.setting_failed'));
-                        }
-                      }}
+                      checked={newShowEnvName}
+                      onCheckedChange={setNewShowEnvName}
                     />
                   </div>
 
@@ -706,14 +714,8 @@ export default function SettingsDialog(props: {
                     </div>
                     <Switch
                       id="showServiceInfo"
-                      checked={systemSettings?.showServiceInfoOnTerminalOpen ?? false}
-                      onCheckedChange={async (checked) => {
-                        try {
-                          await updateSystemSettings({ showServiceInfoOnTerminalOpen: checked });
-                        } catch (e) {
-                          toast.error(t('settings.setting_failed'));
-                        }
-                      }}
+                      checked={newShowServiceInfo}
+                      onCheckedChange={setNewShowServiceInfo}
                     />
                   </div>
                 </div>
@@ -732,10 +734,8 @@ export default function SettingsDialog(props: {
                     <div className="flex items-center gap-2">
                       <Input
                         id="servicesFolder"
-                        value={systemSettings?.envisFolder || ''}
-                        onChange={(e) =>
-                          updateSystemSettings({ envisFolder: e.target.value })
-                        }
+                        value={newEnvisFolder}
+                        onChange={(e) => setNewEnvisFolder(e.target.value)}
                         placeholder="/usr/local/bin"
                         className="flex-1 shadow-none bg-content2 dark:bg-content3"
                       />
@@ -754,7 +754,7 @@ export default function SettingsDialog(props: {
                         onClick={() => onOpenFolder()}
                         className="px-3 shadow-none"
                         title={t('settings.open_in_finder')}
-                        disabled={!systemSettings?.envisFolder}
+                        disabled={!newEnvisFolder}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
