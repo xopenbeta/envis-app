@@ -33,11 +33,6 @@ export function useEnvironment() {
       setSelectedEnvironmentId(newEnvironment.id);
       setSelectedServiceDatas([]); // 清空选中服务数据列表
       setSelectedServiceDataId(''); // 清空选中服务数据
-      
-      // UI 逻辑：如果当前没有任何激活环境，则自动激活新创建的环境（比较方便，删除该逻辑也没事）
-      // if (!activeEnvironment) {
-      //   await activateEnvironment(newEnvironment);
-      // }
     }
     return res;
   }
