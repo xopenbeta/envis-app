@@ -7,6 +7,7 @@ import { ServiceData, Environment } from "@/types"
 import { CAConfig } from "@/types/service"
 import { useSSLService } from "@/hooks/services/ssl"
 import { toast } from "sonner"
+import { useTranslation } from 'react-i18next'
 
 interface CAInitDialogProps {
     open: boolean
@@ -23,6 +24,7 @@ export function CAInitDialog({
     selectedEnvironment,
     serviceData,
 }: CAInitDialogProps) {
+    const { t } = useTranslation()
     const { initializeCA } = useSSLService()
     const [isLoading, setIsLoading] = useState(false)
 
@@ -48,14 +50,14 @@ export function CAInitDialog({
             )
 
             if (result.success) {
-                toast.success('CA 初始化成功')
+                toast.success(t('ssl_service.ca_init_success'))
                 onSuccess()
             } else {
-                toast.error(result.message || 'CA 初始化失败')
+                toast.error(result.message || t('ssl_service.ca_init_failed'))
             }
         } catch (error) {
             console.error('CA 初始化失败:', error)
-            toast.error('CA 初始化失败')
+            toast.error(t('ssl_service.ca_init_failed'))
         } finally {
             setIsLoading(false)
         }
@@ -65,56 +67,56 @@ export function CAInitDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>初始化证书颁发机构 (CA)</DialogTitle>
+                    <DialogTitle>{t('ssl_service.init_ca_title')}</DialogTitle>
                     <DialogDescription>
-                        配置 CA 信息，该 CA 将用于签发所有本地开发证书
+                        {t('ssl_service.init_ca_desc')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="commonName">通用名称 (CN) *</Label>
+                        <Label htmlFor="commonName">{t('ssl_service.cn_label')}</Label>
                         <Input
                             id="commonName"
                             value={formData.commonName}
                             onChange={(e) => setFormData({ ...formData, commonName: e.target.value })}
-                            placeholder="例如: My Local CA"
+                            placeholder={t('ssl_service.cn_placeholder')}
                             required
                             className="shadow-none"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="organization">组织名称 (O) *</Label>
+                        <Label htmlFor="organization">{t('ssl_service.org_label')}</Label>
                         <Input
                             id="organization"
                             value={formData.organization}
                             onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                            placeholder="例如: My Company"
+                            placeholder={t('ssl_service.org_placeholder')}
                             required
                             className="shadow-none"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="organizationalUnit">组织单位 (OU)</Label>
+                        <Label htmlFor="organizationalUnit">{t('ssl_service.ou_label')}</Label>
                         <Input
                             id="organizationalUnit"
                             value={formData.organizationalUnit || ''}
                             onChange={(e) => setFormData({ ...formData, organizationalUnit: e.target.value })}
-                            placeholder="例如: Development"
+                            placeholder={t('ssl_service.ou_placeholder')}
                             className="shadow-none"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="country">国家代码 (C) *</Label>
+                            <Label htmlFor="country">{t('ssl_service.country_label')}</Label>
                             <Input
                                 id="country"
                                 value={formData.country}
                                 onChange={(e) => setFormData({ ...formData, country: e.target.value.toUpperCase() })}
-                                placeholder="例如: CN"
+                                placeholder={t('ssl_service.country_placeholder')}
                                 maxLength={2}
                                 required
                                 className="shadow-none"
@@ -122,7 +124,7 @@ export function CAInitDialog({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="validityDays">有效期 (天) *</Label>
+                            <Label htmlFor="validityDays">{t('ssl_service.validity_label')}</Label>
                             <Input
                                 id="validityDays"
                                 type="number"
@@ -137,24 +139,24 @@ export function CAInitDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="state">省/州 (ST) *</Label>
+                        <Label htmlFor="state">{t('ssl_service.state_label')}</Label>
                         <Input
                             id="state"
                             value={formData.state}
                             onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                            placeholder="例如: Beijing"
+                            placeholder={t('ssl_service.state_placeholder')}
                             required
                             className="shadow-none"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="locality">城市 (L) *</Label>
+                        <Label htmlFor="locality">{t('ssl_service.locality_label')}</Label>
                         <Input
                             id="locality"
                             value={formData.locality}
                             onChange={(e) => setFormData({ ...formData, locality: e.target.value })}
-                            placeholder="例如: Beijing"
+                            placeholder={t('ssl_service.locality_placeholder')}
                             required
                             className="shadow-none"
                         />
@@ -168,10 +170,10 @@ export function CAInitDialog({
                             disabled={isLoading}
                             className="shadow-none"
                         >
-                            取消
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={isLoading} className="shadow-none">
-                            {isLoading ? '初始化中...' : '初始化 CA'}
+                            {isLoading ? t('ssl_service.initializing') : t('ssl_service.init_ca_btn')}
                         </Button>
                     </DialogFooter>
                 </form>

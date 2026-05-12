@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Label } from "@/components/ui/label"
 import { Environment, ServiceData, ServiceDataStatus } from '@/types/index'
 import { useServiceDataStatus } from '@/hooks/useStatus'
@@ -21,6 +22,7 @@ interface SSLServiceProps {
 }
 
 export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps) {
+    const { t } = useTranslation()
     const {
         checkCAInitialized,
         getCAInfo,
@@ -155,13 +157,13 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
         setIsCAInitialized(true)
         setShowCAInitDialog(false)
         checkCAStatus()
-        toast.success('CA 初始化成功')
+        toast.success(t('ssl_service.ca_init_success'))
     }
 
     const handleCertificateIssued = () => {
         setShowIssueCertDialog(false)
         loadCertificates()
-        toast.success('证书签发成功')
+        toast.success(t('ssl_service.cert_issued_success'))
     }
 
     const handleExportCA = async () => {
@@ -170,11 +172,11 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
             if (result.success && result.data?.caCertPath) {
                 // 打开证书所在文件夹
                 await openFolderInFinder(result.data.caCertPath)
-                toast.success('CA 证书路径已打开')
+                toast.success(t('ssl_service.ca_cert_path_opened'))
             }
         } catch (error) {
             console.error('导出 CA 证书失败:', error)
-            toast.error('导出 CA 证书失败')
+            toast.error(t('ssl_service.export_ca_failed'))
         }
     }
 
@@ -185,7 +187,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                 <div className="flex items-center justify-between mb-2">
                     <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                         <Shield className="h-3.5 w-3.5" />
-                        证书颁发机构 (CA)
+                        {t('ssl_service.ca_title')}
                     </Label>
                     {isCAInitialized && (
                         <Button
@@ -195,7 +197,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                             className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                         >
                             <FolderOpen className="h-3 w-3 mr-1" />
-                            打开 CA 证书
+                            {t('ssl_service.open_ca_cert')}
                         </Button>
                     )}
                 </div>
@@ -203,15 +205,15 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                 {!isServiceActive && (
                     <div className="text-center py-6 text-muted-foreground bg-white dark:bg-white/5 rounded-lg border border-dashed border-gray-200 dark:border-white/10">
                         <AlertCircle className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">服务未激活</p>
-                        <p className="text-xs">请先激活 SSL 服务</p>
+                        <p className="text-sm">{t('ssl_service.service_not_active')}</p>
+                        <p className="text-xs">{t('ssl_service.service_not_active_hint')}</p>
                     </div>
                 )}
 
                 {isServiceActive && isCheckingCA && (
                     <div className="flex items-center justify-center py-6 text-muted-foreground">
                         <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                        <span className="text-sm">正在检查 CA 状态...</span>
+                        <span className="text-sm">{t('ssl_service.checking_ca')}</span>
                     </div>
                 )}
 
@@ -220,14 +222,14 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                         <Alert className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription className="text-xs">
-                                CA 未初始化，请先初始化 CA 后才能签发证书
+                                {t('ssl_service.ca_not_initialized')}
                             </AlertDescription>
                         </Alert>
                         <Button
                             onClick={() => setShowCAInitDialog(true)}
                             className="w-full h-8 text-xs shadow-none"
                         >
-                            初始化 CA
+                            {t('ssl_service.init_ca')}
                         </Button>
                     </div>
                 )}
@@ -243,18 +245,18 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                         {/* CA 详细信息 - 可折叠 */}
                         <Collapsible open={showCADetails} onOpenChange={setShowCADetails}>
                             <div className="flex items-center justify-between">
-                                <div className="text-xs font-medium text-muted-foreground">CA 详细信息</div>
+                                <div className="text-xs font-medium text-muted-foreground">{t('ssl_service.ca_details')}</div>
                                 <CollapsibleTrigger asChild>
                                     <Button variant="ghost" size="sm" className="h-6 px-2 text-xs shadow-none hover:bg-white dark:hover:bg-white/10">
                                         {showCADetails ? (
                                             <>
                                                 <ChevronUp className="h-3 w-3 mr-1" />
-                                                收起
+                                                {t('ssl_service.collapse')}
                                             </>
                                         ) : (
                                             <>
                                                 <ChevronDown className="h-3 w-3 mr-1" />
-                                                展开
+                                                {t('ssl_service.expand')}
                                             </>
                                         )}
                                     </Button>
@@ -264,21 +266,21 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                             <CollapsibleContent>
                                 <div className="space-y-2 text-xs mt-2 p-3 bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10">
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">通用名称:</span>
+                                        <span className="text-muted-foreground">{t('ssl_service.common_name')}</span>
                                         <span className="font-medium">{caInfo?.subject}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">颁发者:</span>
+                                        <span className="text-muted-foreground">{t('ssl_service.issuer')}</span>
                                         <span className="font-medium">{caInfo?.issuer}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">有效期:</span>
+                                        <span className="text-muted-foreground">{t('ssl_service.validity')}</span>
                                         <span className="font-medium">
                                             {caInfo?.validFrom} ~ {caInfo?.validTo}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">序列号:</span>
+                                        <span className="text-muted-foreground">{t('ssl_service.serial_number')}</span>
                                         <span className="font-mono">{caInfo?.serialNumber}</span>
                                     </div>
                                 </div>
@@ -293,7 +295,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
             {isCAInitialized && (
                 <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                     <div className="flex items-center justify-between mb-2">
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">证书管理</Label>
+                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('ssl_service.cert_management')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
@@ -302,7 +304,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                             className="h-7 px-2 shadow-none text-xs"
                         >
                             <Plus className="h-3 w-3 mr-1" />
-                            签发新证书
+                            {t('ssl_service.issue_new_cert')}
                         </Button>
                     </div>
                     <div>

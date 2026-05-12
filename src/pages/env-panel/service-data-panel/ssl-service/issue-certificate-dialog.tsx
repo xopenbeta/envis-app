@@ -8,6 +8,7 @@ import { useSSLService } from "@/hooks/services/ssl"
 import { toast } from "sonner"
 import { Plus, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from 'react-i18next'
 
 interface IssueCertificateDialogProps {
     open: boolean
@@ -24,6 +25,7 @@ export function IssueCertificateDialog({
     selectedEnvironment,
     serviceData,
 }: IssueCertificateDialogProps) {
+    const { t } = useTranslation()
     const { issueCertificate } = useSSLService()
     const [isLoading, setIsLoading] = useState(false)
 
@@ -57,7 +59,7 @@ export function IssueCertificateDialog({
             )
 
             if (result.success) {
-                toast.success('证书签发成功')
+                toast.success(t('ssl_service.cert_issued_success'))
                 // 重置表单
                 setDomain('')
                 setValidityDays(365)
@@ -65,11 +67,11 @@ export function IssueCertificateDialog({
                 setSanInput('')
                 onSuccess()
             } else {
-                toast.error(result.message || '证书签发失败')
+                toast.error(result.message || t('ssl_service.issue_cert_failed'))
             }
         } catch (error) {
             console.error('证书签发失败:', error)
-            toast.error('证书签发失败')
+            toast.error(t('ssl_service.issue_cert_failed'))
         } finally {
             setIsLoading(false)
         }
@@ -79,30 +81,30 @@ export function IssueCertificateDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>签发新证书</DialogTitle>
+                    <DialogTitle>{t('ssl_service.issue_cert_title')}</DialogTitle>
                     <DialogDescription>
-                        为本地开发域名签发 SSL/TLS 证书
+                        {t('ssl_service.issue_cert_desc')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="domain">域名 *</Label>
+                        <Label htmlFor="domain">{t('ssl_service.domain_label')}</Label>
                         <Input
                             id="domain"
                             value={domain}
                             onChange={(e) => setDomain(e.target.value)}
-                            placeholder="例如: localhost 或 example.local"
+                            placeholder={t('ssl_service.domain_placeholder')}
                             required
                             className="shadow-none"
                         />
                         <p className="text-xs text-muted-foreground">
-                            常用开发域名: localhost, 127.0.0.1, *.local
+                            {t('ssl_service.domain_hint')}
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="validityDays">有效期 (天) *</Label>
+                        <Label htmlFor="validityDays">{t('ssl_service.validity_days_label')}</Label>
                         <Input
                             id="validityDays"
                             type="number"
@@ -114,18 +116,18 @@ export function IssueCertificateDialog({
                             className="shadow-none"
                         />
                         <p className="text-xs text-muted-foreground">
-                            建议 365 天（浏览器限制最长 825 天）
+                            {t('ssl_service.validity_hint')}
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="san">主题备用名称 (SAN)</Label>
+                        <Label htmlFor="san">{t('ssl_service.san_title')}</Label>
                         <div className="flex gap-2">
                             <Input
                                 id="san"
                                 value={sanInput}
                                 onChange={(e) => setSanInput(e.target.value)}
-                                placeholder="例如: www.example.local"
+                                placeholder={t('ssl_service.san_placeholder')}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault()
@@ -158,7 +160,7 @@ export function IssueCertificateDialog({
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground">
-                            可选，用于支持多个域名的证书
+                            {t('ssl_service.san_hint')}
                         </p>
                     </div>
 
@@ -170,10 +172,10 @@ export function IssueCertificateDialog({
                             disabled={isLoading}
                             className="shadow-none"
                         >
-                            取消
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={isLoading} className="shadow-none">
-                            {isLoading ? '签发中...' : '签发证书'}
+                            {isLoading ? t('ssl_service.issuing') : t('ssl_service.issue_cert_btn')}
                         </Button>
                     </DialogFooter>
                 </form>

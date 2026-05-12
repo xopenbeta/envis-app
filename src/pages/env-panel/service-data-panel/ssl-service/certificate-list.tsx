@@ -33,6 +33,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { useState } from "react"
+import { useTranslation } from 'react-i18next'
 
 interface CertificateListProps {
     certificates: Certificate[]
@@ -52,25 +53,26 @@ export function CertificateList({
     const { deleteCertificate } = useSSLService()
     const { openFolderInFinder } = useFileOperations()
     const [expandedCert, setExpandedCert] = useState<string | null>(null)
+    const { t } = useTranslation()
 
     const handleDelete = async (domain: string) => {
         try {
             const result = await deleteCertificate(selectedEnvironment.id, serviceData, domain)
             if (result.success) {
-                toast.success('证书已删除')
+                toast.success(t('ssl_service.cert_deleted'))
                 onRefresh()
             } else {
-                toast.error(result.message || '删除证书失败')
+                toast.error(result.message || t('ssl_service.delete_cert_failed'))
             }
         } catch (error) {
             console.error('删除证书失败:', error)
-            toast.error('删除证书失败')
+            toast.error(t('ssl_service.delete_cert_failed'))
         }
     }
 
     const handleCopyPath = (path: string) => {
         navigator.clipboard.writeText(path)
-        toast.success('路径已复制到剪贴板')
+        toast.success(t('ssl_service.path_copied'))
     }
 
     const handleOpenFolder = async (path: string) => {
@@ -78,7 +80,7 @@ export function CertificateList({
             await openFolderInFinder(path)
         } catch (error) {
             console.error('打开文件夹失败:', error)
-            toast.error('打开文件夹失败')
+            toast.error(t('ssl_service.open_folder_failed'))
         }
     }
 
@@ -94,8 +96,8 @@ export function CertificateList({
         return (
             <div className="text-center py-8 text-muted-foreground">
                 <Shield className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>暂无证书</p>
-                <p className="text-xs mt-1">点击上方按钮签发新证书</p>
+                <p>{t('ssl_service.no_certs')}</p>
+                <p className="text-xs mt-1">{t('ssl_service.no_certs_hint')}</p>
             </div>
         )
     }
@@ -146,15 +148,15 @@ export function CertificateList({
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>确认删除证书？</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t('ssl_service.delete_cert_confirm')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        将删除 {cert.domain} 的证书及所有相关文件，此操作不可恢复。
+                                                        {t('ssl_service.delete_cert_desc', { domain: cert.domain })}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>取消</AlertDialogCancel>
+                                                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                                                     <AlertDialogAction onClick={() => handleDelete(cert.domain)}>
-                                                        删除
+                                                        {t('common.delete')}
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
@@ -168,12 +170,12 @@ export function CertificateList({
                                 {/* 基本信息 */}
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">序列号:</span>
+                                        <span className="text-muted-foreground">{t('ssl_service.serial_number')}</span>
                                         <span className="font-mono text-xs">{cert.serialNumber}</span>
                                     </div>
                                     {cert.subjectAltNames && cert.subjectAltNames.length > 0 && (
                                         <div className="flex justify-between">
-                                            <span className="text-muted-foreground">SAN:</span>
+                                            <span className="text-muted-foreground">{t('ssl_service.san_label')}</span>
                                             <div className="text-right">
                                                 {cert.subjectAltNames.map((san) => (
                                                     <div key={san} className="text-xs">{san}</div>
@@ -185,7 +187,7 @@ export function CertificateList({
 
                                 {/* 证书格式 */}
                                 <div className="space-y-2">
-                                    <div className="text-sm font-medium">证书文件</div>
+                                    <div className="text-sm font-medium">{t('ssl_service.cert_files')}</div>
 
                                     {/* PEM 格式 */}
                                     {cert.formats.pem && (
@@ -220,7 +222,7 @@ export function CertificateList({
                                         <div className="flex items-center justify-between p-2 bg-accent/30 rounded text-xs">
                                             <div className="flex items-center gap-2">
                                                 <Key className="h-3 w-3" />
-                                                <span className="font-medium">CRT + KEY (通用)</span>
+                                                <span className="font-medium">CRT + KEY ({t('common.general')})</span>
                                             </div>
                                             <div className="flex gap-1">
                                                 <Button
@@ -281,13 +283,13 @@ export function CertificateList({
             <div className="p-3 bg-muted/50 rounded text-xs space-y-2 mt-4">
                 <div className="font-medium flex items-center gap-2">
                     <Shield className="h-3 w-3" />
-                    安装说明
+                    {t('ssl_service.install_guide_title')}
                 </div>
                 <div className="space-y-1 text-muted-foreground">
-                    <p>1. 首次使用需要将 CA 证书添加到系统信任</p>
-                    <p>2. Nginx: 使用 PEM 格式，配置 ssl_certificate 和 ssl_certificate_key</p>
-                    <p>3. Apache: 使用 CRT + KEY，配置 SSLCertificateFile 和 SSLCertificateKeyFile</p>
-                    <p>4. IIS: 导入 PFX 文件到证书存储</p>
+                    <p>1. {t('ssl_service.install_guide_1')}</p>
+                    <p>2. {t('ssl_service.install_guide_2')}</p>
+                    <p>3. {t('ssl_service.install_guide_3')}</p>
+                    <p>4. {t('ssl_service.install_guide_4')}</p>
                 </div>
             </div>
         </div>

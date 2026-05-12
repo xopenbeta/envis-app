@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import {
   Database,
   BarChart3,
@@ -44,6 +45,7 @@ interface MySQLServiceProps {
 }
 
 export function MySQLService({ serviceData }: MySQLServiceProps) {
+  const { t } = useTranslation()
   const { openFolderInFinder } = useFileOperations()
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
 
@@ -334,15 +336,15 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     try {
       const result = await createMysqlDatabase(selectedEnvironmentId, serviceData, newDbName)
       if (result.success) {
-        toast.success('数据库创建成功')
+        toast.success(t('mysql_service.db_create_success'))
         setShowCreateDbDialog(false)
         setNewDbName('')
         loadDatabases()
       } else {
-        toast.error('创建数据库失败: ' + result.message)
+        toast.error(t('mysql_service.db_create_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('创建数据库失败: ' + error)
+      toast.error(t('mysql_service.db_create_failed', { message: String(error) }))
     } finally {
       setIsCreatingDb(false)
     }
@@ -359,15 +361,15 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       }))
       const result = await createMysqlUser(selectedEnvironmentId, serviceData, userForm.username, userForm.password, grants)
       if (result.success) {
-        toast.success(`用户 '${userForm.username}' 创建成功`)
+        toast.success(t('mysql_service.user_create_success', { username: userForm.username }))
         setShowCreateUserDialog(false)
         setUserForm({ username: '', password: '', grants: {}, customDb: '' })
         loadUsers()
       } else {
-        toast.error('创建用户失败: ' + result.message)
+        toast.error(t('mysql_service.user_create_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('创建用户失败: ' + error)
+      toast.error(t('mysql_service.user_create_failed', { message: String(error) }))
     } finally {
       setIsSubmittingUser(false)
     }
@@ -395,14 +397,14 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       }))
       const result = await updateMysqlUserGrants(selectedEnvironmentId, serviceData, selectedUsername, grants)
       if (result.success) {
-        toast.success(`用户 '${selectedUsername}' 权限更新成功`)
+        toast.success(t('mysql_service.permission_update_success', { username: selectedUsername }))
         setShowEditUserDialog(false)
         loadUsers()
       } else {
-        toast.error('更新权限失败: ' + result.message)
+        toast.error(t('mysql_service.permission_update_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('更新权限失败: ' + error)
+      toast.error(t('mysql_service.permission_update_failed', { message: String(error) }))
     } finally {
       setIsSubmittingUser(false)
     }
@@ -415,14 +417,14 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     try {
       const result = await deleteMysqlUser(selectedEnvironmentId, serviceData, selectedUsername)
       if (result.success) {
-        toast.success(`用户 '${selectedUsername}' 删除成功`)
+        toast.success(t('mysql_service.user_delete_success', { username: selectedUsername }))
         setShowDeleteUserDialog(false)
         loadUsers()
       } else {
-        toast.error('删除用户失败: ' + result.message)
+        toast.error(t('mysql_service.user_delete_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('删除用户失败: ' + error)
+      toast.error(t('mysql_service.user_delete_failed', { message: String(error) }))
     } finally {
       setIsSubmittingUser(false)
     }
@@ -435,13 +437,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     try {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('MySQL 服务启动成功')
+        toast.success(t('mysql_service.start_success'))
         refreshServiceStatus()
       } else {
-        toast.error('启动 MySQL 服务失败: ' + result.message)
+        toast.error(t('mysql_service.start_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('启动 MySQL 服务失败: ' + error)
+      toast.error(t('mysql_service.start_failed', { message: String(error) }))
     } finally {
       setIsStarting(false)
     }
@@ -454,13 +456,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     try {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('MySQL 服务已停止')
+        toast.success(t('mysql_service.stop_success'))
         refreshServiceStatus()
       } else {
-        toast.error('停止 MySQL 服务失败: ' + result.message)
+        toast.error(t('mysql_service.stop_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('停止 MySQL 服务失败: ' + error)
+      toast.error(t('mysql_service.stop_failed', { message: String(error) }))
     } finally {
       setIsStopping(false)
     }
@@ -473,13 +475,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
     try {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('MySQL 服务重启成功')
+        toast.success(t('mysql_service.restart_success'))
         refreshServiceStatus()
       } else {
-        toast.error('重启 MySQL 服务失败: ' + result.message)
+        toast.error(t('mysql_service.restart_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('重启 MySQL 服务失败: ' + error)
+      toast.error(t('mysql_service.restart_failed', { message: String(error) }))
     } finally {
       setIsRestarting(false)
     }
@@ -488,11 +490,11 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
   // 初始化 MySQL
   const handleInitialize = async (reset: boolean = false) => {
     if (!dialogData.rootPassword) {
-      toast.error('请输入 root 密码')
+      toast.error(t('mysql_service.password_required'))
       return
     }
     if (reset && serviceStatus === ServiceStatus.Running) {
-      toast.error('MySQL 正在运行中，请先停止服务后再进行重置')
+      toast.error(t('mysql_service.running_warning'))
       return
     }
     setIsInitializing(true)
@@ -516,15 +518,15 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           updates: { metadata: newMetadata },
           serviceDatas: selectedServiceDatas,
         })
-        toast.success('MySQL 初始化成功')
+        toast.success(t('mysql_service.init_success'))
         setShowInitDialog(false)
         setShowResetDialog(false)
         setIsInitialized(true)
       } else {
-        toast.error(result.message || 'MySQL 初始化失败')
+        toast.error(result.message || t('mysql_service.init_failed'))
       }
     } catch (error) {
-      toast.error('初始化失败: ' + error)
+      toast.error(t('mysql_service.init_failed_msg', { message: String(error) }))
     } finally {
       setIsInitializing(false)
     }
@@ -540,21 +542,21 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              初始化 MySQL
+              {t('mysql_service.init_title')}
             </DialogTitle>
             <DialogDescription>
-              首次使用需要初始化 MySQL。系统将创建配置文件、数据目录，并设置 root 账户。
+              {t('mysql_service.init_desc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="root-password">Root 密码</Label>
+              <Label htmlFor="root-password">{t('mysql_service.root_password_label')}</Label>
               <Input
                 id="root-password"
                 type="password"
                 value={dialogData.rootPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, rootPassword: e.target.value }))}
-                placeholder="输入 root 密码"
+                placeholder={t('mysql_service.root_password_placeholder')}
                 disabled={isInitializing}
               />
             </div>
@@ -565,12 +567,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               className="w-full"
               type="button"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('mysql_service.hide_advanced') : t('mysql_service.show_advanced')}
             </Button>
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="init-port">端口</Label>
+                  <Label htmlFor="init-port">{t('mysql_service.port_label')}</Label>
                   <Input
                     id="init-port"
                     value={dialogData.port}
@@ -580,7 +582,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="init-bind-address">绑定地址</Label>
+                  <Label htmlFor="init-bind-address">{t('mysql_service.bind_address_label')}</Label>
                   <Input
                     id="init-bind-address"
                     value={dialogData.bindAddress}
@@ -589,7 +591,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     disabled={isInitializing}
                   />
                   <p className="text-xs text-muted-foreground">
-                    默认仅本地访问。如需远程访问请设置为 0.0.0.0
+                    {t('mysql_service.local_access_note')}
                   </p>
                 </div>
               </>
@@ -597,13 +599,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-xs">
-                请牢记 root 密码。初始化包含：创建配置文件、数据目录和 root 账户。
+                {t('mysql_service.init_alert')}
               </AlertDescription>
             </Alert>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInitDialog(false)} disabled={isInitializing} className="shadow-none">
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => handleInitialize(false)}
@@ -612,9 +614,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  初始化中...
+                  {t('mysql_service.initializing')}
                 </>
-              ) : '开始初始化'}
+              ) : t('mysql_service.start_init')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -626,11 +628,11 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              重置 MySQL
+              {t('mysql_service.reset_title')}
             </DialogTitle>
             <DialogDescription>
-              重置将删除所有现有数据、配置文件和用户信息，然后重新初始化 MySQL。
-              <span className="text-red-600 font-semibold">此操作不可恢复！</span>
+              {t('mysql_service.reset_desc')}
+              <span className="text-red-600 font-semibold">{t('mysql_service.reset_irrecoverable')}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -639,19 +641,19 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    <strong>MySQL 正在运行中！</strong> 请先停止 MySQL 服务后再进行重置。
+                    <strong>MySQL</strong> {t('mysql_service.running_warning_text')}
                   </AlertDescription>
                 </div>
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="reset-root-password">新 Root 密码</Label>
+              <Label htmlFor="reset-root-password">{t('mysql_service.new_root_password_label')}</Label>
               <Input
                 id="reset-root-password"
                 type="password"
                 value={dialogData.rootPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, rootPassword: e.target.value }))}
-                placeholder="输入新 root 密码"
+                placeholder={t('mysql_service.new_root_password_placeholder')}
                 disabled={isInitializing}
                 className="shadow-none"
               />
@@ -662,12 +664,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
               className="w-full"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('mysql_service.hide_advanced') : t('mysql_service.show_advanced')}
             </Button>
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="reset-port">端口</Label>
+                  <Label htmlFor="reset-port">{t('mysql_service.port_label')}</Label>
                   <Input
                     id="reset-port"
                     value={dialogData.port}
@@ -677,7 +679,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reset-bind-address">绑定地址</Label>
+                  <Label htmlFor="reset-bind-address">{t('mysql_service.bind_address_label')}</Label>
                   <Input
                     id="reset-bind-address"
                     value={dialogData.bindAddress}
@@ -691,7 +693,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowResetDialog(false)} disabled={isInitializing} className="shadow-none">
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -701,12 +703,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  重置中...
+                  {t('mysql_service.resetting')}
                 </>
               ) : (
                 <>
                   <AlertTriangle className="h-4 w-4 mr-2" />
-                  确认重置
+                  {t('mysql_service.confirm_reset')}
                 </>
               )}
             </Button>
@@ -723,34 +725,34 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              新建用户
+              {t('mysql_service.new_user_title')}
             </DialogTitle>
-            <DialogDescription>创建一个新的 MySQL 用户并分配数据库权限。</DialogDescription>
+            <DialogDescription>{t('mysql_service.new_user_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="new-username">用户名</Label>
+              <Label htmlFor="new-username">{t('mysql_service.username_label')}</Label>
               <Input
                 id="new-username"
                 value={userForm.username}
                 onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
-                placeholder="输入用户名"
+                placeholder={t('mysql_service.username_placeholder')}
                 disabled={isSubmittingUser}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-user-password">密码</Label>
+              <Label htmlFor="new-user-password">{t('mysql_service.password_label')}</Label>
               <Input
                 id="new-user-password"
                 type="password"
                 value={userForm.password}
                 onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="输入密码"
+                placeholder={t('mysql_service.password_placeholder')}
                 disabled={isSubmittingUser}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-medium">数据库权限</Label>
+              <Label className="text-xs font-medium">{t('mysql_service.db_permissions')}</Label>
               {databases.length > 0 && (
                 <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
                   {databases.map((db) => (
@@ -791,7 +793,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 <Input
                   value={userForm.customDb}
                   onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
-                  placeholder="自定义数据库名"
+                  placeholder={t('mysql_service.custom_db_placeholder')}
                   className="h-7 text-xs shadow-none"
                   disabled={isSubmittingUser}
                   onKeyDown={(e) => {
@@ -846,9 +848,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+            <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
             <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password || isSubmittingUser}>
-              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />创建中...</> : '创建'}
+              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mysql_service.creating')}</> : t('mysql_service.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -860,9 +862,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5" />
-              编辑权限 - {selectedUsername}
+              {t('mysql_service.edit_permissions_title')} - {selectedUsername}
             </DialogTitle>
-            <DialogDescription>修改用户的数据库访问权限（全量替换）。</DialogDescription>
+            <DialogDescription>{t('mysql_service.edit_permissions_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {databases.length > 0 && (
@@ -905,7 +907,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               <Input
                 value={userForm.customDb}
                 onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
-                placeholder="自定义数据库名"
+                placeholder={t('mysql_service.custom_db_placeholder')}
                 className="h-7 text-xs shadow-none"
                 disabled={isSubmittingUser}
                 onKeyDown={(e) => {
@@ -959,9 +961,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             )}
           </div>
           <DialogFooter>
-            <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+            <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
             <Button onClick={handleUpdateUserGrants} disabled={isSubmittingUser}>
-              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />保存中...</> : '保存'}
+              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('common.saving')}</> : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -973,16 +975,16 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              删除用户
+              {t('mysql_service.delete_user_title')}
             </DialogTitle>
             <DialogDescription>
-              确认要删除用户 <span className="font-semibold text-foreground">'{selectedUsername}'</span> 吗？此操作不可恢复。
+              {t('mysql_service.delete_user_confirm', { username: selectedUsername })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+            <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmittingUser}>
-              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />删除中...</> : '确认删除'}
+              {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mysql_service.deleting')}</> : t('mysql_service.confirm_delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -995,10 +997,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
                 <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
-                  MySQL 尚未初始化
+                  {t('mysql_service.not_initialized_title')}
                 </p>
                 <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
-                  首次使用需要初始化配置文件、数据目录，并创建 root 账户。
+                  {t('mysql_service.not_initialized_desc')}
                 </p>
               </div>
             </div>
@@ -1008,7 +1010,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 onClick={() => setShowInitDialog(true)}
                 className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
               >
-                立即初始化
+                {t('mysql_service.init_now')}
               </Button>
             </div>
           </div>
@@ -1018,7 +1020,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              服务控制
+              {t('mysql_service.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
@@ -1027,8 +1029,8 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
               )} />
               <span className="text-xs font-normal text-muted-foreground">
-                {serviceStatus === ServiceStatus.Running ? '运行中' :
-                  serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知状态'}
+                {serviceStatus === ServiceStatus.Running ? t('mysql_service.running') :
+                  serviceStatus === ServiceStatus.Stopped ? t('mysql_service.stopped') : t('mysql_service.unknown_status')}
               </span>
             </div>
           </div>
@@ -1046,7 +1048,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 ) : (
                   <Power className="h-3.5 w-3.5 text-green-600" />
                 )}
-                启动
+                {t('mysql_service.start')}
               </Button>
               <Button
                 size="sm"
@@ -1056,7 +1058,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <PowerOff className="h-3.5 w-3.5 text-red-600" />
-                停止
+                {t('mysql_service.stop')}
               </Button>
               <Button
                 size="sm"
@@ -1066,7 +1068,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
-                重启
+                {t('mysql_service.restart')}
               </Button>
             </div>
           )}
@@ -1078,12 +1080,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             <div className="space-y-4">
               {/* 配置文件路径 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.config_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={configPath}
                     readOnly
-                    placeholder="MySQL 配置文件路径"
+                    placeholder={t('mysql_service.config_path_placeholder')}
                     className="flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
                   <Button
@@ -1092,7 +1094,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开配置文件目录"
+                    title={t('mysql_service.open_config_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -1101,10 +1103,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
               {/* 数据目录 */}
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录（从配置文件读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.data_dir_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={mysqlConfig?.dataPath || '未配置'}
+                    value={mysqlConfig?.dataPath || t('mysql_service.not_configured')}
                     readOnly
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
@@ -1117,7 +1119,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => mysqlConfig?.dataPath && openFolderInFinder(mysqlConfig.dataPath)}
                     disabled={!mysqlConfig?.dataPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('mysql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -1126,10 +1128,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
               {/* 日志文件 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件（从配置文件读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.log_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={mysqlConfig?.logPath || '未配置'}
+                    value={mysqlConfig?.logPath || t('mysql_service.not_configured')}
                     readOnly
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
@@ -1142,7 +1144,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => mysqlConfig?.logPath && openFolderInFinder(mysqlConfig.logPath)}
                     disabled={!mysqlConfig?.logPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('mysql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -1152,17 +1154,17 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               {/* 主机 & 端口 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">主机（从配置文件读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.host_label')}</Label>
                   <Input
-                    value={mysqlConfig?.bindIp || '未配置'}
+                    value={mysqlConfig?.bindIp || t('mysql_service.not_configured')}
                     readOnly
                     className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口（从配置文件读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.port_from_config')}</Label>
                   <Input
-                    value={mysqlConfig?.port ?? '未配置'}
+                    value={mysqlConfig?.port ?? t('mysql_service.not_configured')}
                     readOnly
                     className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
@@ -1171,11 +1173,11 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
               {/* Root 密码 */}
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">Root 密码</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.root_password_label')}</Label>
                 <div className="relative mt-1">
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    value={serviceData.metadata?.['MYSQL_ROOT_PASSWORD'] || '未设置'}
+                    value={serviceData.metadata?.['MYSQL_ROOT_PASSWORD'] || t('mysql_service.not_set')}
                     readOnly
                     className="h-8 text-xs shadow-none bg-muted cursor-not-allowed pr-10 border-gray-200 dark:border-white/10"
                   />
@@ -1185,7 +1187,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={!serviceData.metadata?.['MYSQL_ROOT_PASSWORD']}
                     className="absolute right-1 top-0 h-8 w-8 p-0 hover:bg-transparent"
-                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                    aria-label={showPassword ? t('mysql_service.hide_password') : t('mysql_service.show_password')}
                   >
                     {showPassword ? (
                       <EyeOff className="h-3 w-3 text-gray-500" />
@@ -1198,7 +1200,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
               {/* 管理工具 */}
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.management_tools')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
                     variant="outline"
@@ -1207,12 +1209,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                       try {
                         const result = await openMysqlClient(selectedEnvironmentId, serviceData)
                         if (result.success) {
-                          toast.success('MySQL 客户端已打开')
+                          toast.success(t('mysql_service.client_opened'))
                         } else {
-                          toast.error(result.message || '打开 MySQL 客户端失败')
+                          toast.error(result.message || t('mysql_service.client_open_failed'))
                         }
                       } catch (error) {
-                        toast.error('打开 MySQL 客户端失败: ' + error)
+                        toast.error(t('mysql_service.client_open_failed'))
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
@@ -1229,13 +1231,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活，无法显示配置信息</p>
-                  <p className="text-xs">请先激活 MySQL 服务</p>
+                  <p className="text-sm">{t('mysql_service.service_not_active_config')}</p>
+                  <p className="text-xs">{t('mysql_service.activate_service_hint')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">MySQL 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('mysql_service.not_initialized_short')}</p>
+                  <p className="text-xs">{t('mysql_service.complete_init')}</p>
                 </>
               )}
             </div>
@@ -1246,7 +1248,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              数据库管理
+              {t('mysql_service.db_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1256,7 +1258,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <Plus className="h-3 w-3 mr-1" />
-                新建数据库
+                {t('mysql_service.new_database')}
               </Button>
             )}
           </div>
@@ -1316,19 +1318,19 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                                   {db.showAllTables ? (
                                     <>
                                       <ChevronUp className="h-3 w-3 mr-1" />
-                                      收起 ({db.tables.length - 4} 个)
+                                      {t('mysql_service.collapse_tables', { count: db.tables.length - 4 })}
                                     </>
                                   ) : (
                                     <>
                                       <ChevronDown className="h-3 w-3 mr-1" />
-                                      还有 {db.tables.length - 4} 张表
+                                      {t('mysql_service.more_tables', { count: db.tables.length - 4 })}
                                     </>
                                   )}
                                 </Button>
                               )}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-500 text-center py-2">暂无表</div>
+                            <div className="text-xs text-gray-500 text-center py-2">{t('mysql_service.no_tables')}</div>
                           )}
                         </div>
                       )}
@@ -1344,12 +1346,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                       {showAllDatabases ? (
                         <>
                           <ChevronUp className="h-3.5 w-3.5 mr-1" />
-                          收起 ({databases.length - 4} 个数据库)
+                          {t('mysql_service.collapse_dbs', { count: databases.length - 4 })}
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-3.5 w-3.5 mr-1" />
-                          还有 {databases.length - 4} 个数据库
+                          {t('mysql_service.more_dbs', { count: databases.length - 4 })}
                         </>
                       )}
                     </Button>
@@ -1359,7 +1361,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
                   {isLoadingDatabases ? (
                     <RefreshCw className="h-4 w-4 animate-spin mx-auto" />
-                  ) : '暂无数据库'}
+                  ) : t('mysql_service.no_databases')}
                 </div>
               )}
             </div>
@@ -1368,18 +1370,18 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               <Database className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活</p>
-                  <p className="text-xs">无法管理数据库</p>
+                  <p className="text-sm">{t('mysql_service.service_not_active_db')}</p>
+                  <p className="text-xs">{t('mysql_service.cannot_manage_db')}</p>
                 </>
               ) : !isInitialized ? (
                 <>
-                  <p className="text-sm">MySQL 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('mysql_service.not_initialized_short')}</p>
+                  <p className="text-xs">{t('mysql_service.complete_init')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">服务未运行</p>
-                  <p className="text-xs">请先启动服务</p>
+                  <p className="text-sm">{t('mysql_service.service_not_running')}</p>
+                  <p className="text-xs">{t('mysql_service.start_first')}</p>
                 </>
               )}
             </div>
@@ -1390,19 +1392,19 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         <Dialog open={showCreateDbDialog} onOpenChange={setShowCreateDbDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>新建数据库</DialogTitle>
+              <DialogTitle>{t('mysql_service.new_database_title')}</DialogTitle>
               <DialogDescription>
-                创建一个新的 MySQL 数据库。
+                {t('mysql_service.new_database_desc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="db-name">数据库名称</Label>
+                <Label htmlFor="db-name">{t('mysql_service.db_name_label')}</Label>
                 <Input
                   id="db-name"
                   value={newDbName}
                   onChange={(e) => setNewDbName(e.target.value)}
-                  placeholder="输入数据库名称"
+                  placeholder={t('mysql_service.db_name_placeholder')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newDbName) {
                       handleCreateDatabase()
@@ -1413,15 +1415,15 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             </div>
             <DialogFooter>
               <Button className="shadow-none" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
-                取消
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleCreateDatabase} disabled={!newDbName || isCreatingDb}>
                 {isCreatingDb ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    创建中...
+                    {t('mysql_service.creating')}
                   </>
-                ) : '创建'}
+                ) : t('mysql_service.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1431,7 +1433,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              用户管理
+              {t('mysql_service.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1441,7 +1443,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <UserPlus className="h-3 w-3 mr-1" />
-                新建用户
+                {t('mysql_service.new_user')}
               </Button>
             )}
           </div>
@@ -1453,7 +1455,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                   <div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">root</span>
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{t('mysql_service.admin_tag')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1491,7 +1493,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                           variant="ghost"
                           className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                           onClick={() => openEditUserDialog(user)}
-                          title="编辑权限"
+                          title={t('mysql_service.edit_permissions_title')}
                         >
                           <Pencil className="h-3 w-3" />
                         </Button>
@@ -1503,7 +1505,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                             setSelectedUsername(user.username)
                             setShowDeleteUserDialog(true)
                           }}
-                          title="删除用户"
+                          title={t('mysql_service.delete_user_title')}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -1513,7 +1515,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
-                  暂无普通用户
+                  {t('mysql_service.no_normal_users')}
                 </div>
               )}
             </div>
@@ -1521,11 +1523,11 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
-                <><p className="text-sm">服务未激活</p><p className="text-xs">无法管理用户</p></>
+                <><p className="text-sm">{t('mysql_service.service_not_active_users')}</p><p className="text-xs">{t('mysql_service.cannot_manage_users')}</p></>
               ) : !isInitialized ? (
-                <><p className="text-sm">MySQL 尚未初始化</p><p className="text-xs">请先完成初始化</p></>
+                <><p className="text-sm">{t('mysql_service.not_initialized_short')}</p><p className="text-xs">{t('mysql_service.complete_init')}</p></>
               ) : (
-                <><p className="text-sm">服务未运行</p><p className="text-xs">请先启动服务</p></>
+                <><p className="text-sm">{t('mysql_service.service_not_running')}</p><p className="text-xs">{t('mysql_service.start_first')}</p></>
               )}
             </div>
           )}
@@ -1534,7 +1536,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         {/* 其他操作 */}
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-            其他操作
+            {t('mysql_service.other_operations')}
           </Label>
           {isServiceActive && isInitialized ? (
             <div className="flex gap-2">
@@ -1545,14 +1547,14 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
               >
                 <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-                重置初始化
+                {t('mysql_service.reset_init')}
               </Button>
             </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <BarChart3 className="h-6 w-6 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">服务未激活</p>
-              <p className="text-xs">无法使用其他操作</p>
+              <p className="text-sm">{t('mysql_service.service_not_active_config')}</p>
+              <p className="text-xs">{t('mysql_service.activate_service_hint')}</p>
             </div>
           )}
         </div>

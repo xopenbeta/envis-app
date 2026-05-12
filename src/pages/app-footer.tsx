@@ -3,11 +3,13 @@ import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/app';
 import pkg from '../../package.json';
 import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from 'react-i18next';
 
 export function AppFooter(props: {
     isShowConsoleBtn?: boolean,
     onConsoleBtnClick?: () => void
 }) {
+    const { t } = useTranslation()
     const [updateAvailable] = useAtom(updateAvailableAtom)
     const [, setIsUpdateDialogOpen] = useAtom(isUpdateDialogOpenAtom)
 
@@ -31,7 +33,7 @@ export function AppFooter(props: {
                         onClick={() => setIsUpdateDialogOpen(true)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-0.5 my-0 rounded-full bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 transition-colors font-medium"
                     >
-                        Update Available
+                    {t('app_footer.update_available')}
                     </button>
                 )}
             </div>

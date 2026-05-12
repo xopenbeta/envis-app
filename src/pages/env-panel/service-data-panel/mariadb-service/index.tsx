@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import {
   Database,
   BarChart3,
@@ -44,6 +45,7 @@ interface MariaDBServiceProps {
 }
 
 export function MariaDBService({ serviceData }: MariaDBServiceProps) {
+  const { t } = useTranslation()
   const { openFolderInFinder } = useFileOperations()
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
 
@@ -330,15 +332,15 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     try {
       const result = await createMariadbDatabase(selectedEnvironmentId, serviceData, newDbName)
       if (result.success) {
-        toast.success('数据库创建成功')
+        toast.success(t('mariadb_service.db_create_success'))
         setShowCreateDbDialog(false)
         setNewDbName('')
         loadDatabases()
       } else {
-        toast.error('创建数据库失败: ' + result.message)
+        toast.error(t('mariadb_service.db_create_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('创建数据库失败: ' + error)
+      toast.error(t('mariadb_service.db_create_failed', { message: String(error) }))
     } finally {
       setIsCreatingDb(false)
     }
@@ -355,15 +357,15 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       }))
       const result = await createMariadbUser(selectedEnvironmentId, serviceData, userForm.username, userForm.password, grants)
       if (result.success) {
-        toast.success(`用户 '${userForm.username}' 创建成功`)
+        toast.success(t('mariadb_service.user_create_success', { username: userForm.username }))
         setShowCreateUserDialog(false)
         setUserForm({ username: '', password: '', grants: {}, customDb: '' })
         loadUsers()
       } else {
-        toast.error('创建用户失败: ' + result.message)
+        toast.error(t('mariadb_service.user_create_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('创建用户失败: ' + error)
+      toast.error(t('mariadb_service.user_create_failed', { message: String(error) }))
     } finally {
       setIsSubmittingUser(false)
     }
@@ -391,14 +393,14 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       }))
       const result = await updateMariadbUserGrants(selectedEnvironmentId, serviceData, selectedUsername, grants)
       if (result.success) {
-        toast.success(`用户 '${selectedUsername}' 权限更新成功`)
+        toast.success(t('mariadb_service.permission_update_success', { username: selectedUsername }))
         setShowEditUserDialog(false)
         loadUsers()
       } else {
-        toast.error('更新权限失败: ' + result.message)
+        toast.error(t('mariadb_service.permission_update_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('更新权限失败: ' + error)
+      toast.error(t('mariadb_service.permission_update_failed', { message: String(error) }))
     } finally {
       setIsSubmittingUser(false)
     }
@@ -411,14 +413,14 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     try {
       const result = await deleteMariadbUser(selectedEnvironmentId, serviceData, selectedUsername)
       if (result.success) {
-        toast.success(`用户 '${selectedUsername}' 删除成功`)
+        toast.success(t('mariadb_service.user_delete_success', { username: selectedUsername }))
         setShowDeleteUserDialog(false)
         loadUsers()
       } else {
-        toast.error('删除用户失败: ' + result.message)
+        toast.error(t('mariadb_service.user_delete_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('删除用户失败: ' + error)
+      toast.error(t('mariadb_service.user_delete_failed', { message: String(error) }))
     } finally {
       setIsSubmittingUser(false)
     }
@@ -431,13 +433,13 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     try {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('MariaDB 服务启动成功')
+        toast.success(t('mariadb_service.start_success'))
         refreshServiceStatus()
       } else {
-        toast.error('启动 MariaDB 服务失败: ' + result.message)
+        toast.error(t('mariadb_service.start_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('启动 MariaDB 服务失败: ' + error)
+      toast.error(t('mariadb_service.start_failed', { message: String(error) }))
     } finally {
       setIsStarting(false)
     }
@@ -450,13 +452,13 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     try {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('MariaDB 服务已停止')
+        toast.success(t('mariadb_service.stop_success'))
         refreshServiceStatus()
       } else {
-        toast.error('停止 MariaDB 服务失败: ' + result.message)
+        toast.error(t('mariadb_service.stop_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('停止 MariaDB 服务失败: ' + error)
+      toast.error(t('mariadb_service.stop_failed', { message: String(error) }))
     } finally {
       setIsStopping(false)
     }
@@ -469,13 +471,13 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     try {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('MariaDB 服务重启成功')
+        toast.success(t('mariadb_service.restart_success'))
         refreshServiceStatus()
       } else {
-        toast.error('重启 MariaDB 服务失败: ' + result.message)
+        toast.error(t('mariadb_service.restart_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('重启 MariaDB 服务失败: ' + error)
+      toast.error(t('mariadb_service.restart_failed', { message: String(error) }))
     } finally {
       setIsRestarting(false)
     }
@@ -484,11 +486,11 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   // 初始化 MariaDB
   const handleInitialize = async (reset: boolean = false) => {
     if (!dialogData.rootPassword) {
-      toast.error('请输入 root 密码')
+      toast.error(t('mariadb_service.password_required'))
       return
     }
     if (reset && serviceStatus === ServiceStatus.Running) {
-      toast.error('MariaDB 正在运行中，请先停止服务后再进行重置')
+      toast.error(t('mariadb_service.running_warning'))
       return
     }
     setIsInitializing(true)
@@ -512,15 +514,15 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           updates: { metadata: newMetadata },
           serviceDatas: selectedServiceDatas,
         })
-        toast.success('MariaDB 初始化成功')
+        toast.success(t('mariadb_service.init_success'))
         setShowInitDialog(false)
         setShowResetDialog(false)
         setIsInitialized(true)
       } else {
-        toast.error(result.message || 'MariaDB 初始化失败')
+        toast.error(result.message || t('mariadb_service.init_failed'))
       }
     } catch (error) {
-      toast.error('初始化失败: ' + error)
+      toast.error(t('mariadb_service.init_failed_msg', { message: String(error) }))
     } finally {
       setIsInitializing(false)
     }
@@ -536,21 +538,21 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              初始化 MariaDB
+              {t('mariadb_service.init_title')}
             </DialogTitle>
             <DialogDescription>
-              首次使用需要初始化 MariaDB。系统将创建配置文件、数据目录，并设置 root 账户。
+              {t('mariadb_service.init_desc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="root-password">Root 密码</Label>
+              <Label htmlFor="root-password">{t('mariadb_service.root_password_label')}</Label>
               <Input
                 id="root-password"
                 type="password"
                 value={dialogData.rootPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, rootPassword: e.target.value }))}
-                placeholder="输入 root 密码"
+                placeholder={t('mariadb_service.root_password_placeholder')}
                 disabled={isInitializing}
               />
             </div>
@@ -561,12 +563,12 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               className="w-full"
               type="button"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('mariadb_service.hide_advanced') : t('mariadb_service.show_advanced')}
             </Button>
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="init-port">端口</Label>
+                  <Label htmlFor="init-port">{t('mariadb_service.port_label')}</Label>
                   <Input
                     id="init-port"
                     value={dialogData.port}
@@ -576,7 +578,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="init-bind-address">绑定地址</Label>
+                  <Label htmlFor="init-bind-address">{t('mariadb_service.bind_address_label')}</Label>
                   <Input
                     id="init-bind-address"
                     value={dialogData.bindAddress}
@@ -585,7 +587,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                     disabled={isInitializing}
                   />
                   <p className="text-xs text-muted-foreground">
-                    默认仅本地访问。如需远程访问请设置为 0.0.0.0
+                    {t('mariadb_service.local_access_note')}
                   </p>
                 </div>
               </>
@@ -593,13 +595,13 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-xs">
-                请牢记 root 密码。初始化包含：创建配置文件、数据目录和 root 账户。
+                {t('mariadb_service.remember_password')}
               </AlertDescription>
             </Alert>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInitDialog(false)} disabled={isInitializing} className="shadow-none">
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => handleInitialize(false)}
@@ -608,9 +610,9 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  初始化中...
+                  {t('mariadb_service.initializing')}
                 </>
-              ) : '开始初始化'}
+              ) : t('mariadb_service.start_init')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -622,11 +624,11 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              重置 MariaDB
+              {t('mariadb_service.reset_title')}
             </DialogTitle>
             <DialogDescription>
-              重置将删除所有现有数据、配置文件和用户信息，然后重新初始化 MariaDB。
-              <span className="text-red-600 font-semibold">此操作不可恢复！</span>
+              {t('mariadb_service.reset_desc')}
+              <span className="text-red-600 font-semibold">{t('mariadb_service.reset_irrecoverable')}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -635,19 +637,19 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    <strong>MariaDB 正在运行中！</strong> 请先停止 MariaDB 服务后再进行重置。
+                    <strong>MariaDB</strong> {t('mariadb_service.running_warning_text')}
                   </AlertDescription>
                 </div>
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="reset-root-password">新 Root 密码</Label>
+              <Label htmlFor="reset-root-password">{t('mariadb_service.new_root_password_label')}</Label>
               <Input
                 id="reset-root-password"
                 type="password"
                 value={dialogData.rootPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, rootPassword: e.target.value }))}
-                placeholder="输入新 root 密码"
+                placeholder={t('mariadb_service.new_root_password_placeholder')}
                 disabled={isInitializing}
                 className="shadow-none"
               />
@@ -658,12 +660,12 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
               className="w-full"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('mariadb_service.hide_advanced') : t('mariadb_service.show_advanced')}
             </Button>
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="reset-port">端口</Label>
+                  <Label htmlFor="reset-port">{t('mariadb_service.port_label')}</Label>
                   <Input
                     id="reset-port"
                     value={dialogData.port}
@@ -673,7 +675,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reset-bind-address">绑定地址</Label>
+                  <Label htmlFor="reset-bind-address">{t('mariadb_service.bind_address_label')}</Label>
                   <Input
                     id="reset-bind-address"
                     value={dialogData.bindAddress}
@@ -687,7 +689,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowResetDialog(false)} disabled={isInitializing} className="shadow-none">
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -697,12 +699,12 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  重置中...
+                  {t('mariadb_service.resetting')}
                 </>
               ) : (
                 <>
                   <AlertTriangle className="h-4 w-4 mr-2" />
-                  确认重置
+                  {t('mariadb_service.confirm_reset')}
                 </>
               )}
             </Button>
@@ -717,10 +719,10 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
                 <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
-                  MariaDB 尚未初始化
+                  {t('mariadb_service.not_initialized_title')}
                 </p>
                 <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
-                  首次使用需要初始化配置文件、数据目录，并创建 root 账户。
+                  {t('mariadb_service.not_initialized_desc')}
                 </p>
               </div>
             </div>
@@ -730,7 +732,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 onClick={() => setShowInitDialog(true)}
                 className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
               >
-                立即初始化
+                {t('mariadb_service.init_now')}
               </Button>
             </div>
           </div>
@@ -740,7 +742,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              服务控制
+              {t('mariadb_service.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
@@ -749,8 +751,8 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                   serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
               )} />
               <span className="text-xs font-normal text-muted-foreground">
-                {serviceStatus === ServiceStatus.Running ? '运行中' :
-                  serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知状态'}
+                {serviceStatus === ServiceStatus.Running ? t('mariadb_service.running') :
+                  serviceStatus === ServiceStatus.Stopped ? t('mariadb_service.stopped') : t('mariadb_service.unknown_status')}
               </span>
             </div>
           </div>
@@ -768,7 +770,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 ) : (
                   <Power className="h-3.5 w-3.5 text-green-600" />
                 )}
-                启动
+                {t('mariadb_service.start')}
               </Button>
               <Button
                 size="sm"
@@ -778,7 +780,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <PowerOff className="h-3.5 w-3.5 text-red-600" />
-                停止
+                {t('mariadb_service.stop')}
               </Button>
               <Button
                 size="sm"
@@ -788,7 +790,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
-                重启
+                {t('mariadb_service.restart')}
               </Button>
             </div>
           )}
@@ -800,12 +802,12 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             <div className="space-y-4">
               {/* 配置文件路径 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mariadb_service.config_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={configPath}
                     readOnly
-                    placeholder="MariaDB 配置文件路径"
+                    placeholder={t('mariadb_service.config_path_placeholder')}
                     className="flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
                   <Button
@@ -814,7 +816,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开配置文件目录"
+                    title={t('mariadb_service.open_config_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -823,10 +825,10 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
 
               {/* 数据目录 */}
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录（从配置文件读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mariadb_service.data_dir_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={mariadbConfig?.dataPath || '未配置'}
+                    value={mariadbConfig?.dataPath || t('mariadb_service.not_configured')}
                     readOnly
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
@@ -839,7 +841,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                     onClick={() => mariadbConfig?.dataPath && openFolderInFinder(mariadbConfig.dataPath)}
                     disabled={!mariadbConfig?.dataPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('mariadb_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -848,10 +850,10 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
 
               {/* 日志文件 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件（从配置文件读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mariadb_service.log_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={mariadbConfig?.logPath || '未配置'}
+                    value={mariadbConfig?.logPath || t('mariadb_service.not_configured')}
                     readOnly
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
@@ -864,7 +866,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                     onClick={() => mariadbConfig?.logPath && openFolderInFinder(mariadbConfig.logPath)}
                     disabled={!mariadbConfig?.logPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('mariadb_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -874,17 +876,17 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               {/* 主机 & 端口 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">主机（从配置文件读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mariadb_service.host_label')}</Label>
                   <Input
-                    value={mariadbConfig?.bindIp || '未配置'}
+                    value={mariadbConfig?.bindIp || t('mariadb_service.not_configured')}
                     readOnly
                     className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口（从配置文件读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mariadb_service.port_from_config')}</Label>
                   <Input
-                    value={mariadbConfig?.port ?? '未配置'}
+                    value={mariadbConfig?.port ?? t('mariadb_service.not_configured')}
                     readOnly
                     className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
@@ -893,7 +895,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
 
               {/* 管理工具 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mariadb_service.management_tools')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
                     variant="outline"
@@ -902,12 +904,12 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                       try {
                         const result = await openMariadbClient(selectedEnvironmentId, serviceData)
                         if (result.success) {
-                          toast.success('MariaDB 客户端已打开')
+                          toast.success(t('mariadb_service.client_opened'))
                         } else {
-                          toast.error(result.message || '打开 MariaDB 客户端失败')
+                          toast.error(result.message || t('mariadb_service.client_open_failed'))
                         }
                       } catch (error) {
-                        toast.error('打开 MariaDB 客户端失败: ' + error)
+                        toast.error(t('mariadb_service.client_open_failed'))
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
@@ -924,13 +926,13 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活，无法显示配置信息</p>
-                  <p className="text-xs">请先激活 MariaDB 服务</p>
+                  <p className="text-sm">{t('mariadb_service.service_not_active_config')}</p>
+                  <p className="text-xs">{t('mariadb_service.activate_service_hint')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">MariaDB 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('mariadb_service.not_initialized_short')}</p>
+                  <p className="text-xs">{t('mariadb_service.complete_init')}</p>
                 </>
               )}
             </div>
@@ -941,7 +943,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              数据库管理
+              {t('mariadb_service.db_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -951,7 +953,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <Plus className="h-3 w-3 mr-1" />
-                新建数据库
+                {t('mariadb_service.new_database')}
               </Button>
             )}
           </div>
@@ -1011,19 +1013,19 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                                   {db.showAllTables ? (
                                     <>
                                       <ChevronUp className="h-3 w-3 mr-1" />
-                                      收起 ({db.tables.length - 4} 个)
+                                      {t('mariadb_service.collapse_tables', { count: db.tables.length - 4 })}
                                     </>
                                   ) : (
                                     <>
                                       <ChevronDown className="h-3 w-3 mr-1" />
-                                      还有 {db.tables.length - 4} 张表
+                                      {t('mariadb_service.more_tables', { count: db.tables.length - 4 })}
                                     </>
                                   )}
                                 </Button>
                               )}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-500 text-center py-2">暂无表</div>
+                            <div className="text-xs text-gray-500 text-center py-2">{t('mariadb_service.no_tables')}</div>
                           )}
                         </div>
                       )}
@@ -1039,12 +1041,12 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                       {showAllDatabases ? (
                         <>
                           <ChevronUp className="h-3.5 w-3.5 mr-1" />
-                          收起 ({databases.length - 4} 个数据库)
+                          {t('mariadb_service.collapse_dbs', { count: databases.length - 4 })}
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-3.5 w-3.5 mr-1" />
-                          还有 {databases.length - 4} 个数据库
+                          {t('mariadb_service.more_dbs', { count: databases.length - 4 })}
                         </>
                       )}
                     </Button>
@@ -1052,7 +1054,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
-                  暂无数据库
+                  {t('mariadb_service.no_databases')}
                 </div>
               )}
             </div>
@@ -1061,18 +1063,18 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               <Database className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活</p>
-                  <p className="text-xs">无法管理数据库</p>
+                  <p className="text-sm">{t('mariadb_service.service_not_active_db')}</p>
+                  <p className="text-xs">{t('mariadb_service.cannot_manage_db')}</p>
                 </>
               ) : !isInitialized ? (
                 <>
-                  <p className="text-sm">MariaDB 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('mariadb_service.not_initialized_short')}</p>
+                  <p className="text-xs">{t('mariadb_service.complete_init')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">服务未运行</p>
-                  <p className="text-xs">请先启动服务</p>
+                  <p className="text-sm">{t('mariadb_service.service_not_running')}</p>
+                  <p className="text-xs">{t('mariadb_service.start_first')}</p>
                 </>
               )}
             </div>
@@ -1083,19 +1085,19 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
         <Dialog open={showCreateDbDialog} onOpenChange={setShowCreateDbDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>新建数据库</DialogTitle>
+              <DialogTitle>{t('mariadb_service.new_database_title')}</DialogTitle>
               <DialogDescription>
-                创建一个新的 MariaDB 数据库。
+                {t('mariadb_service.new_database_desc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="db-name">数据库名称</Label>
+                <Label htmlFor="db-name">{t('mariadb_service.db_name_label')}</Label>
                 <Input
                   id="db-name"
                   value={newDbName}
                   onChange={(e) => setNewDbName(e.target.value)}
-                  placeholder="输入数据库名称"
+                  placeholder={t('mariadb_service.db_name_placeholder')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newDbName) {
                       handleCreateDatabase()
@@ -1106,15 +1108,15 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             </div>
             <DialogFooter>
               <Button className="shadow-none" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
-                取消
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleCreateDatabase} disabled={!newDbName || isCreatingDb}>
                 {isCreatingDb ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    创建中...
+                    {t('mariadb_service.creating')}
                   </>
-                ) : '创建'}
+                ) : t('mariadb_service.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1135,29 +1137,29 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="new-username">用户名</Label>
+                <Label htmlFor="new-username">{t('mariadb_service.username_label')}</Label>
                 <Input
                   id="new-username"
                   value={userForm.username}
                   onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
-                  placeholder="输入用户名"
+                  placeholder={t('mariadb_service.username_placeholder')}
                   disabled={isSubmittingUser}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-user-password">密码</Label>
+                <Label htmlFor="new-user-password">{t('mariadb_service.password_label')}</Label>
                 <Input
                   id="new-user-password"
                   type="password"
                   value={userForm.password}
                   onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="输入密码"
+                  placeholder={t('mariadb_service.password_placeholder')}
                   disabled={isSubmittingUser}
                 />
               </div>
               {/* 数据库权限设置 */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium">数据库权限</Label>
+                <Label className="text-xs font-medium">{t('mariadb_service.db_permissions')}</Label>
                 {databases.length > 0 && (
                   <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
                     {databases.map((db) => (
@@ -1199,7 +1201,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                   <Input
                     value={userForm.customDb}
                     onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
-                    placeholder="自定义数据库名"
+                    placeholder={t('mariadb_service.custom_db_placeholder')}
                     className="h-7 text-xs shadow-none"
                     disabled={isSubmittingUser}
                     onKeyDown={(e) => {
@@ -1255,9 +1257,9 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
               <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password || isSubmittingUser}>
-                {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />创建中...</> : '创建'}
+                {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mariadb_service.creating')}</> : t('mariadb_service.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1269,9 +1271,9 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5" />
-                编辑权限 - {selectedUsername}
+                {t('mariadb_service.edit_permissions_title', { username: selectedUsername })}
               </DialogTitle>
-              <DialogDescription>修改用户的数据库访问权限（全量替换）。</DialogDescription>
+              <DialogDescription>{t('mariadb_service.edit_permissions_desc')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               {databases.length > 0 && (
@@ -1314,7 +1316,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 <Input
                   value={userForm.customDb}
                   onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
-                  placeholder="自定义数据库名"
+                  placeholder={t('mariadb_service.custom_db_placeholder')}
                   className="h-7 text-xs shadow-none"
                   disabled={isSubmittingUser}
                   onKeyDown={(e) => {
@@ -1368,9 +1370,9 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
               )}
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
               <Button onClick={handleUpdateUserGrants} disabled={isSubmittingUser}>
-                {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />保存中...</> : '保存'}
+                {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mariadb_service.saving')}</> : t('mariadb_service.save')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1382,16 +1384,16 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-600">
                 <Trash2 className="h-5 w-5" />
-                删除用户
+                {t('mariadb_service.delete_user_title')}
               </DialogTitle>
               <DialogDescription>
-                确认要删除用户 <span className="font-semibold text-foreground">'{selectedUsername}'</span> 吗？此操作不可恢复。
+                {t('mariadb_service.delete_user_confirm', { username: selectedUsername })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
               <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmittingUser}>
-                {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />删除中...</> : '确认删除'}
+                {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mariadb_service.deleting')}</> : t('mariadb_service.confirm_delete')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1401,7 +1403,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              用户管理
+              {t('mariadb_service.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1411,7 +1413,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <UserPlus className="h-3 w-3 mr-1" />
-                新建用户
+                {t('mariadb_service.new_user')}
               </Button>
             )}
           </div>
@@ -1423,7 +1425,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                   <div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">root</span>
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{t('mariadb_service.admin_tag')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1485,7 +1487,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
-                  暂无普通用户
+                  {t('mariadb_service.no_normal_users')}
                 </div>
               )}
             </div>
@@ -1493,11 +1495,11 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
-                <><p className="text-sm">服务未激活</p><p className="text-xs">无法管理用户</p></>
+                <><p className="text-sm">{t('mariadb_service.service_not_active_users')}</p><p className="text-xs">{t('mariadb_service.cannot_manage_users')}</p></>
               ) : !isInitialized ? (
-                <><p className="text-sm">MariaDB 尚未初始化</p><p className="text-xs">请先完成初始化</p></>
+                <><p className="text-sm">{t('mariadb_service.not_initialized_short')}</p><p className="text-xs">{t('mariadb_service.complete_init')}</p></>
               ) : (
-                <><p className="text-sm">服务未运行</p><p className="text-xs">请先启动服务</p></>
+                <><p className="text-sm">{t('mariadb_service.service_not_running')}</p><p className="text-xs">{t('mariadb_service.start_first')}</p></>
               )}
             </div>
           )}
@@ -1506,7 +1508,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
         {/* 其他操作 */}
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-            其他操作
+            {t('mariadb_service.other_operations')}
           </Label>
           {isServiceActive && isInitialized ? (
             <div className="flex gap-2">
@@ -1517,14 +1519,14 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
                 className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
               >
                 <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-                重置初始化
+                {t('mariadb_service.reset_init')}
               </Button>
             </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <BarChart3 className="h-6 w-6 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">服务未激活</p>
-              <p className="text-xs">无法使用其他操作</p>
+              <p className="text-sm">{t('mariadb_service.service_not_active_users')}</p>
+              <p className="text-xs">{t('mariadb_service.cannot_manage_users')}</p>
             </div>
           )}
         </div>

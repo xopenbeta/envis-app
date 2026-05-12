@@ -8,6 +8,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { toast } from "sonner"
 import { chatMessagesAtom, addChatMessageAtom, clearChatMessagesAtom, isAIResponseLoadingAtom } from "@/store/ai"
 import { useSettings } from "@/hooks/appSettings"
+import { useTranslation } from 'react-i18next'
 
 // 优化的Markdown渲染函数 - 更好支持中文
 const renderMarkdown = (content: string) => {
@@ -47,6 +48,7 @@ const renderMarkdown = (content: string) => {
 }
 
 export function AIPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const {appSettings} = useSettings()
   const [chatMessages] = useAtom(chatMessagesAtom)
   const [, addChatMessage] = useAtom(addChatMessageAtom)
@@ -163,7 +165,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
     if (typingMessage && typingMessage.displayedContent.trim()) {
       addChatMessage({
         role: 'assistant',
-        content: typingMessage.displayedContent + '\n\n[输出已中断]'
+        content: typingMessage.displayedContent + '\n\n' + t('ai_panel.interrupted')
       })
     }
 
@@ -177,14 +179,14 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       isInterruptedRef.current = false
     }, 500)
 
-    toast.info('AI输出已中断')
+    toast.info(t('ai_panel.interrupt_success'))
   }
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
 
     if (!appSettings?.ai?.enabled || !appSettings?.ai?.apiKey) {
-      toast.error('请先在设置中配置AI API')
+      toast.error(t('ai_panel.configure_ai_first'))
       return
     }
 
@@ -401,7 +403,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       console.error('AI API调用失败:', error)
       
       // 错误消息直接显示，不使用流式效果
-      const errorMessage = `抱歉，AI服务暂时不可用：${error instanceof Error ? error.message : '未知错误'}`
+      const errorMessage = t('ai_panel.error_message', { message: error instanceof Error ? error.message : 'Unknown error' })
       
       // 直接添加错误消息到聊天记录
       addChatMessage({
@@ -409,7 +411,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         content: errorMessage
       })
       
-      toast.error('AI请求失败，请检查API配置')
+      toast.error(t('ai_panel.send_error'))
     } finally {
       setIsLoading(false)
       abortControllerRef.current = null
@@ -453,7 +455,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
 
     // 清除聊天记录
     clearChatMessages()
-    toast.success('聊天记录已清空')
+    toast.success(t('ai_panel.chat_cleared'))
   }
 
   return (
@@ -469,7 +471,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
           >
             <X className="h-4 w-4" />
           </Button>
-          <h2 className="text-[15px] font-semibold">AI 助手</h2>
+          <h2 className="text-[15px] font-semibold">{t('ai_panel.title')}</h2>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -478,7 +480,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             variant="ghost"
             className="h-7 text-default-500 hover:text-foreground hover:bg-content2 heroui-transition"
             disabled={chatMessages.length === 0 && !isLoading && !typingMessage}
-            title={isLoading || typingMessage ? "中断AI输出并清空" : "清空聊天记录"}
+            title={isLoading || typingMessage ? t('ai_panel.interrupt_and_clear') : t('ai_panel.clear_chat')}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -491,9 +493,9 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
           <div className="flex items-center space-x-2 text-xs text-warning-600">
             <div className="animate-pulse w-2 h-2 bg-warning rounded-full"></div>
             <span>
-              {isLoading && !typingMessage ? 'AI正在思考...' : 'AI正在回复...'}
+              {isLoading && !typingMessage ? t('ai_panel.ai_thinking') : t('ai_panel.ai_replying')}
             </span>
-            <span className="text-default-400">按Esc键或点击中断按钮可中断</span>
+            <span className="text-default-400">{t('ai_panel.press_esc')}</span>
           </div>
         </div>
       )}
@@ -503,7 +505,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         {chatMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <Bot className="h-12 w-12 text-default-300 mb-4" />
-            <h3 className="text-lg font-medium text-default-500 mb-2">AI 配置助手</h3>
+            <h3 className="text-lg font-medium text-default-500 mb-2">{t('ai_panel.empty_title')}</h3>
             <p className="text-sm text-default-400 max-w-sm leading-relaxed">
             </p>
           </div>
@@ -552,7 +554,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
                     )}
                   </div>
                   <div className="text-xs mt-2 opacity-70 text-default-500">
-                    {typingMessage.isTyping ? '正在输入...' : new Date().toLocaleTimeString()}
+                    {typingMessage.isTyping ? t('ai_panel.typing') : new Date().toLocaleTimeString()}
                   </div>
                 </div>
               </div>
@@ -563,7 +565,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
                 <div className="bg-content2 text-foreground rounded-lg p-3">
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                    <span className="text-sm">AI正在思考...</span>
+                    <span className="text-sm">{t('ai_panel.ai_thinking')}</span>
                   </div>
                 </div>
               </div>
@@ -584,7 +586,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             onKeyDown={handleKeyPress}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
-            placeholder={"请先在设置中配置AI服务..."}
+            placeholder={t('ai_panel.placeholder')}
             disabled={!appSettings?.ai?.enabled || isLoading}
             className="w-full bg-content2 border-divider focus:border-primary heroui-transition min-h-[80px] max-h-[200px] resize-none pr-12 pb-12"
             rows={3}
@@ -597,7 +599,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
                 ? 'heroui-button heroui-button-danger bg-danger hover:bg-danger/90'
                 : 'heroui-button heroui-button-primary'
               }`}
-            title={isLoading || typingMessage ? "中断AI输出" : "发送消息"}
+            title={isLoading || typingMessage ? t('ai_panel.interrupt_btn') : t('ai_panel.send_btn')}
           >
             {isLoading || typingMessage ? (
               <Square className="h-3 w-3" />
@@ -608,7 +610,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         </div>
         {!appSettings?.ai?.enabled && (
           <div className="text-xs text-warning mt-2">
-            ⚠️ AI功能未启用，请在设置中配置API后启用
+            {t('ai_panel.not_enabled_hint')}
           </div>
         )}
       </div>
