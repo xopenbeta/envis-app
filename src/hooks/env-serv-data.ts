@@ -117,6 +117,11 @@ export function useEnvironmentServiceData() {
             const newServiceData = result.data.serviceData
             setSelectedServiceDatas([newServiceData, ...serviceDatas])
             setSelectedServiceDataId(newServiceData.id) // 设置新添加的服务为选中状态
+            // 创建后立马尝试激活，如果失败则静默忽略（例如服务程序还没下载）
+            // 后续即使错误修复（如服务下载完成），也不会再自动激活
+            activateServiceData(environmentId, newServiceData, '').catch((e) => {
+                console.warn('创建后尝试激活失败，已忽略:', e)
+            })
             return newServiceData
         } else {
             console.error('创建服务失败:', result.message)
