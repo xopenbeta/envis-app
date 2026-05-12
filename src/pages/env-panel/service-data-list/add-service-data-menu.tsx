@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChevronDown } from 'lucide-react'
 
-import { serviceCategories, ServiceData, ServiceType } from '@/types/index'
+import { serviceCategories, ServiceData, ServiceType, EnvironmentStatus } from '@/types/index'
 import { useAtom } from 'jotai'
 import {
     CheckCircle,
@@ -31,7 +31,7 @@ import {
     selectedEnvironmentIdAtom,
 } from '@/store/environment'
 import { shouldDownloadServiceAtom } from '@/store/service'
-import { useEnvironment } from '@/hooks/environment'
+import { useEnvironmentStatus } from '@/hooks/useStatus'
 
 export function AddServiceMenu({ buttonType = "icon" }: {
     buttonType?: "icon" | "button";
@@ -39,7 +39,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     const { t } = useTranslation()
     const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
     const [, setShouldDownloadService] = useAtom(shouldDownloadServiceAtom)
-    const { activeEnvironment } = useEnvironment()
+    const { status: selectedEnvStatus } = useEnvironmentStatus(selectedEnvironmentId || '')
     const { createServiceData, activateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const { getServiceVersions, checkServiceInstalled, downloadService } = useService()
 
@@ -231,7 +231,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             if (isDownloaded) {
                 // 已下载，尝试激活服务
                 // 如果当前激活的环境就是所创建服务的环境
-                if (selectedEnvironmentId === activeEnvironment?.id) {
+                if (selectedEnvStatus === EnvironmentStatus.Active) {
                     await activateServiceData(selectedEnvironmentId, newServiceData, '')
                 }
             } else {

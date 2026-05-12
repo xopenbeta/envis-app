@@ -12,10 +12,6 @@ export function useEnvironment() {
   const [selectedServiceDatas, setSelectedServiceDatas] = useAtom(selectedServiceDatasAtom)
   const [, setSelectedServiceDataId] = useAtom(selectedServiceDataIdAtom)
 
-  const activeEnvironment = useMemo(() => {
-    return environments.find(env => env.status === EnvironmentStatus.Active) || null
-  }, [environments])
-
   const selectedEnvironment = useMemo(() => {
     return environments.find(env => env.id === selectedEnvironmentId) || null
   }, [environments, selectedEnvironmentId])
@@ -130,7 +126,6 @@ export function useEnvironment() {
   }
 
   return {
-    activeEnvironment,
     selectedEnvironment,
     deleteEnvironment,
     updateEnvironment,

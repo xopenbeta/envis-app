@@ -110,7 +110,7 @@ export function SortableServiceItem({
 
   const [showEnvironmentActivationDialog, setShowEnvironmentActivationDialog] = useState(false)
 
-  const { selectedEnvironment, activeEnvironment } = useEnvironment();
+  const { selectedEnvironment } = useEnvironment();
   const { cancelServiceDownload, downloadService } = useService();
   const { switchEnvAndServDatasThenActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
   const { status: environmentStatus } = useEnvironmentStatus(selectedEnvironmentId)
