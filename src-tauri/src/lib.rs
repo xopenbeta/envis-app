@@ -114,7 +114,7 @@ pub fn run() {
 
             log::info!("GUI 模式启动成功");
 
-            // 初始化状态事件推送模块
+            // 初始化状态事件推送模块（内含配置文件轮询，检测 CLI 对 active 字段的修改）
             status_events::init(app.handle().clone());
 
             // 设置系统托盘
