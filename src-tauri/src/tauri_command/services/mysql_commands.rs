@@ -57,6 +57,7 @@ pub async fn cancel_mysql_download(version: String) -> Result<CommandResponse, S
     let mysql_service = MysqlService::global();
     match mysql_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("mysql-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({
                 "cancelled": true
             });

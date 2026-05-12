@@ -1,4 +1,5 @@
 use envis_core::manager::app_config_manager::AppConfigManager;
+use envis_core::manager::services::DownloadManager;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -17,6 +18,7 @@ const SERVICE_CONFIG_FILE: &str = "service.json";
 pub fn init(handle: AppHandle) {
     let _ = APP_HANDLE.set(handle);
     start_config_watcher();
+    start_download_watcher();
 }
 
 fn emit(event: &str, payload: serde_json::Value) {
@@ -48,6 +50,14 @@ pub fn emit_service_status(environment_id: &str, service_id: &str, status: &str)
     emit(
         "status:service",
         serde_json::json!({ "environmentId": environment_id, "serviceId": service_id, "status": status }),
+    );
+}
+
+/// 推送服务下载状态变化事件，status 为 DownloadStatus 的小写字符串，progress 为 0-100
+pub fn emit_download_status(task_id: &str, status: &str, progress: f64) {
+    emit(
+        "status:download",
+        serde_json::json!({ "taskId": task_id, "status": status, "progress": progress }),
     );
 }
 
@@ -192,4 +202,43 @@ fn read_id_and_status_field(path: &Path) -> Option<(String, String)> {
     let id = value.get("id")?.as_str()?.to_string();
     let status = value.get("status")?.as_str()?.to_string();
     Some((id, status))
+}
+
+// ── 下载状态轮询 ────────────────────────────────────────────────────────────
+
+/// 启动下载状态轮询线程，每 500ms 检查 DownloadManager 中所有任务。
+/// 若任务的 (status, progress) 与上次快照不同，则向前端推送 `status:download` 事件。
+fn start_download_watcher() {
+    std::thread::spawn(|| {
+        // task_id -> (status_str, progress)
+        let mut snapshot: HashMap<String, (String, u64)> = HashMap::new();
+
+        loop {
+            std::thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
+
+            let tasks = DownloadManager::global().get_all_tasks();
+
+            for task in tasks {
+                let status_str = format!("{:?}", task.status).to_lowercase();
+                // 用整数进度（避免浮点比较问题）
+                let progress_int = task.progress as u64;
+                let key = task.id.clone();
+
+                let prev = snapshot.get(&key);
+                let changed = prev
+                    .map(|(s, p)| s != &status_str || *p != progress_int)
+                    .unwrap_or(true);
+
+                snapshot.insert(key, (status_str.clone(), progress_int));
+
+                if changed {
+                    log::debug!(
+                        "status_events: 下载状态变化 task_id={} status={} progress={:.1} → 推送事件",
+                        task.id, status_str, task.progress
+                    );
+                    emit_download_status(&task.id, &status_str, task.progress);
+                }
+            }
+        }
+    });
 }

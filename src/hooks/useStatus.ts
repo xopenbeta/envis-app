@@ -12,7 +12,6 @@ import {
 import { useEnvironmentServiceData, useServiceData } from './env-serv-data'
 import { useService } from './service'
 import { useEnvironment } from './environment'
-import { setImmediateInterval } from '@/utils/patch'
 
 interface PollingOptions {
   enabled?: boolean
@@ -260,16 +259,28 @@ export function useServiceDownloadStatus(
       return
     }
 
-    const timer = immediate
-      ? setImmediateInterval(() => {
-          void refresh()
-        }, interval)
-      : setInterval(() => {
-          void refresh()
-        }, interval)
+    // 初始化时立即主动请求一次当前下载状态
+    void refresh()
 
-    return () => clearInterval(timer)
-  }, [enabled, interval, immediate, serviceType, version])
+    // 监听 Rust 推送的下载状态变化事件，直接使用 payload 中的状态值
+    const taskId = `${serviceType}-${version}`
+    let cancelled = false
+    let unlistenFn: UnlistenFn | undefined
+    void listen<{ taskId: string; status: DownloadStatus; progress: number }>('status:download', (event) => {
+      if (event.payload.taskId === taskId) {
+        setDownloadStatus(event.payload.status)
+        setDownloadProgress(event.payload.progress)
+      }
+    }).then((fn) => {
+      if (cancelled) fn()
+      else unlistenFn = fn
+    })
+
+    return () => {
+      cancelled = true
+      unlistenFn?.()
+    }
+  }, [enabled, serviceType, version])
 
   return {
     downloadStatus,

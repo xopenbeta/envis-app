@@ -70,6 +70,7 @@ pub async fn cancel_download_nodejs(version: String) -> Result<CommandResponse, 
     let nodejs_service = NodejsService::global();
     match nodejs_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("nodejs-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({
                 "cancelled": true
             });

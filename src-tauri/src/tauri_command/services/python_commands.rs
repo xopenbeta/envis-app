@@ -83,6 +83,7 @@ pub async fn cancel_download_python(version: String) -> Result<CommandResponse, 
     let python_service = PythonService::global();
     match python_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("python-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({
                 "cancelled": true
             });

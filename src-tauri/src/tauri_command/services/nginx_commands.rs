@@ -178,6 +178,7 @@ pub async fn cancel_download_nginx(version: String) -> Result<CommandResponse, S
     let nginx_service = NginxService::global();
     match nginx_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("nginx-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({"cancelled": true});
             Ok(CommandResponse::success(
                 "Nginx 下载已取消".to_string(),

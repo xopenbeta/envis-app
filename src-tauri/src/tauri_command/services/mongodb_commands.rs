@@ -35,10 +35,13 @@ pub async fn download_mongodb(version: String) -> Result<CommandResponse, String
 pub async fn cancel_mongodb_download(version: String) -> Result<CommandResponse, String> {
     let service = MongodbService::global();
     match service.cancel_download(&version) {
-        Ok(_) => Ok(CommandResponse::success(
-            "MongoDB 下载已取消".to_string(),
-            Some(serde_json::json!({ "cancelled": true })),
-        )),
+        Ok(_) => {
+            crate::status_events::emit_download_status(&format!("mongodb-{}", version), "cancelled", 0.0);
+            Ok(CommandResponse::success(
+                "MongoDB 下载已取消".to_string(),
+                Some(serde_json::json!({ "cancelled": true })),
+            ))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "取消 MongoDB 下载失败: {}",
             e

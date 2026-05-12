@@ -59,6 +59,7 @@ pub async fn cancel_download_rust(version: String) -> Result<CommandResponse, St
     let rust_service = RustService::global();
     match rust_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("rust-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({
                 "cancelled": true
             });

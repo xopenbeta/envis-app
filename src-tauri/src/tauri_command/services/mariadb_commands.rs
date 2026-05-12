@@ -49,10 +49,13 @@ pub async fn download_mariadb(version: String) -> Result<CommandResponse, String
 pub async fn cancel_mariadb_download(version: String) -> Result<CommandResponse, String> {
     let service = MariadbService::global();
     match service.cancel_download(&version) {
-        Ok(_) => Ok(CommandResponse::success(
-            "MariaDB 下载已取消".to_string(),
-            Some(serde_json::json!({ "cancelled": true })),
-        )),
+        Ok(_) => {
+            crate::status_events::emit_download_status(&format!("mariadb-{}", version), "cancelled", 0.0);
+            Ok(CommandResponse::success(
+                "MariaDB 下载已取消".to_string(),
+                Some(serde_json::json!({ "cancelled": true })),
+            ))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "取消 MariaDB 下载失败: {}",
             e

@@ -59,6 +59,7 @@ pub async fn cancel_download_nasm(version: String) -> Result<CommandResponse, St
     let nasm_service = NasmService::global();
     match nasm_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("nasm-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({
                 "cancelled": true,
             });

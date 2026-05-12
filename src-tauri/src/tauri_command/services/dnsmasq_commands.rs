@@ -166,10 +166,13 @@ pub async fn download_dnsmasq(version: String) -> Result<CommandResponse, String
 pub async fn cancel_download_dnsmasq(version: String) -> Result<CommandResponse, String> {
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.cancel_download(&version) {
-        Ok(_) => Ok(CommandResponse::success(
-            "取消 Dnsmasq 下载成功".to_string(),
-            None,
-        )),
+        Ok(_) => {
+            crate::status_events::emit_download_status(&format!("dnsmasq-{}", version), "cancelled", 0.0);
+            Ok(CommandResponse::success(
+                "取消 Dnsmasq 下载成功".to_string(),
+                None,
+            ))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "取消 Dnsmasq 下载失败: {}",
             e

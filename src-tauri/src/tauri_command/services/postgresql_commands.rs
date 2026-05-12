@@ -100,6 +100,7 @@ pub async fn cancel_postgresql_download(version: String) -> Result<CommandRespon
     let postgresql_service = PostgresqlService::global();
     match postgresql_service.cancel_download(&version) {
         Ok(_) => {
+            crate::status_events::emit_download_status(&format!("postgresql-{}", version), "cancelled", 0.0);
             let data = serde_json::json!({
                 "cancelled": true
             });
