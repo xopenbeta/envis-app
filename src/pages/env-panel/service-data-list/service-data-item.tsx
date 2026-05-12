@@ -55,7 +55,7 @@ import { Input } from '@/components/ui/input'
 import { useSettings } from '@/hooks/appSettings'
 import { useFileOperations } from '@/hooks/file-operations'
 import { useEnvironment } from '@/hooks/environment'
-import { useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/useStatus'
+import { useEnvironmentStatus, useServiceDataStatus, useServiceDownloadStatus, useServiceStatus } from '@/hooks/useStatus'
 
 type PasswordProtectedActionResult = {
   success?: boolean
@@ -113,6 +113,7 @@ export function SortableServiceItem({
   const { selectedEnvironment, activeEnvironment } = useEnvironment();
   const { cancelServiceDownload, downloadService } = useService();
   const { switchEnvAndServDatasThenActive, deleteServiceData, activateServiceData, deactivateServiceData, updateServiceData, selectedServiceDatas } = useEnvironmentServiceData();
+  const { status: environmentStatus } = useEnvironmentStatus(selectedEnvironmentId)
   const { status: serviceStatus } = useServiceStatus(selectedEnvironmentId, serviceData, {
     enabled: CanRunServices.includes(serviceData.type),
     interval: 500,
@@ -190,7 +191,7 @@ export function SortableServiceItem({
     if (!selectedEnvironment) return;
 
     // 如果环境没有开启，需要先激活环境
-    if (selectedEnvironment.status !== EnvironmentStatus.Active) {
+    if (environmentStatus !== EnvironmentStatus.Active) {
       setShowEnvironmentActivationDialog(true)
       return
     }

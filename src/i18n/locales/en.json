@@ -143,6 +143,7 @@
     "create_env_log": "Create environment:",
     "create_env_error_log": "Failed to create environment:",
     "create_env_error": "Failed to create environment",
+    "env_created": "Environment created",
     "back_home": "Back to Home",
     "open_settings": "Open settings dialog",
     "open_terminal": "Open terminal",

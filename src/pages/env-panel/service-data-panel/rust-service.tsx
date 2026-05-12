@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useFileOperations } from "@/hooks/file-operations"
 import { useRustService } from "@/hooks/services/rust"
+import { useServiceDataStatus } from "@/hooks/useStatus"
 
 interface RustServiceProps {
     serviceData: ServiceData
@@ -38,7 +39,8 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
     const [rustHome, setRustHomeState] = useState('')
     const [cargoHome, setCargoHomeState] = useState('')
     const [isLoading, setIsLoading] = useState(false)
-    const isActive = serviceData.status === ServiceDataStatus.Active
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, { enabled: true })
+    const isActive = serviceDataStatus === ServiceDataStatus.Active
 
     useEffect(() => {
         setRustHomeState(serviceData.metadata?.RUST_HOME || '')

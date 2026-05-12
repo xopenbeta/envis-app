@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ServiceData, ServiceDataStatus } from '@/types/index'
 import { useCustomService } from '@/hooks/services/custom'
+import { useServiceDataStatus } from '@/hooks/useStatus'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,10 +15,11 @@ interface AutoChdirViewProps {
 
 export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirViewProps) {
     const { updateCustomServiceChdir, applyServiceMetadata } = useCustomService()
+    const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, { enabled: true })
     const [path, setPath] = useState('')
     const [enabled, setEnabled] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
-    const isServiceDataActive = serviceData.status === ServiceDataStatus.Active
+    const isServiceDataActive = serviceDataStatus === ServiceDataStatus.Active
 
     // 从 metadata 加载配置
     useEffect(() => {

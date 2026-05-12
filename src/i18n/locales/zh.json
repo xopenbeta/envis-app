@@ -143,6 +143,7 @@
     "create_env_log": "创建环境:",
     "create_env_error_log": "创建环境失败:",
     "create_env_error": "创建环境失败",
+    "env_created": "环境已创建",
     "back_home": "返回首页",
     "open_settings": "打开设置对话框",
     "open_terminal": "打开终端",
