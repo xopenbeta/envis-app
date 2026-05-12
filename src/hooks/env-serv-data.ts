@@ -2,7 +2,7 @@ import { AppSettings, CanRunServices, CannotRunServices, Environment, Environmen
 import { useAtom } from "jotai"
 import { toast } from 'sonner'
 import { ipcActivateServiceData, ipcCreateServiceData, ipcDeactivateServiceData, ipcDeleteServiceData, ipcGetEnvAllServDatas, ipcGetServiceData, ipcRestartServiceData, ipcUpdateServiceData, ipcStartServiceData, ipcStoppedServiceData } from "../ipc/env-serv-data"
-import { ipcGetAllEnvironments, ipcActivateEnvironmentAndServices, ipcDeactivateEnvironmentAndServices } from "../ipc/environment"
+import { ipcGetAllEnvironments, ipcActivateEnvironmentAndServices, ipcDeactivateEnvironmentAndServices, ipcSwitchEnvironmentAndServices } from "../ipc/environment"
 import { isAppLoadingAtom } from "../store/app"
 import { environmentsAtom, selectedEnvironmentIdAtom, selectedServiceDatasAtom, selectedServiceDataIdAtom, envActivationEventAtom } from "../store/environment"
 import { useSettings } from "./appSettings"
@@ -367,31 +367,38 @@ export function useEnvironmentServiceData() {
         await switchEnvAndServDatas(environment);
         console.log("zws switchEnvAndServDatasThenActive 切换环境状态3:", Date.now() - t);
         t = Date.now();
-        const currentLastUsedIds = getLastUsedEnvironmentIds(settings)
-        let nextLastUsedIds = [...currentLastUsedIds]
 
-        // 根据设置决定是否停用其他环境
         const shouldDeactivateOthers = settings.deactivateOtherEnvironmentsOnActivate ?? true;
+        const password = passwordOverride || getSudoPassword();
+
+        // 统一调用后端切换命令，Rust 侧负责停用其他环境并发送事件
+        const switchRes = await ipcSwitchEnvironmentAndServices(
+            currentSelectedEnvironmentId,
+            password,
+            shouldDeactivateOthers,
+        );
+
+        if (switchRes.success) {
+            // 触发事件通知所有 service-data-item 更新状态
+            setEnvActivationEvent(Date.now())
+        } else {
+            console.error(`切换环境失败: ${switchRes.message}`)
+        }
+
+        // 更新最近使用记录
+        const currentLastUsedIds = getLastUsedEnvironmentIds(settings)
+        let nextLastUsedIds: string[]
         if (shouldDeactivateOthers) {
-            for (const environment of environments) {
-                if (environment.id !== currentSelectedEnvironmentId) {
-                    await deactivateEnvAndServDatas(environment, passwordOverride)
-                }
-            }
             nextLastUsedIds = [environment.id]
         } else {
             const filtered = currentLastUsedIds.filter(id => id !== environment.id)
             nextLastUsedIds = [...filtered, environment.id]
         }
         await setLastUsedEnvironmentIds(nextLastUsedIds, settings)
+
         console.log("zws switchEnvAndServDatasThenActive 切换环境状态4:", Date.now() - t);
         t = Date.now();
-        // 激活环境
-        await activateEnvAndServDatas(environment, passwordOverride)
-        console.log("zws switchEnvAndServDatasThenActive 切换环境状态5:", Date.now() - t);
-        t = Date.now();
         console.log('激活环境:', environment.name)
-
 
         isActiveFinish = true;
         if (loadingTimer) {
@@ -399,7 +406,7 @@ export function useEnvironmentServiceData() {
         }
         setIsAppLoading(false);
 
-        return { success: true };
+        return { success: switchRes.success };
     }
 
     return {

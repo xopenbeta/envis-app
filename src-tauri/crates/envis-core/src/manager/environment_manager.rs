@@ -22,6 +22,17 @@ pub struct EnvironmentResult {
     pub data: Option<serde_json::Value>,
 }
 
+/// 切换环境操作结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwitchEnvironmentResult {
+    pub success: bool,
+    pub message: String,
+    /// 已激活的目标环境 ID
+    pub activated_environment_id: String,
+    /// 本次被停用的其他环境 ID 列表
+    pub deactivated_environment_ids: Vec<String>,
+}
+
 /// 活跃环境信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -437,6 +448,58 @@ impl EnvironmentManager {
         }
 
         Ok(result)
+    }
+
+    /// 切换到目标环境（停用其他活跃环境后激活目标环境）。
+    ///
+    /// - `deactivate_others`：是否先停用所有其他活跃环境（CLI 始终传 `true`；
+    ///   GUI 根据 `deactivate_other_environments_on_activate` 配置决定）。
+    ///
+    /// 返回 [`SwitchEnvironmentResult`]，包含被停用的环境 ID 列表，
+    /// 供调用方（Tauri 命令）批量发送状态事件。
+    pub fn switch_environment_and_services(
+        &self,
+        target_environment_id: &str,
+        password: Option<String>,
+        deactivate_others: bool,
+    ) -> Result<SwitchEnvironmentResult> {
+        // 1. 找到目标环境
+        let mut all_environments = self.get_all_environments()?;
+        let target_idx = all_environments
+            .iter()
+            .position(|e| e.id == target_environment_id)
+            .ok_or_else(|| {
+                anyhow!("未找到 ID 为 '{}' 的环境", target_environment_id)
+            })?;
+
+        let mut deactivated_environment_ids: Vec<String> = Vec::new();
+
+        // 2. 停用其他活跃环境（按需）
+        if deactivate_others {
+            for (i, env) in all_environments.iter_mut().enumerate() {
+                if i != target_idx && env.status == EnvironmentStatus::Active {
+                    let env_id = env.id.clone();
+                    if let Err(e) =
+                        self.deactivate_environment_and_services(env, password.clone())
+                    {
+                        log::warn!("切换环境时停用环境 {} 失败（非致命）: {}", env_id, e);
+                    }
+                    // 不管 success 字段，只要没有 Err 说明状态已改变
+                    deactivated_environment_ids.push(env_id);
+                }
+            }
+        }
+
+        // 3. 激活目标环境
+        let mut target_env = all_environments[target_idx].clone();
+        let activate_result = self.activate_environment_and_services(&mut target_env, password)?;
+
+        Ok(SwitchEnvironmentResult {
+            success: activate_result.success,
+            message: activate_result.message,
+            activated_environment_id: target_environment_id.to_string(),
+            deactivated_environment_ids,
+        })
     }
 
     /// 从文件加载环境配置

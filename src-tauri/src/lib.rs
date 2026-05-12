@@ -1,3 +1,4 @@
+mod status_events;
 mod tauri_command;
 mod tray;
 mod window;
@@ -113,6 +114,9 @@ pub fn run() {
 
             log::info!("GUI 模式启动成功");
 
+            // 初始化状态事件推送模块
+            status_events::init(app.handle().clone());
+
             // 设置系统托盘
             if let Err(e) = tray::setup_tray(app.handle()) {
                 log::error!("设置系统托盘失败: {}", e);
@@ -149,6 +153,7 @@ pub fn run() {
             activate_environment_and_services,
             deactivate_environment,
             deactivate_environment_and_services,
+            switch_environment_and_services,
             export_environment_data,
             import_environment_data,
             // 环境服务数据相关命令

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use envis_core::manager::env_serv_data_manager::EnvServDataManager;
 use envis_core::manager::environment_manager::EnvironmentManager;
 use envis_core::manager::export_import;
 use envis_core::types::Environment;
@@ -175,7 +176,11 @@ pub async fn activate_environment(
     let manager = manager.lock().unwrap();
 
     match manager.activate_environment(&mut environment) {
-        Ok(result) => Ok(result.into()),
+        Ok(result) => {
+            // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
+            crate::status_events::emit_environment_status(&environment.id);
+            Ok(result.into())
+        }
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,
             message: e.to_string(),
@@ -190,11 +195,29 @@ pub async fn activate_environment_and_services(
     mut environment: Environment,
     password: Option<String>,
 ) -> Result<EnvironmentCommandResult, String> {
-    let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let result = {
+        let manager = EnvironmentManager::global();
+        let manager = manager.lock().unwrap();
+        manager.activate_environment_and_services(&mut environment, password)
+    };
 
-    match manager.activate_environment_and_services(&mut environment, password) {
-        Ok(result) => Ok(result.into()),
+    match result {
+        Ok(result) => {
+            // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
+            let env_id = environment.id.clone();
+            crate::status_events::emit_environment_status(&env_id);
+            // 推送每个服务数据的激活状态（服务状态可能部分成功，全量刷新）
+            if let Ok(sd_manager) = EnvServDataManager::global().lock() {
+                if let Ok(service_datas) =
+                    sd_manager.get_environment_all_service_datas(&env_id)
+                {
+                    for sd in &service_datas {
+                        crate::status_events::emit_service_data_status(&env_id, &sd.id);
+                    }
+                }
+            }
+            Ok(result.into())
+        }
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,
             message: e.to_string(),
@@ -212,7 +235,11 @@ pub async fn deactivate_environment(
     let manager = manager.lock().unwrap();
 
     match manager.deactivate_environment(&mut environment) {
-        Ok(result) => Ok(result.into()),
+        Ok(result) => {
+            // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
+            crate::status_events::emit_environment_status(&environment.id);
+            Ok(result.into())
+        }
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,
             message: e.to_string(),
@@ -227,11 +254,90 @@ pub async fn deactivate_environment_and_services(
     mut environment: Environment,
     password: Option<String>,
 ) -> Result<EnvironmentCommandResult, String> {
-    let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let result = {
+        let manager = EnvironmentManager::global();
+        let manager = manager.lock().unwrap();
+        manager.deactivate_environment_and_services(&mut environment, password)
+    };
 
-    match manager.deactivate_environment_and_services(&mut environment, password) {
-        Ok(result) => Ok(result.into()),
+    match result {
+        Ok(result) => {
+            // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
+            let env_id = environment.id.clone();
+            crate::status_events::emit_environment_status(&env_id);
+            // 推送每个服务数据的停用状态（服务状态可能部分成功，全量刷新）
+            if let Ok(sd_manager) = EnvServDataManager::global().lock() {
+                if let Ok(service_datas) =
+                    sd_manager.get_environment_all_service_datas(&env_id)
+                {
+                    for sd in &service_datas {
+                        crate::status_events::emit_service_data_status(&env_id, &sd.id);
+                    }
+                }
+            }
+            Ok(result.into())
+        }
+        Err(e) => Ok(EnvironmentCommandResult {
+            success: false,
+            message: e.to_string(),
+            data: None,
+        }),
+    }
+}
+
+/// 切换到目标环境（可选：同时停用其他活跃环境）
+///
+/// `deactivate_others` 对应 GUI 设置项"激活环境时禁用其他环境"，
+/// CLI 调用时始终传 `true`，GUI 根据用户配置传入。
+#[tauri::command]
+pub async fn switch_environment_and_services(
+    environment_id: String,
+    password: Option<String>,
+    deactivate_others: bool,
+) -> Result<EnvironmentCommandResult, String> {
+    let result = {
+        let manager = EnvironmentManager::global();
+        let manager = manager.lock().unwrap();
+        manager.switch_environment_and_services(&environment_id, password, deactivate_others)
+    };
+
+    match result {
+        Ok(res) => {
+            // 推送被停用的其他环境事件
+            for deactivated_id in &res.deactivated_environment_ids {
+                crate::status_events::emit_environment_status(deactivated_id);
+                // 同时推送被停用环境下所有服务数据的状态变化
+                if let Ok(sd_manager) = EnvServDataManager::global().lock() {
+                    if let Ok(service_datas) =
+                        sd_manager.get_environment_all_service_datas(deactivated_id)
+                    {
+                        for sd in &service_datas {
+                            crate::status_events::emit_service_data_status(deactivated_id, &sd.id);
+                        }
+                    }
+                }
+            }
+            // 推送目标环境激活事件
+            crate::status_events::emit_environment_status(&res.activated_environment_id);
+            if let Ok(sd_manager) = EnvServDataManager::global().lock() {
+                if let Ok(service_datas) = sd_manager
+                    .get_environment_all_service_datas(&res.activated_environment_id)
+                {
+                    for sd in &service_datas {
+                        crate::status_events::emit_service_data_status(
+                            &res.activated_environment_id,
+                            &sd.id,
+                        );
+                    }
+                }
+            }
+
+            Ok(EnvironmentCommandResult {
+                success: res.success,
+                message: res.message,
+                data: None,
+            })
+        }
         Err(e) => Ok(EnvironmentCommandResult {
             success: false,
             message: e.to_string(),

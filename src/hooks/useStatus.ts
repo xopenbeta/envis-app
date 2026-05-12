@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import {
   DownloadStatus,
   EnvironmentStatus,
@@ -15,8 +16,10 @@ import { setImmediateInterval } from '@/utils/patch'
 
 interface PollingOptions {
   enabled?: boolean
+  /** @deprecated 事件驱动模式下忽略此参数，保留以兼容已有调用方 */
   interval?: number
-  immediate?: boolean
+  /** @deprecated 事件驱动模式下忽略此参数，保留以兼容已有调用方 */
+  immediate?: number
 }
 
 const DEFAULT_INTERVAL = 500
@@ -27,8 +30,6 @@ export function useEnvironmentStatus(
 ) {
   const { getEnvironment } = useEnvironment()
   const enabled = options.enabled ?? true
-  const interval = options.interval ?? DEFAULT_INTERVAL
-  const immediate = options.immediate ?? true
   const [status, setStatus] = useState<EnvironmentStatus>(EnvironmentStatus.Inactive)
   const isRefreshingRef = useRef(false)
 
@@ -41,7 +42,7 @@ export function useEnvironmentStatus(
         setStatus(result.data.environment.status)
       }
     } catch (error) {
-      console.error('轮询环境状态失败:', error)
+      console.error('获取环境状态失败:', error)
     } finally {
       isRefreshingRef.current = false
     }
@@ -53,16 +54,26 @@ export function useEnvironmentStatus(
       return
     }
 
-    const timer = immediate
-      ? setImmediateInterval(() => {
-          void refresh()
-        }, interval)
-      : setInterval(() => {
-          void refresh()
-        }, interval)
+    // 初始化时立即拉取一次当前状态
+    void refresh()
 
-    return () => clearInterval(timer)
-  }, [enabled, interval, immediate, environmentId])
+    // 监听 Rust 推送的环境状态变化事件
+    let cancelled = false
+    let unlistenFn: UnlistenFn | undefined
+    void listen<{ environmentId: string }>('status:environment', (event) => {
+      if (event.payload.environmentId === environmentId) {
+        void refresh()
+      }
+    }).then((fn) => {
+      if (cancelled) fn()
+      else unlistenFn = fn
+    })
+
+    return () => {
+      cancelled = true
+      unlistenFn?.()
+    }
+  }, [enabled, environmentId])
 
   return {
     status,
@@ -77,8 +88,6 @@ export function useServiceStatus(
 ) {
   const { getServiceStatus } = useEnvironmentServiceData()
   const enabled = options.enabled ?? true
-  const interval = options.interval ?? DEFAULT_INTERVAL
-  const immediate = options.immediate ?? true
   const [status, setStatus] = useState<ServiceStatus>(ServiceStatus.Unknown)
   const isRefreshingRef = useRef(false)
 
@@ -91,7 +100,7 @@ export function useServiceStatus(
         setStatus(result.data.status)
       }
     } catch (error) {
-      console.error('轮询服务程序状态失败:', error)
+      console.error('获取服务程序状态失败:', error)
     } finally {
       isRefreshingRef.current = false
     }
@@ -103,16 +112,29 @@ export function useServiceStatus(
       return
     }
 
-    const timer = immediate
-      ? setImmediateInterval(() => {
-          void refresh()
-        }, interval)
-      : setInterval(() => {
-          void refresh()
-        }, interval)
+    // 初始化时立即拉取一次当前状态
+    void refresh()
 
-    return () => clearInterval(timer)
-  }, [enabled, interval, immediate, environmentId, serviceData.id, serviceData.version, serviceData.type])
+    // 监听 Rust 推送的服务运行状态变化事件
+    let cancelled = false
+    let unlistenFn: UnlistenFn | undefined
+    void listen<{ environmentId: string; serviceId: string }>('status:service', (event) => {
+      if (
+        event.payload.environmentId === environmentId &&
+        event.payload.serviceId === serviceData.id
+      ) {
+        void refresh()
+      }
+    }).then((fn) => {
+      if (cancelled) fn()
+      else unlistenFn = fn
+    })
+
+    return () => {
+      cancelled = true
+      unlistenFn?.()
+    }
+  }, [enabled, environmentId, serviceData.id, serviceData.version, serviceData.type])
 
   return {
     status,
@@ -127,8 +149,6 @@ export function useServiceDataStatus(
 ) {
   const { getServiceData } = useServiceData()
   const enabled = options.enabled ?? true
-  const interval = options.interval ?? DEFAULT_INTERVAL
-  const immediate = options.immediate ?? true
   const [serviceDataStatus, setServiceDataStatus] = useState<ServiceDataStatus>(ServiceDataStatus.Unknown)
   const isRefreshingRef = useRef(false)
 
@@ -141,7 +161,7 @@ export function useServiceDataStatus(
         setServiceDataStatus(result.data.serviceData.status)
       }
     } catch (error) {
-      console.error('轮询服务激活状态失败:', error)
+      console.error('获取服务激活状态失败:', error)
     } finally {
       isRefreshingRef.current = false
     }
@@ -153,16 +173,29 @@ export function useServiceDataStatus(
       return
     }
 
-    const timer = immediate
-      ? setImmediateInterval(() => {
-          void refresh()
-        }, interval)
-      : setInterval(() => {
-          void refresh()
-        }, interval)
+    // 初始化时立即拉取一次当前状态
+    void refresh()
 
-    return () => clearInterval(timer)
-  }, [enabled, interval, immediate, environmentId, serviceId])
+    // 监听 Rust 推送的服务数据激活状态变化事件
+    let cancelled = false
+    let unlistenFn: UnlistenFn | undefined
+    void listen<{ environmentId: string; serviceId: string }>('status:service-data', (event) => {
+      if (
+        event.payload.environmentId === environmentId &&
+        event.payload.serviceId === serviceId
+      ) {
+        void refresh()
+      }
+    }).then((fn) => {
+      if (cancelled) fn()
+      else unlistenFn = fn
+    })
+
+    return () => {
+      cancelled = true
+      unlistenFn?.()
+    }
+  }, [enabled, environmentId, serviceId])
 
   return {
     serviceDataStatus,
@@ -178,7 +211,7 @@ export function useServiceDownloadStatus(
 ) {
   const { checkServiceInstalled, getServiceDownloadProgress } = useService()
   const enabled = options.enabled ?? true
-  const interval = options.interval ?? DEFAULT_INTERVAL
+  const interval = typeof options.interval === 'number' ? options.interval : DEFAULT_INTERVAL
   const immediate = options.immediate ?? true
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(DownloadStatus.Unknown)
   const [downloadProgress, setDownloadProgress] = useState(0)
@@ -244,3 +277,4 @@ export function useServiceDownloadStatus(
     refresh,
   }
 }
+

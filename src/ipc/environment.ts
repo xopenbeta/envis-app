@@ -53,6 +53,10 @@ export const ipcDeactivateEnvironmentAndServices = ipcLogFunc('停用环境及�
     return invokeCommand('deactivate_environment_and_services', { environment, password })
 })
 
+export const ipcSwitchEnvironmentAndServices = ipcLogFunc('切换环境', async (environmentId: string, password?: string, deactivateOthers = true): Promise<IPCResult<undefined>> => {
+    return invokeCommand('switch_environment_and_services', { environmentId, password, deactivateOthers })
+})
+
 export const ipcExportEnvironmentData = ipcLogFunc('导出环境数据', async (environmentId: string): Promise<IPCResult<{ json: string }>> => {
     return invokeCommand('export_environment_data', { environmentId })
 })

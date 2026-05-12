@@ -251,6 +251,7 @@ pub async fn start_postgresql_service(
     match postgresql_service.start_service(&environment_id, &service_data) {
         Ok(result) => {
             if result.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
                 Ok(CommandResponse::success(result.message, result.data))
             } else {
                 Ok(CommandResponse::error(result.message))
@@ -273,6 +274,7 @@ pub async fn stop_postgresql_service(
     match postgresql_service.stop_service(&environment_id, &service_data) {
         Ok(result) => {
             if result.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
                 Ok(CommandResponse::success(result.message, result.data))
             } else {
                 Ok(CommandResponse::error(result.message))
@@ -295,6 +297,7 @@ pub async fn restart_postgresql_service(
     match postgresql_service.restart_service(&environment_id, &service_data) {
         Ok(result) => {
             if result.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
                 Ok(CommandResponse::success(result.message, result.data))
             } else {
                 Ok(CommandResponse::error(result.message))

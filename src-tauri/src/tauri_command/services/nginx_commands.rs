@@ -58,13 +58,14 @@ pub async fn get_nginx_config(
 /// 启动 Nginx 服务
 #[tauri::command]
 pub async fn start_nginx_service(
-    _environment_id: String,
+    environment_id: String,
     service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let nginx_service = NginxService::global();
     match nginx_service.start_service(&service_data) {
         Ok(result) => {
             if result.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
                 Ok(CommandResponse::success(result.message, result.data))
             } else {
                 Ok(CommandResponse::error(result.message))
@@ -80,15 +81,15 @@ pub async fn start_nginx_service(
 /// 停止 Nginx 服务
 #[tauri::command]
 pub async fn stop_nginx_service(
-    _environment_id: String,
+    environment_id: String,
     service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let nginx_service = NginxService::global();
     match nginx_service.stop_service(&service_data) {
-        Ok(_) => Ok(CommandResponse::success(
-            "Nginx 服务停止成功".to_string(),
-            None,
-        )),
+        Ok(_) => {
+            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            Ok(CommandResponse::success("Nginx 服务停止成功".to_string(), None))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "停止 Nginx 服务失败: {}",
             e
@@ -99,15 +100,15 @@ pub async fn stop_nginx_service(
 /// 重启 Nginx 服务
 #[tauri::command]
 pub async fn restart_nginx_service(
-    _environment_id: String,
+    environment_id: String,
     service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let nginx_service = NginxService::global();
     match nginx_service.restart_service(&service_data) {
-        Ok(_) => Ok(CommandResponse::success(
-            "Nginx 服务重启成功".to_string(),
-            None,
-        )),
+        Ok(_) => {
+            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            Ok(CommandResponse::success("Nginx 服务重启成功".to_string(), None))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "重启 Nginx 服务失败: {}",
             e

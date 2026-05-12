@@ -85,7 +85,12 @@ pub async fn start_redis_service(
 ) -> Result<CommandResponse, String> {
     let service = RedisService::global();
     match service.start_service(&environment_id, &service_data) {
-        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Ok(res) => {
+            if res.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            }
+            Ok(CommandResponse::success(res.message, res.data))
+        }
         Err(e) => Ok(CommandResponse::error(format!("启动 Redis 失败: {}", e))),
     }
 }
@@ -97,7 +102,12 @@ pub async fn stop_redis_service(
 ) -> Result<CommandResponse, String> {
     let service = RedisService::global();
     match service.stop_service(&environment_id, &service_data) {
-        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Ok(res) => {
+            if res.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            }
+            Ok(CommandResponse::success(res.message, res.data))
+        }
         Err(e) => Ok(CommandResponse::error(format!("停止 Redis 失败: {}", e))),
     }
 }
@@ -109,7 +119,12 @@ pub async fn restart_redis_service(
 ) -> Result<CommandResponse, String> {
     let service = RedisService::global();
     match service.restart_service(&environment_id, &service_data) {
-        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Ok(res) => {
+            if res.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            }
+            Ok(CommandResponse::success(res.message, res.data))
+        }
         Err(e) => Ok(CommandResponse::error(format!("重启 Redis 失败: {}", e))),
     }
 }

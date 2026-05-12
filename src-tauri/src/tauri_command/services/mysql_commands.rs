@@ -110,7 +110,12 @@ pub async fn start_mysql_service(
 ) -> Result<CommandResponse, String> {
     let service = MysqlService::global();
     match service.start_service(&environment_id, &service_data) {
-        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Ok(res) => {
+            if res.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            }
+            Ok(CommandResponse::success(res.message, res.data))
+        }
         Err(e) => Ok(CommandResponse::error(format!("启动失败: {}", e))),
     }
 }
@@ -123,7 +128,12 @@ pub async fn stop_mysql_service(
 ) -> Result<CommandResponse, String> {
     let service = MysqlService::global();
     match service.stop_service(&environment_id, &service_data) {
-        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Ok(res) => {
+            if res.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            }
+            Ok(CommandResponse::success(res.message, res.data))
+        }
         Err(e) => Ok(CommandResponse::error(format!("停止失败: {}", e))),
     }
 }
@@ -136,7 +146,12 @@ pub async fn restart_mysql_service(
 ) -> Result<CommandResponse, String> {
     let service = MysqlService::global();
     match service.restart_service(&environment_id, &service_data) {
-        Ok(res) => Ok(CommandResponse::success(res.message, res.data)),
+        Ok(res) => {
+            if res.success {
+                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            }
+            Ok(CommandResponse::success(res.message, res.data))
+        }
         Err(e) => Ok(CommandResponse::error(format!("重启失败: {}", e))),
     }
 }

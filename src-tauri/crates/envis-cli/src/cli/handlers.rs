@@ -42,71 +42,53 @@ pub fn handle_use_early(target_str: &str) {
     let manager = EnvironmentManager::global();
     let manager = manager.lock().unwrap();
 
-    // 1. 获取所有环境
-    let mut environments = match manager.get_all_environments() {
-        Ok(envs) => envs,
+    // 1. 查找目标环境（优先精确匹配 ID，然后精确匹配 Name）
+    let target_environment_id = match manager.get_all_environments() {
+        Ok(envs) => {
+            envs.iter()
+                .find(|e| e.id == target_str)
+                .or_else(|| envs.iter().find(|e| e.name == target_str))
+                .map(|e| e.id.clone())
+                .unwrap_or_else(|| {
+                    eprintln!("错误: 未找到名称或 ID 为 '{}' 的环境", target_str);
+                    std::process::exit(1);
+                })
+        }
         Err(e) => {
             eprintln!("错误: 无法获取环境列表: {}", e);
             std::process::exit(1);
         }
     };
 
-    // 2. 查找目标环境
-    // 优先精确匹配 ID，然后精确匹配 Name
-    let target_idx = environments
-        .iter()
-        .position(|e| e.id == target_str)
-        .or_else(|| environments.iter().position(|e| e.name == target_str));
+    // 2. 打印提示
+    println!("正在激活环境: {} ...", target_str);
 
-    if let Some(idx) = target_idx {
-        let mut target_env = environments[idx].clone();
-
-        println!("正在激活环境: {} ({}) ...", target_env.name, target_env.id);
-
-        // 3. 停用其他活跃环境 (复用既有 deactive 逻辑，统一停服务+状态持久化)
-        for (i, env) in environments.iter_mut().enumerate() {
-            if i != idx && env.status == EnvironmentStatus::Active {
-                if let Err(e) = manager.deactivate_environment_and_services(env, None) {
+    // 3. 统一调用 core 的切换逻辑（始终停用其他活跃环境）
+    match manager.switch_environment_and_services(&target_environment_id, None, true) {
+        Ok(res) => {
+            let activated = res.success || res.message.contains("环境已激活");
+            if activated {
+                if !res.success {
+                    eprintln!("警告: {}", res.message);
+                }
+                let active_environment_ids =
+                    collect_active_environment_ids(&manager, &target_environment_id);
+                if let Err(e) = persist_last_used_environment_ids(active_environment_ids) {
                     eprintln!(
-                        "警告: 无法停用并停止原环境 {} 的服务 (非致命错误): {}",
-                        env.name, e
+                        "警告: 环境已激活，但更新上次使用环境记录失败，UI 下次启动可能无法正确恢复: {}",
+                        e
                     );
                 }
-            }
-        }
-
-        // 4. 激活目标环境
-        match manager.activate_environment_and_services(&mut target_env, None) {
-            Ok(res) => {
-                // 环境本身已激活（即使部分服务启动失败），均视为成功并持久化记录
-                // 这样 shell wrapper 能正常执行 source，刷新环境变量
-                let activated = res.success || res.message.contains("环境已激活");
-                if activated {
-                    if !res.success {
-                        eprintln!("警告: {}", res.message);
-                    }
-                    let active_environment_ids =
-                        collect_active_environment_ids(&manager, &target_env.id);
-                    if let Err(e) = persist_last_used_environment_ids(active_environment_ids) {
-                        eprintln!(
-                            "警告: 环境已激活，但更新上次使用环境记录失败，UI 下次启动可能无法正确恢复: {}",
-                            e
-                        );
-                    }
-                    println!("✓ 成功激活环境: {}", target_env.name);
-                } else {
-                    eprintln!("错误: {}", res.message);
-                    std::process::exit(1);
-                }
-            }
-            Err(e) => {
-                eprintln!("错误: 激活环境失败: {}", e);
+                println!("✓ 成功激活环境: {}", target_str);
+            } else {
+                eprintln!("错误: {}", res.message);
                 std::process::exit(1);
             }
         }
-    } else {
-        eprintln!("错误: 未找到名称或 ID 为 '{}' 的环境", target_str);
-        std::process::exit(1);
+        Err(e) => {
+            eprintln!("错误: 激活环境失败: {}", e);
+            std::process::exit(1);
+        }
     }
 }
 

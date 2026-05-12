@@ -108,7 +108,11 @@ pub async fn active_service_data(
     let manager = EnvServDataManager::global();
     let manager = manager.lock().unwrap();
     match manager.active_service_data(&environment_id, &mut service_data, password) {
-        Ok(result) => Ok(serde_json::to_value(result).map_err(|e| e.to_string())?),
+        Ok(result) => {
+            // 服务数据状态已变更，始终推送事件
+            crate::status_events::emit_service_data_status(&environment_id, &service_data.id);
+            Ok(serde_json::to_value(result).map_err(|e| e.to_string())?)
+        }
         Err(e) => Ok(serde_json::json!({
             "success": false,
             "message": e.to_string()
@@ -126,7 +130,11 @@ pub async fn deactive_service_data(
     let manager = EnvServDataManager::global();
     let manager = manager.lock().unwrap();
     match manager.deactive_service_data(&environment_id, &mut service_data, password) {
-        Ok(result) => Ok(serde_json::to_value(result).map_err(|e| e.to_string())?),
+        Ok(result) => {
+            // 服务数据状态已变更，始终推送事件
+            crate::status_events::emit_service_data_status(&environment_id, &service_data.id);
+            Ok(serde_json::to_value(result).map_err(|e| e.to_string())?)
+        }
         Err(e) => Ok(serde_json::json!({
             "success": false,
             "message": e.to_string()

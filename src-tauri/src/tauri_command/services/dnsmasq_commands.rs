@@ -54,15 +54,15 @@ pub async fn get_dnsmasq_config(
 /// 启动 Dnsmasq 服务
 #[tauri::command]
 pub async fn start_dnsmasq_service(
-    _environment_id: String,
+    environment_id: String,
     service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.start_service(&service_data) {
-        Ok(_) => Ok(CommandResponse::success(
-            "Dnsmasq 服务启动成功".to_string(),
-            None,
-        )),
+        Ok(_) => {
+            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            Ok(CommandResponse::success("Dnsmasq 服务启动成功".to_string(), None))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "启动 Dnsmasq 服务失败: {}",
             e
@@ -73,15 +73,15 @@ pub async fn start_dnsmasq_service(
 /// 停止 Dnsmasq 服务
 #[tauri::command]
 pub async fn stop_dnsmasq_service(
-    _environment_id: String,
+    environment_id: String,
     service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.stop_service(&service_data) {
-        Ok(_) => Ok(CommandResponse::success(
-            "Dnsmasq 服务停止成功".to_string(),
-            None,
-        )),
+        Ok(_) => {
+            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            Ok(CommandResponse::success("Dnsmasq 服务停止成功".to_string(), None))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "停止 Dnsmasq 服务失败: {}",
             e
@@ -92,15 +92,15 @@ pub async fn stop_dnsmasq_service(
 /// 重启 Dnsmasq 服务
 #[tauri::command]
 pub async fn restart_dnsmasq_service(
-    _environment_id: String,
+    environment_id: String,
     service_data: ServiceData,
 ) -> Result<CommandResponse, String> {
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.restart_service(&service_data) {
-        Ok(_) => Ok(CommandResponse::success(
-            "Dnsmasq 服务重启成功".to_string(),
-            None,
-        )),
+        Ok(_) => {
+            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            Ok(CommandResponse::success("Dnsmasq 服务重启成功".to_string(), None))
+        }
         Err(e) => Ok(CommandResponse::error(format!(
             "重启 Dnsmasq 服务失败: {}",
             e
