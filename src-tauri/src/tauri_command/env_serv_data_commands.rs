@@ -110,7 +110,7 @@ pub async fn active_service_data(
     match manager.active_service_data(&environment_id, &mut service_data, password) {
         Ok(result) => {
             // 服务数据状态已变更，始终推送事件
-            crate::status_events::emit_service_data_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_data_status(&environment_id, &service_data.id, "active");
             Ok(serde_json::to_value(result).map_err(|e| e.to_string())?)
         }
         Err(e) => Ok(serde_json::json!({
@@ -132,7 +132,7 @@ pub async fn deactive_service_data(
     match manager.deactive_service_data(&environment_id, &mut service_data, password) {
         Ok(result) => {
             // 服务数据状态已变更，始终推送事件
-            crate::status_events::emit_service_data_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_data_status(&environment_id, &service_data.id, "inactive");
             Ok(serde_json::to_value(result).map_err(|e| e.to_string())?)
         }
         Err(e) => Ok(serde_json::json!({

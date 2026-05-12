@@ -8,7 +8,7 @@ use tauri::{AppHandle, Emitter};
 
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
-const POLL_INTERVAL_SECS: u64 = 3;
+const POLL_INTERVAL_MS: u64 = 500;
 const ENV_CONFIG_FILE: &str = "environment.json";
 const SERVICE_CONFIG_FILE: &str = "service.json";
 
@@ -27,27 +27,27 @@ fn emit(event: &str, payload: serde_json::Value) {
     }
 }
 
-/// 推送环境状态变化事件（激活 / 停用）
-pub fn emit_environment_status(environment_id: &str) {
+/// 推送环境状态变化事件（激活 / 停用），status 为 "active" 或 "inactive"
+pub fn emit_environment_status(environment_id: &str, status: &str) {
     emit(
         "status:environment",
-        serde_json::json!({ "environmentId": environment_id }),
+        serde_json::json!({ "environmentId": environment_id, "status": status }),
     );
 }
 
-/// 推送服务数据激活状态变化事件（激活 / 停用）
-pub fn emit_service_data_status(environment_id: &str, service_id: &str) {
+/// 推送服务数据激活状态变化事件（激活 / 停用），status 为 "active" 或 "inactive"
+pub fn emit_service_data_status(environment_id: &str, service_id: &str, status: &str) {
     emit(
         "status:service-data",
-        serde_json::json!({ "environmentId": environment_id, "serviceId": service_id }),
+        serde_json::json!({ "environmentId": environment_id, "serviceId": service_id, "status": status }),
     );
 }
 
-/// 推送服务运行状态变化事件（启动 / 停止 / 重启）
-pub fn emit_service_status(environment_id: &str, service_id: &str) {
+/// 推送服务运行状态变化事件（启动 / 停止 / 重启），status 为 "running" 或 "stopped"
+pub fn emit_service_status(environment_id: &str, service_id: &str, status: &str) {
     emit(
         "status:service",
-        serde_json::json!({ "environmentId": environment_id, "serviceId": service_id }),
+        serde_json::json!({ "environmentId": environment_id, "serviceId": service_id, "status": status }),
     );
 }
 
@@ -64,7 +64,7 @@ fn start_config_watcher() {
         let mut svc_snapshot: HashMap<(String, String), String> = HashMap::new();
 
         loop {
-            std::thread::sleep(Duration::from_secs(POLL_INTERVAL_SECS));
+            std::thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
 
             let envs_folder = {
                 let global = AppConfigManager::global();
@@ -110,14 +110,14 @@ fn start_config_watcher() {
                         let changed = prev.map(|p| p != &status).unwrap_or(false);
                         let is_first = prev.is_none();
 
-                        env_snapshot.insert(env_id.clone(), status);
+                        env_snapshot.insert(env_id.clone(), status.clone());
 
                         if changed && !is_first {
                             log::debug!(
-                                "status_events: 环境状态变化 env_id={} → 推送事件",
-                                env_id
+                                "status_events: 环境状态变化 env_id={} status={} → 推送事件",
+                                env_id, status
                             );
-                            emit_environment_status(&env_id);
+                            emit_environment_status(&env_id, &status);
                         }
                     }
                 }
@@ -159,15 +159,16 @@ fn start_config_watcher() {
                             let changed = prev.map(|p| p != &status).unwrap_or(false);
                             let is_first = prev.is_none();
 
-                            svc_snapshot.insert(key, status);
+                            svc_snapshot.insert(key, status.clone());
 
                             if changed && !is_first {
                                 log::debug!(
-                                    "status_events: 服务数据状态变化 env_id={} svc_id={} → 推送事件",
+                                    "status_events: 服务数据状态变化 env_id={} svc_id={} status={} → 推送事件",
                                     env_id,
-                                    svc_id
+                                    svc_id,
+                                    status
                                 );
-                                emit_service_data_status(&env_id, &svc_id);
+                                emit_service_data_status(&env_id, &svc_id, &status);
                             }
                         }
                     }

@@ -57,12 +57,12 @@ export function useEnvironmentStatus(
     // 初始化时立即拉取一次当前状态
     void refresh()
 
-    // 监听 Rust 推送的环境状态变化事件
+    // 监听 Rust 推送的环境状态变化事件，直接使用 payload 中的状态值
     let cancelled = false
     let unlistenFn: UnlistenFn | undefined
-    void listen<{ environmentId: string }>('status:environment', (event) => {
+    void listen<{ environmentId: string; status: EnvironmentStatus }>('status:environment', (event) => {
       if (event.payload.environmentId === environmentId) {
-        void refresh()
+        setStatus(event.payload.status)
       }
     }).then((fn) => {
       if (cancelled) fn()
@@ -115,15 +115,15 @@ export function useServiceStatus(
     // 初始化时立即拉取一次当前状态
     void refresh()
 
-    // 监听 Rust 推送的服务运行状态变化事件
+    // 监听 Rust 推送的服务运行状态变化事件，直接使用 payload 中的状态值
     let cancelled = false
     let unlistenFn: UnlistenFn | undefined
-    void listen<{ environmentId: string; serviceId: string }>('status:service', (event) => {
+    void listen<{ environmentId: string; serviceId: string; status: ServiceStatus }>('status:service', (event) => {
       if (
         event.payload.environmentId === environmentId &&
         event.payload.serviceId === serviceData.id
       ) {
-        void refresh()
+        setStatus(event.payload.status)
       }
     }).then((fn) => {
       if (cancelled) fn()
@@ -176,15 +176,15 @@ export function useServiceDataStatus(
     // 初始化时立即拉取一次当前状态
     void refresh()
 
-    // 监听 Rust 推送的服务数据激活状态变化事件
+    // 监听 Rust 推送的服务数据激活状态变化事件，直接使用 payload 中的状态值
     let cancelled = false
     let unlistenFn: UnlistenFn | undefined
-    void listen<{ environmentId: string; serviceId: string }>('status:service-data', (event) => {
+    void listen<{ environmentId: string; serviceId: string; status: ServiceDataStatus }>('status:service-data', (event) => {
       if (
         event.payload.environmentId === environmentId &&
         event.payload.serviceId === serviceId
       ) {
-        void refresh()
+        setServiceDataStatus(event.payload.status)
       }
     }).then((fn) => {
       if (cancelled) fn()

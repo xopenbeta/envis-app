@@ -97,7 +97,7 @@ pub async fn start_mariadb_service(
     match service.start_service(&environment_id, &service_data) {
         Ok(res) => {
             if res.success {
-                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+                crate::status_events::emit_service_status(&environment_id, &service_data.id, "running");
             }
             Ok(CommandResponse::success(res.message, res.data))
         }
@@ -114,7 +114,7 @@ pub async fn stop_mariadb_service(
     match service.stop_service(&environment_id, &service_data) {
         Ok(res) => {
             if res.success {
-                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+                crate::status_events::emit_service_status(&environment_id, &service_data.id, "stopped");
             }
             Ok(CommandResponse::success(res.message, res.data))
         }
@@ -131,7 +131,7 @@ pub async fn restart_mariadb_service(
     match service.restart_service(&environment_id, &service_data) {
         Ok(res) => {
             if res.success {
-                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+                crate::status_events::emit_service_status(&environment_id, &service_data.id, "running");
             }
             Ok(CommandResponse::success(res.message, res.data))
         }

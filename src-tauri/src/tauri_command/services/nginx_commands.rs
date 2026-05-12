@@ -65,7 +65,7 @@ pub async fn start_nginx_service(
     match nginx_service.start_service(&service_data) {
         Ok(result) => {
             if result.success {
-                crate::status_events::emit_service_status(&environment_id, &service_data.id);
+                crate::status_events::emit_service_status(&environment_id, &service_data.id, "running");
                 Ok(CommandResponse::success(result.message, result.data))
             } else {
                 Ok(CommandResponse::error(result.message))
@@ -87,7 +87,7 @@ pub async fn stop_nginx_service(
     let nginx_service = NginxService::global();
     match nginx_service.stop_service(&service_data) {
         Ok(_) => {
-            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_status(&environment_id, &service_data.id, "stopped");
             Ok(CommandResponse::success("Nginx 服务停止成功".to_string(), None))
         }
         Err(e) => Ok(CommandResponse::error(format!(
@@ -106,7 +106,7 @@ pub async fn restart_nginx_service(
     let nginx_service = NginxService::global();
     match nginx_service.restart_service(&service_data) {
         Ok(_) => {
-            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_status(&environment_id, &service_data.id, "running");
             Ok(CommandResponse::success("Nginx 服务重启成功".to_string(), None))
         }
         Err(e) => Ok(CommandResponse::error(format!(

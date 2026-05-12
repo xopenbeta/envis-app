@@ -60,7 +60,7 @@ pub async fn start_dnsmasq_service(
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.start_service(&service_data) {
         Ok(_) => {
-            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_status(&environment_id, &service_data.id, "running");
             Ok(CommandResponse::success("Dnsmasq 服务启动成功".to_string(), None))
         }
         Err(e) => Ok(CommandResponse::error(format!(
@@ -79,7 +79,7 @@ pub async fn stop_dnsmasq_service(
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.stop_service(&service_data) {
         Ok(_) => {
-            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_status(&environment_id, &service_data.id, "stopped");
             Ok(CommandResponse::success("Dnsmasq 服务停止成功".to_string(), None))
         }
         Err(e) => Ok(CommandResponse::error(format!(
@@ -98,7 +98,7 @@ pub async fn restart_dnsmasq_service(
     let dnsmasq_service = DnsmasqService::global();
     match dnsmasq_service.restart_service(&service_data) {
         Ok(_) => {
-            crate::status_events::emit_service_status(&environment_id, &service_data.id);
+            crate::status_events::emit_service_status(&environment_id, &service_data.id, "running");
             Ok(CommandResponse::success("Dnsmasq 服务重启成功".to_string(), None))
         }
         Err(e) => Ok(CommandResponse::error(format!(

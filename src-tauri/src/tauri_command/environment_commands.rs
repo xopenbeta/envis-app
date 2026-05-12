@@ -178,7 +178,7 @@ pub async fn activate_environment(
     match manager.activate_environment(&mut environment) {
         Ok(result) => {
             // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
-            crate::status_events::emit_environment_status(&environment.id);
+            crate::status_events::emit_environment_status(&environment.id, "active");
             Ok(result.into())
         }
         Err(e) => Ok(EnvironmentCommandResult {
@@ -205,14 +205,18 @@ pub async fn activate_environment_and_services(
         Ok(result) => {
             // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
             let env_id = environment.id.clone();
-            crate::status_events::emit_environment_status(&env_id);
+            crate::status_events::emit_environment_status(&env_id, "active");
             // 推送每个服务数据的激活状态（服务状态可能部分成功，全量刷新）
             if let Ok(sd_manager) = EnvServDataManager::global().lock() {
                 if let Ok(service_datas) =
                     sd_manager.get_environment_all_service_datas(&env_id)
                 {
                     for sd in &service_datas {
-                        crate::status_events::emit_service_data_status(&env_id, &sd.id);
+                        let status_str = match sd.status {
+                            envis_core::types::ServiceDataStatus::Active => "active",
+                            envis_core::types::ServiceDataStatus::Inactive => "inactive",
+                        };
+                        crate::status_events::emit_service_data_status(&env_id, &sd.id, status_str);
                     }
                 }
             }
@@ -237,7 +241,7 @@ pub async fn deactivate_environment(
     match manager.deactivate_environment(&mut environment) {
         Ok(result) => {
             // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
-            crate::status_events::emit_environment_status(&environment.id);
+            crate::status_events::emit_environment_status(&environment.id, "inactive");
             Ok(result.into())
         }
         Err(e) => Ok(EnvironmentCommandResult {
@@ -264,14 +268,18 @@ pub async fn deactivate_environment_and_services(
         Ok(result) => {
             // 无论服务是否全部成功，环境本身状态已变更，始终推送事件
             let env_id = environment.id.clone();
-            crate::status_events::emit_environment_status(&env_id);
+            crate::status_events::emit_environment_status(&env_id, "inactive");
             // 推送每个服务数据的停用状态（服务状态可能部分成功，全量刷新）
             if let Ok(sd_manager) = EnvServDataManager::global().lock() {
                 if let Ok(service_datas) =
                     sd_manager.get_environment_all_service_datas(&env_id)
                 {
                     for sd in &service_datas {
-                        crate::status_events::emit_service_data_status(&env_id, &sd.id);
+                        let status_str = match sd.status {
+                            envis_core::types::ServiceDataStatus::Active => "active",
+                            envis_core::types::ServiceDataStatus::Inactive => "inactive",
+                        };
+                        crate::status_events::emit_service_data_status(&env_id, &sd.id, status_str);
                     }
                 }
             }
@@ -305,28 +313,37 @@ pub async fn switch_environment_and_services(
         Ok(res) => {
             // 推送被停用的其他环境事件
             for deactivated_id in &res.deactivated_environment_ids {
-                crate::status_events::emit_environment_status(deactivated_id);
+                crate::status_events::emit_environment_status(deactivated_id, "inactive");
                 // 同时推送被停用环境下所有服务数据的状态变化
                 if let Ok(sd_manager) = EnvServDataManager::global().lock() {
                     if let Ok(service_datas) =
                         sd_manager.get_environment_all_service_datas(deactivated_id)
                     {
                         for sd in &service_datas {
-                            crate::status_events::emit_service_data_status(deactivated_id, &sd.id);
+                            let status_str = match sd.status {
+                                envis_core::types::ServiceDataStatus::Active => "active",
+                                envis_core::types::ServiceDataStatus::Inactive => "inactive",
+                            };
+                            crate::status_events::emit_service_data_status(deactivated_id, &sd.id, status_str);
                         }
                     }
                 }
             }
             // 推送目标环境激活事件
-            crate::status_events::emit_environment_status(&res.activated_environment_id);
+            crate::status_events::emit_environment_status(&res.activated_environment_id, "active");
             if let Ok(sd_manager) = EnvServDataManager::global().lock() {
                 if let Ok(service_datas) = sd_manager
                     .get_environment_all_service_datas(&res.activated_environment_id)
                 {
                     for sd in &service_datas {
+                        let status_str = match sd.status {
+                            envis_core::types::ServiceDataStatus::Active => "active",
+                            envis_core::types::ServiceDataStatus::Inactive => "inactive",
+                        };
                         crate::status_events::emit_service_data_status(
                             &res.activated_environment_id,
                             &sd.id,
+                            status_str,
                         );
                     }
                 }
