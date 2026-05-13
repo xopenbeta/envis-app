@@ -543,7 +543,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mongodb.start_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mongodb.start_error', { message: result.message }))
       }
@@ -563,7 +562,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mongodb.stop_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mongodb.stop_error', { message: result.message }))
       }
@@ -583,7 +581,6 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mongodb.restart_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mongodb.restart_error', { message: result.message }))
       }

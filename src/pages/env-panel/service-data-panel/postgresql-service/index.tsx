@@ -427,7 +427,6 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务启动成功')
-        void refreshServiceStatus()
       } else {
         toast.error('启动 PostgreSQL 服务失败: ' + result.message)
       }
@@ -446,7 +445,6 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务已停止')
-        void refreshServiceStatus()
       } else {
         toast.error('停止 PostgreSQL 服务失败: ' + result.message)
       }
@@ -465,7 +463,6 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success('PostgreSQL 服务重启成功')
-        void refreshServiceStatus()
       } else {
         toast.error('重启 PostgreSQL 服务失败: ' + result.message)
       }

@@ -438,7 +438,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mysql_service.start_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mysql_service.start_failed', { message: result.message }))
       }
@@ -457,7 +456,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mysql_service.stop_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mysql_service.stop_failed', { message: result.message }))
       }
@@ -476,7 +474,6 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mysql_service.restart_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mysql_service.restart_failed', { message: result.message }))
       }

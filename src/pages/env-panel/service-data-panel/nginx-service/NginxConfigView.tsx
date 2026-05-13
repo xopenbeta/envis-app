@@ -234,7 +234,6 @@ export function NginxConfigView({
             console.log('zws startServiceData result:', res)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务启动成功')
-                await refreshServiceStatus()
             } else {
                 toast.error((res as any)?.message || '启动失败')
             }
@@ -254,7 +253,6 @@ export function NginxConfigView({
             const res = await stopServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务停止成功')
-                await refreshServiceStatus()
             } else {
                 toast.error((res as any)?.message || '停止失败')
             }
@@ -273,7 +271,6 @@ export function NginxConfigView({
             const res = await restartServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
                 toast.success('Nginx 服务重启成功')
-                await refreshServiceStatus()
             } else {
                 toast.error((res as any)?.message || '重启失败')
             }

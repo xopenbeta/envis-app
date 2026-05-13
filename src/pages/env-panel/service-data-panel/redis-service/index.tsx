@@ -215,7 +215,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       console.log('启动 Redis 结果:', res)
       if (res?.success) {
         toast.success(t('redis_service.start_success'))
-        await refreshServiceStatus()
       } else {
         toast.error(res?.message || t('redis_service.start_failed'))
       }
@@ -230,7 +229,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       const res = await stopServiceData(selectedEnvironmentId, serviceData)
       if (res?.success) {
         toast.success(t('redis_service.stop_success'))
-        await refreshServiceStatus()
       } else {
         toast.error(res?.message || t('redis_service.stop_failed'))
       }
@@ -245,7 +243,6 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       const res = await restartServiceData(selectedEnvironmentId, serviceData)
       if (res?.success) {
         toast.success(t('redis_service.restart_success'))
-        await refreshServiceStatus()
       } else {
         toast.error(res?.message || t('redis_service.restart_failed'))
       }

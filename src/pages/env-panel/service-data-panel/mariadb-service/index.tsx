@@ -434,7 +434,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mariadb_service.start_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mariadb_service.start_failed', { message: result.message }))
       }
@@ -453,7 +452,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mariadb_service.stop_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mariadb_service.stop_failed', { message: result.message }))
       }
@@ -472,7 +470,6 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
         toast.success(t('mariadb_service.restart_success'))
-        refreshServiceStatus()
       } else {
         toast.error(t('mariadb_service.restart_failed', { message: result.message }))
       }

@@ -210,8 +210,6 @@ export function useServiceDownloadStatus(
 ) {
   const { checkServiceInstalled, getServiceDownloadProgress } = useService()
   const enabled = options.enabled ?? true
-  const interval = typeof options.interval === 'number' ? options.interval : DEFAULT_INTERVAL
-  const immediate = options.immediate ?? true
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(DownloadStatus.Unknown)
   const [downloadProgress, setDownloadProgress] = useState(0)
   const isRefreshingRef = useRef(false)
