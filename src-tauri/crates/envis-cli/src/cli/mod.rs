@@ -6,7 +6,7 @@ use envis_core::manager::shell_manamger::initialize_shell_manager;
 
 /// 提前处理 CLI 参数（不依赖 Tauri 应用）
 /// args: 来自 std::env::args().collect()，由 main.rs 传入，避免重复收集
-pub fn handle_cli_early(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+pub fn handle_cli(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     // 没有参数，直接返回 Ok(())，让程序继续启动 GUI
     if args.len() <= 1 {
         return Ok(());

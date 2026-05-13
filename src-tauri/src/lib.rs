@@ -13,7 +13,7 @@ use envis_core::manager::shell_manamger::initialize_shell_manager;
 use tauri::Manager;
 
 // 导出 CLI 相关函数供 main.rs 使用
-pub use envis_cli::cli::handle_cli_early;
+pub use envis_cli::cli::handle_cli;
 use tauri_command::app_config_commands::{get_app_config, open_app_config_folder, set_app_config};
 use tauri_command::env_serv_data_commands::*;
 use tauri_command::environment_commands::*;
