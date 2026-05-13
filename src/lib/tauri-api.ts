@@ -4,6 +4,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 // 通用的 IPC 调用封装
 export async function invokeCommand<T = any>(command: string, args?: any): Promise<T> {
@@ -18,7 +19,7 @@ export async function invokeCommand<T = any>(command: string, args?: any): Promi
 
 // 打开外部链接或文件
 export async function openExternal(path: string): Promise<void> {
-  await invoke('plugin:opener|open', { path });
+  await openUrl(path);
 }
 
 // 类型定义

@@ -20,6 +20,7 @@ import {
     useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { openExternal } from '@/lib/tauri-api'
 import { environmentsAtom } from '@/store/environment'
 import { useEnvironment } from '@/hooks/environment'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
@@ -195,7 +196,7 @@ export function WelcomeFragment({ onOpen }: {
                             icon={<Book className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
                             title={t('welcome.documentation')}
                             desc={t('welcome.documentation_desc')}
-                            onClick={() => window.open('https://github.com/xopenbeta/envis-app', '_blank')}
+                            onClick={() => openExternal('https://envis.app/docs/')}
                         />
                     </div>
 
