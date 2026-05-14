@@ -1349,16 +1349,9 @@ dependencies = [
 name = "envis"
 version = "0.13.6"
 dependencies = [
- "anyhow",
- "chrono",
- "dirs 5.0.1",
  "envis-cli",
- "envis-core",
- "image",
- "log",
- "serde",
+ "envis-gui",
  "serde_json",
- "sysinfo",
  "tauri",
  "tauri-build",
  "tauri-plugin-cli",
@@ -1369,7 +1362,6 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tempfile",
- "tokio",
 ]
 
 [[package]]
@@ -1410,6 +1402,31 @@ dependencies = [
  "walkdir",
  "xmltree",
  "zip 6.0.0",
+]
+
+[[package]]
+name = "envis-gui"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs 5.0.1",
+ "envis-cli",
+ "envis-core",
+ "image",
+ "log",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tauri",
+ "tauri-plugin-cli",
+ "tauri-plugin-dialog",
+ "tauri-plugin-log",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tokio",
 ]
 
 [[package]]

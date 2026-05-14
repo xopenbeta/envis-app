@@ -16,7 +16,7 @@ pub fn setup_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), Box<dyn s
     let menu = Menu::with_items(app, &[&show_item, &hide_item, &separator, &quit_item])?;
 
     // 加载自定义托盘图标
-    let icon_bytes = include_bytes!("../icons/envis.png");
+    let icon_bytes = include_bytes!("../../../icons/envis.png");
     // decode PNG bytes to RGBA using the image crate, then build a tauri::image::Image
     let dyn_img = image::load_from_memory(icon_bytes)?;
     let rgba = dyn_img.to_rgba8();
