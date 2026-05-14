@@ -37,7 +37,7 @@ envis-gui    = { path = "crates/envis-gui" }
 
 [package]
 name = "envis"
-version = "0.13.6"
+version = "0.13.7"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
