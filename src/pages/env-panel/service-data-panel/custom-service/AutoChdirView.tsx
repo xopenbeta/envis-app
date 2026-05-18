@@ -17,15 +17,15 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
     const { updateCustomServiceChdir, applyServiceMetadata } = useCustomService()
     const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, { enabled: true })
     const [path, setPath] = useState('')
-    const [enabled, setEnabled] = useState(true)
+    const [enabled, setEnabled] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const isServiceDataActive = serviceDataStatus === ServiceDataStatus.Active
 
     // 从 metadata 加载配置
     useEffect(() => {
         const p = serviceData.metadata?.autoChdirPath || ''
-        // autoChdirEnabled 未设置时默认为 true
-        const e = serviceData.metadata?.autoChdirEnabled !== false
+        // autoChdirEnabled 未设置时默认为 false
+        const e = serviceData.metadata?.autoChdirEnabled === true
         setPath(p)
         setEnabled(e)
     }, [serviceData])
@@ -48,7 +48,7 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
 
         setIsLoading(true)
         try {
-            const wasActive = serviceData.metadata?.autoChdirEnabled !== false
+            const wasActive = serviceData.metadata?.autoChdirEnabled === true
             const oldChdir = wasActive && serviceData.metadata?.autoChdirPath
                 ? serviceData.metadata.autoChdirPath as string
                 : null
@@ -83,7 +83,7 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
         setIsLoading(true)
         try {
             const newPath = path.trim()
-            const wasActive = serviceData.metadata?.autoChdirEnabled !== false
+            const wasActive = serviceData.metadata?.autoChdirEnabled === true
             const oldChdir = wasActive && serviceData.metadata?.autoChdirPath
                 ? serviceData.metadata.autoChdirPath as string
                 : null

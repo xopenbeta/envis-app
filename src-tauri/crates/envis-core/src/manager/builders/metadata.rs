@@ -417,6 +417,16 @@ http {{
             serde_json::Value::Object(serde_json::Map::new()),
         );
 
+        // 默认关闭终端自动跳转目录
+        metadata.insert(
+            "autoChdirEnabled".to_string(),
+            serde_json::Value::Bool(false),
+        );
+        metadata.insert(
+            "autoChdirPath".to_string(),
+            serde_json::Value::String(String::new()),
+        );
+
         log::debug!(
             "已为自定义服务 {} {} (env: {}) 创建默认 metadata",
             service_data.name,

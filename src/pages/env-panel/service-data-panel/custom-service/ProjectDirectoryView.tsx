@@ -20,7 +20,7 @@ interface ProjectDirectoryViewProps {
 export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, status }: ProjectDirectoryViewProps) {
     const { updateCustomServiceChdir, applyServiceMetadata } = useCustomService()
     const [path, setPath] = useState('')
-    const [enabled, setEnabled] = useState(true)
+    const [enabled, setEnabled] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
     const isServiceDataActive = status === ServiceDataStatus.Active
@@ -28,8 +28,8 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
     // 从 metadata 加载配置
     useEffect(() => {
         const p = serviceData.metadata?.autoChdirPath || ''
-        // autoChdirEnabled 未设置时默认为 true
-        const e = serviceData.metadata?.autoChdirEnabled !== false
+        // autoChdirEnabled 未设置时默认为 false
+        const e = serviceData.metadata?.autoChdirEnabled === true
         setPath(p)
         setEnabled(e)
     }, [serviceData])
@@ -52,7 +52,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
 
         setIsLoading(true)
         try {
-            const wasActive = serviceData.metadata?.autoChdirEnabled !== false
+            const wasActive = serviceData.metadata?.autoChdirEnabled === true
             const oldChdir = wasActive && serviceData.metadata?.autoChdirPath
                 ? serviceData.metadata.autoChdirPath as string
                 : null
@@ -87,7 +87,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
         setIsLoading(true)
         try {
             const newPath = path.trim()
-            const wasActive = serviceData.metadata?.autoChdirEnabled !== false
+            const wasActive = serviceData.metadata?.autoChdirEnabled === true
             const oldChdir = wasActive && serviceData.metadata?.autoChdirPath
                 ? serviceData.metadata.autoChdirPath as string
                 : null

@@ -86,7 +86,7 @@ impl ServiceLifecycle for CustomService {
             let auto_chdir_enabled = metadata
                 .get("autoChdirEnabled")
                 .and_then(|v| v.as_bool())
-                .unwrap_or(true); // 默认启用
+                .unwrap_or(false); // 默认禁用
 
             if auto_chdir_enabled {
                 if let Some(chdir_path_value) = metadata.get("autoChdirPath") {
@@ -158,7 +158,7 @@ impl ServiceLifecycle for CustomService {
             let auto_chdir_enabled = metadata
                 .get("autoChdirEnabled")
                 .and_then(|v| v.as_bool())
-                .unwrap_or(true); // 默认启用
+                .unwrap_or(false); // 默认禁用
 
             if auto_chdir_enabled {
                 if let Some(chdir_path_value) = metadata.get("autoChdirPath") {
