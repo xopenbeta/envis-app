@@ -1,0 +1,4 @@
+[submodule "src-tauri/crates/envis-core"]
+	path = src-tauri/crates/envis-core
+	url = https://github.com/xopenbeta/envis-core.git
+	branch = enterprise

@@ -4,6 +4,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch to build (must be enterprise)'
+        required: false
+        default: 'enterprise'
 
 jobs:
   release:
@@ -18,6 +23,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: enterprise
+          submodules: recursive
+          token: ${{ secrets.ENVIS_CORE_ACCESS_TOKEN }}
+
+      - name: Verify submodule checkout
+        shell: bash
+        run: |
+          if [ ! -f "src-tauri/crates/envis-core/Cargo.toml" ]; then
+            echo "envis-core submodule is missing."
+            echo "Please configure ENVIS_CORE_ACCESS_TOKEN with read access to private envis-core repository."
+            exit 1
+          fi
+          git submodule status --recursive
+
+      - name: Force envis-core to latest enterprise
+        shell: bash
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive --remote src-tauri/crates/envis-core
+          git -C src-tauri/crates/envis-core fetch origin enterprise
+          git -C src-tauri/crates/envis-core checkout enterprise || git -C src-tauri/crates/envis-core checkout -b enterprise --track origin/enterprise
+          git -C src-tauri/crates/envis-core pull --rebase --autostash origin enterprise
+          git -C src-tauri/crates/envis-core rev-parse --short HEAD
 
       - name: Install dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-22.04'
