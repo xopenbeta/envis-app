@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import {
   closestCenter,
@@ -47,6 +48,11 @@ import {
   MoreHorizontal,
   Hexagon,
   Upload,
+  Crown,
+  Check,
+  FileJson,
+  Download,
+  Trash2,
 } from 'lucide-react'
 import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -77,6 +83,16 @@ interface NavBarProps {
   onClose?: () => void
 }
 
+type VipPlan = 'basic' | 'pro' | 'enterprise'
+
+interface UploadedJsonRecord {
+  id: string
+  name: string
+  content: string
+  uploadedAt: string
+  size: number
+}
+
 export default function NavBar({ onClose }: NavBarProps) {
   const { t } = useTranslation()
   const [environments, setEnvironments] = useAtom(environmentsAtom)
@@ -105,9 +121,13 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
   const [editingEnvironment, setEditingEnvironment] = useState<Environment | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [envInfoFormData, setEnvInfoFormData] = useState({ name: '' })
+  const [selectedVipPlan, setSelectedVipPlan] = useState<VipPlan>('basic')
+  const [vipPlanActivated, setVipPlanActivated] = useState<VipPlan | ''>('')
+  const [uploadedJsonRecords, setUploadedJsonRecords] = useState<UploadedJsonRecord[]>([])
   const isEnvNameComposingRef = useRef(false)
 
   const onEnvNameInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -319,6 +339,97 @@ export default function NavBar({ onClose }: NavBarProps) {
     setIsSettingsDialogOpen(true)
   })
 
+  // 打开用户对话框
+  const onOpenUserDialog = eventLogFunc(t('user_dialog.open_user_dialog_log'), () => {
+    setIsUserDialogOpen(true)
+  })
+
+  // 开通 VIP（纯前端 demo）
+  const onActivateVipPlan = eventLogFunc(t('user_dialog.activate_vip_log'), () => {
+    setVipPlanActivated(selectedVipPlan)
+    toast.success(t('user_dialog.activate_success', { plan: t(`user_dialog.plan_name.${selectedVipPlan}`) }))
+  })
+
+  // 上传 JSON 记录（纯前端 demo，使用内存态）
+  const onUploadEnvironmentJson = async () => {
+    try {
+      const dialogRes = await ipcOpenFileDialog({
+        title: t('user_dialog.upload_dialog_title'),
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      })
+
+      if (!dialogRes?.success || !dialogRes?.data?.path) return
+
+      const readRes = await ipcReadFileContent(dialogRes.data.path)
+      if (!readRes?.success || !readRes?.data?.content) {
+        toast.error(t('user_dialog.upload_read_error'))
+        return
+      }
+
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(readRes.data.content)
+      } catch {
+        toast.error(t('user_dialog.upload_invalid_json'))
+        return
+      }
+
+      if (!parsed || typeof parsed !== 'object') {
+        toast.error(t('user_dialog.upload_invalid_json'))
+        return
+      }
+
+      const fileName = dialogRes.data.path.split('/').pop() || `${t('user_dialog.file_name_prefix')}.json`
+      const nextRecord: UploadedJsonRecord = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: fileName,
+        content: readRes.data.content,
+        uploadedAt: new Date().toISOString(),
+        size: readRes.data.content.length,
+      }
+
+      setUploadedJsonRecords(prev => [nextRecord, ...prev])
+      toast.success(t('user_dialog.upload_success', { name: fileName }))
+    } catch (error) {
+      logError(`${t('user_dialog.upload_failed')}: ${error}`)
+      toast.error(t('user_dialog.upload_failed'))
+    }
+  }
+
+  const onDeleteUploadedJson = (id: string) => {
+    const target = uploadedJsonRecords.find(item => item.id === id)
+    setUploadedJsonRecords(prev => prev.filter(item => item.id !== id))
+    toast.success(t('user_dialog.delete_success', { name: target?.name || t('user_dialog.default_json_name') }))
+  }
+
+  const onDownloadUploadedJson = async (item: UploadedJsonRecord) => {
+    try {
+      const defaultName = item.name.endsWith('.json') ? item.name : `${item.name}.json`
+      const saveDialogRes = await ipcSaveFileDialog({
+        title: t('user_dialog.download_dialog_title'),
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+        defaultName,
+      })
+
+      if (!saveDialogRes?.success || !saveDialogRes?.data?.path) return
+
+      const savePath = saveDialogRes.data.path.endsWith('.json')
+        ? saveDialogRes.data.path
+        : `${saveDialogRes.data.path}.json`
+
+      const writeRes = await ipcWriteFileContent(savePath, item.content)
+      if (!writeRes?.success) {
+        toast.error(t('user_dialog.download_failed'))
+        return
+      }
+
+      toast.success(t('user_dialog.download_success', { name: item.name }))
+    } catch (error) {
+      logError(`${t('user_dialog.download_failed')}: ${error}`)
+      toast.error(t('user_dialog.download_failed'))
+    }
+  }
+
   // 打开终端
   const onOpenTerminal = eventLogFunc(t('nav_bar.open_terminal'), async () => {
     try {
@@ -371,6 +482,12 @@ export default function NavBar({ onClose }: NavBarProps) {
   // 底部动作按钮定义（顺序即默认显示顺序，必要时最后一个将被“更多”替代）
   const actions = [
     {
+      key: 'user',
+      title: t('nav_bar.user'),
+      icon: <User className="h-4 w-4" />,
+      onClick: onOpenUserDialog,
+    },
+    {
       key: 'settings',
       title: t('nav_bar.settings'),
       icon: <Settings className="h-4 w-4" />,
@@ -382,12 +499,6 @@ export default function NavBar({ onClose }: NavBarProps) {
       icon: getThemeIcon(),
       onClick: onToggleTheme,
     },
-    // {
-    //   key: 'user',
-    //   title: t('nav_bar.user'),
-    //   icon: <User className="h-4 w-4" />,
-    //   onClick: onOpenSettingsDialog,
-    // },
     {
       key: 'terminal',
       title: t('nav_bar.open_terminal'),
@@ -698,6 +809,153 @@ export default function NavBar({ onClose }: NavBarProps) {
                 </Button>
               </div>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Dialog */}
+      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+        <DialogContent className="sm:max-w-[640px]">
+          <DialogHeader>
+            <DialogTitle>{t('user_dialog.title')}</DialogTitle>
+            <DialogDescription>{t('user_dialog.description')}</DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile">{t('user_dialog.tabs.profile')}</TabsTrigger>
+              <TabsTrigger value="vip">{t('user_dialog.tabs.vip')}</TabsTrigger>
+              <TabsTrigger value="json">{t('user_dialog.tabs.json')}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile" className="space-y-4 pt-4">
+              <div className="rounded-md border border-divider p-3">
+                <div className="text-sm font-medium">{t('user_dialog.profile.status_label')}</div>
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-divider px-2 py-1 text-xs">
+                  <Crown className="h-3.5 w-3.5" />
+                  {vipPlanActivated
+                    ? t('user_dialog.profile.vip_active', { plan: t(`user_dialog.plan_name.${vipPlanActivated}`) })
+                    : t('user_dialog.profile.vip_inactive')}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="user-demo-name">{t('user_dialog.profile.name_label')}</Label>
+                  <Input id="user-demo-name" value={t('user_dialog.profile.demo_name')} readOnly className="mt-1 shadow-none" />
+                </div>
+                <div>
+                  <Label htmlFor="user-demo-email">{t('user_dialog.profile.email_label')}</Label>
+                  <Input id="user-demo-email" value={t('user_dialog.profile.demo_email')} readOnly className="mt-1 shadow-none" />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="vip" className="space-y-4 pt-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {(['basic', 'pro', 'enterprise'] as VipPlan[]).map(plan => {
+                  const isSelected = selectedVipPlan === plan
+                  const isActive = vipPlanActivated === plan
+
+                  return (
+                    <button
+                      key={plan}
+                      type="button"
+                      onClick={() => setSelectedVipPlan(plan)}
+                      className={cn(
+                        'rounded-md border p-3 text-left heroui-transition',
+                        isSelected ? 'border-primary bg-primary/5' : 'border-divider hover:border-primary/60',
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{t(`user_dialog.plan_name.${plan}`)}</span>
+                        {isActive ? <Check className="h-4 w-4 text-green-600" /> : null}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">{t(`user_dialog.plan_desc.${plan}`)}</div>
+                      <div className="mt-2 text-sm font-medium">{t(`user_dialog.plan_price.${plan}`)}</div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border border-divider p-3">
+                <div>
+                  <div className="text-sm font-medium">
+                    {vipPlanActivated
+                      ? t('user_dialog.current_vip', { plan: t(`user_dialog.plan_name.${vipPlanActivated}`) })
+                      : t('user_dialog.no_vip')}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{t('user_dialog.vip_hint')}</div>
+                </div>
+                <Button onClick={onActivateVipPlan}>
+                  <Crown className="h-4 w-4 mr-2" />
+                  {t('user_dialog.activate_btn')}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="json" className="space-y-4 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  {t('user_dialog.uploaded_count', { count: uploadedJsonRecords.length })}
+                </div>
+                <Button variant="outline" className="shadow-none" onClick={onUploadEnvironmentJson}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {t('user_dialog.upload_btn')}
+                </Button>
+              </div>
+
+              {uploadedJsonRecords.length === 0 ? (
+                <div className="rounded-md border border-dashed border-divider p-6 text-center text-sm text-muted-foreground">
+                  <FileJson className="mx-auto mb-2 h-6 w-6 opacity-60" />
+                  {t('user_dialog.empty_upload')}
+                </div>
+              ) : (
+                <div className="max-h-[260px] space-y-2 overflow-auto pr-1">
+                  {uploadedJsonRecords.map(item => (
+                    <div key={item.id} className="rounded-md border border-divider p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium">{item.name}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {t('user_dialog.uploaded_at', { time: new Date(item.uploadedAt).toLocaleString() })}
+                            {' · '}
+                            {t('user_dialog.file_size', { size: item.size })}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => onDownloadUploadedJson(item)}
+                            title={t('user_dialog.download_btn')}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            onClick={() => onDeleteUploadedJson(item.id)}
+                            title={t('user_dialog.delete_btn')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button variant="outline" className="shadow-none" onClick={() => setIsUserDialogOpen(false)}>
+              {t('user_dialog.close_btn')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

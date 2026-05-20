@@ -186,6 +186,65 @@
     "import_invalid_format": "Invalid file format: missing environment name",
     "import_create_env_error": "Failed to create environment"
   },
+  "user_dialog": {
+    "open_user_dialog_log": "Open user dialog",
+    "activate_vip_log": "Activate VIP",
+    "title": "User Center",
+    "description": "Manage VIP plans and uploaded environment JSON (Demo)",
+    "tabs": {
+      "profile": "Profile",
+      "vip": "VIP",
+      "json": "Environment JSON"
+    },
+    "profile": {
+      "status_label": "Current Status",
+      "vip_active": "VIP activated ({{plan}})",
+      "vip_inactive": "VIP not activated",
+      "name_label": "Nickname",
+      "email_label": "Email",
+      "demo_name": "Envis Demo User",
+      "demo_email": "demo@envis.app"
+    },
+    "plan_name": {
+      "basic": "Basic",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "plan_desc": {
+      "basic": "For personal daily development",
+      "pro": "For parallel multi-environment work",
+      "enterprise": "For teams and advanced capabilities"
+    },
+    "plan_price": {
+      "basic": "$4.99/month",
+      "pro": "$12.99/month",
+      "enterprise": "$29.99/month"
+    },
+    "activate_btn": "Activate Now",
+    "activate_success": "Activated {{plan}}",
+    "current_vip": "Current VIP: {{plan}}",
+    "no_vip": "No VIP activated",
+    "vip_hint": "This is a frontend demo flow and does not trigger real payment.",
+    "upload_dialog_title": "Select environment JSON file",
+    "download_dialog_title": "Download environment JSON",
+    "upload_btn": "Upload JSON",
+    "download_btn": "Download",
+    "delete_btn": "Delete",
+    "uploaded_count": "Uploaded records: {{count}}",
+    "empty_upload": "No upload records yet. Click the top-right button to upload JSON.",
+    "upload_read_error": "Failed to read JSON file",
+    "upload_invalid_json": "Invalid JSON content",
+    "upload_success": "Upload record added: {{name}}",
+    "upload_failed": "Upload failed",
+    "download_success": "Downloaded: {{name}}",
+    "download_failed": "Download failed",
+    "delete_success": "Record deleted: {{name}}",
+    "uploaded_at": "Uploaded at: {{time}}",
+    "file_size": "{{size}} bytes",
+    "file_name_prefix": "environment",
+    "default_json_name": "Environment JSON",
+    "close_btn": "Close"
+  },
   "nav_bar_item": {
     "drag_to_sort": "Drag to sort",
     "active": "Active",

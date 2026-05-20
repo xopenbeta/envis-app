@@ -186,6 +186,65 @@
     "import_invalid_format": "文件格式不正确，缺少环境名称",
     "import_create_env_error": "创建环境失败"
   },
+  "user_dialog": {
+    "open_user_dialog_log": "打开用户对话框",
+    "activate_vip_log": "开通 VIP",
+    "title": "用户中心",
+    "description": "管理 VIP 套餐与上传的环境 JSON（Demo）",
+    "tabs": {
+      "profile": "个人信息",
+      "vip": "VIP",
+      "json": "环境 JSON"
+    },
+    "profile": {
+      "status_label": "当前状态",
+      "vip_active": "已开通 VIP（{{plan}}）",
+      "vip_inactive": "未开通 VIP",
+      "name_label": "昵称",
+      "email_label": "邮箱",
+      "demo_name": "Envis Demo User",
+      "demo_email": "demo@envis.app"
+    },
+    "plan_name": {
+      "basic": "基础版",
+      "pro": "专业版",
+      "enterprise": "旗舰版"
+    },
+    "plan_desc": {
+      "basic": "适合个人日常开发",
+      "pro": "适合多环境并行开发",
+      "enterprise": "适合团队协作与高级功能"
+    },
+    "plan_price": {
+      "basic": "￥29/月",
+      "pro": "￥89/月",
+      "enterprise": "￥199/月"
+    },
+    "activate_btn": "立即开通",
+    "activate_success": "已开通 {{plan}}",
+    "current_vip": "当前 VIP：{{plan}}",
+    "no_vip": "当前未开通 VIP",
+    "vip_hint": "此处为前端 Demo 流程，不会触发真实支付。",
+    "upload_dialog_title": "选择环境 JSON 文件",
+    "download_dialog_title": "下载环境 JSON",
+    "upload_btn": "上传 JSON",
+    "download_btn": "下载",
+    "delete_btn": "删除",
+    "uploaded_count": "已上传记录：{{count}}",
+    "empty_upload": "暂无上传记录，点击右上角上传 JSON。",
+    "upload_read_error": "读取 JSON 文件失败",
+    "upload_invalid_json": "JSON 内容无效",
+    "upload_success": "上传记录已添加：{{name}}",
+    "upload_failed": "上传失败",
+    "download_success": "下载成功：{{name}}",
+    "download_failed": "下载失败",
+    "delete_success": "已删除记录：{{name}}",
+    "uploaded_at": "上传时间：{{time}}",
+    "file_size": "{{size}} 字节",
+    "file_name_prefix": "environment",
+    "default_json_name": "环境 JSON",
+    "close_btn": "关闭"
+  },
   "nav_bar_item": {
     "drag_to_sort": "拖动排序",
     "active": "运行中",
