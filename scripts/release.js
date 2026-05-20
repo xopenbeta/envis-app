@@ -20,6 +20,20 @@ if (!version) {
 // tagVersion: v0.1.9 (for git tag)
 const cleanVersion = version.startsWith('v') ? version.slice(1) : version;
 const tagVersion = version.startsWith('v') ? version : `v${version}`;
+const envisCoreDir = 'src-tauri/crates/envis-core';
+
+function getGitOutputWithCwd(command, cwd) {
+  return execSync(command, { cwd, stdio: 'pipe' }).toString().trim();
+}
+
+function hasStagedChanges(cwd = rootDir) {
+  try {
+    execSync('git diff --cached --quiet', { cwd, stdio: 'ignore' });
+    return false;
+  } catch {
+    return true;
+  }
+}
 
 // Validate version format (simple check)
 if (!/^\d+\.\d+\.\d+/.test(cleanVersion)) {
@@ -30,6 +44,25 @@ if (!/^\d+\.\d+\.\d+/.test(cleanVersion)) {
 console.log(`🚀 Starting release process for version ${cleanVersion} (${tagVersion})...`);
 
 try {
+  // 0. Commit envis-core changes first (if any)
+  const envisCoreAbsDir = path.join(rootDir, envisCoreDir);
+  const subRepoChanges = getGitOutputWithCwd('git status --porcelain', envisCoreAbsDir);
+  if (subRepoChanges.length > 0) {
+    console.log('📌 Detected changes in envis-core submodule, committing inside submodule...');
+    execSync('git add .', { stdio: 'inherit', cwd: envisCoreAbsDir });
+    if (hasStagedChanges(envisCoreAbsDir)) {
+      execSync(`git commit -m "chore(envis-core): prepare release ${tagVersion}"`, {
+        stdio: 'inherit',
+        cwd: envisCoreAbsDir,
+      });
+      console.log('✅ Committed envis-core submodule changes');
+    } else {
+      console.log('ℹ️ No staged changes in envis-core submodule after add, skip commit');
+    }
+  } else {
+    console.log('ℹ️ No changes in envis-core submodule, skip pre-commit');
+  }
+
   // 1. Update package.json
   const packageJsonPath = path.join(rootDir, 'package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
