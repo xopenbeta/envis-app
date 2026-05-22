@@ -4,26 +4,38 @@ use envis_core::manager::services::{
     PostgresqlService, RedisService,
 };
 use envis_core::types::{ServiceData, ServiceType};
-use std::collections::HashMap;
+use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
+static DB_OBJECT_WATCHES: OnceLock<Mutex<HashSet<DbObjectWatchKey>>> = OnceLock::new();
 
 const POLL_INTERVAL_MS: u64 = 500;
 const ENV_CONFIG_FILE: &str = "environment.json";
 const SERVICE_CONFIG_FILE: &str = "service.json";
+const DB_WATCH_INTERVAL_MS: u64 = 1000;
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct DbObjectWatchKey {
+    pub environment_id: String,
+    pub service_id: String,
+    pub database_name: String,
+}
 
 /// 初始化事件模块，保存 AppHandle 供后续推送使用，并启动配置文件轮询线程。
 /// 应在 setup 回调中调用一次。
 pub fn init(handle: AppHandle) {
     let _ = APP_HANDLE.set(handle);
+    let _ = DB_OBJECT_WATCHES.set(Mutex::new(HashSet::new()));
     start_config_watcher();
     start_service_status_watcher();
     start_download_watcher();
+    start_database_data_watcher();
 }
 
 fn emit(event: &str, payload: serde_json::Value) {
@@ -64,6 +76,106 @@ pub fn emit_download_status(task_id: &str, status: &str, progress: f64) {
         "status:download",
         serde_json::json!({ "taskId": task_id, "status": status, "progress": progress }),
     );
+}
+
+pub fn emit_db_databases(
+    environment_id: &str,
+    service_id: &str,
+    service_type: &str,
+    items: Value,
+) {
+    emit(
+        "status:db-databases",
+        serde_json::json!({
+            "environmentId": environment_id,
+            "serviceId": service_id,
+            "serviceType": service_type,
+            "kind": "databases",
+            "items": items,
+        }),
+    );
+}
+
+pub fn emit_db_principals(
+    environment_id: &str,
+    service_id: &str,
+    service_type: &str,
+    items: Value,
+) {
+    emit(
+        "status:db-principals",
+        serde_json::json!({
+            "environmentId": environment_id,
+            "serviceId": service_id,
+            "serviceType": service_type,
+            "kind": "principals",
+            "items": items,
+        }),
+    );
+}
+
+pub fn emit_db_objects(
+    environment_id: &str,
+    service_id: &str,
+    service_type: &str,
+    database_name: &str,
+    items: Value,
+) {
+    emit(
+        "status:db-objects",
+        serde_json::json!({
+            "environmentId": environment_id,
+            "serviceId": service_id,
+            "serviceType": service_type,
+            "kind": "objects",
+            "databaseName": database_name,
+            "items": items,
+        }),
+    );
+}
+
+pub fn register_db_object_watch(environment_id: &str, service_id: &str, database_name: &str) {
+    let Some(watches) = DB_OBJECT_WATCHES.get() else {
+        return;
+    };
+
+    if let Ok(mut guard) = watches.lock() {
+        guard.insert(DbObjectWatchKey {
+            environment_id: environment_id.to_string(),
+            service_id: service_id.to_string(),
+            database_name: database_name.to_string(),
+        });
+    }
+}
+
+pub fn unregister_db_object_watch(environment_id: &str, service_id: &str, database_name: &str) {
+    let Some(watches) = DB_OBJECT_WATCHES.get() else {
+        return;
+    };
+
+    if let Ok(mut guard) = watches.lock() {
+        guard.remove(&DbObjectWatchKey {
+            environment_id: environment_id.to_string(),
+            service_id: service_id.to_string(),
+            database_name: database_name.to_string(),
+        });
+    }
+}
+
+fn get_object_watches_for_service(environment_id: &str, service_id: &str) -> Vec<String> {
+    let Some(watches) = DB_OBJECT_WATCHES.get() else {
+        return vec![];
+    };
+
+    let Ok(guard) = watches.lock() else {
+        return vec![];
+    };
+
+    guard
+        .iter()
+        .filter(|item| item.environment_id == environment_id && item.service_id == service_id)
+        .map(|item| item.database_name.clone())
+        .collect()
 }
 
 // ── 配置文件轮询 ────────────────────────────────────────────────────────────
@@ -428,4 +540,295 @@ fn start_download_watcher() {
             }
         }
     });
+}
+
+fn start_database_data_watcher() {
+    std::thread::spawn(|| {
+        let mut snapshot: HashMap<String, String> = HashMap::new();
+
+        loop {
+            std::thread::sleep(Duration::from_millis(DB_WATCH_INTERVAL_MS));
+
+            let envs_folder = {
+                let global = AppConfigManager::global();
+                let guard = match global.lock() {
+                    Ok(g) => g,
+                    Err(e) => {
+                        log::warn!("status_events: db_watcher 获取锁失败: {}", e);
+                        continue;
+                    }
+                };
+                guard.get_envs_folder()
+            };
+
+            let envs_path = Path::new(&envs_folder);
+            if !envs_path.exists() {
+                continue;
+            }
+
+            let entries = match fs::read_dir(envs_path) {
+                Ok(e) => e,
+                Err(e) => {
+                    log::warn!("status_events: db_watcher 读取 envs_folder 失败: {}", e);
+                    continue;
+                }
+            };
+
+            for entry in entries.flatten() {
+                let env_path = entry.path();
+                if !env_path.is_dir() {
+                    continue;
+                }
+
+                let environment_id = match env_path.file_name().and_then(|n| n.to_str()) {
+                    Some(id) => id.to_string(),
+                    None => continue,
+                };
+
+                let env_status = match read_status_field(&env_path.join(ENV_CONFIG_FILE)) {
+                    Some(s) => s,
+                    None => continue,
+                };
+
+                if env_status != "active" {
+                    continue;
+                }
+
+                let svc_type_entries = match fs::read_dir(&env_path) {
+                    Ok(e) => e,
+                    Err(_) => continue,
+                };
+
+                for svc_type_entry in svc_type_entries.flatten() {
+                    let svc_type_path = svc_type_entry.path();
+                    if !svc_type_path.is_dir() {
+                        continue;
+                    }
+
+                    let version_entries = match fs::read_dir(&svc_type_path) {
+                        Ok(e) => e,
+                        Err(_) => continue,
+                    };
+
+                    for version_entry in version_entries.flatten() {
+                        let version_path = version_entry.path();
+                        if !version_path.is_dir() {
+                            continue;
+                        }
+
+                        let svc_config_path = version_path.join(SERVICE_CONFIG_FILE);
+                        if !svc_config_path.exists() {
+                            continue;
+                        }
+
+                        let (service_id, svc_status) =
+                            match read_id_and_status_field(&svc_config_path) {
+                                Some(v) => v,
+                                None => continue,
+                            };
+                        if svc_status != "active" {
+                            continue;
+                        }
+
+                        let service_data: ServiceData = match fs::read_to_string(&svc_config_path)
+                            .ok()
+                            .and_then(|c| serde_json::from_str(&c).ok())
+                        {
+                            Some(sd) => sd,
+                            None => continue,
+                        };
+
+                        let Some(status_str) = get_service_running_status(&environment_id, &service_data) else {
+                            continue;
+                        };
+                        if status_str != "running" {
+                            continue;
+                        }
+
+                        if !is_database_service(&service_data.service_type) {
+                            continue;
+                        }
+
+                        let service_type = service_type_tag(&service_data.service_type);
+
+                        if let Some(databases) = fetch_database_items(&environment_id, &service_data) {
+                            let key = format!(
+                                "{}::{}::{}::databases",
+                                environment_id, service_id, service_type
+                            );
+                            if update_snapshot_if_changed(&mut snapshot, &key, &databases) {
+                                emit_db_databases(
+                                    &environment_id,
+                                    &service_id,
+                                    service_type,
+                                    databases,
+                                );
+                            }
+                        }
+
+                        if let Some(principals) = fetch_principal_items(&environment_id, &service_data) {
+                            let key = format!(
+                                "{}::{}::{}::principals",
+                                environment_id, service_id, service_type
+                            );
+                            if update_snapshot_if_changed(&mut snapshot, &key, &principals) {
+                                emit_db_principals(
+                                    &environment_id,
+                                    &service_id,
+                                    service_type,
+                                    principals,
+                                );
+                            }
+                        }
+
+                        let db_watches = get_object_watches_for_service(&environment_id, &service_id);
+                        for database_name in db_watches {
+                            if let Some(objects) = fetch_object_items(
+                                &environment_id,
+                                &service_data,
+                                &database_name,
+                            ) {
+                                let key = format!(
+                                    "{}::{}::{}::objects::{}",
+                                    environment_id, service_id, service_type, database_name
+                                );
+                                if update_snapshot_if_changed(&mut snapshot, &key, &objects) {
+                                    emit_db_objects(
+                                        &environment_id,
+                                        &service_id,
+                                        service_type,
+                                        &database_name,
+                                        objects,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+fn is_database_service(service_type: &ServiceType) -> bool {
+    matches!(
+        service_type,
+        ServiceType::Mysql | ServiceType::Mariadb | ServiceType::Postgresql | ServiceType::Mongodb
+    )
+}
+
+fn service_type_tag(service_type: &ServiceType) -> &'static str {
+    match service_type {
+        ServiceType::Mysql => "mysql",
+        ServiceType::Mariadb => "mariadb",
+        ServiceType::Postgresql => "postgresql",
+        ServiceType::Mongodb => "mongodb",
+        _ => "unknown",
+    }
+}
+
+fn extract_items_field(data: Option<Value>, key: &str) -> Option<Value> {
+    let value = data?;
+    value.get(key).cloned()
+}
+
+fn fetch_database_items(environment_id: &str, service_data: &ServiceData) -> Option<Value> {
+    match service_data.service_type {
+        ServiceType::Mysql => MysqlService::global()
+            .list_databases(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "databases")),
+        ServiceType::Mariadb => MariadbService::global()
+            .list_databases(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "databases")),
+        ServiceType::Postgresql => PostgresqlService::global()
+            .list_databases(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "databases")),
+        ServiceType::Mongodb => MongodbService::global()
+            .list_databases(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "databases")),
+        _ => None,
+    }
+}
+
+fn fetch_principal_items(environment_id: &str, service_data: &ServiceData) -> Option<Value> {
+    match service_data.service_type {
+        ServiceType::Mysql => MysqlService::global()
+            .list_users(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "users")),
+        ServiceType::Mariadb => MariadbService::global()
+            .list_users(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "users")),
+        ServiceType::Postgresql => PostgresqlService::global()
+            .list_roles(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "roles")),
+        ServiceType::Mongodb => MongodbService::global()
+            .list_users(environment_id, service_data)
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "users")),
+        _ => None,
+    }
+}
+
+fn fetch_object_items(
+    environment_id: &str,
+    service_data: &ServiceData,
+    database_name: &str,
+) -> Option<Value> {
+    match service_data.service_type {
+        ServiceType::Mysql => MysqlService::global()
+            .list_tables(environment_id, service_data, database_name.to_string())
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "tables")),
+        ServiceType::Mariadb => MariadbService::global()
+            .list_tables(environment_id, service_data, database_name.to_string())
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "tables")),
+        ServiceType::Postgresql => PostgresqlService::global()
+            .list_tables(environment_id, service_data, database_name.to_string())
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "tables")),
+        ServiceType::Mongodb => MongodbService::global()
+            .list_collections(environment_id, service_data, database_name.to_string())
+            .ok()
+            .and_then(|res| extract_items_field(res.data, "collections")),
+        _ => None,
+    }
+}
+
+fn canonicalize_json(value: &Value) -> Value {
+    match value {
+        Value::Array(items) => {
+            let mut normalized: Vec<Value> = items.iter().map(canonicalize_json).collect();
+            normalized.sort_by_key(|item| serde_json::to_string(item).unwrap_or_default());
+            Value::Array(normalized)
+        }
+        Value::Object(map) => {
+            let mut keys: Vec<&String> = map.keys().collect();
+            keys.sort();
+            let mut normalized = serde_json::Map::new();
+            for key in keys {
+                if let Some(v) = map.get(key) {
+                    normalized.insert(key.clone(), canonicalize_json(v));
+                }
+            }
+            Value::Object(normalized)
+        }
+        _ => value.clone(),
+    }
+}
+
+fn update_snapshot_if_changed(snapshot: &mut HashMap<String, String>, key: &str, items: &Value) -> bool {
+    let normalized = canonicalize_json(items);
+    let fingerprint = serde_json::to_string(&normalized).unwrap_or_default();
+    let previous = snapshot.get(key);
+    let changed = previous.map(|p| p != &fingerprint).unwrap_or(true);
+    snapshot.insert(key.to_string(), fingerprint);
+    changed
 }

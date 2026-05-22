@@ -30,14 +30,22 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '../../../../store/environment'
 import { usePostgresqlService, PostgreSQLConfig, PostgreSQLRole, PostgreSQLGrant } from '@/hooks/services/postgresql'
 import { useFileOperations } from "@/hooks/file-operations"
 import { PostgreSQLMetadata } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data'
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
+import {
+  registerDbObjectWatch,
+  unregisterDbObjectWatch,
+  useServiceDataStatus,
+  useServiceDatabasePush,
+  useServiceDbObjectPush,
+  useServicePrincipalPush,
+  useServiceStatus,
+} from '@/hooks/useStatus'
 
 interface PostgreSQLServiceProps {
   serviceData: ServiceData
@@ -77,6 +85,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
   const [isStarting, setIsStarting] = useState(false)
   const [isStopping, setIsStopping] = useState(false)
   const [isRestarting, setIsRestarting] = useState(false)
+  const watchedDatabasesRef = useRef<Set<string>>(new Set())
 
   const [databases, setDatabases] = useState<Array<{
     name: string,
@@ -174,28 +183,87 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
       void loadDatabases()
-      const timer = setInterval(() => {
-        void loadDatabases()
-      }, 3000)
-      return () => clearInterval(timer)
+      void loadRoles()
+      return () => {}
     }
 
+    const watched = Array.from(watchedDatabasesRef.current)
+    for (const dbName of watched) {
+      void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, dbName)
+    }
+    watchedDatabasesRef.current.clear()
     setDatabases([])
+    setRoles([])
     return () => {}
   }, [isServiceActive, isInitialized, serviceStatus])
 
   useEffect(() => {
-    if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
-      void loadRoles()
-      const timer = setInterval(() => {
-        void loadRoles()
-      }, 3000)
-      return () => clearInterval(timer)
+    return () => {
+      const watched = Array.from(watchedDatabasesRef.current)
+      for (const dbName of watched) {
+        void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, dbName)
+      }
+      watchedDatabasesRef.current.clear()
     }
+  }, [selectedEnvironmentId, serviceData.id])
 
-    setRoles([])
-    return () => {}
-  }, [isServiceActive, isInitialized, serviceStatus])
+  useServiceDatabasePush<string[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      const names = Array.isArray(payload.items)
+        ? payload.items.filter((item): item is string => typeof item === 'string')
+        : []
+
+      setDatabases(prev => {
+        const nextDatabases = names.map((name) => {
+          const existing = prev.find(d => d.name === name)
+          return {
+            name,
+            tables: existing?.tables,
+            isLoadingTables: existing?.isLoadingTables || false,
+            showTables: existing?.showTables || false,
+            showAllTables: existing?.showAllTables || false,
+          }
+        })
+        return nextDatabases
+      })
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
+
+  useServicePrincipalPush<PostgreSQLRole[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      const nextRoles = Array.isArray(payload.items) ? payload.items : []
+      setRoles(nextRoles)
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
+
+  useServiceDbObjectPush<string[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      if (!payload.databaseName) return
+      const tableNames = Array.isArray(payload.items)
+        ? payload.items.filter((item): item is string => typeof item === 'string')
+        : []
+
+      setDatabases(prev => prev.map(db =>
+        db.name === payload.databaseName
+          ? {
+            ...db,
+            tables: tableNames,
+            isLoadingTables: false,
+            showTables: db.showTables || watchedDatabasesRef.current.has(db.name),
+          }
+          : db,
+      ))
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
 
   const checkInitialized = async () => {
     try {
@@ -298,12 +366,16 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
     if (!db) return
 
     if (db.showTables) {
+      watchedDatabasesRef.current.delete(databaseName)
+      void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, databaseName)
       setDatabases(prev => prev.map(d =>
         d.name === databaseName ? { ...d, showTables: false } : d
       ))
       return
     }
 
+    watchedDatabasesRef.current.add(databaseName)
+    void registerDbObjectWatch(selectedEnvironmentId, serviceData.id, databaseName)
     if (!db.tables) {
       void loadTables(databaseName)
     } else {

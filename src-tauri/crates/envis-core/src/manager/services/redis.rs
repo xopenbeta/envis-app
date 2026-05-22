@@ -897,13 +897,43 @@ impl RedisService {
 
     fn is_running_on_port(&self, port: u16) -> bool {
         if cfg!(target_os = "windows") {
-            let output = create_command("tasklist")
-                .arg("/FI")
-                .arg("IMAGENAME eq redis-server.exe")
-                .output();
-            return output
-                .map(|o| String::from_utf8_lossy(&o.stdout).contains("redis-server.exe"))
-                .unwrap_or(false);
+            let output = match create_command("netstat").args(["-ano", "-p", "tcp"]).output() {
+                Ok(o) => o,
+                Err(_) => return false,
+            };
+
+            let marker = format!(":{}", port);
+            for line in String::from_utf8_lossy(&output.stdout).lines() {
+                let cols: Vec<&str> = line.split_whitespace().collect();
+                if cols.len() < 5 {
+                    continue;
+                }
+                if !cols[1].contains(&marker) {
+                    continue;
+                }
+                if !cols[3].eq_ignore_ascii_case("LISTENING") {
+                    continue;
+                }
+
+                let pid = cols[4];
+                if !pid.chars().all(|c| c.is_ascii_digit()) {
+                    continue;
+                }
+
+                let task = create_command("tasklist")
+                    .arg("/FI")
+                    .arg(format!("PID eq {}", pid))
+                    .arg("/FI")
+                    .arg("IMAGENAME eq redis-server.exe")
+                    .output();
+                if let Ok(task_out) = task {
+                    if String::from_utf8_lossy(&task_out.stdout).contains("redis-server.exe") {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         let port_arg = format!(":{}", port);
@@ -923,20 +953,10 @@ impl RedisService {
                 if !stdout.trim().is_empty() {
                     true
                 } else {
-                    create_command("pgrep")
-                        .arg("-x")
-                        .arg("redis-server")
-                        .output()
-                        .map(|po| po.status.success() && !po.stdout.is_empty())
-                        .unwrap_or(false)
+                    false
                 }
             }
-            Err(_) => create_command("pgrep")
-                .arg("-x")
-                .arg("redis-server")
-                .output()
-                .map(|po| po.status.success() && !po.stdout.is_empty())
-                .unwrap_or(false),
+            Err(_) => false,
         }
     }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { invokeCommand } from '@/lib/tauri-api'
 import {
   DownloadStatus,
   EnvironmentStatus,
@@ -22,6 +23,15 @@ interface PollingOptions {
 }
 
 const DEFAULT_INTERVAL = 500
+
+interface DbPushPayload<TItems = unknown> {
+  environmentId: string
+  serviceId: string
+  serviceType: string
+  kind: 'databases' | 'principals' | 'objects'
+  databaseName?: string
+  items: TItems
+}
 
 export function useEnvironmentStatus(
   environmentId: string,
@@ -285,5 +295,94 @@ export function useServiceDownloadStatus(
     downloadProgress,
     refresh,
   }
+}
+
+function useDbPushEvent<TItems = unknown>(
+  eventName: 'status:db-databases' | 'status:db-principals' | 'status:db-objects',
+  environmentId: string,
+  serviceData: ServiceData,
+  options: PollingOptions,
+  onEvent: (payload: DbPushPayload<TItems>) => void,
+) {
+  const enabled = options.enabled ?? true
+  const onEventRef = useRef(onEvent)
+
+  useEffect(() => {
+    onEventRef.current = onEvent
+  }, [onEvent])
+
+  useEffect(() => {
+    if (!enabled) return
+
+    let cancelled = false
+    let unlistenFn: UnlistenFn | undefined
+    void listen<DbPushPayload<TItems>>(eventName, (event) => {
+      if (
+        event.payload.environmentId === environmentId &&
+        event.payload.serviceId === serviceData.id
+      ) {
+        onEventRef.current(event.payload)
+      }
+    }).then((fn) => {
+      if (cancelled) fn()
+      else unlistenFn = fn
+    })
+
+    return () => {
+      cancelled = true
+      unlistenFn?.()
+    }
+  }, [enabled, eventName, environmentId, serviceData.id])
+}
+
+export function useServiceDatabasePush<TItems = unknown>(
+  environmentId: string,
+  serviceData: ServiceData,
+  onEvent: (payload: DbPushPayload<TItems>) => void,
+  options: PollingOptions = {},
+) {
+  useDbPushEvent('status:db-databases', environmentId, serviceData, options, onEvent)
+}
+
+export function useServicePrincipalPush<TItems = unknown>(
+  environmentId: string,
+  serviceData: ServiceData,
+  onEvent: (payload: DbPushPayload<TItems>) => void,
+  options: PollingOptions = {},
+) {
+  useDbPushEvent('status:db-principals', environmentId, serviceData, options, onEvent)
+}
+
+export function useServiceDbObjectPush<TItems = unknown>(
+  environmentId: string,
+  serviceData: ServiceData,
+  onEvent: (payload: DbPushPayload<TItems>) => void,
+  options: PollingOptions = {},
+) {
+  useDbPushEvent('status:db-objects', environmentId, serviceData, options, onEvent)
+}
+
+export async function registerDbObjectWatch(
+  environmentId: string,
+  serviceId: string,
+  databaseName: string,
+) {
+  return invokeCommand('register_db_object_watch', {
+    environmentId,
+    serviceId,
+    databaseName,
+  })
+}
+
+export async function unregisterDbObjectWatch(
+  environmentId: string,
+  serviceId: string,
+  databaseName: string,
+) {
+  return invokeCommand('unregister_db_object_watch', {
+    environmentId,
+    serviceId,
+    databaseName,
+  })
 }
 

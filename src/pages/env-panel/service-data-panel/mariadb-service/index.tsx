@@ -31,14 +31,22 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '../../../../store/environment'
 import { useMariadb, MariaDBConfig } from '@/hooks/services/mariadb'
 import { useFileOperations } from "@/hooks/file-operations"
 import { MariaDBMetadata, MariaDBUser, MariaDBGrant } from "@/types/service"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
+import {
+  registerDbObjectWatch,
+  unregisterDbObjectWatch,
+  useServiceDataStatus,
+  useServiceDatabasePush,
+  useServiceDbObjectPush,
+  useServicePrincipalPush,
+  useServiceStatus,
+} from '@/hooks/useStatus'
 
 interface MariaDBServiceProps {
   serviceData: ServiceData
@@ -85,6 +93,7 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
   const [isStarting, setIsStarting] = useState(false)
   const [isStopping, setIsStopping] = useState(false)
   const [isRestarting, setIsRestarting] = useState(false)
+  const watchedDatabasesRef = useRef<Set<string>>(new Set())
 
   // 数据库管理相关状态
   const [databases, setDatabases] = useState<Array<{
@@ -182,33 +191,93 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     }
   }, [isServiceActive, isInitialized])
 
-  // 定时刷新数据库列表（每3秒）
+  // running 后执行一次初始化拉取，后续更新走 Rust 主动推送
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
-      loadDatabases()
-      const timer = setInterval(() => {
-        loadDatabases()
-      }, 3000)
-      return () => clearInterval(timer)
-    } else {
-      setDatabases([])
+      void loadDatabases()
+      void loadUsers()
       return () => {}
-    }
-  }, [isServiceActive, isInitialized, serviceStatus])
-
-  // 定时刷新用户列表（每3秒）
-  useEffect(() => {
-    if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
-      loadUsers()
-      const timer = setInterval(() => {
-        loadUsers()
-      }, 3000)
-      return () => clearInterval(timer)
     } else {
+      const watched = Array.from(watchedDatabasesRef.current)
+      for (const dbName of watched) {
+        void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, dbName)
+      }
+      watchedDatabasesRef.current.clear()
+      setDatabases([])
       setUsers([])
       return () => {}
     }
   }, [isServiceActive, isInitialized, serviceStatus])
+
+  useEffect(() => {
+    return () => {
+      const watched = Array.from(watchedDatabasesRef.current)
+      for (const dbName of watched) {
+        void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, dbName)
+      }
+      watchedDatabasesRef.current.clear()
+    }
+  }, [selectedEnvironmentId, serviceData.id])
+
+  useServiceDatabasePush<string[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      const names = Array.isArray(payload.items)
+        ? payload.items.filter((item): item is string => typeof item === 'string')
+        : []
+
+      setDatabases(prev => {
+        const newDatabases = names.map((name) => {
+          const existing = prev.find(d => d.name === name)
+          return {
+            name,
+            tables: existing?.tables,
+            isLoadingTables: existing?.isLoadingTables || false,
+            showTables: existing?.showTables || false,
+            showAllTables: existing?.showAllTables || false,
+          }
+        })
+        return newDatabases
+      })
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
+
+  useServicePrincipalPush<MariaDBUser[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      const nextUsers = Array.isArray(payload.items) ? payload.items : []
+      setUsers(nextUsers)
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
+
+  useServiceDbObjectPush<string[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      if (!payload.databaseName) {
+        return
+      }
+      const tableNames = Array.isArray(payload.items)
+        ? payload.items.filter((item): item is string => typeof item === 'string')
+        : []
+
+      setDatabases(prev => prev.map(db =>
+        db.name === payload.databaseName
+          ? {
+            ...db,
+            tables: tableNames,
+            isLoadingTables: false,
+            showTables: db.showTables || watchedDatabasesRef.current.has(db.name),
+          }
+          : db
+      ))
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
 
   const checkInitialized = async () => {
     try {
@@ -304,10 +373,14 @@ export function MariaDBService({ serviceData }: MariaDBServiceProps) {
     const db = databases.find(d => d.name === databaseName)
     if (!db) return
     if (db.showTables) {
+      watchedDatabasesRef.current.delete(databaseName)
+      void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, databaseName)
       setDatabases(prev => prev.map(d =>
         d.name === databaseName ? { ...d, showTables: false } : d
       ))
     } else {
+      watchedDatabasesRef.current.add(databaseName)
+      void registerDbObjectWatch(selectedEnvironmentId, serviceData.id, databaseName)
       if (!db.tables) {
         loadTables(databaseName)
       } else {

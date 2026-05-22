@@ -35,6 +35,46 @@ impl MongodbService {
         Self {}
     }
 
+    fn is_windows_mongod_listening_on_port(port: &str) -> bool {
+        let output = match create_command("netstat").args(["-ano", "-p", "tcp"]).output() {
+            Ok(o) => o,
+            Err(_) => return false,
+        };
+
+        let marker = format!(":{}", port);
+        for line in String::from_utf8_lossy(&output.stdout).lines() {
+            let cols: Vec<&str> = line.split_whitespace().collect();
+            if cols.len() < 5 {
+                continue;
+            }
+            if !cols[1].contains(&marker) {
+                continue;
+            }
+            if !cols[3].eq_ignore_ascii_case("LISTENING") {
+                continue;
+            }
+
+            let pid = cols[4];
+            if !pid.chars().all(|c| c.is_ascii_digit()) {
+                continue;
+            }
+
+            let task = create_command("tasklist")
+                .arg("/FI")
+                .arg(format!("PID eq {}", pid))
+                .arg("/FI")
+                .arg("IMAGENAME eq mongod.exe")
+                .output();
+            if let Ok(task_out) = task {
+                if String::from_utf8_lossy(&task_out.stdout).contains("mongod.exe") {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
     /// 获取可用的 MongoDB 版本列表（示例）
     pub fn get_available_versions(&self) -> Vec<MongodbVersion> {
         vec![
@@ -734,92 +774,23 @@ impl MongodbService {
             }
         }
 
-        // 检查是否有 mongod 进程在指定端口运行（优先使用端口检测）
+        // 检查是否有 mongod 在该实例端口运行
         let running = if cfg!(target_os = "windows") {
-            // Windows: 继续使用 tasklist 判断 mongod.exe 是否存在（更可靠且避免复杂的 netstat->pid->映射）
-            let output = create_command("tasklist")
-                .arg("/FI")
-                .arg("IMAGENAME eq mongod.exe")
-                .output();
-            match output {
-                Ok(o) => String::from_utf8_lossy(&o.stdout).contains("mongod.exe"),
-                Err(_) => false,
-            }
+            Self::is_windows_mongod_listening_on_port(&port)
         } else {
-            // Unix-like: 首先尝试用 lsof 检查端口占用并判断是否由 mongod 占用
-            // log::info!("Unix-like: 使用 lsof 检查端口 {}", port);
+            // Unix-like: 使用 lsof 按端口和进程名检测，避免跨实例误判
             let port_arg = format!(":{}", port);
             let output = create_command("lsof")
+                .arg("-c")
+                .arg("mongod")
                 .arg("-iTCP")
                 .arg(&port_arg)
                 .arg("-sTCP:LISTEN")
                 .output();
 
             match output {
-                Ok(o) => {
-                    let stdout = String::from_utf8_lossy(&o.stdout);
-                    let stderr = String::from_utf8_lossy(&o.stderr);
-                    // log::debug!("lsof stdout: {}", stdout);
-                    if !stderr.is_empty() {
-                        // log::debug!("lsof stderr: {}", stderr);
-                    }
-
-                    // 有时 lsof 输出会包含完整命令/可执行名，检查是否包含 mongod
-                    if stdout.contains("mongod") {
-                        // log::info!("检测到 mongod 在端口 {} 上监听", port);
-                        true
-                    } else if !stdout.trim().is_empty() {
-                        // 如果 lsof 有输出但不包含 mongod，说明端口被其他程序占用
-                        // log::warn!(
-                        //     "端口 {} 被其他进程占用（lsof 输出非空但未包含 mongod）：{}",
-                        //     port,
-                        //     stdout.lines().next().unwrap_or("...")
-                        // );
-                        false
-                    } else {
-                        // log::info!("lsof 未返回监听信息，回退到 pgrep 检查 mongod 进程");
-                        let output = create_command("pgrep").arg("-x").arg("mongod").output();
-                        match output {
-                            Ok(o2) => {
-                                let stdout2 = String::from_utf8_lossy(&o2.stdout);
-                                // log::debug!("pgrep stdout: {}", stdout2);
-                                if o2.status.success() && !stdout2.is_empty() {
-                                    // log::info!("pgrep 检测到 mongod 进程存在");
-                                    true
-                                } else {
-                                    // log::info!("pgrep 未检测到 mongod 进程");
-                                    false
-                                }
-                            }
-                            Err(e2) => {
-                                // log::error!("执行 pgrep 失败: {}", e2);
-                                false
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    // 如果 lsof 不可用，回退到 pgrep 检查进程名（不基于端口）
-                    // log::warn!("执行 lsof 失败: {}，回退到 pgrep 检查 mongod 进程", e);
-                    let output = create_command("pgrep").arg("-x").arg("mongod").output();
-                    match output {
-                        Ok(o) => {
-                            let stdout = String::from_utf8_lossy(&o.stdout);
-                            // log::debug!("pgrep stdout: {}", stdout);
-                            let found = o.status.success() && !stdout.is_empty();
-                            if found {
-                                // log::info!("pgrep 检测到 mongod 进程");
-                            } else {
-                                // log::info!("pgrep 未检测到 mongod 进程");
-                            }
-                            found
-                        }
-                        Err(e2) => {
-                            // log::error!("执行 pgrep 也失败: {}", e2);
-                            false
-                        }
-                    }
-                }
+                Ok(o) => !String::from_utf8_lossy(&o.stdout).trim().is_empty(),
+                Err(_) => false,
             }
         };
 

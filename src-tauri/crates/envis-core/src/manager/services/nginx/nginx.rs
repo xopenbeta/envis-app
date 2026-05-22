@@ -5,6 +5,7 @@ use crate::types::{ServiceData, ServiceStatus};
 use crate::utils::create_command;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::copy;
 use std::path::{Path, PathBuf};
@@ -461,6 +462,199 @@ impl NginxService {
         command
     }
 
+    fn parse_nginx_pid_file(conf_path: &PathBuf, install_path: &PathBuf) -> PathBuf {
+        let default_pid = install_path.join("logs").join("nginx.pid");
+        if !conf_path.exists() {
+            return default_pid;
+        }
+
+        if let Ok(content) = std::fs::read_to_string(conf_path) {
+            for line in content.lines() {
+                let trimmed = line
+                    .split('#')
+                    .next()
+                    .unwrap_or("")
+                    .trim();
+                if !trimmed.starts_with("pid") {
+                    continue;
+                }
+
+                let raw = trimmed
+                    .trim_start_matches("pid")
+                    .trim()
+                    .trim_end_matches(';')
+                    .trim()
+                    .trim_matches('"')
+                    .trim_matches('\'');
+                if raw.is_empty() {
+                    continue;
+                }
+
+                let path = PathBuf::from(raw);
+                return if path.is_absolute() {
+                    path
+                } else {
+                    install_path.join(path)
+                };
+            }
+        }
+
+        default_pid
+    }
+
+    fn parse_nginx_listen_ports(conf_path: &PathBuf) -> Vec<u16> {
+        let mut ports = BTreeSet::new();
+        if !conf_path.exists() {
+            return Vec::new();
+        }
+
+        if let Ok(content) = std::fs::read_to_string(conf_path) {
+            for line in content.lines() {
+                let trimmed = line
+                    .split('#')
+                    .next()
+                    .unwrap_or("")
+                    .trim();
+                if !trimmed.starts_with("listen") {
+                    continue;
+                }
+
+                let raw = trimmed
+                    .trim_start_matches("listen")
+                    .trim()
+                    .trim_end_matches(';')
+                    .trim();
+
+                for token in raw.split_whitespace() {
+                    let candidate = token
+                        .trim_matches('[')
+                        .trim_matches(']')
+                        .split(':')
+                        .next_back()
+                        .unwrap_or(token);
+                    if let Ok(port) = candidate.parse::<u16>() {
+                        ports.insert(port);
+                        break;
+                    }
+                }
+            }
+        }
+
+        ports.into_iter().collect()
+    }
+
+    fn is_pid_process_running(pid_file: &PathBuf, process_name: &str) -> Option<bool> {
+        let pid = std::fs::read_to_string(pid_file).ok()?.trim().to_string();
+        if pid.is_empty() || !pid.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            let output = create_command("tasklist")
+                .arg("/FI")
+                .arg(format!("PID eq {}", pid))
+                .arg("/FI")
+                .arg(format!("IMAGENAME eq {}", process_name))
+                .output()
+                .ok()?;
+            return Some(String::from_utf8_lossy(&output.stdout).contains(process_name));
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let output = create_command("ps")
+                .arg("-p")
+                .arg(&pid)
+                .arg("-o")
+                .arg("comm=")
+                .output()
+                .ok()?;
+            if !output.status.success() {
+                return Some(false);
+            }
+
+            let comm = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+            let expected = process_name.trim_end_matches(".exe").to_lowercase();
+            return Some(comm == expected || comm == format!("{}.exe", expected));
+        }
+    }
+
+    fn is_windows_process_listening_ports(process_name: &str, ports: &[u16]) -> bool {
+        if ports.is_empty() {
+            return false;
+        }
+
+        let output = match create_command("netstat").args(["-ano", "-p", "tcp"]).output() {
+            Ok(o) => o,
+            Err(_) => return false,
+        };
+
+        for line in String::from_utf8_lossy(&output.stdout).lines() {
+            let cols: Vec<&str> = line.split_whitespace().collect();
+            if cols.len() < 5 || !cols[3].eq_ignore_ascii_case("LISTENING") {
+                continue;
+            }
+
+            let local_addr = cols[1];
+            let port = local_addr
+                .split(':')
+                .next_back()
+                .and_then(|p| p.parse::<u16>().ok());
+            let Some(port) = port else {
+                continue;
+            };
+            if !ports.contains(&port) {
+                continue;
+            }
+
+            let pid = cols[4];
+            if !pid.chars().all(|c| c.is_ascii_digit()) {
+                continue;
+            }
+
+            let task = create_command("tasklist")
+                .arg("/FI")
+                .arg(format!("PID eq {}", pid))
+                .arg("/FI")
+                .arg(format!("IMAGENAME eq {}", process_name))
+                .output();
+
+            if let Ok(task_out) = task {
+                if String::from_utf8_lossy(&task_out.stdout).contains(process_name) {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    fn is_unix_process_listening_ports(process_name: &str, ports: &[u16]) -> bool {
+        if ports.is_empty() {
+            return false;
+        }
+
+        for port in ports {
+            let port_arg = format!(":{}", port);
+            let output = create_command("lsof")
+                .arg("-c")
+                .arg(process_name)
+                .arg("-iTCP")
+                .arg(&port_arg)
+                .arg("-sTCP:LISTEN")
+                .output();
+
+            if let Ok(o) = output {
+                if !String::from_utf8_lossy(&o.stdout).trim().is_empty() {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
     /// 启动 Nginx 服务
     pub fn start_service(&self, service_data: &ServiceData) -> Result<ServiceDataResult> {
         log::info!("启动 Nginx 服务");
@@ -656,40 +850,27 @@ impl NginxService {
             .map(PathBuf::from)
             .unwrap_or_else(|| install_path.join("conf").join("nginx.conf"));
 
-        let conf_path_str = conf_path.to_string_lossy();
+        let pid_file = Self::parse_nginx_pid_file(&conf_path, &install_path);
+        if let Some(running) = Self::is_pid_process_running(&pid_file, "nginx.exe") {
+            return Ok(if running {
+                ServiceStatus::Running
+            } else {
+                ServiceStatus::Stopped
+            });
+        }
 
-        // 使用 ps 命令检查 nginx 进程
-        let output = if cfg!(target_os = "windows") {
-            create_command("tasklist")
-                .arg("/FI")
-                .arg("IMAGENAME eq nginx.exe")
-                .output()
+        let ports = Self::parse_nginx_listen_ports(&conf_path);
+        let running = if cfg!(target_os = "windows") {
+            Self::is_windows_process_listening_ports("nginx.exe", &ports)
         } else {
-            create_command("sh")
-                .arg("-c")
-                .arg(format!(
-                    "ps aux | grep '[n]ginx: master process' | grep '{}'",
-                    conf_path_str
-                ))
-                .output()
+            Self::is_unix_process_listening_ports("nginx", &ports)
         };
 
-        match output {
-            Ok(output) => {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                if stdout.contains("nginx") {
-                    // log::info!("Nginx 服务正在运行");
-                    Ok(ServiceStatus::Running)
-                } else {
-                    // log::info!("Nginx 服务未运行");
-                    Ok(ServiceStatus::Stopped)
-                }
-            }
-            Err(e) => {
-                log::warn!("检查 Nginx 服务状态失败: {}", e);
-                Ok(ServiceStatus::Unknown)
-            }
-        }
+        Ok(if running {
+            ServiceStatus::Running
+        } else {
+            ServiceStatus::Stopped
+        })
     }
 
     fn format_path_for_nginx_conf<P: AsRef<Path>>(path: P) -> String {

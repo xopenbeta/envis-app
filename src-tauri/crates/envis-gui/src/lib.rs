@@ -167,6 +167,8 @@ pub fn run(ctx: tauri::Context<tauri::Wry>) {
             get_service_size,
             delete_service,
             get_services_process_stats,
+            register_db_object_watch,
+            unregister_db_object_watch,
             // 系统信息相关命令
             get_system_info,
             open_terminal,

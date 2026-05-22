@@ -93,6 +93,133 @@ impl MariadbService {
         services_folder.join("mariadb").join(version)
     }
 
+    fn parse_port_bind_and_pid(config_path: &PathBuf, service_data_folder: &PathBuf) -> (String, String, PathBuf) {
+        let mut port = "3306".to_string();
+        let mut bind_address = "127.0.0.1".to_string();
+        let mut pid_file = service_data_folder.join("tmp").join("mysql.pid");
+
+        if config_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(config_path) {
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if let Some(val) = trimmed.strip_prefix("port") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            port = val.to_string();
+                        }
+                    } else if let Some(val) = trimmed.strip_prefix("bind-address") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            bind_address = val.to_string();
+                        }
+                    } else if let Some(val) = trimmed.strip_prefix("pid-file") {
+                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
+                        if !val.is_empty() {
+                            pid_file = PathBuf::from(val);
+                        }
+                    }
+                }
+            }
+        }
+
+        (port, bind_address, pid_file)
+    }
+
+    fn is_windows_pid_mysqld_running(pid_file: &PathBuf) -> Option<bool> {
+        let pid_str = std::fs::read_to_string(pid_file).ok()?.trim().to_string();
+        if pid_str.is_empty() || !pid_str.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+
+        let output = create_command("tasklist")
+            .arg("/FI")
+            .arg(format!("PID eq {}", pid_str))
+            .arg("/FI")
+            .arg("IMAGENAME eq mysqld.exe")
+            .output()
+            .ok()?;
+
+        Some(String::from_utf8_lossy(&output.stdout).contains("mysqld.exe"))
+    }
+
+    fn is_unix_pid_mysqld_running(pid_file: &PathBuf) -> Option<bool> {
+        let pid_str = std::fs::read_to_string(pid_file).ok()?.trim().to_string();
+        if pid_str.is_empty() || !pid_str.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+
+        let output = create_command("ps")
+            .arg("-p")
+            .arg(&pid_str)
+            .arg("-o")
+            .arg("comm=")
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return Some(false);
+        }
+
+        let comm = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+        Some(comm == "mysqld" || comm == "mysqld.exe")
+    }
+
+    fn is_windows_mysqld_listening_on_port(port: &str) -> bool {
+        let output = match create_command("netstat").args(["-ano", "-p", "tcp"]).output() {
+            Ok(o) => o,
+            Err(_) => return false,
+        };
+
+        let marker = format!(":{}", port);
+        for line in String::from_utf8_lossy(&output.stdout).lines() {
+            let cols: Vec<&str> = line.split_whitespace().collect();
+            if cols.len() < 5 {
+                continue;
+            }
+            if !cols[1].contains(&marker) {
+                continue;
+            }
+            if !cols[3].eq_ignore_ascii_case("LISTENING") {
+                continue;
+            }
+
+            let pid = cols[4];
+            if !pid.chars().all(|c| c.is_ascii_digit()) {
+                continue;
+            }
+
+            let task = create_command("tasklist")
+                .arg("/FI")
+                .arg(format!("PID eq {}", pid))
+                .arg("/FI")
+                .arg("IMAGENAME eq mysqld.exe")
+                .output();
+            if let Ok(task_out) = task {
+                if String::from_utf8_lossy(&task_out.stdout).contains("mysqld.exe") {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    fn is_unix_mysqld_listening_on_port(port: &str) -> bool {
+        let port_arg = format!(":{}", port);
+        let output = create_command("lsof")
+            .arg("-c")
+            .arg("mysqld")
+            .arg("-iTCP")
+            .arg(&port_arg)
+            .arg("-sTCP:LISTEN")
+            .output();
+
+        match output {
+            Ok(o) => !String::from_utf8_lossy(&o.stdout).trim().is_empty(),
+            Err(_) => false,
+        }
+    }
+
     /// 构建下载文件名和 URL 列表
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
@@ -384,76 +511,20 @@ impl MariadbService {
             .map(PathBuf::from)
             .unwrap_or_else(|| service_data_folder.join("my.cnf"));
 
-        // 从配置文件解析端口和绑定地址
-        let mut port = "3306".to_string();
-        let mut bind_address = "127.0.0.1".to_string();
-        if config_path.exists() {
-            if let Ok(content) = std::fs::read_to_string(&config_path) {
-                for line in content.lines() {
-                    let trimmed = line.trim();
-                    if let Some(val) = trimmed.strip_prefix("port") {
-                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
-                        if !val.is_empty() {
-                            port = val.to_string();
-                        }
-                    } else if let Some(val) = trimmed.strip_prefix("bind-address") {
-                        let val = val.trim_start_matches(|c: char| c == ' ' || c == '=').trim();
-                        if !val.is_empty() {
-                            bind_address = val.to_string();
-                        }
-                    }
-                }
-            }
-        }
+        let (port, bind_address, pid_file) =
+            Self::parse_port_bind_and_pid(&config_path, &service_data_folder);
 
         let running = if cfg!(target_os = "windows") {
-            let output = create_command("tasklist")
-                .arg("/FI")
-                .arg("IMAGENAME eq mysqld.exe")
-                .output();
-            match output {
-                Ok(o) => String::from_utf8_lossy(&o.stdout).contains("mysqld.exe"),
-                Err(_) => false,
+            if let Some(precise_running) = Self::is_windows_pid_mysqld_running(&pid_file) {
+                precise_running
+            } else {
+                Self::is_windows_mysqld_listening_on_port(&port)
             }
         } else {
-            // 优先用 lsof 检测端口，与 MongoDB 逻辑保持一致
-            let port_arg = format!(":{}", port);
-            let output = create_command("lsof")
-                .arg("-iTCP")
-                .arg(&port_arg)
-                .arg("-sTCP:LISTEN")
-                .output();
-            match output {
-                Ok(o) => {
-                    let stdout = String::from_utf8_lossy(&o.stdout);
-                    if stdout.contains("mysqld") {
-                        true
-                    } else if !stdout.trim().is_empty() {
-                        // 端口被其他进程占用
-                        false
-                    } else {
-                        // lsof 无输出时回退到 pgrep
-                        let output = create_command("pgrep").arg("-x").arg("mysqld").output();
-                        match output {
-                            Ok(o2) => {
-                                let stdout2 = String::from_utf8_lossy(&o2.stdout);
-                                o2.status.success() && !stdout2.is_empty()
-                            }
-                            Err(_) => false,
-                        }
-                    }
-                }
-                Err(_) => {
-                    // lsof 不可用，回退到 pgrep
-                    let output = create_command("pgrep").arg("-x").arg("mysqld").output();
-                    match output {
-                        Ok(o) => {
-                            let stdout = String::from_utf8_lossy(&o.stdout);
-                            o.status.success() && !stdout.is_empty()
-                        }
-                        Err(_) => false,
-                    }
-                }
+            if let Some(precise_running) = Self::is_unix_pid_mysqld_running(&pid_file) {
+                precise_running
+            } else {
+                Self::is_unix_mysqld_listening_on_port(&port)
             }
         };
 

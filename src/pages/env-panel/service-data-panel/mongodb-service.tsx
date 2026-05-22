@@ -44,7 +44,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ServiceData, ServiceDataStatus, ServiceStatus } from '@/types/index'
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAtom } from 'jotai'
 import { selectedEnvironmentIdAtom } from '../../../store/environment'
@@ -53,7 +53,15 @@ import { MongoDBConfig, MongoDBMetadata } from "@/types/service"
 import { useMongodb } from "@/hooks/services/mongodb"
 import { useEnvironmentServiceData, useServiceData } from "@/hooks/env-serv-data"
 import { useService } from "@/hooks/service"
-import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
+import {
+  registerDbObjectWatch,
+  unregisterDbObjectWatch,
+  useServiceDataStatus,
+  useServiceDatabasePush,
+  useServiceDbObjectPush,
+  useServicePrincipalPush,
+  useServiceStatus,
+} from '@/hooks/useStatus'
 
 interface MongoDBServiceProps {
   serviceData: ServiceData
@@ -149,6 +157,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   const [newDbName, setNewDbName] = useState('')
   const [isCreatingDb, setIsCreatingDb] = useState(false)
   const [customDbName, setCustomDbName] = useState('')
+  const watchedDatabasesRef = useRef<Set<string>>(new Set())
 
   const { openFolderInFinder } = useFileOperations()
   const {
@@ -446,6 +455,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     if (!db) return
 
     if (db.showCollections) {
+      watchedDatabasesRef.current.delete(databaseName)
+      void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, databaseName)
       // 折叠
       setDatabases(prev => prev.map(d =>
         d.name === databaseName
@@ -453,6 +464,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           : d
       ))
     } else {
+      watchedDatabasesRef.current.add(databaseName)
+      void registerDbObjectWatch(selectedEnvironmentId, serviceData.id, databaseName)
       // 展开 - 如果还没加载过集合，则加载
       if (!db.collections) {
         loadCollections(databaseName)
@@ -488,28 +501,104 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     }
   }, [isServiceActive, isInitialized])
 
-  // 定时刷新数据库列表（每3秒）
+  // running 后执行一次初始化拉取，后续更新走 Rust 主动推送
   useEffect(() => {
     if (isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running) {
-      // 首次加载
-      loadDatabases()
-      loadUsers()
-
-      // 每3秒刷新一次
-      const timer = setInterval(() => {
-        loadDatabases()
-        loadUsers()
-      }, 3000);
-
-      return () => {
-        clearInterval(timer)
-      }
+      void loadDatabases()
+      void loadUsers()
+      return () => { }
     } else {
+      const watched = Array.from(watchedDatabasesRef.current)
+      for (const dbName of watched) {
+        void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, dbName)
+      }
+      watchedDatabasesRef.current.clear()
       setDatabases([])
       setUsers([])
       return () => { }
     }
   }, [isServiceActive, isInitialized, serviceStatus])
+
+  useEffect(() => {
+    return () => {
+      const watched = Array.from(watchedDatabasesRef.current)
+      for (const dbName of watched) {
+        void unregisterDbObjectWatch(selectedEnvironmentId, serviceData.id, dbName)
+      }
+      watchedDatabasesRef.current.clear()
+    }
+  }, [selectedEnvironmentId, serviceData.id])
+
+  useServiceDatabasePush<Array<{ name: string, sizeOnDisk: number, empty: boolean }>>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      const databaseItems = Array.isArray(payload.items)
+        ? payload.items.filter((item): item is { name: string, sizeOnDisk: number, empty: boolean } =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as { name?: unknown }).name === 'string' &&
+          typeof (item as { sizeOnDisk?: unknown }).sizeOnDisk === 'number' &&
+          typeof (item as { empty?: unknown }).empty === 'boolean')
+        : []
+
+      setDatabases(prev => {
+        const newDatabases = databaseItems.map((db) => {
+          const existingDb = prev.find(d => d.name === db.name)
+          return {
+            ...db,
+            collections: existingDb?.collections,
+            isLoadingCollections: existingDb?.isLoadingCollections || false,
+            showCollections: existingDb?.showCollections || false,
+            showAllCollections: existingDb?.showAllCollections || false,
+          }
+        })
+        return newDatabases
+      })
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
+
+  useServicePrincipalPush<Array<{
+    _id: string;
+    user: string;
+    db: string;
+    roles: Array<{ role: string; db: string }>;
+  }>>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      const nextUsers = Array.isArray(payload.items) ? payload.items : []
+      setUsers(nextUsers)
+      setIsLoadingUsers(false)
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
+
+  useServiceDbObjectPush<string[]>(
+    selectedEnvironmentId,
+    serviceData,
+    (payload) => {
+      if (!payload.databaseName) {
+        return
+      }
+      const collectionNames = Array.isArray(payload.items)
+        ? payload.items.filter((item): item is string => typeof item === 'string')
+        : []
+
+      setDatabases(prev => prev.map(db =>
+        db.name === payload.databaseName
+          ? {
+            ...db,
+            collections: collectionNames,
+            isLoadingCollections: false,
+            showCollections: db.showCollections || watchedDatabasesRef.current.has(db.name),
+          }
+          : db
+      ))
+    },
+    { enabled: isServiceActive && Boolean(isInitialized) && serviceStatus === ServiceStatus.Running },
+  )
 
   // 当 configPath 变化时，更新编辑状态
   useEffect(() => {

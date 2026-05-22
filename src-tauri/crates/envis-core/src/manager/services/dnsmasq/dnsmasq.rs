@@ -406,12 +406,21 @@ impl DnsmasqService {
 
         let pid_str = std::fs::read_to_string(&pid_file)?;
         let pid = pid_str.trim();
+        if pid.is_empty() || !pid.chars().all(|c| c.is_ascii_digit()) {
+            return Ok(ServiceStatus::Stopped);
+        }
 
         // 检查进程是否存在
         #[cfg(not(target_os = "windows"))]
         {
-            let output = create_command("ps").arg("-p").arg(pid).output()?;
-            if output.status.success() {
+            let output = create_command("ps")
+                .arg("-p")
+                .arg(pid)
+                .arg("-o")
+                .arg("comm=")
+                .output()?;
+            let comm = String::from_utf8_lossy(&output.stdout).trim().to_lowercase();
+            if output.status.success() && (comm == "dnsmasq" || comm == "dnsmasq.exe") {
                 return Ok(ServiceStatus::Running);
             }
         }
@@ -421,9 +430,11 @@ impl DnsmasqService {
             let output = create_command("tasklist")
                 .arg("/FI")
                 .arg(format!("PID eq {}", pid))
+                .arg("/FI")
+                .arg("IMAGENAME eq dnsmasq.exe")
                 .output()?;
             let stdout = String::from_utf8_lossy(&output.stdout);
-            if stdout.contains(pid) {
+            if stdout.contains("dnsmasq.exe") {
                 return Ok(ServiceStatus::Running);
             }
         }
