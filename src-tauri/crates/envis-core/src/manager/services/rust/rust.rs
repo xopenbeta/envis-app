@@ -37,7 +37,7 @@ impl RustService {
         Self {}
     }
 
-    /// 获取可用的 Rust 版本列表
+    /// 获取可用的 Rust 版本列表（自己打包）
     pub fn get_available_versions(&self) -> Vec<RustVersion> {
         vec![
             RustVersion {

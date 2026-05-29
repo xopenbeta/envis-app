@@ -46,18 +46,32 @@ console.log(`🚀 Starting release process for version ${cleanVersion} (${tagVer
 try {
   // 0. Commit envis-core changes first (if any)
   const envisCoreAbsDir = path.join(rootDir, envisCoreDir);
-  const subRepoChanges = getGitOutputWithCwd('git status --porcelain', envisCoreAbsDir);
-  if (subRepoChanges.length > 0) {
+  const envisCoreChanges = getGitOutputWithCwd('git status --porcelain', envisCoreAbsDir);
+  if (envisCoreChanges.length > 0) {
     console.log('📌 Detected changes in envis-core submodule, committing inside submodule...');
     execSync('git add .', { stdio: 'inherit', cwd: envisCoreAbsDir });
+
+    let committedSubmodule = false;
     if (hasStagedChanges(envisCoreAbsDir)) {
       execSync(`git commit -m "chore(envis-core): prepare release ${tagVersion}"`, {
         stdio: 'inherit',
         cwd: envisCoreAbsDir,
       });
+      committedSubmodule = true;
       console.log('✅ Committed envis-core submodule changes');
     } else {
       console.log('ℹ️ No staged changes in envis-core submodule after add, skip commit');
+    }
+
+    // If we made a commit inside the sub-repo, push it to its remote as well
+    if (committedSubmodule) {
+      try {
+        console.log('⬆️ Pushing envis-core submodule commits to remote...');
+        execSync('git push origin', { stdio: 'inherit', cwd: envisCoreAbsDir });
+        console.log('✅ Pushed envis-core submodule to remote');
+      } catch (err) {
+        console.warn('⚠️ Warning: Failed to push envis-core submodule to remote:', err.message);
+      }
     }
   } else {
     console.log('ℹ️ No changes in envis-core submodule, skip pre-commit');
