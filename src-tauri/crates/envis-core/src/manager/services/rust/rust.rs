@@ -41,14 +41,29 @@ impl RustService {
     pub fn get_available_versions(&self) -> Vec<RustVersion> {
         vec![
             RustVersion {
-                version: "1.85.0".to_string(),
+                version: "1.95.0".to_string(),
                 stable: true,
-                date: "2025-02-20".to_string(),
+                date: "2026-05-28".to_string(),
+            },
+            RustVersion {
+                version: "1.89.0".to_string(),
+                stable: true,
+                date: "2026-05-28".to_string(),
             },
             RustVersion {
                 version: "1.86.0".to_string(),
                 stable: true,
                 date: "2025-04-03".to_string(),
+            },
+            RustVersion {
+                version: "1.85.0".to_string(),
+                stable: true,
+                date: "2025-02-20".to_string(),
+            },
+            RustVersion {
+                version: "1.75.0".to_string(),
+                stable: true,
+                date: "2026-05-28".to_string(),
             },
         ]
     }
@@ -91,7 +106,7 @@ impl RustService {
 
         // 验证 Rust 版本是否支持
         match version {
-            "1.85.0" | "1.86.0" => {}
+            "1.75.0" | "1.85.0" | "1.86.0" | "1.89.0" | "1.95.0" => {}
             _ => return Err(anyhow!("不支持的 Rust 版本: {}", version)),
         };
 
