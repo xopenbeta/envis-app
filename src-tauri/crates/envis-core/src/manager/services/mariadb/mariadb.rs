@@ -238,53 +238,25 @@ impl MariadbService {
                     "https://github.com/xopenbeta/mariadb-archive/releases/latest/download/{}",
                     filename
                 ));
-                // 备用来源：mariadb-corporation 官方 GitHub Release
-                urls.push(format!(
-                    "https://github.com/mariadb-corporation/mariadb-community-server-release/releases/download/mariadb-{}/{}",
-                    version, filename
-                ));
-                // 备用来源：MariaDB 官方下载站
-                urls.push(format!(
-                    "https://downloads.mariadb.org/f/mariadb-{}/bintar-macos-{}/{}",
-                    version, arch_str, filename
-                ));
 
                 Ok((urls, filename))
             }
-            // Linux/Windows 镜像站有完整包，优先走国内镜像
+            // Linux 包同样从 GitHub Release 下载
             "linux" => {
                 let arch_str = if arch == "aarch64" { "aarch64" } else { "x86_64" };
                 let filename =
                     format!("mariadb-{}-linux-systemd-{}.tar.gz", version, arch_str);
-                let subdir = format!("bintar-linux-systemd-{}", arch_str);
                 urls.push(format!(
-                    "https://mirrors.tuna.tsinghua.edu.cn/mariadb/mariadb-{}/{}/{}",
-                    version, subdir, filename
-                ));
-                urls.push(format!(
-                    "https://mirrors.aliyun.com/mariadb/mariadb-{}/{}/{}",
-                    version, subdir, filename
-                ));
-                urls.push(format!(
-                    "https://downloads.mariadb.org/f/mariadb-{}/{}/{}",
-                    version, subdir, filename
+                    "https://github.com/xopenbeta/mariadb-archive/releases/latest/download/{}",
+                    filename
                 ));
                 Ok((urls, filename))
             }
             "windows" => {
                 let filename = format!("mariadb-{}-winx64.zip", version);
-                let subdir = "winx64-packages";
                 urls.push(format!(
-                    "https://mirrors.tuna.tsinghua.edu.cn/mariadb/mariadb-{}/{}/{}",
-                    version, subdir, filename
-                ));
-                urls.push(format!(
-                    "https://mirrors.aliyun.com/mariadb/mariadb-{}/{}/{}",
-                    version, subdir, filename
-                ));
-                urls.push(format!(
-                    "https://downloads.mariadb.org/f/mariadb-{}/{}/{}",
-                    version, subdir, filename
+                    "https://github.com/xopenbeta/mariadb-archive/releases/latest/download/{}",
+                    filename
                 ));
                 Ok((urls, filename))
             }
