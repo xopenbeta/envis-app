@@ -7,7 +7,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::copy;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -40,8 +40,8 @@ impl MysqlService {
     pub fn get_available_versions(&self) -> Vec<MysqlVersion> {
         vec![
             MysqlVersion {
-                version: "9.6.0".to_string(),
-                date: "2023-12-20".to_string(),
+                version: "9.7.0".to_string(),
+                date: "2026-06-07".to_string(),
             },
             MysqlVersion {
                 version: "8.4.7".to_string(),
@@ -71,28 +71,7 @@ impl MysqlService {
             let app_config_manager = app_config_manager.lock().unwrap();
             std::path::PathBuf::from(app_config_manager.get_services_folder())
         };
-        services_folder.join("mysql").join(version).join("data")
-    }
-
-    fn series_from_version(version: &str) -> String {
-        let mut parts = version.split('.');
-        match (parts.next(), parts.next()) {
-            (Some(major), Some(minor)) => format!("{}.{}", major, minor),
-            _ => version.to_string(),
-        }
-    }
-
-    fn detect_macos_major_version() -> Option<String> {
-        let output = create_command("sw_vers").arg("-productVersion").output();
-        if let Ok(o) = output {
-            let v = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            if let Some(major) = v.split('.').next() {
-                if !major.is_empty() {
-                    return Some(major.to_string());
-                }
-            }
-        }
-        None
+        services_folder.join("mysql").join(version)
     }
 
     fn parse_port_bind_and_pid(config_path: &PathBuf, service_data_folder: &PathBuf) -> (String, String, PathBuf) {
@@ -226,51 +205,24 @@ impl MysqlService {
     fn build_download_info(&self, version: &str) -> Result<(Vec<String>, String)> {
         let platform = std::env::consts::OS;
         let arch = std::env::consts::ARCH;
-        let series = Self::series_from_version(version);
 
         let filename = match platform {
             "macos" => {
                 let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
-                if arch == "aarch64" && (version == "9.6.0" || version == "8.4.7") {
-                    format!("mysql-{}-macos15-arm64.tar.gz", version)
-                } else if let Some(macos_major) = Self::detect_macos_major_version() {
-                    format!("mysql-{}-macos{}-{}.tar.gz", version, macos_major, arch_str)
-                } else {
-                    format!("mysql-{}-macos-{}.tar.gz", version, arch_str)
-                }
+                format!("mysql-{}-macos-{}.tar.gz", version, arch_str)
             }
             "linux" => {
-                let arch_str = if arch == "aarch64" { "aarch64" } else { "x86_64" };
-                format!("mysql-{}-linux-glibc2.17-{}.tar.xz", version, arch_str)
+                let arch_str = if arch == "aarch64" { "arm64" } else { "x86_64" };
+                format!("mysql-{}-linux-{}.tar.gz", version, arch_str)
             }
-            "windows" => format!("mysql-{}-winx64.zip", version),
+            "windows" => format!("mysql-{}-windows-x86_64.zip", version),
             _ => return Err(anyhow!("不支持的操作系统: {}", platform)),
         };
 
-        let mut urls: Vec<String> = Vec::new();
-
-        // 官方 CDN，匹配如：https://cdn.mysql.com/Downloads/MySQL-9.6/mysql-9.6.0-macos15-arm64.dmg
-        urls.push(format!(
-            "https://cdn.mysql.com/Downloads/MySQL-{}/{}",
-            series, filename
-        ));
-        // 官方下载入口（会重定向到 CDN）
-        urls.push(format!(
-            "https://dev.mysql.com/get/Downloads/MySQL-{}/{}",
-            series, filename
-        ));
-
-        // 兼容旧目录结构作为兜底
-        if series != "8.0" {
-            urls.push(format!(
-                "https://cdn.mysql.com/Downloads/MySQL-8.0/{}",
-                filename
-            ));
-            urls.push(format!(
-                "https://dev.mysql.com/get/Downloads/MySQL-8.0/{}",
-                filename
-            ));
-        }
+        let urls = vec![format!(
+            "https://github.com/xopenbeta/mysql-archive/releases/latest/download/{}",
+            filename
+        )];
 
         Ok((urls, filename))
     }
@@ -410,10 +362,17 @@ impl MysqlService {
 
             let file = File::open(archive_path)?;
             let mut archive = ZipArchive::new(file)?;
+            let archive_root_name = format!("mysql-{}", version);
+            let archive_root = Path::new(&archive_root_name);
 
             for index in 0..archive.len() {
                 let mut entry = archive.by_index(index)?;
-                let outpath = install_dir.join(entry.mangled_name());
+                let entry_path = entry.mangled_name();
+                let relative_path = entry_path.strip_prefix(archive_root).unwrap_or(&entry_path);
+                if relative_path.as_os_str().is_empty() {
+                    continue;
+                }
+                let outpath = install_dir.join(relative_path);
 
                 if entry.name().ends_with('/') {
                     std::fs::create_dir_all(&outpath)?;

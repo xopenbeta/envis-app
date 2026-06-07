@@ -9,9 +9,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 // Shell 配置相关常量
 const ENVIS_ACTIVE_BLOCK_START: &str = "# BEGIN Envis Environment Block";
+const ENVIS_LEGACY_BLOCK_START: &str = "# BEGIN Envis Active Environment Block";
 const ENVIS_WARNING: &str =
     "# WARNING: This block is automatically managed by Envis. Do not edit manually!";
 const ENVIS_ACTIVE_BLOCK_END: &str = "# END Envis Environment Block";
+const ENVIS_LEGACY_BLOCK_END: &str = "# END Envis Active Environment Block";
 
 // 支持的 Shell 类型
 #[derive(Debug, Clone, PartialEq)]
@@ -47,6 +49,31 @@ pub struct ShellManager {
 }
 
 impl ShellManager {
+    fn is_env_block_start_marker(cleaned_line: &str) -> bool {
+        cleaned_line == ENVIS_ACTIVE_BLOCK_START || cleaned_line == ENVIS_LEGACY_BLOCK_START
+    }
+
+    fn is_env_block_end_marker(cleaned_line: &str) -> bool {
+        cleaned_line == ENVIS_ACTIVE_BLOCK_END || cleaned_line == ENVIS_LEGACY_BLOCK_END
+    }
+
+    fn strip_comment_prefix_for_marker(line: &str) -> &str {
+        let trimmed = line.trim();
+        if trimmed.starts_with("REM ") {
+            trimmed[4..].trim()
+        } else {
+            trimmed
+        }
+    }
+
+    fn sanitize_shell_content(content: &str) -> String {
+        if content.contains('\0') {
+            content.chars().filter(|ch| *ch != '\0').collect()
+        } else {
+            content.to_string()
+        }
+    }
+
     /// 获取全局 Shell 管理器实例
     pub fn global() -> Arc<Mutex<ShellManager>> {
         SHELL_MANAGER
@@ -371,9 +398,14 @@ fi
                 String::new()
             };
 
+            let content = Self::sanitize_shell_content(&content);
+
             // 检查是否已存在环境变量块,如果存在先删除
             let mut base_content = content.clone();
-            if base_content.contains(ENVIS_ACTIVE_BLOCK_START) {
+            if base_content
+                .lines()
+                .any(|line| Self::is_env_block_start_marker(Self::strip_comment_prefix_for_marker(line)))
+            {
                 base_content = self.remove_env_block(&base_content)?;
             }
 
@@ -717,6 +749,7 @@ fi
         }
 
         let content = fs::read_to_string(config_file_path).context("读取 Shell 配置文件失败")?;
+        let content = Self::sanitize_shell_content(&content);
         let block_content = self.extract_env_block_content(&content)?;
         let mut paths = HashSet::new();
 
@@ -887,6 +920,7 @@ fi
         }
 
         let content = fs::read_to_string(config_file_path).context("读取 Shell 配置文件失败")?;
+        let content = Self::sanitize_shell_content(&content);
         let new_content = self.insert_line_in_block(&content, line)?;
         self.write_content_atomic_for_path(config_file_path, &new_content)?;
         Ok(())
@@ -899,6 +933,7 @@ fi
         }
 
         let content = fs::read_to_string(config_file_path).context("读取 Shell 配置文件失败")?;
+        let content = Self::sanitize_shell_content(&content);
         let new_content = self.remove_lines_with_prefix_from_block(&content, line_prefix)?;
         self.write_content_atomic_for_path(config_file_path, &new_content)?;
         Ok(())
@@ -910,6 +945,7 @@ fi
         // 对所有配置文件执行添加操作
         for path in &self.config_file_paths {
             let content = fs::read_to_string(path).context("读取 Shell 配置文件失败")?;
+            let content = Self::sanitize_shell_content(&content);
             let new_content = self.insert_line_in_block(&content, line)?;
             self.write_content_atomic_for_path(path, &new_content)?;
         }
@@ -922,6 +958,7 @@ fi
         // 对所有配置文件执行删除操作
         for path in &self.config_file_paths {
             let content = fs::read_to_string(path).context("读取 Shell 配置文件失败")?;
+            let content = Self::sanitize_shell_content(&content);
             let new_content = self.remove_lines_with_prefix_from_block(&content, line_prefix)?;
             self.write_content_atomic_for_path(path, &new_content)?;
         }
@@ -934,22 +971,13 @@ fi
         let mut result_lines = Vec::new();
         let mut inside_block = false;
 
-        let block_start = ENVIS_ACTIVE_BLOCK_START;
-        let block_end = ENVIS_ACTIVE_BLOCK_END;
-
         for line in lines {
-            let trimmed = line.trim();
-            // 移除 REM 前缀，但保留 # 前缀，因为常量中包含 #
-            let cleaned = if trimmed.starts_with("REM ") {
-                trimmed[4..].trim()
-            } else {
-                trimmed
-            };
+            let cleaned = Self::strip_comment_prefix_for_marker(line);
 
-            if cleaned == block_start {
+            if Self::is_env_block_start_marker(cleaned) {
                 inside_block = true;
                 result_lines.push(line);
-            } else if cleaned == block_end {
+            } else if Self::is_env_block_end_marker(cleaned) {
                 if !inside_block {
                     return Err(anyhow::anyhow!("环境变量块损坏"));
                 }
@@ -971,22 +999,13 @@ fi
         let mut result_lines = Vec::new();
         let mut inside_block = false;
 
-        let block_start = ENVIS_ACTIVE_BLOCK_START;
-        let block_end = ENVIS_ACTIVE_BLOCK_END;
-
         for line in lines {
-            let trimmed = line.trim();
-            // 移除 REM 前缀，但保留 # 前缀
-            let cleaned = if trimmed.starts_with("REM ") {
-                trimmed[4..].trim()
-            } else {
-                trimmed
-            };
+            let cleaned = Self::strip_comment_prefix_for_marker(line);
 
-            if cleaned == block_start {
+            if Self::is_env_block_start_marker(cleaned) {
                 inside_block = true;
                 result_lines.push(line);
-            } else if cleaned == block_end {
+            } else if Self::is_env_block_end_marker(cleaned) {
                 inside_block = false;
                 result_lines.push(line);
             } else if inside_block && line.trim().starts_with(prefix) {
@@ -1006,22 +1025,13 @@ fi
         let mut block_lines = Vec::new();
         let mut inside_block = false;
 
-        let block_start = ENVIS_ACTIVE_BLOCK_START;
-        let block_end = ENVIS_ACTIVE_BLOCK_END;
-
         for line in lines {
-            let trimmed = line.trim();
-            // 移除 REM 前缀，但保留 # 前缀
-            let cleaned = if trimmed.starts_with("REM ") {
-                trimmed[4..].trim()
-            } else {
-                trimmed
-            };
+            let cleaned = Self::strip_comment_prefix_for_marker(line);
 
-            if cleaned == block_start {
+            if Self::is_env_block_start_marker(cleaned) {
                 inside_block = true;
                 continue;
-            } else if cleaned == block_end {
+            } else if Self::is_env_block_end_marker(cleaned) {
                 break;
             } else if inside_block {
                 // 检查是否是警告行
@@ -1042,6 +1052,7 @@ fi
         // 对所有配置文件执行清除操作
         for path in &self.config_file_paths {
             let content = fs::read_to_string(path).context("读取 Shell 配置文件失败")?;
+            let content = Self::sanitize_shell_content(&content);
             // 1. 先清空内容（保留 BLOCK 标记）
             let cleared_content = self.clear_env_block_content(&content)?;
 
@@ -1064,25 +1075,16 @@ fi
         let mut result_lines = Vec::new();
         let mut inside_block = false;
 
-        let block_start = ENVIS_ACTIVE_BLOCK_START;
-        let block_end = ENVIS_ACTIVE_BLOCK_END;
-
         for line in lines {
-            let trimmed = line.trim();
-            // 移除 REM 前缀，但保留 # 前缀
-            let cleaned = if trimmed.starts_with("REM ") {
-                trimmed[4..].trim()
-            } else {
-                trimmed
-            };
+            let cleaned = Self::strip_comment_prefix_for_marker(line);
 
-            if cleaned == block_start {
+            if Self::is_env_block_start_marker(cleaned) {
                 inside_block = true;
                 result_lines.push(line);
             } else if cleaned == ENVIS_WARNING && inside_block {
                 // 保留警告行
                 result_lines.push(line);
-            } else if cleaned == block_end {
+            } else if Self::is_env_block_end_marker(cleaned) {
                 inside_block = false;
                 result_lines.push(line);
             } else if !inside_block {
@@ -1100,20 +1102,13 @@ fi
         let mut result_lines = Vec::new();
         let mut inside_block = false;
 
-        let block_start = ENVIS_ACTIVE_BLOCK_START; // "# BEGIN ..."
-        let block_end = ENVIS_ACTIVE_BLOCK_END; // "# END ..."
-
-        // 同时兼容 CMD 中以 REM 开头的块标记
-        let cmd_block_start = format!("REM {}", block_start);
-        let cmd_block_end = format!("REM {}", block_end);
-
         for line in lines {
-            let trimmed = line.trim();
+            let cleaned = Self::strip_comment_prefix_for_marker(line);
 
-            if !inside_block && (trimmed == block_start || trimmed == cmd_block_start) {
+            if !inside_block && Self::is_env_block_start_marker(cleaned) {
                 inside_block = true;
                 continue;
-            } else if inside_block && (trimmed == block_end || trimmed == cmd_block_end) {
+            } else if inside_block && Self::is_env_block_end_marker(cleaned) {
                 inside_block = false;
                 continue;
             } else if !inside_block {

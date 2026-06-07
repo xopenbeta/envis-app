@@ -25,6 +25,7 @@ dist-ssr
 
 src-tauri/github.action.key
 src-tauri/github.action.key.pub
+src-tauri/crates/envis-core
 target
 .vscode
 skills
