@@ -14,7 +14,7 @@ import { HardDrive, Info, Moon, RefreshCw, Sun, Monitor, Bot, Code, Power, Globe
 import { useEffect, useState, useRef } from 'react'
 import _ from 'lodash'
 import { toast } from 'sonner'
-import { AppSettings, AppTheme, Service, ServiceData, EnvironmentStatus } from "@/types/index"
+import { AppSettings, AppTheme, ProxyMode, Service, ServiceData, EnvironmentStatus } from "@/types/index"
 import { useSettings } from "@/hooks/appSettings"
 import { useService } from "@/hooks/service"
 import { useServiceData } from "@/hooks/env-serv-data"
@@ -200,6 +200,8 @@ export default function SettingsDialog(props: {
   const [newShowEnvName, setNewShowEnvName] = useState(true)
   const [newShowServiceInfo, setNewShowServiceInfo] = useState(false)
   const [newEnvisFolder, setNewEnvisFolder] = useState('')
+  const [newProxyMode, setNewProxyMode] = useState<ProxyMode>('none')
+  const [newProxyUrl, setNewProxyUrl] = useState('')
 
   // 服务管理相关状态
   const [installedServices, setInstalledServices] = useState<any[]>([])
@@ -225,6 +227,8 @@ export default function SettingsDialog(props: {
     setNewShowEnvName(systemSettings?.showEnvironmentNameOnTerminalOpen ?? true)
     setNewShowServiceInfo(systemSettings?.showServiceInfoOnTerminalOpen ?? false)
     setNewEnvisFolder(systemSettings?.envisFolder || '')
+    setNewProxyMode(systemSettings?.proxyMode || 'none')
+    setNewProxyUrl(systemSettings?.proxyUrl || '')
   }
 
   useEffect(() => {
@@ -332,6 +336,20 @@ export default function SettingsDialog(props: {
 
   const onSaveBtnClick = async () => {
     if (appSettings) {
+      const trimmedProxyUrl = newProxyUrl.trim()
+      if (newProxyMode === 'http' && !/^https?:\/\//i.test(trimmedProxyUrl)) {
+        toast.error(t('settings.invalid_http_proxy'))
+        return
+      }
+      if (newProxyMode === 'socks5' && !/^socks5:\/\//i.test(trimmedProxyUrl)) {
+        toast.error(t('settings.invalid_socks5_proxy'))
+        return
+      }
+      if ((newProxyMode === 'http' || newProxyMode === 'socks5') && trimmedProxyUrl.length === 0) {
+        toast.error(t('settings.proxy_url_required'))
+        return
+      }
+
       // 检查 envisFolder 是否有变化，若变化需先检查活跃环境
       const folderChanged = newEnvisFolder !== systemSettings?.envisFolder
       if (folderChanged) {
@@ -366,6 +384,8 @@ export default function SettingsDialog(props: {
         showEnvironmentNameOnTerminalOpen: newShowEnvName,
         showServiceInfoOnTerminalOpen: newShowServiceInfo,
         envisFolder: newEnvisFolder,
+        proxyMode: newProxyMode,
+        proxyUrl: newProxyMode === 'http' || newProxyMode === 'socks5' ? trimmedProxyUrl : '',
       });
       if (folderChanged) {
         toast.success(t('settings.data_migrated'))
@@ -789,6 +809,50 @@ export default function SettingsDialog(props: {
                       {t('settings.app_config_desc')}
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* 代理设置 */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-medium">{t('settings.proxy_settings')}</h3>
+                </div>
+
+                <div className="space-y-3 pl-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="proxyMode">{t('settings.proxy_mode')}</Label>
+                    <Select value={newProxyMode} onValueChange={(value: ProxyMode) => setNewProxyMode(value)}>
+                      <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
+                        <SelectValue placeholder={t('settings.select_proxy_mode')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t('settings.proxy_none')}</SelectItem>
+                        <SelectItem value="http">{t('settings.proxy_http')}</SelectItem>
+                        <SelectItem value="socks5">{t('settings.proxy_socks5')}</SelectItem>
+                        <SelectItem value="system">{t('settings.proxy_system')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t('settings.proxy_mode_desc')}</p>
+                  </div>
+
+                  {(newProxyMode === 'http' || newProxyMode === 'socks5') && (
+                    <div className="space-y-2">
+                      <Label htmlFor="proxyUrl">{t('settings.proxy_url')}</Label>
+                      <Input
+                        id="proxyUrl"
+                        value={newProxyUrl}
+                        onChange={(e) => setNewProxyUrl(e.target.value)}
+                        placeholder={newProxyMode === 'http' ? 'http://127.0.0.1:7890' : 'socks5://127.0.0.1:1080'}
+                        className="shadow-none bg-content2 dark:bg-content3"
+                      />
+                      <p className="text-xs text-muted-foreground">{t('settings.proxy_url_desc')}</p>
+                    </div>
+                  )}
+
+                  {newProxyMode === 'system' && (
+                    <p className="text-xs text-muted-foreground">{t('settings.proxy_system_desc')}</p>
+                  )}
                 </div>
               </div>
 

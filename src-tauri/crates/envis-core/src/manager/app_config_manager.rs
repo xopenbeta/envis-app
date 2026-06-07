@@ -28,10 +28,18 @@ pub struct AppConfig {
     pub show_environment_name_on_terminal_open: bool,
     #[serde(default)]
     pub show_service_info_on_terminal_open: bool,
+    #[serde(default = "default_proxy_mode")]
+    pub proxy_mode: String,
+    #[serde(default)]
+    pub proxy_url: Option<String>,
 }
 
 fn default_true() -> bool {
     true
+}
+
+fn default_proxy_mode() -> String {
+    "none".to_string()
 }
 
 impl Default for AppConfig {
@@ -49,6 +57,8 @@ impl Default for AppConfig {
             deactivate_other_environments_on_activate: true,
             show_environment_name_on_terminal_open: true,
             show_service_info_on_terminal_open: false,
+            proxy_mode: default_proxy_mode(),
+            proxy_url: None,
         }
     }
 }

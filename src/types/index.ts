@@ -8,6 +8,8 @@ export type AppSettings = {
   ai: AISettings,
 }
 
+export type ProxyMode = 'none' | 'http' | 'socks5' | 'system'
+
 export type SystemSettings = {
   envisFolder: string // envis 主文件夹路径
   autoStartAppOnLogin: boolean // 是否开机自启
@@ -18,6 +20,8 @@ export type SystemSettings = {
   terminalTool?: string // 终端程序路径或程序名（为空时使用系统默认）
   showEnvironmentNameOnTerminalOpen?: boolean // 打开终端时显示环境名称
   showServiceInfoOnTerminalOpen?: boolean // 打开终端时显示服务信息
+  proxyMode?: ProxyMode // 代理模式：none/http/socks5/system
+  proxyUrl?: string // 代理地址，http/socks5 模式下使用
 }
 
 export enum EnvironmentStatus {

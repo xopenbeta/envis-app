@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Result};
+use crate::manager::app_config_manager::AppConfigManager;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
@@ -136,7 +138,6 @@ static GLOBAL_DOWNLOAD_MANAGER: OnceLock<Arc<DownloadManager>> = OnceLock::new()
 /// 下载管理器
 pub struct DownloadManager {
     pub(crate) tasks: Arc<Mutex<HashMap<String, DownloadTask>>>,
-    client: reqwest::Client,
 }
 
 impl DownloadManager {
@@ -149,15 +150,133 @@ impl DownloadManager {
 
     /// 创建新的下载管理器实例（内部使用）
     fn new() -> Self {
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(1800)) // 30分钟超时
-            .build()
-            .expect("Failed to create HTTP client");
-
         Self {
             tasks: Arc::new(Mutex::new(HashMap::new())),
-            client,
         }
+    }
+
+    fn get_current_proxy_config(&self) -> (String, Option<String>) {
+        let app_config_manager = AppConfigManager::global();
+        let app_config_manager = app_config_manager.lock().unwrap();
+        let app_config = app_config_manager.get_app_config();
+
+        (
+            app_config.proxy_mode.to_lowercase(),
+            app_config
+                .proxy_url
+                .map(|v| v.trim().to_string())
+                .filter(|v| !v.is_empty()),
+        )
+    }
+
+    fn resolve_env_proxy_url(&self) -> Option<String> {
+        for key in ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"] {
+            if let Ok(value) = env::var(key) {
+                let value = value.trim().to_string();
+                if !value.is_empty() {
+                    return Some(value);
+                }
+            }
+        }
+        None
+    }
+
+    #[cfg(target_os = "windows")]
+    fn resolve_system_proxy_url(&self) -> Option<String> {
+        use winreg::enums::HKEY_CURRENT_USER;
+        use winreg::RegKey;
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let internet_settings = hkcu
+            .open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")
+            .ok()?;
+
+        let proxy_enabled: u32 = internet_settings.get_value("ProxyEnable").ok()?;
+        if proxy_enabled == 0 {
+            return None;
+        }
+
+        let proxy_server: String = internet_settings.get_value("ProxyServer").ok()?;
+        let proxy_server = proxy_server.trim();
+        if proxy_server.is_empty() {
+            return None;
+        }
+
+        if proxy_server.contains('=') {
+            for segment in proxy_server.split(';') {
+                let mut parts = segment.splitn(2, '=');
+                let key = parts.next().unwrap_or_default().trim().to_lowercase();
+                let value = parts.next().unwrap_or_default().trim();
+                if (key == "https" || key == "http") && !value.is_empty() {
+                    let normalized = if value.starts_with("http://") || value.starts_with("https://") {
+                        value.to_string()
+                    } else {
+                        format!("http://{}", value)
+                    };
+                    return Some(normalized);
+                }
+            }
+            return None;
+        }
+
+        if proxy_server.starts_with("http://") || proxy_server.starts_with("https://") {
+            Some(proxy_server.to_string())
+        } else {
+            Some(format!("http://{}", proxy_server))
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    fn resolve_system_proxy_url(&self) -> Option<String> {
+        None
+    }
+
+    fn build_http_client(&self) -> Result<reqwest::Client> {
+        let (proxy_mode, proxy_url) = self.get_current_proxy_config();
+
+        let mut builder = reqwest::Client::builder().timeout(std::time::Duration::from_secs(1800));
+
+        match proxy_mode.as_str() {
+            "none" => {
+                builder = builder.no_proxy();
+                log::info!("下载代理模式: none");
+            }
+            "http" => {
+                if let Some(url) = proxy_url {
+                    let proxy = reqwest::Proxy::all(&url)?;
+                    builder = builder.proxy(proxy);
+                    log::info!("下载代理模式: http");
+                } else {
+                    builder = builder.no_proxy();
+                    log::warn!("下载代理模式为 http 但地址为空，已回退到无代理");
+                }
+            }
+            "socks5" => {
+                if let Some(url) = proxy_url {
+                    let proxy = reqwest::Proxy::all(&url)?;
+                    builder = builder.proxy(proxy);
+                    log::info!("下载代理模式: socks5");
+                } else {
+                    builder = builder.no_proxy();
+                    log::warn!("下载代理模式为 socks5 但地址为空，已回退到无代理");
+                }
+            }
+            "system" => {
+                if let Some(url) = self.resolve_system_proxy_url().or_else(|| self.resolve_env_proxy_url()) {
+                    let proxy = reqwest::Proxy::all(&url)?;
+                    builder = builder.proxy(proxy);
+                    log::info!("下载代理模式: system");
+                } else {
+                    log::warn!("系统代理模式未检测到系统代理配置，按直连处理");
+                }
+            }
+            _ => {
+                builder = builder.no_proxy();
+                log::warn!("未知下载代理模式: {}，已回退到无代理", proxy_mode);
+            }
+        }
+
+        Ok(builder.build()?)
     }
 
     /// 开始下载任务（支持备用URL和成功回调）
@@ -298,10 +417,11 @@ impl DownloadManager {
     /// 执行文件下载
     async fn download_file(&self, task: &mut DownloadTask) -> Result<()> {
         log::info!("开始下载文件: {} -> {:?}", task.url, task.target_path);
+        let client = self.build_http_client()?;
 
         // 发送HTTP请求
         log::info!("正在连接下载服务器...");
-        let response = self.client.get(&task.url).send().await?;
+        let response = client.get(&task.url).send().await?;
 
         if !response.status().is_success() {
             let error_msg = format!("下载失败，状态码: {}", response.status());
