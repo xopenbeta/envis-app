@@ -1347,7 +1347,7 @@ dependencies = [
 
 [[package]]
 name = "envis"
-version = "0.13.9"
+version = "10.13.10"
 dependencies = [
  "envis-cli",
  "envis-gui",
