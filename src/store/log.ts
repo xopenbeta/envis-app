@@ -16,7 +16,7 @@ export const autoScrollLogAtom = atom(true)
 export const enableConsoleLogAtom = atom(true) // 控制是否在console中输出日志
 
 // 限制日志条目数量，防止内存占用过高
-const MAX_LOG_ENTRIES = 10000
+const MAX_LOG_ENTRIES = 1000
 
 export const logEntriesAtom = atom<LogEntry[]>([])
 
