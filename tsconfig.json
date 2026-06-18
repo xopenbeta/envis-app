@@ -28,6 +28,6 @@
   "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/pc", "src/Loading.tsx", "src/main.tsx", "src/rehype-highlight.d.ts", "src/vite-env.d.ts"],
+  "include": ["src/pc", "src/mobile", "src/Loading.tsx", "src/main.tsx", "src/rehype-highlight.d.ts", "src/vite-env.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
