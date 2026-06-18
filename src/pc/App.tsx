@@ -6,7 +6,7 @@ import { isAppLoadingAtom } from "@/store/app";
 import { useAtom } from "jotai";
 import Envis from "./pages";
 import { useAppTheme } from "./hooks/useTheme";
-import { Loading } from "./Loading";
+import { Loading } from "../Loading";
 import { useAppTitleVersion } from "./hooks/useAppVersion";
 import { useRustLogger } from "./hooks/useRustLogger";
 import { useEffect } from "react";

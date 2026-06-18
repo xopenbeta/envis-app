@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { updateAvailableAtom, isUpdateDialogOpenAtom } from '@/store/app';
-import pkg from '../../package.json';
+import pkg from '../../../package.json';
 import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from 'react-i18next';

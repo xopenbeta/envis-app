@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import pkg from '../../package.json';
+import pkg from '../../../package.json';
 
 export function useAppTitleVersion() {
   useEffect(() => {
