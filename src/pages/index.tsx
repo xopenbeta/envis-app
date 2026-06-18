@@ -4,7 +4,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { useAtom } from 'jotai'
-import { useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useRef, useState } from "react"
 import { ImperativePanelHandle } from "react-resizable-panels"
 import { EnvironmentPanel } from "./env-panel/env-panel"
 import NavBar from "./nav-bar/nav-bar"
@@ -13,9 +13,15 @@ import { selectedEnvironmentIdAtom } from '../store/environment'
 import LogPanel from './log-panel/log-panel'
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
 import { isNavPanelOpenAtom, isAIPanelOpenAtom, navPanelWidthRatioAtom, aiPanelWidthRatioAtom, isEnvPanelOpenAtom, envPanelWidthRatioAtom } from "@/store"
-import { AIPanel } from "./ai-panel/ai-panel"
+import { useTranslation } from "react-i18next"
+
+const LazyAIPanel = lazy(async () => {
+  const module = await import("./ai-panel/ai-panel")
+  return { default: module.AIPanel }
+})
 
 export default function Envis() {
+  const { t } = useTranslation()
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom);
   const [isNavPanelOpen, setIsNavPanelOpen] = useAtom(isNavPanelOpenAtom);
   const [navPanelWidthRatio, setNavPanelWidthRatio] = useAtom(navPanelWidthRatioAtom);
@@ -149,7 +155,9 @@ export default function Envis() {
       >
         <div className='w-full h-full flex items-center'>
           <div style={{ width: 'calc(100% - 5px)', height: 'calc(100% - 10px)' }} className="bg-white dark:bg-content3 flex flex-col overflow-hidden rounded-lg border">
-            <AIPanel onClose={() => setIsAIPanelOpen(false)} />
+            <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-default-400">{t('ai_panel.loading')}</div>}>
+              <LazyAIPanel onClose={() => setIsAIPanelOpen(false)} />
+            </Suspense>
           </div>
         </div>
       </ResizablePanel>

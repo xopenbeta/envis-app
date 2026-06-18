@@ -15,7 +15,15 @@ const APP_SETTINGS_STORAGE_KEY = 'envis-app-settings'
 export const loadAppSettingsFromStorage = (): AppSettings => {
   try {
     const settingsStr = localStorage.getItem(APP_SETTINGS_STORAGE_KEY)
-    return JSON.parse(settingsStr || '{}') as AppSettings;
+    const parsedSettings = JSON.parse(settingsStr || '{}') as Partial<AppSettings>
+    return {
+      ...defaultAppSettings,
+      ...parsedSettings,
+      ai: {
+        ...defaultAppSettings.ai,
+        ...(parsedSettings.ai ?? {}),
+      },
+    }
   } catch (error) {
     console.error('Failed to load app settings from localStorage:', error)
     return defaultAppSettings

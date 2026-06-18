@@ -33,6 +33,11 @@ declare module 'input-otp' {
   export default OTPInput
 }
 
+declare module 'rehype-highlight' {
+  const rehypeHighlight: any
+  export default rehypeHighlight
+}
+
 // declare global ipcRenderer if some legacy code uses it
 declare global {
   interface Window {

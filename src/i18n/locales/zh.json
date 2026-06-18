@@ -1357,6 +1357,7 @@
     "ai_replying": "AI正在回复...",
     "press_esc": "按Esc键或点击中断按钮可中断",
     "empty_title": "AI 配置助手",
+    "empty_description": "可以让 AI 帮你分析问题、解释配置或生成命令，聊天内容会保留在本地。",
     "configure_ai_first": "请先在设置中配置AI API",
     "interrupted": "[输出已中断]",
     "interrupt_success": "AI输出已中断",
@@ -1366,7 +1367,10 @@
     "interrupt_btn": "中断AI输出",
     "send_btn": "发送消息",
     "not_enabled_hint": "⚠️ AI功能未启用，请在设置中配置API后启用",
-    "placeholder": "请先在设置中配置AI服务...",
+    "setup_hint": "⚠️ 请先在设置中完成 AI 服务启用、API Key 和模型配置。",
+    "placeholder": "输入你的问题，Enter 发送，Shift+Enter 换行...",
+    "disabled_placeholder": "请先在设置中配置AI服务...",
+    "loading": "正在加载 AI 助手...",
     "typing": "正在输入..."
   },
   "app_footer": {

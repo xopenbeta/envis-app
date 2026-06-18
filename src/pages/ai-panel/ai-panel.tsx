@@ -3,48 +3,71 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAtom } from 'jotai'
-import { Bot, ChevronLeft, Send, Trash2, Square, X } from 'lucide-react'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { Bot, Send, Trash2, Square, X } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { toast } from "sonner"
 import { chatMessagesAtom, addChatMessageAtom, clearChatMessagesAtom, isAIResponseLoadingAtom } from "@/store/ai"
 import { useSettings } from "@/hooks/appSettings"
 import { useTranslation } from 'react-i18next'
+import ReactMarkdown from 'react-markdown'
+import rehypeHighlight from 'rehype-highlight'
+import { AIProvider } from "@/types/ai"
 
-// 优化的Markdown渲染函数 - 更好支持中文
-const renderMarkdown = (content: string) => {
-  let html = content
-    // 代码块 - 支持中文注释
-    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-content3 p-3 rounded-lg overflow-x-auto my-2 font-mono"><code class="text-sm whitespace-pre-wrap">$2</code></pre>')
-    // 行内代码 - 优化中文显示
-    .replace(/`([^`]+)`/g, '<code class="bg-content3 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
-    // 粗体 - 支持中文
-    .replace(/\*\*([\s\S]*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-    // 斜体 - 支持中文
-    .replace(/\*([\s\S]*?)\*/g, '<em class="italic">$1</em>')
-    // 链接
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
-    // 标题 - 优化中文排版
-    .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-4 mb-2 text-foreground">$1</h3>')
-    .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2 text-foreground">$1</h2>')
-    .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2 text-foreground">$1</h1>')
-    // 有序列表
-    .replace(/^\d+\.\s+(.*$)/gm, '<li class="ml-4 list-decimal mb-1">$1</li>')
-    // 无序列表
-    .replace(/^[-*]\s+(.*$)/gm, '<li class="ml-4 list-disc mb-1">$1</li>')
-    // 引用块
-    .replace(/^>\s*(.*$)/gm, '<blockquote class="border-l-4 border-primary pl-4 my-2 text-default-600 italic">$1</blockquote>')
-    // 分隔线
-    .replace(/^---$/gm, '<hr class="my-4 border-divider" />')
-    // 换行 - 保持段落结构
-    .replace(/\n\n/g, '</p><p class="mb-2">')
-    .replace(/\n/g, '<br/>')
+type ProviderDefaults = {
+  baseUrl: string
+  model: string
+}
 
-  // 包装段落
-  if (html && !html.startsWith('<')) {
-    html = '<p class="mb-2">' + html + '</p>'
-  }
+type AIResponseChunk = {
+  choices?: Array<{
+    delta?: {
+      content?: string
+    }
+    message?: {
+      content?: string
+    }
+  }>
+}
 
-  return html
+const AI_PROVIDER_DEFAULTS: Record<AIProvider, ProviderDefaults> = {
+  openai: {
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-3.5-turbo',
+  },
+  deepseek: {
+    baseUrl: 'https://api.deepseek.com/v1',
+    model: 'deepseek-chat',
+  },
+}
+
+const normalizeBaseUrl = (baseUrl: string) => baseUrl.trim().replace(/\/+$/, '')
+
+function MarkdownMessage({ content }: { content: string }) {
+  return (
+    <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:my-2 prose-p:text-foreground prose-pre:my-2 prose-pre:overflow-x-auto prose-pre:rounded-lg prose-pre:bg-content3 prose-pre:p-3 prose-code:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-blockquote:text-default-600 dark:prose-invert">
+      <ReactMarkdown
+        rehypePlugins={[rehypeHighlight]}
+        components={{
+          a: ({ node: _node, ...props }) => (
+            <a
+              {...props}
+              className="text-primary hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          ),
+          blockquote: ({ node: _node, ...props }) => (
+            <blockquote
+              {...props}
+              className="border-l-4 border-primary pl-4 italic text-default-600"
+            />
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  )
 }
 
 export function AIPanel({ onClose }: { onClose: () => void }) {
@@ -67,7 +90,6 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
     displayedContent: string
     isTyping: boolean
   } | null>(null)
-  const typingIntervalRef = useRef<any>(null)
 
   // 智能滚动相关状态
   const userHasScrolledRef = useRef(false)
@@ -77,6 +99,22 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
   const [, setIsInterrupted] = useState(false)
   const isInterruptedRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const aiSettings = useMemo(() => {
+    const provider = appSettings?.ai?.provider ?? 'openai'
+    const providerDefaults = AI_PROVIDER_DEFAULTS[provider]
+    const configuredBaseUrl = appSettings?.ai?.baseUrl?.trim()
+    const configuredModel = appSettings?.ai?.model?.trim()
+    const configuredApiKey = appSettings?.ai?.apiKey?.trim() ?? ''
+
+    return {
+      provider,
+      enabled: appSettings?.ai?.enabled ?? false,
+      apiKey: configuredApiKey,
+      baseUrl: normalizeBaseUrl(configuredBaseUrl || providerDefaults.baseUrl),
+      model: configuredModel || providerDefaults.model,
+    }
+  }, [appSettings])
+  const isAIReady = aiSettings.enabled && aiSettings.apiKey.length > 0
 
   // 智能滚动到底部
   const scrollToBottom = () => {
@@ -136,9 +174,6 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
   // 清理打字机定时器
   useEffect(() => {
     return () => {
-      if (typingIntervalRef.current) {
-        clearInterval(typingIntervalRef.current)
-      }
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
       }
@@ -153,12 +188,6 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
     // 中断网络请求
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
-    }
-
-    // 停止打字机效果
-    if (typingIntervalRef.current) {
-      clearInterval(typingIntervalRef.current)
-      typingIntervalRef.current = null
     }
 
     // 如果有正在显示的消息，添加到聊天记录
@@ -185,7 +214,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
 
-    if (!appSettings?.ai?.enabled || !appSettings?.ai?.apiKey) {
+    if (!isAIReady) {
       toast.error(t('ai_panel.configure_ai_first'))
       return
     }
@@ -265,25 +294,18 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         { role: 'user', content: userMessage }
       ]
 
-      // 根据provider调用不同的API
-      let apiUrl = appSettings.ai?.baseUrl || 'https://api.openai.com/v1'
-      let headers = {
+      const apiUrl = `${aiSettings.baseUrl}/chat/completions`
+      const headers = {
         'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': `Bearer ${appSettings.ai?.apiKey || ''}`
+        'Authorization': `Bearer ${aiSettings.apiKey}`
       }
 
-      if (appSettings.ai?.provider === 'deepseek') {
-        apiUrl = apiUrl || 'https://api.deepseek.com/v1'
-      } else if (appSettings.ai?.provider === 'openai') {
-        apiUrl = apiUrl || 'https://api.openai.com/v1'
-      }
-
-      const response = await fetch(`${apiUrl}/chat/completions`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers,
         signal: abortControllerRef.current?.signal,
         body: JSON.stringify({
-          model: appSettings.ai?.model || 'gpt-3.5-turbo',
+          model: aiSettings.model,
           messages,
           temperature: 0.7,
           max_tokens: 3000,
@@ -299,6 +321,22 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         throw new Error(`API请求失败: ${response.status} ${response.statusText}`)
       }
 
+      const responseContentType = response.headers.get('content-type') || ''
+      if (!responseContentType.includes('text/event-stream')) {
+        const data = await response.json() as AIResponseChunk
+        const content = data.choices?.[0]?.message?.content?.trim()
+
+        if (!content) {
+          throw new Error('AI返回了空响应')
+        }
+
+        addChatMessage({
+          role: 'assistant',
+          content,
+        })
+        return
+      }
+
       // 处理流式响应
       const reader = response.body?.getReader()
       if (!reader) {
@@ -308,6 +346,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       const decoder = new TextDecoder()
       let messageContent = ''
       let messageId = Date.now().toString()
+      let pendingChunk = ''
 
       // 初始化流式打字效果
       setTypingMessage({
@@ -317,8 +356,41 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         isTyping: true
       })
 
+      const applyResponseChunk = (line: string) => {
+        const trimmedLine = line.trim()
+        if (!trimmedLine.startsWith('data:')) {
+          return false
+        }
+
+        const jsonStr = trimmedLine.replace(/^data:\s*/, '')
+        if (!jsonStr || jsonStr === '[DONE]') {
+          return jsonStr === '[DONE]'
+        }
+
+        const data = JSON.parse(jsonStr) as AIResponseChunk
+        const deltaContent = data.choices?.[0]?.delta?.content
+        if (!deltaContent) {
+          return false
+        }
+
+        messageContent += deltaContent
+        setTypingMessage(prev => prev ? {
+          ...prev,
+          content: messageContent,
+          displayedContent: messageContent
+        } : null)
+
+        setTimeout(() => {
+          scrollToBottom()
+        }, 0)
+
+        return false
+      }
+
       try {
-        while (true) {
+        let streamDone = false
+
+        while (!streamDone) {
           const { done, value } = await reader.read()
           
           if (done) {
@@ -331,41 +403,30 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             break
           }
 
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
+          pendingChunk += decoder.decode(value, { stream: true })
+          const lines = pendingChunk.split(/\r?\n/)
+          pendingChunk = lines.pop() ?? ''
 
           for (const line of lines) {
-            if (line.trim() === '') continue
-            if (line.trim() === 'data: [DONE]') continue
+            if (!line.trim()) continue
 
-            if (line.startsWith('data: ')) {
-              try {
-                const jsonStr = line.slice(6) // 移除 "data: " 前缀
-                const data = JSON.parse(jsonStr)
-
-                if (data.choices && data.choices[0] && data.choices[0].delta) {
-                  const delta = data.choices[0].delta
-                  if (delta.content) {
-                    messageContent += delta.content
-                    
-                    // 实时更新显示内容
-                    setTypingMessage(prev => prev ? {
-                      ...prev,
-                      content: messageContent,
-                      displayedContent: messageContent
-                    } : null)
-
-                    // 实时滚动到底部
-                    setTimeout(() => {
-                      scrollToBottom()
-                    }, 0)
-                  }
-                }
-              } catch (parseError) {
-                console.warn('解析流式数据失败:', parseError, '原始数据:', line)
-                // 继续处理下一行，不中断整个流程
+            try {
+              if (applyResponseChunk(line)) {
+                streamDone = true
+                break
               }
+            } catch (parseError) {
+              console.warn('解析流式数据失败:', parseError, '原始数据:', line)
             }
+          }
+        }
+
+        const restChunk = pendingChunk.trim()
+        if (!streamDone && restChunk) {
+          try {
+            applyResponseChunk(restChunk)
+          } catch (parseError) {
+            console.warn('解析流式尾包失败:', parseError, '原始数据:', restChunk)
           }
         }
 
@@ -507,6 +568,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             <Bot className="h-12 w-12 text-default-300 mb-4" />
             <h3 className="text-lg font-medium text-default-500 mb-2">{t('ai_panel.empty_title')}</h3>
             <p className="text-sm text-default-400 max-w-sm leading-relaxed">
+              {t('ai_panel.empty_description')}
             </p>
           </div>
         ) : (
@@ -524,10 +586,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
                 >
                   <div className="text-sm whitespace-pre-wrap leading-relaxed">
                     {message.role === 'assistant' ? (
-                      <div
-                        className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-code:text-foreground"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
-                      />
+                      <MarkdownMessage content={message.content} />
                     ) : (
                       <div className="break-words">{message.content}</div>
                     )}
@@ -545,10 +604,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
               <div className="flex justify-start">
                 <div className="max-w-[80%] bg-content2 text-foreground rounded-lg p-3">
                   <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                    <div
-                      className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-code:text-foreground"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(typingMessage.displayedContent) }}
-                    />
+                    <MarkdownMessage content={typingMessage.displayedContent} />
                     {typingMessage.isTyping && (
                       <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
                     )}
@@ -586,14 +642,14 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             onKeyDown={handleKeyPress}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
-            placeholder={t('ai_panel.placeholder')}
-            disabled={!appSettings?.ai?.enabled || isLoading}
+            placeholder={isAIReady ? t('ai_panel.placeholder') : t('ai_panel.disabled_placeholder')}
+            disabled={!isAIReady || isLoading}
             className="w-full bg-content2 border-divider focus:border-primary heroui-transition min-h-[80px] max-h-[200px] resize-none pr-12 pb-12"
             rows={3}
           />
           <Button
             onClick={isLoading || typingMessage ? handleInterrupt : handleSend}
-            disabled={(!inputValue.trim() && !isLoading && !typingMessage) || !appSettings?.ai?.enabled}
+            disabled={(!inputValue.trim() && !isLoading && !typingMessage) || !isAIReady}
             size="sm"
             className={`absolute bottom-2 right-2 h-8 w-8 p-0 ${isLoading || typingMessage
                 ? 'heroui-button heroui-button-danger bg-danger hover:bg-danger/90'
@@ -608,9 +664,9 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             )}
           </Button>
         </div>
-        {!appSettings?.ai?.enabled && (
+        {!isAIReady && (
           <div className="text-xs text-warning mt-2">
-            {t('ai_panel.not_enabled_hint')}
+            {t('ai_panel.setup_hint')}
           </div>
         )}
       </div>

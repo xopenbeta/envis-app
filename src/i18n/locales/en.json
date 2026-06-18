@@ -1391,6 +1391,7 @@
     "ai_replying": "AI is replying...",
     "press_esc": "Press Esc or click the interrupt button to stop",
     "empty_title": "AI Configuration Assistant",
+    "empty_description": "Ask AI to analyze issues, explain config, or draft commands. Chat history stays on this device.",
     "configure_ai_first": "Please configure AI API in settings first",
     "interrupted": "[Output interrupted]",
     "interrupt_success": "AI output interrupted",
@@ -1400,7 +1401,10 @@
     "interrupt_btn": "Interrupt AI output",
     "send_btn": "Send message",
     "not_enabled_hint": "⚠️ AI not enabled, please configure API in settings first",
-    "placeholder": "Please configure AI service in settings first...",
+    "setup_hint": "⚠️ Enable the AI service and configure the API key and model in settings first.",
+    "placeholder": "Type your question. Press Enter to send, Shift+Enter for a new line...",
+    "disabled_placeholder": "Please configure AI service in settings first...",
+    "loading": "Loading AI assistant...",
     "typing": "Typing..."
   },
   "app_footer": {
