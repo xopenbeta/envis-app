@@ -11,8 +11,8 @@ const isMobilePlatform = () => {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 }
 
-// const App = isMobilePlatform() ? MobileApp : PcApp
-const App = MobileApp
+const App = isMobilePlatform() ? MobileApp : PcApp
+// const App = MobileApp
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

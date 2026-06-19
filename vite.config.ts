@@ -10,7 +10,7 @@ export default defineConfig(async () => ({
   
   resolve: {
     alias: {
-      '@': path.resolve('src')
+      '@': path.resolve('src/pc')
     },
   },
 
