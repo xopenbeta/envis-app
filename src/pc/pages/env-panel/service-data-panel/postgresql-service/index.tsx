@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import {
   Database,
   BarChart3,
@@ -52,6 +53,7 @@ interface PostgreSQLServiceProps {
 }
 
 export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
+  const { t } = useTranslation()
   const { openFolderInFinder } = useFileOperations()
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
 
@@ -82,10 +84,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [postgresqlConfig, setPostgresqlConfig] = useState<PostgreSQLConfig | null>(null)
 
-  const [isStarting, setIsStarting] = useState(false)
-  const [isStopping, setIsStopping] = useState(false)
-  const [isRestarting, setIsRestarting] = useState(false)
+  const [serviceAction, setServiceAction] = useState<'starting' | 'stopping' | 'restarting' | null>(null)
   const watchedDatabasesRef = useRef<Set<string>>(new Set())
+
+  const isStarting = serviceAction === 'starting'
+  const isStopping = serviceAction === 'stopping'
+  const isRestarting = serviceAction === 'restarting'
 
   const [databases, setDatabases] = useState<Array<{
     name: string,
@@ -196,6 +200,22 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
     setRoles([])
     return () => {}
   }, [isServiceActive, isInitialized, serviceStatus])
+
+  useEffect(() => {
+    if (serviceAction === 'starting' && serviceStatus === ServiceStatus.Running) {
+      setServiceAction(null)
+      return
+    }
+
+    if (serviceAction === 'stopping' && serviceStatus === ServiceStatus.Stopped) {
+      setServiceAction(null)
+      return
+    }
+
+    if (serviceAction === 'restarting' && serviceStatus === ServiceStatus.Running) {
+      setServiceAction(null)
+    }
+  }, [serviceAction, serviceStatus])
 
   useEffect(() => {
     return () => {
@@ -398,15 +418,15 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
     try {
       const result = await createPostgresqlDatabase(selectedEnvironmentId, serviceData, newDbName)
       if (result.success) {
-        toast.success('数据库创建成功')
+        toast.success(t('postgresql_service.db_create_success'))
         setShowCreateDbDialog(false)
         setNewDbName('')
         void loadDatabases()
       } else {
-        toast.error('创建数据库失败: ' + result.message)
+        toast.error(t('postgresql_service.db_create_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('创建数据库失败: ' + error)
+      toast.error(t('postgresql_service.db_create_failed', { message: String(error) }))
     } finally {
       setIsCreatingDb(false)
     }
@@ -423,15 +443,15 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       }))
       const result = await createPostgresqlRole(selectedEnvironmentId, serviceData, roleForm.roleName, roleForm.password, grants)
       if (result.success) {
-        toast.success(`角色 '${roleForm.roleName}' 创建成功`)
+        toast.success(t('postgresql_service.role_create_success', { roleName: roleForm.roleName }))
         setShowCreateRoleDialog(false)
         setRoleForm({ roleName: '', password: '', grants: {}, customDb: '' })
         void loadRoles()
       } else {
-        toast.error('创建角色失败: ' + result.message)
+        toast.error(t('postgresql_service.role_create_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('创建角色失败: ' + error)
+      toast.error(t('postgresql_service.role_create_failed', { message: String(error) }))
     } finally {
       setIsSubmittingRole(false)
     }
@@ -458,14 +478,14 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
       }))
       const result = await updatePostgresqlRoleGrants(selectedEnvironmentId, serviceData, selectedRoleName, grants)
       if (result.success) {
-        toast.success(`角色 '${selectedRoleName}' 权限更新成功`)
+        toast.success(t('postgresql_service.permission_update_success', { roleName: selectedRoleName }))
         setShowEditRoleDialog(false)
         void loadRoles()
       } else {
-        toast.error('更新权限失败: ' + result.message)
+        toast.error(t('postgresql_service.permission_update_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('更新权限失败: ' + error)
+      toast.error(t('postgresql_service.permission_update_failed', { message: String(error) }))
     } finally {
       setIsSubmittingRole(false)
     }
@@ -478,81 +498,95 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
     try {
       const result = await deletePostgresqlRole(selectedEnvironmentId, serviceData, selectedRoleName)
       if (result.success) {
-        toast.success(`角色 '${selectedRoleName}' 删除成功`)
+        toast.success(t('postgresql_service.role_delete_success', { roleName: selectedRoleName }))
         setShowDeleteRoleDialog(false)
         void loadRoles()
       } else {
-        toast.error('删除角色失败: ' + result.message)
+        toast.error(t('postgresql_service.role_delete_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('删除角色失败: ' + error)
+      toast.error(t('postgresql_service.role_delete_failed', { message: String(error) }))
     } finally {
       setIsSubmittingRole(false)
+    }
+  }
+
+  const refreshServiceStatusSafely = async () => {
+    try {
+      await refreshServiceStatus()
+    } catch (error) {
+      console.error('刷新 PostgreSQL 服务状态失败:', error)
     }
   }
 
   const startService = async () => {
     if (!serviceData?.version) return
 
-    setIsStarting(true)
+    setServiceAction('starting')
     try {
+      await refreshServiceStatusSafely()
       const result = await startServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('PostgreSQL 服务启动成功')
+        toast.success(t('postgresql_service.start_success'))
       } else {
-        toast.error('启动 PostgreSQL 服务失败: ' + result.message)
+        toast.error(t('postgresql_service.start_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('启动 PostgreSQL 服务失败: ' + error)
+      toast.error(t('postgresql_service.start_failed', { message: String(error) }))
     } finally {
-      setIsStarting(false)
+      await refreshServiceStatusSafely()
+      setServiceAction((prev) => (prev === 'starting' ? null : prev))
     }
   }
 
   const stopService = async () => {
     if (!serviceData?.version) return
 
-    setIsStopping(true)
+    setServiceAction('stopping')
     try {
+      await refreshServiceStatusSafely()
       const result = await stopServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('PostgreSQL 服务已停止')
+        toast.success(t('postgresql_service.stop_success'))
       } else {
-        toast.error('停止 PostgreSQL 服务失败: ' + result.message)
+        toast.error(t('postgresql_service.stop_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('停止 PostgreSQL 服务失败: ' + error)
+      toast.error(t('postgresql_service.stop_failed', { message: String(error) }))
     } finally {
-      setIsStopping(false)
+      await refreshServiceStatusSafely()
+      setServiceAction((prev) => (prev === 'stopping' ? null : prev))
     }
   }
 
   const restartService = async () => {
     if (!serviceData?.version) return
 
-    setIsRestarting(true)
+    setServiceAction('restarting')
     try {
+      await refreshServiceStatusSafely()
       const result = await restartServiceData(selectedEnvironmentId, serviceData)
       if (result.success) {
-        toast.success('PostgreSQL 服务重启成功')
+        toast.success(t('postgresql_service.restart_success'))
       } else {
-        toast.error('重启 PostgreSQL 服务失败: ' + result.message)
+        toast.error(t('postgresql_service.restart_failed', { message: result.message }))
       }
     } catch (error) {
-      toast.error('重启 PostgreSQL 服务失败: ' + error)
+      toast.error(t('postgresql_service.restart_failed', { message: String(error) }))
     } finally {
-      setIsRestarting(false)
+      await refreshServiceStatusSafely()
+      setServiceAction((prev) => (prev === 'restarting' ? null : prev))
     }
   }
 
   const handleInitialize = async (reset: boolean = false) => {
     if (!dialogData.superPassword) {
-      toast.error('请输入 postgres 超级用户密码')
+      toast.error(t('postgresql_service.password_required'))
       return
     }
 
     if (reset && serviceStatus === ServiceStatus.Running) {
-      toast.error('PostgreSQL 正在运行中，请先停止服务后再进行重置')
+      toast.error(t('postgresql_service.running_warning'))
       return
     }
 
@@ -580,12 +614,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
           serviceDatas: selectedServiceDatas,
         })
 
-        toast.success('PostgreSQL 初始化成功')
+        toast.success(t('postgresql_service.init_success'))
         setShowInitDialog(false)
         setShowResetDialog(false)
         setIsInitialized(true)
       } else {
-        toast.error(result.message || 'PostgreSQL 初始化失败')
+        toast.error(result.message || t('postgresql_service.init_failed'))
       }
     } catch (error) {
       const errorMessage =
@@ -600,7 +634,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         serviceId: serviceData.id,
         error,
       })
-      toast.error('初始化失败: ' + errorMessage)
+      toast.error(t('postgresql_service.init_failed_msg', { message: errorMessage }))
     } finally {
       setIsInitializing(false)
     }
@@ -615,21 +649,21 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              初始化 PostgreSQL
+              {t('postgresql_service.init_title')}
             </DialogTitle>
             <DialogDescription>
-              首次使用需要初始化 PostgreSQL。系统将创建配置文件、数据目录，并设置 postgres 超级用户密码。
+              {t('postgresql_service.init_desc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="postgres-super-password">超级用户密码</Label>
+              <Label htmlFor="postgres-super-password">{t('postgresql_service.super_password_label')}</Label>
               <Input
                 id="postgres-super-password"
                 type="password"
                 value={dialogData.superPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, superPassword: e.target.value }))}
-                placeholder="输入 postgres 超级用户密码"
+                placeholder={t('postgresql_service.super_password_placeholder')}
                 disabled={isInitializing}
               />
             </div>
@@ -640,12 +674,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               className="w-full"
               type="button"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('postgresql_service.hide_advanced') : t('postgresql_service.show_advanced')}
             </Button>
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="postgres-init-port">端口</Label>
+                  <Label htmlFor="postgres-init-port">{t('postgresql_service.port_label')}</Label>
                   <Input
                     id="postgres-init-port"
                     value={dialogData.port}
@@ -655,7 +689,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="postgres-init-bind-address">绑定地址</Label>
+                  <Label htmlFor="postgres-init-bind-address">{t('postgresql_service.bind_address_label')}</Label>
                   <Input
                     id="postgres-init-bind-address"
                     value={dialogData.bindAddress}
@@ -664,7 +698,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     disabled={isInitializing}
                   />
                   <p className="text-xs text-muted-foreground">
-                    默认仅本地访问。如需远程访问请设置为 0.0.0.0
+                    {t('postgresql_service.local_access_note')}
                   </p>
                 </div>
               </>
@@ -672,13 +706,13 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-xs">
-                请牢记超级用户密码。初始化包含：创建配置文件、数据目录并初始化数据库集群。
+                {t('postgresql_service.init_alert')}
               </AlertDescription>
             </Alert>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInitDialog(false)} disabled={isInitializing} className="shadow-none">
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => void handleInitialize(false)}
@@ -687,9 +721,9 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  初始化中...
+                  {t('postgresql_service.initializing')}
                 </>
-              ) : '开始初始化'}
+              ) : t('postgresql_service.start_init')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -700,11 +734,11 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              重置 PostgreSQL
+              {t('postgresql_service.reset_title')}
             </DialogTitle>
             <DialogDescription>
-              重置将删除所有现有数据、配置文件和角色信息，然后重新初始化 PostgreSQL。
-              <span className="text-red-600 font-semibold">此操作不可恢复！</span>
+              {t('postgresql_service.reset_desc')}
+              <span className="text-red-600 font-semibold">{t('postgresql_service.reset_irrecoverable')}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -713,19 +747,19 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    <strong>PostgreSQL 正在运行中！</strong> 请先停止 PostgreSQL 服务后再进行重置。
+                    {t('postgresql_service.running_warning_text')}
                   </AlertDescription>
                 </div>
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="postgres-reset-password">新超级用户密码</Label>
+              <Label htmlFor="postgres-reset-password">{t('postgresql_service.new_super_password_label')}</Label>
               <Input
                 id="postgres-reset-password"
                 type="password"
                 value={dialogData.superPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, superPassword: e.target.value }))}
-                placeholder="输入新超级用户密码"
+                placeholder={t('postgresql_service.new_super_password_placeholder')}
                 disabled={isInitializing}
                 className="shadow-none"
               />
@@ -736,12 +770,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
               className="w-full"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('postgresql_service.hide_advanced') : t('postgresql_service.show_advanced')}
             </Button>
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="postgres-reset-port">端口</Label>
+                  <Label htmlFor="postgres-reset-port">{t('postgresql_service.port_label')}</Label>
                   <Input
                     id="postgres-reset-port"
                     value={dialogData.port}
@@ -751,7 +785,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="postgres-reset-bind-address">绑定地址</Label>
+                  <Label htmlFor="postgres-reset-bind-address">{t('postgresql_service.bind_address_label')}</Label>
                   <Input
                     id="postgres-reset-bind-address"
                     value={dialogData.bindAddress}
@@ -765,7 +799,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowResetDialog(false)} disabled={isInitializing} className="shadow-none">
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -775,12 +809,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  重置中...
+                  {t('postgresql_service.resetting')}
                 </>
               ) : (
                 <>
                   <AlertTriangle className="h-4 w-4 mr-2" />
-                  确认重置
+                  {t('postgresql_service.confirm_reset')}
                 </>
               )}
             </Button>
@@ -794,10 +828,10 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
                 <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
-                  PostgreSQL 尚未初始化
+                  {t('postgresql_service.not_initialized_title')}
                 </p>
                 <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
-                  首次使用需要初始化配置文件、数据目录，并设置超级用户密码。
+                  {t('postgresql_service.not_initialized_desc')}
                 </p>
               </div>
             </div>
@@ -807,7 +841,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 onClick={() => setShowInitDialog(true)}
                 className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
               >
-                立即初始化
+                {t('postgresql_service.init_now')}
               </Button>
             </div>
           </div>
@@ -816,7 +850,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              服务控制
+              {t('postgresql_service.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
@@ -825,8 +859,8 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                   serviceStatus === ServiceStatus.Stopped ? 'bg-red-500' : 'bg-gray-300'
               )} />
               <span className="text-xs font-normal text-muted-foreground">
-                {serviceStatus === ServiceStatus.Running ? '运行中' :
-                  serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知状态'}
+                {serviceStatus === ServiceStatus.Running ? t('postgresql_service.running') :
+                  serviceStatus === ServiceStatus.Stopped ? t('postgresql_service.stopped') : t('postgresql_service.unknown_status')}
               </span>
             </div>
           </div>
@@ -844,17 +878,17 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 ) : (
                   <Power className="h-3.5 w-3.5 text-green-600" />
                 )}
-                启动
+                {t('postgresql_service.start')}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                 onClick={() => void stopService()}
-                disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
+                disabled={serviceStatus === ServiceStatus.Stopped || isStarting || isStopping || isRestarting}
               >
                 <PowerOff className="h-3.5 w-3.5 text-red-600" />
-                停止
+                {t('postgresql_service.stop')}
               </Button>
               <Button
                 size="sm"
@@ -864,7 +898,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <RotateCw className={cn('h-3.5 w-3.5 text-blue-600', isRestarting && 'animate-spin')} />
-                重启
+                {t('postgresql_service.restart')}
               </Button>
             </div>
           )}
@@ -874,12 +908,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
           {isServiceActive && isInitialized ? (
             <div className="space-y-4">
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置文件</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('postgresql_service.config_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={configPath}
                     readOnly
-                    placeholder="PostgreSQL 配置文件路径"
+                    placeholder={t('postgresql_service.config_path_placeholder')}
                     className="flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
                   <Button
@@ -888,7 +922,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开配置文件目录"
+                    title={t('postgresql_service.open_config_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -896,10 +930,10 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               </div>
 
               <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录（从配置读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('postgresql_service.data_dir_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={postgresqlConfig?.dataPath || '未配置'}
+                    value={postgresqlConfig?.dataPath || t('postgresql_service.not_configured')}
                     readOnly
                     className={cn(
                       'flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10',
@@ -912,7 +946,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     onClick={() => postgresqlConfig?.dataPath && openFolderInFinder(postgresqlConfig.dataPath)}
                     disabled={!postgresqlConfig?.dataPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('postgresql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -920,10 +954,10 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               </div>
 
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件（从配置读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('postgresql_service.log_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={postgresqlConfig?.logPath || '未配置'}
+                    value={postgresqlConfig?.logPath || t('postgresql_service.not_configured')}
                     readOnly
                     className={cn(
                       'flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10',
@@ -936,7 +970,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     onClick={() => postgresqlConfig?.logPath && openFolderInFinder(postgresqlConfig.logPath)}
                     disabled={!postgresqlConfig?.logPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('postgresql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -945,17 +979,17 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">主机（从配置读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('postgresql_service.host_label')}</Label>
                   <Input
-                    value={postgresqlConfig?.bindIp || '未配置'}
+                    value={postgresqlConfig?.bindIp || t('postgresql_service.not_configured')}
                     readOnly
                     className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口（从配置读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('postgresql_service.port_from_config')}</Label>
                   <Input
-                    value={postgresqlConfig?.port ?? '未配置'}
+                    value={postgresqlConfig?.port ?? t('postgresql_service.not_configured')}
                     readOnly
                     className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
                   />
@@ -963,7 +997,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               </div>
 
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('postgresql_service.management_tools')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
                     variant="outline"
@@ -972,19 +1006,19 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                       try {
                         const result = await openPostgresqlClient(selectedEnvironmentId, serviceData)
                         if (result.success) {
-                          toast.success('PostgreSQL 客户端已打开')
+                          toast.success(t('postgresql_service.client_opened'))
                         } else {
-                          toast.error(result.message || '打开 PostgreSQL 客户端失败')
+                          toast.error(result.message || t('postgresql_service.client_open_failed'))
                         }
                       } catch (error) {
-                        toast.error('打开 PostgreSQL 客户端失败: ' + error)
+                        toast.error(t('postgresql_service.client_open_failed') + ': ' + String(error))
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
                     className="flex items-center gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                   >
                     <Terminal className="h-3.5 w-3.5" />
-                    psql Client
+                    {t('postgresql_service.psql_client_label')}
                   </Button>
                 </div>
               </div>
@@ -994,13 +1028,13 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活，无法显示配置信息</p>
-                  <p className="text-xs">请先激活 PostgreSQL 服务</p>
+                  <p className="text-sm">{t('postgresql_service.service_not_active_config')}</p>
+                  <p className="text-xs">{t('postgresql_service.activate_service_hint')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">PostgreSQL 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('postgresql_service.not_initialized_short')}</p>
+                  <p className="text-xs">{t('postgresql_service.complete_init')}</p>
                 </>
               )}
             </div>
@@ -1010,7 +1044,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              数据库管理
+              {t('postgresql_service.db_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1020,7 +1054,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <Plus className="h-3 w-3 mr-1" />
-                新建数据库
+                {t('postgresql_service.new_database')}
               </Button>
             )}
           </div>
@@ -1078,19 +1112,19 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                                   {db.showAllTables ? (
                                     <>
                                       <ChevronUp className="h-3 w-3 mr-1" />
-                                      收起 ({db.tables.length - 4} 张表)
+                                      {t('postgresql_service.collapse_tables', { count: db.tables.length - 4 })}
                                     </>
                                   ) : (
                                     <>
                                       <ChevronDown className="h-3 w-3 mr-1" />
-                                      还有 {db.tables.length - 4} 张表
+                                      {t('postgresql_service.more_tables', { count: db.tables.length - 4 })}
                                     </>
                                   )}
                                 </Button>
                               )}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-500 text-center py-2">暂无表</div>
+                            <div className="text-xs text-gray-500 text-center py-2">{t('postgresql_service.no_tables')}</div>
                           )}
                         </div>
                       )}
@@ -1106,12 +1140,12 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                       {showAllDatabases ? (
                         <>
                           <ChevronUp className="h-3.5 w-3.5 mr-1" />
-                          收起 ({databases.length - 4} 个数据库)
+                          {t('postgresql_service.collapse_dbs', { count: databases.length - 4 })}
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-3.5 w-3.5 mr-1" />
-                          还有 {databases.length - 4} 个数据库
+                          {t('postgresql_service.more_dbs', { count: databases.length - 4 })}
                         </>
                       )}
                     </Button>
@@ -1121,7 +1155,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
                   {isLoadingDatabases ? (
                     <RefreshCw className="h-4 w-4 animate-spin mx-auto" />
-                  ) : '暂无数据库'}
+                  ) : t('postgresql_service.no_databases')}
                 </div>
               )}
             </div>
@@ -1130,18 +1164,18 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               <Database className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活</p>
-                  <p className="text-xs">无法管理数据库</p>
+                  <p className="text-sm">{t('postgresql_service.service_not_active_db')}</p>
+                  <p className="text-xs">{t('postgresql_service.cannot_manage_db')}</p>
                 </>
               ) : !isInitialized ? (
                 <>
-                  <p className="text-sm">PostgreSQL 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('postgresql_service.not_initialized_short')}</p>
+                  <p className="text-xs">{t('postgresql_service.complete_init')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">服务未运行</p>
-                  <p className="text-xs">请先启动服务</p>
+                  <p className="text-sm">{t('postgresql_service.service_not_running')}</p>
+                  <p className="text-xs">{t('postgresql_service.start_first')}</p>
                 </>
               )}
             </div>
@@ -1151,19 +1185,19 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         <Dialog open={showCreateDbDialog} onOpenChange={setShowCreateDbDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>新建数据库</DialogTitle>
+              <DialogTitle>{t('postgresql_service.new_database_title')}</DialogTitle>
               <DialogDescription>
-                创建一个新的 PostgreSQL 数据库。
+                {t('postgresql_service.new_database_desc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="pg-db-name">数据库名称</Label>
+                <Label htmlFor="pg-db-name">{t('postgresql_service.db_name_label')}</Label>
                 <Input
                   id="pg-db-name"
                   value={newDbName}
                   onChange={(e) => setNewDbName(e.target.value)}
-                  placeholder="输入数据库名称"
+                  placeholder={t('postgresql_service.db_name_placeholder')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newDbName) {
                       void handleCreateDatabase()
@@ -1174,15 +1208,15 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             </div>
             <DialogFooter>
               <Button className="shadow-none" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
-                取消
+                {t('common.cancel')}
               </Button>
               <Button onClick={() => void handleCreateDatabase()} disabled={!newDbName || isCreatingDb}>
                 {isCreatingDb ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    创建中...
+                    {t('postgresql_service.creating')}
                   </>
-                ) : '创建'}
+                ) : t('postgresql_service.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1196,34 +1230,34 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
-                新建角色
+                {t('postgresql_service.new_role_title')}
               </DialogTitle>
-              <DialogDescription>创建一个新的 PostgreSQL 登录角色并分配数据库权限。</DialogDescription>
+              <DialogDescription>{t('postgresql_service.new_role_desc')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="new-role-name">角色名</Label>
+                <Label htmlFor="new-role-name">{t('postgresql_service.role_name_label')}</Label>
                 <Input
                   id="new-role-name"
                   value={roleForm.roleName}
                   onChange={(e) => setRoleForm(prev => ({ ...prev, roleName: e.target.value }))}
-                  placeholder="输入角色名"
+                  placeholder={t('postgresql_service.role_name_placeholder')}
                   disabled={isSubmittingRole}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-role-password">密码</Label>
+                <Label htmlFor="new-role-password">{t('postgresql_service.password_label')}</Label>
                 <Input
                   id="new-role-password"
                   type="password"
                   value={roleForm.password}
                   onChange={(e) => setRoleForm(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="输入密码"
+                  placeholder={t('postgresql_service.password_placeholder')}
                   disabled={isSubmittingRole}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-medium">数据库权限</Label>
+                <Label className="text-xs font-medium">{t('postgresql_service.db_permissions')}</Label>
                 {databases.length > 0 && (
                   <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
                     {databases.map((db) => (
@@ -1252,7 +1286,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                                   : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
                               )}
                             >
-                              {priv === 'SELECT' ? 'Read' : 'ReadWrite'}
+                              {priv === 'SELECT' ? t('postgresql_service.privilege_read') : t('postgresql_service.privilege_read_write')}
                             </button>
                           ))}
                         </div>
@@ -1264,7 +1298,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                   <Input
                     value={roleForm.customDb}
                     onChange={(e) => setRoleForm(prev => ({ ...prev, customDb: e.target.value }))}
-                    placeholder="自定义数据库名"
+                    placeholder={t('postgresql_service.custom_db_placeholder')}
                     className="h-7 text-xs shadow-none"
                     disabled={isSubmittingRole}
                     onKeyDown={(e) => {
@@ -1302,7 +1336,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                         key={db}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
                       >
-                        {db}: {priv === 'ALL PRIVILEGES' ? 'ReadWrite' : 'Read'}
+                          {db}: {priv === 'ALL PRIVILEGES' ? t('postgresql_service.privilege_read_write') : t('postgresql_service.privilege_read')}
                         <button
                           type="button"
                           onClick={() => setRoleForm(prev => {
@@ -1319,9 +1353,9 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateRoleDialog(false)} disabled={isSubmittingRole}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateRoleDialog(false)} disabled={isSubmittingRole}>{t('common.cancel')}</Button>
               <Button onClick={() => void handleCreateRole()} disabled={!roleForm.roleName || !roleForm.password || isSubmittingRole}>
-                {isSubmittingRole ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />创建中...</> : '创建'}
+                {isSubmittingRole ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('postgresql_service.creating')}</> : t('postgresql_service.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1332,9 +1366,9 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5" />
-                编辑权限 - {selectedRoleName}
+                {t('postgresql_service.edit_permissions_title', { roleName: selectedRoleName })}
               </DialogTitle>
-              <DialogDescription>修改角色的数据库访问权限（全量替换）。</DialogDescription>
+              <DialogDescription>{t('postgresql_service.edit_permissions_desc')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               {databases.length > 0 && (
@@ -1365,7 +1399,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                                 : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
                             )}
                           >
-                            {priv === 'SELECT' ? 'Read' : 'ReadWrite'}
+                            {priv === 'SELECT' ? t('postgresql_service.privilege_read') : t('postgresql_service.privilege_read_write')}
                           </button>
                         ))}
                       </div>
@@ -1377,7 +1411,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 <Input
                   value={roleForm.customDb}
                   onChange={(e) => setRoleForm(prev => ({ ...prev, customDb: e.target.value }))}
-                  placeholder="自定义数据库名"
+                  placeholder={t('postgresql_service.custom_db_placeholder')}
                   className="h-7 text-xs shadow-none"
                   disabled={isSubmittingRole}
                   onKeyDown={(e) => {
@@ -1415,7 +1449,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                       key={db}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
                     >
-                      {db}: {priv === 'ALL PRIVILEGES' ? 'ReadWrite' : 'Read'}
+                        {db}: {priv === 'ALL PRIVILEGES' ? t('postgresql_service.privilege_read_write') : t('postgresql_service.privilege_read')}
                       <button
                         type="button"
                         onClick={() => setRoleForm(prev => {
@@ -1431,9 +1465,9 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
               )}
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowEditRoleDialog(false)} disabled={isSubmittingRole}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowEditRoleDialog(false)} disabled={isSubmittingRole}>{t('common.cancel')}</Button>
               <Button onClick={() => void handleUpdateRoleGrants()} disabled={isSubmittingRole}>
-                {isSubmittingRole ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />保存中...</> : '保存'}
+                {isSubmittingRole ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('postgresql_service.saving')}</> : t('postgresql_service.save')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1444,16 +1478,16 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-600">
                 <Trash2 className="h-5 w-5" />
-                删除角色
+                {t('postgresql_service.delete_role_title')}
               </DialogTitle>
               <DialogDescription>
-                确认要删除角色 <span className="font-semibold text-foreground">'{selectedRoleName}'</span> 吗？此操作不可恢复。
+                {t('postgresql_service.delete_role_confirm', { roleName: selectedRoleName })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteRoleDialog(false)} disabled={isSubmittingRole}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteRoleDialog(false)} disabled={isSubmittingRole}>{t('common.cancel')}</Button>
               <Button variant="destructive" onClick={() => void handleDeleteRole()} disabled={isSubmittingRole}>
-                {isSubmittingRole ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />删除中...</> : '确认删除'}
+                {isSubmittingRole ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('postgresql_service.deleting')}</> : t('postgresql_service.confirm_delete')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1462,7 +1496,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              角色管理（Role）
+              {t('postgresql_service.role_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1472,7 +1506,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <UserPlus className="h-3 w-3 mr-1" />
-                新建角色
+                {t('postgresql_service.new_role')}
               </Button>
             )}
           </div>
@@ -1483,7 +1517,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                   <div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">postgres</span>
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{t('postgresql_service.admin_tag')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1522,7 +1556,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                           variant="ghost"
                           className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                           onClick={() => openEditRoleDialog(role)}
-                          title="编辑权限"
+                          title={t('common.edit')}
                         >
                           <Pencil className="h-3 w-3" />
                         </Button>
@@ -1534,7 +1568,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                             setSelectedRoleName(role.roleName)
                             setShowDeleteRoleDialog(true)
                           }}
-                          title="删除角色"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -1544,7 +1578,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
-                  暂无普通角色
+                  {t('postgresql_service.no_normal_roles')}
                 </div>
               )}
             </div>
@@ -1552,11 +1586,11 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
-                <><p className="text-sm">服务未激活</p><p className="text-xs">无法管理角色</p></>
+                <><p className="text-sm">{t('postgresql_service.service_not_active_roles')}</p><p className="text-xs">{t('postgresql_service.cannot_manage_roles')}</p></>
               ) : !isInitialized ? (
-                <><p className="text-sm">PostgreSQL 尚未初始化</p><p className="text-xs">请先完成初始化</p></>
+                <><p className="text-sm">{t('postgresql_service.not_initialized_short')}</p><p className="text-xs">{t('postgresql_service.complete_init')}</p></>
               ) : (
-                <><p className="text-sm">服务未运行</p><p className="text-xs">请先启动服务</p></>
+                <><p className="text-sm">{t('postgresql_service.service_not_running')}</p><p className="text-xs">{t('postgresql_service.start_first')}</p></>
               )}
             </div>
           )}
@@ -1564,7 +1598,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-            其他操作
+            {t('postgresql_service.other_operations')}
           </Label>
           {isServiceActive && isInitialized ? (
             <div className="flex gap-2">
@@ -1575,14 +1609,14 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
               >
                 <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-                重置初始化
+                {t('postgresql_service.reset_init')}
               </Button>
             </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <BarChart3 className="h-6 w-6 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">服务未激活</p>
-              <p className="text-xs">无法使用其他操作</p>
+              <p className="text-sm">{t('postgresql_service.service_not_active_db')}</p>
+              <p className="text-xs">{t('postgresql_service.cannot_use_other_operations')}</p>
             </div>
           )}
         </div>
