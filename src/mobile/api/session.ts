@@ -22,6 +22,7 @@ const buildRequestBody = (payload: SessionInitPayload): Record<string, unknown> 
       host: payload.host,
       port: payload.port,
       username: payload.username,
+      environmentName: payload.targetEnvironmentName,
     },
     code: payload.forceBusiness301 ? 301 : undefined,
   }
@@ -35,13 +36,18 @@ const parseJsonSafe = async (response: Response): Promise<SessionInitServerRespo
   }
 }
 
-const createMockResult = (baseUrl: string, message: string): SessionInitResult => {
+const createMockResult = (
+  baseUrl: string,
+  message: string,
+  targetEnvironmentName?: string,
+): SessionInitResult => {
   const sessionId = `mock-${Date.now()}`
   return {
     sessionId,
     wsUrl: 'mock://terminal',
     baseUrl,
     mocked: true,
+    targetEnvironmentName,
     message,
   }
 }
@@ -68,6 +74,7 @@ const requestSession = async (
 const resolveServerResult = (
   baseUrl: string,
   body: SessionInitServerResponse | null,
+  targetEnvironmentName?: string,
 ): SessionInitResult | null => {
   if (!body) return null
 
@@ -79,6 +86,7 @@ const resolveServerResult = (
     wsUrl,
     baseUrl,
     mocked: !body.data?.sessionId || !body.data?.wsUrl,
+    targetEnvironmentName,
     message: body.message,
   }
 }
@@ -98,16 +106,28 @@ export const createTerminalSession = async (
     ) {
       const fallbackResult = await requestSession(fallbackBase, payload, token)
       return (
-        resolveServerResult(fallbackBase, fallbackResult.body) ??
-        createMockResult(fallbackBase, 'fallback server did not return a session, use mocked stream')
+        resolveServerResult(fallbackBase, fallbackResult.body, payload.targetEnvironmentName) ??
+        createMockResult(
+          fallbackBase,
+          'fallback server did not return a session, use mocked stream',
+          payload.targetEnvironmentName,
+        )
       )
     }
 
     return (
-      resolveServerResult(primaryBase, primaryResult.body) ??
-      createMockResult(primaryBase, 'primary server did not return a session, use mocked stream')
+      resolveServerResult(primaryBase, primaryResult.body, payload.targetEnvironmentName) ??
+      createMockResult(
+        primaryBase,
+        'primary server did not return a session, use mocked stream',
+        payload.targetEnvironmentName,
+      )
     )
   } catch (_error) {
-    return createMockResult(primaryBase, 'session API unavailable, use mocked stream')
+    return createMockResult(
+      primaryBase,
+      'session API unavailable, use mocked stream',
+      payload.targetEnvironmentName,
+    )
   }
 }

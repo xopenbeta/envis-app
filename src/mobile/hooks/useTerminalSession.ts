@@ -1,21 +1,16 @@
-import { useAtom } from 'jotai'
-import { useMemo, useRef } from 'react'
+import { useRef, useState } from 'react'
 import { createTerminalSession } from '../api/session'
-import {
-  terminalConfigAtom,
-  terminalOutputsAtom,
-  terminalSessionAtom,
-  terminalStatusAtom,
-} from '../store/terminal'
 import type {
+  ConnectionStatus,
   SessionInitPayload,
-  TerminalConnectionConfig,
   TerminalOutputEvent,
   TerminalOutputKind,
   TerminalOutputLine,
+  SessionInitResult,
   TerminalTransport,
 } from '../types/terminal'
 import { MockTerminalTransport } from '../terminal/transports/mock'
+import type { MobileHostItem } from '../types/home'
 
 const createOutputLine = (kind: TerminalOutputKind, text: string): TerminalOutputLine => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -25,22 +20,13 @@ const createOutputLine = (kind: TerminalOutputKind, text: string): TerminalOutpu
 })
 
 export const useTerminalSession = () => {
-  const [config, setConfig] = useAtom(terminalConfigAtom)
-  const [status, setStatus] = useAtom(terminalStatusAtom)
-  const [session, setSession] = useAtom(terminalSessionAtom)
-  const [outputs, setOutputs] = useAtom(terminalOutputsAtom)
+  const [status, setStatus] = useState<ConnectionStatus>('idle')
+  const [session, setSession] = useState<SessionInitResult | null>(null)
+  const [outputs, setOutputs] = useState<TerminalOutputLine[]>([])
   const transportRef = useRef<TerminalTransport | null>(null)
-
-  const canConnect = useMemo(() => {
-    return !!config.host.trim() && !!config.username.trim() && !!config.token.trim()
-  }, [config.host, config.username, config.token])
 
   const appendOutput = (kind: TerminalOutputKind, text: string) => {
     setOutputs((current) => [...current, createOutputLine(kind, text)])
-  }
-
-  const applyConfig = (next: Partial<TerminalConnectionConfig>) => {
-    setConfig((current) => ({ ...current, ...next }))
   }
 
   const clearOutput = () => {
@@ -54,9 +40,16 @@ export const useTerminalSession = () => {
     setStatus('disconnected')
   }
 
-  const connect = async () => {
-    if (!canConnect) {
-      appendOutput('stderr', 'Please fill host, username and bearer token before connecting.')
+  const connect = async (params: {
+    host: MobileHostItem
+    token: string
+    targetEnvironmentName?: string
+    forceBusiness301?: boolean
+  }) => {
+    const normalizedToken = params.token.trim()
+    if (!normalizedToken) {
+      appendOutput('stderr', 'Bearer token is required before connecting.')
+      setStatus('error')
       return
     }
 
@@ -69,14 +62,15 @@ export const useTerminalSession = () => {
     appendOutput('system', 'Initializing terminal session...')
 
     const payload: SessionInitPayload = {
-      host: config.host,
-      port: config.port,
-      username: config.username,
-      forceBusiness301: config.simulateFallback,
+      host: params.host.host,
+      port: params.host.port,
+      username: params.host.username,
+      targetEnvironmentName: params.targetEnvironmentName,
+      forceBusiness301: params.forceBusiness301,
     }
 
     try {
-      const sessionResult = await createTerminalSession(payload, config.token)
+      const sessionResult = await createTerminalSession(payload, normalizedToken)
       setSession(sessionResult)
       appendOutput(
         'system',
@@ -117,15 +111,13 @@ export const useTerminalSession = () => {
   }
 
   return {
-    config,
     status,
     session,
     outputs,
-    canConnect,
     connect,
     disconnect,
     sendCommand,
     clearOutput,
-    applyConfig,
+    appendOutput,
   }
 }

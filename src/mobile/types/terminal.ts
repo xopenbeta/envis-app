@@ -20,6 +20,7 @@ export interface SessionInitPayload {
   host: string
   port: number
   username: string
+  targetEnvironmentName?: string
   forceBusiness301?: boolean
 }
 
@@ -28,6 +29,7 @@ export interface SessionInitResult {
   wsUrl: string
   baseUrl: string
   mocked: boolean
+  targetEnvironmentName?: string
   message?: string
 }
 

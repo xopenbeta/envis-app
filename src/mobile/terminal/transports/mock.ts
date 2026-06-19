@@ -22,6 +22,12 @@ export class MockTerminalTransport implements TerminalTransport {
         kind: 'system',
         text: `Connected to ${session.baseUrl} with session ${session.sessionId}`,
       })
+      if (session.targetEnvironmentName) {
+        callbacks.onOutput({
+          kind: 'system',
+          text: `Environment: ${session.targetEnvironmentName}`,
+        })
+      }
       callbacks.onOutput({
         kind: 'stdout',
         text: 'Mock SSH shell ready. Type help to view commands.',
