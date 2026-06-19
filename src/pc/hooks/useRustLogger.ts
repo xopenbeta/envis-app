@@ -15,8 +15,13 @@ interface RustLogEvent {
  */
 export function useRustLogger() {
   const appendLog = useSetAtom(appendLogAtom);
+  const isProduction = import.meta.env.PROD;
 
   useEffect(() => {
+    if (isProduction) {
+      return;
+    }
+
     // 1. 附加控制台，将 Rust 日志显示到浏览器 DevTools
     const detachConsolePromise = attachConsole();
 
@@ -57,5 +62,5 @@ export function useRustLogger() {
       });
       unlistenPromise.then(unlisten => unlisten());
     };
-  }, [appendLog]);
+  }, [appendLog, isProduction]);
 }

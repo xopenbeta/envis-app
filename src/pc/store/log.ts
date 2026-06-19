@@ -13,7 +13,7 @@ export interface LogEntry {
 
 export const isLogPanelOpenAtom = atom(false)
 export const autoScrollLogAtom = atom(true)
-export const enableConsoleLogAtom = atom(true) // 控制是否在console中输出日志
+export const enableConsoleLogAtom = atom(!import.meta.env.PROD) // 控制是否在console中输出日志
 
 // 限制日志条目数量，防止内存占用过高
 const MAX_LOG_ENTRIES = 1000

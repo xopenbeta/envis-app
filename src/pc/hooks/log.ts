@@ -4,10 +4,13 @@ import { appendLogAtom, isLogPanelOpenAtom, LogLevel } from '@/store/log'
 export function useLogger() {
   const append = useSetAtom(appendLogAtom)
   const setOpen = useSetAtom(isLogPanelOpenAtom)
+  const shouldRecordLogs = !import.meta.env.PROD
 
   const addLog = (level: LogLevel, message: string, meta?: Record<string, any>) => {
-    // append({ level, message, meta })
-    console.log(`[${level}]`, message, meta)
+    if (!shouldRecordLogs) {
+      return
+    }
+    append({ level, message, meta })
   }
 
   const logInfo = (message: string, meta?: Record<string, any>) => addLog('info', message, meta)

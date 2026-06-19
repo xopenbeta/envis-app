@@ -5,11 +5,17 @@ import { safeStringify } from '@/lib/utils'
 
 // 获取 jotai 的默认 store
 const store = getDefaultStore()
+const shouldRecordLogs = !import.meta.env.PROD
+const MAX_LOG_ENTRIES = 1000
 
 /**
  * 添加日志条目的辅助函数
  */
 function addLogEntry(level: LogLevel, message: string, meta?: Record<string, any>) {
+  if (!shouldRecordLogs) {
+    return
+  }
+
   const entries = store.get(logEntriesAtom)
   const enableConsole = store.get(enableConsoleLogAtom)
   
@@ -44,7 +50,6 @@ function addLogEntry(level: LogLevel, message: string, meta?: Record<string, any
     }
   }
   
-  const MAX_LOG_ENTRIES = 10000
   const next = [...entries, newEntry]
   const trimmed = next.length > MAX_LOG_ENTRIES ? next.slice(next.length - MAX_LOG_ENTRIES) : next
   store.set(logEntriesAtom, trimmed)
@@ -54,14 +59,14 @@ function addLogEntry(level: LogLevel, message: string, meta?: Record<string, any
  * 设置是否在console中输出日志
  */
 export function setConsoleLogEnabled(enabled: boolean) {
-  store.set(enableConsoleLogAtom, enabled)
+  store.set(enableConsoleLogAtom, shouldRecordLogs && enabled)
 }
 
 /**
  * 获取当前console日志输出状态
  */
 export function getConsoleLogEnabled(): boolean {
-  return store.get(enableConsoleLogAtom)
+  return shouldRecordLogs && store.get(enableConsoleLogAtom)
 }
 
 async function createLogFunc<T>(
@@ -70,6 +75,10 @@ async function createLogFunc<T>(
   params?: Record<string, any>,
   closeLog?: boolean
 ): Promise<IPCResult<T>> {
+  if (!shouldRecordLogs) {
+    return ipcCall()
+  }
+
   // 构造参数字符串（用于日志显示）
   const paramsStr = params 
     ? ` | 参数: ${safeStringify(params)}`
@@ -135,6 +144,10 @@ export function eventLogFunc<TParams extends any[], TResult>(
   eventHandler: (...args: TParams) => TResult | Promise<TResult>
 ) {
   return async (...args: TParams): Promise<TResult> => {
+    if (!shouldRecordLogs) {
+      return eventHandler(...args)
+    }
+
     // 将参数转换为对象（用于日志）
     const params = args.length > 0 ? { args } : undefined
     
