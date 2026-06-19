@@ -481,12 +481,12 @@ export default function NavBar({ onClose }: NavBarProps) {
 
   // 底部动作按钮定义（顺序即默认显示顺序，必要时最后一个将被“更多”替代）
   const actions = [
-    // {
-    //   key: 'settings',
-    //   title: t('nav_bar.settings'),
-    //   icon: <Settings className="h-4 w-4" />,
-    //   onClick: onOpenSettingsDialog,
-    // },
+    {
+      key: 'settings',
+      title: t('nav_bar.settings'),
+      icon: <Settings className="h-4 w-4" />,
+      onClick: onOpenSettingsDialog,
+    },
     {
       key: 'theme',
       title: getThemeTooltip(),
