@@ -630,10 +630,10 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         )}
       </ScrollArea>
 
-      <Separator />
+      {/* <Separator /> */}
 
       {/* 输入区域 */}
-      <div className="p-4">
+      <div className="p-2">
         <div className="relative">
           <Textarea
             ref={inputRef}
