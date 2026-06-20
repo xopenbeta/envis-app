@@ -86,6 +86,7 @@ const resolveServerResult = (
     wsUrl,
     baseUrl,
     mocked: !body.data?.sessionId || !body.data?.wsUrl,
+    transport: body.data?.transport ?? 'mock',
     targetEnvironmentName,
     message: body.message,
   }

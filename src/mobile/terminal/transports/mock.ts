@@ -10,7 +10,11 @@ export class MockTerminalTransport implements TerminalTransport {
   private timers: ReturnType<typeof setTimeout>[] = []
   private connected = false
 
-  async connect(session: SessionInitResult, callbacks: TerminalTransportCallbacks): Promise<void> {
+  async connect(
+    session: SessionInitResult,
+    callbacks: TerminalTransportCallbacks,
+    _options?: { token: string },
+  ): Promise<void> {
     this.callbacks = callbacks
     this.connected = false
     callbacks.onStatusChange('connecting')

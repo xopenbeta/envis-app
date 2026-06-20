@@ -11,20 +11,23 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChevronDown } from 'lucide-react'
 
-import { serviceCategories, ServiceData, ServiceType, EnvironmentStatus } from '@/types/index'
+import { serviceCategories, ServiceData, ServiceType, EnvironmentStatus, ProxyMode } from '@/types/index'
 import { useAtom } from 'jotai'
 import {
     CheckCircle,
     Download,
+    Globe,
     Plus
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useSettings } from '@/hooks/appSettings'
 import { useEnvironmentServiceData } from '@/hooks/env-serv-data'
 import { useService } from '@/hooks/service'
 import {
@@ -40,6 +43,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom)
     const [, setShouldDownloadService] = useAtom(shouldDownloadServiceAtom)
     const { status: selectedEnvStatus } = useEnvironmentStatus(selectedEnvironmentId || '')
+    const { systemSettings, updateSystemSettings } = useSettings()
     const { createServiceData, activateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const { getServiceVersions, checkServiceInstalled, downloadService } = useService()
 
@@ -121,11 +125,20 @@ export function AddServiceMenu({ buttonType = "icon" }: {
         dialogOpen: boolean;
     } | null>(null)
 
-    // 编译方式选择：prebuilt(预编译包) 或 from_source(从源码编译)
-    const [buildMethod, setBuildMethod] = useState<'prebuilt' | 'from_source'>('prebuilt')
     const [installMavenWithJava, setInstallMavenWithJava] = useState(false)
+    const [downloadProxyMode, setDownloadProxyMode] = useState<ProxyMode>('none')
+    const [downloadProxyUrl, setDownloadProxyUrl] = useState('')
     // 高级选项展开状态
     const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false)
+
+    useEffect(() => {
+        if (!downloadingServiceDialogData?.dialogOpen) {
+            return
+        }
+
+        setDownloadProxyMode(systemSettings?.proxyMode || 'none')
+        setDownloadProxyUrl(systemSettings?.proxyUrl || '')
+    }, [downloadingServiceDialogData?.dialogOpen, systemSettings])
 
     if (!selectedEnvironmentId) return null
 
@@ -292,6 +305,25 @@ export function AddServiceMenu({ buttonType = "icon" }: {
     // 处理下载确认
     const handleDownloadConfirm = async () => {
         if (!downloadingServiceDialogData) return
+        const trimmedProxyUrl = downloadProxyUrl.trim()
+        if (downloadProxyMode === 'http' && !/^https?:\/\//i.test(trimmedProxyUrl)) {
+            toast.error(t('settings.invalid_http_proxy'))
+            return
+        }
+        if (downloadProxyMode === 'socks5' && !/^socks5:\/\//i.test(trimmedProxyUrl)) {
+            toast.error(t('settings.invalid_socks5_proxy'))
+            return
+        }
+        if ((downloadProxyMode === 'http' || downloadProxyMode === 'socks5') && trimmedProxyUrl.length === 0) {
+            toast.error(t('settings.proxy_url_required'))
+            return
+        }
+
+        await updateSystemSettings({
+            proxyMode: downloadProxyMode,
+            proxyUrl: downloadProxyMode === 'http' || downloadProxyMode === 'socks5' ? trimmedProxyUrl : '',
+        })
+
         const downloadOptions = downloadingServiceDialogData.serviceType === ServiceType.Java
             ? { installMaven: installMavenWithJava }
             : {}
@@ -299,7 +331,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
         downloadService(
             downloadingServiceDialogData.serviceType,
             downloadingServiceDialogData.version,
-            buildMethod,
+            'prebuilt',
             downloadOptions
         )
         setTimeout(() => {
@@ -307,8 +339,9 @@ export function AddServiceMenu({ buttonType = "icon" }: {
         }, 300); // 确保状态更新后再设置
         setDownloadingServiceDialogData(null)
         // 重置高级选项
-        setBuildMethod('prebuilt')
         setInstallMavenWithJava(false)
+        setDownloadProxyMode(systemSettings?.proxyMode || 'none')
+        setDownloadProxyUrl(systemSettings?.proxyUrl || '')
         setAdvancedOptionsOpen(false)
     }
 
@@ -317,14 +350,17 @@ export function AddServiceMenu({ buttonType = "icon" }: {
         if (!downloadingServiceDialogData) return
         setDownloadingServiceDialogData(null)
         // 重置高级选项
-        setBuildMethod('prebuilt')
         setInstallMavenWithJava(false)
+        setDownloadProxyMode(systemSettings?.proxyMode || 'none')
+        setDownloadProxyUrl(systemSettings?.proxyUrl || '')
         setAdvancedOptionsOpen(false)
     }
 
     const getServiceName = (name: string) => {
         return ['custom', 'host', 'ssl'].includes(name) ? t(`add_service.services.${name}`) : name
     }
+
+    const showAdvancedOptions = Boolean(downloadingServiceDialogData)
 
     return (
         <>
@@ -443,8 +479,9 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                 onOpenChange={(open) => {
                     if (!open) {
                         setDownloadingServiceDialogData(null)
-                        setBuildMethod('prebuilt')
                         setInstallMavenWithJava(false)
+                        setDownloadProxyMode(systemSettings?.proxyMode || 'none')
+                        setDownloadProxyUrl(systemSettings?.proxyUrl || '')
                         setAdvancedOptionsOpen(false)
                     }
                 }}
@@ -463,49 +500,76 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     
-                    {/* 高级选项 */}
-                    <div className="py-2">
-                        <Collapsible open={advancedOptionsOpen} onOpenChange={setAdvancedOptionsOpen}>
-                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
-                                <ChevronDown className={`h-4 w-4 transition-transform ${advancedOptionsOpen ? 'rotate-180' : ''}`} />
-                                {t('add_service.advanced_options')}
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="mt-3 space-y-3">
-                                <RadioGroup value={buildMethod} onValueChange={(value) => setBuildMethod(value as 'prebuilt' | 'from_source')}>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="prebuilt" id="prebuilt" />
-                                        <Label htmlFor="prebuilt" className="cursor-pointer font-normal">
-                                            {t('add_service.use_prebuilt')}
-                                        </Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="from_source" id="from_source" />
-                                        <Label htmlFor="from_source" className="cursor-pointer font-normal">
-                                            {t('add_service.compile_from_source')}
-                                        </Label>
-                                    </div>
-                                </RadioGroup>
-
-                                {downloadingServiceDialogData?.serviceType === ServiceType.Java && (
-                                    <div className="flex items-start space-x-2 pt-2 border-t border-border">
-                                        <Checkbox
-                                            id="install_maven_with_java"
-                                            checked={installMavenWithJava}
-                                            onCheckedChange={(checked) => setInstallMavenWithJava(checked === true)}
-                                        />
-                                        <div className="grid gap-1.5 leading-none">
-                                            <Label htmlFor="install_maven_with_java" className="cursor-pointer font-normal">
-                                                同时下载 Maven（默认关闭）
-                                            </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                启用后会在下载 Java 时并行下载当前版本推荐的 Maven
-                                            </p>
+                    {showAdvancedOptions && (
+                        <div className="py-2">
+                            <Collapsible open={advancedOptionsOpen} onOpenChange={setAdvancedOptionsOpen}>
+                                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${advancedOptionsOpen ? 'rotate-180' : ''}`} />
+                                    {t('add_service.advanced_options')}
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="mt-3 space-y-3">
+                                    <div className="space-y-3 rounded-md border border-border p-3">
+                                        <div className="flex items-center gap-2">
+                                            <Globe className="h-4 w-4 text-primary" />
+                                            <h3 className="text-sm font-medium">{t('settings.proxy_settings')}</h3>
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="downloadProxyMode">{t('settings.proxy_mode')}</Label>
+                                            <Select value={downloadProxyMode} onValueChange={(value: ProxyMode) => setDownloadProxyMode(value)}>
+                                                <SelectTrigger id="downloadProxyMode" className="shadow-none bg-content2 dark:bg-content3">
+                                                    <SelectValue placeholder={t('settings.select_proxy_mode')} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">{t('settings.proxy_none')}</SelectItem>
+                                                    <SelectItem value="http">{t('settings.proxy_http')}</SelectItem>
+                                                    <SelectItem value="socks5">{t('settings.proxy_socks5')}</SelectItem>
+                                                    <SelectItem value="system">{t('settings.proxy_system')}</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-muted-foreground">{t('settings.proxy_mode_desc')}</p>
+                                        </div>
+
+                                        {(downloadProxyMode === 'http' || downloadProxyMode === 'socks5') && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="downloadProxyUrl">{t('settings.proxy_url')}</Label>
+                                                <Input
+                                                    id="downloadProxyUrl"
+                                                    value={downloadProxyUrl}
+                                                    onChange={(e) => setDownloadProxyUrl(e.target.value)}
+                                                    placeholder={downloadProxyMode === 'http' ? 'http://127.0.0.1:7890' : 'socks5://127.0.0.1:1080'}
+                                                    className="shadow-none bg-content2 dark:bg-content3"
+                                                />
+                                                <p className="text-xs text-muted-foreground">{t('settings.proxy_url_desc')}</p>
+                                            </div>
+                                        )}
+
+                                        {downloadProxyMode === 'system' && (
+                                            <p className="text-xs text-muted-foreground">{t('settings.proxy_system_desc')}</p>
+                                        )}
                                     </div>
-                                )}
-                            </CollapsibleContent>
-                        </Collapsible>
-                    </div>
+
+                                    {downloadingServiceDialogData?.serviceType === ServiceType.Java && (
+                                        <div className="flex items-start space-x-2 border-t border-border pt-2">
+                                            <Checkbox
+                                                id="install_maven_with_java"
+                                                checked={installMavenWithJava}
+                                                onCheckedChange={(checked) => setInstallMavenWithJava(checked === true)}
+                                            />
+                                            <div className="grid gap-1.5 leading-none">
+                                                <Label htmlFor="install_maven_with_java" className="cursor-pointer font-normal">
+                                                    同时下载 Maven（默认关闭）
+                                                </Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    启用后会在下载 Java 时并行下载当前版本推荐的 Maven
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </div>
+                    )}
 
                     <AlertDialogFooter>
                         <AlertDialogCancel className='shadow-none' onClick={handleDownloadCancel}>

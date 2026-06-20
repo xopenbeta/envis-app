@@ -29,6 +29,7 @@ export interface SessionInitResult {
   wsUrl: string
   baseUrl: string
   mocked: boolean
+  transport?: 'mock' | 'http-poll'
   targetEnvironmentName?: string
   message?: string
 }
@@ -39,6 +40,7 @@ export interface SessionInitServerResponse {
   data?: {
     sessionId?: string
     wsUrl?: string
+    transport?: 'mock' | 'http-poll'
   }
 }
 
@@ -61,7 +63,40 @@ export interface TerminalTransportCallbacks {
 }
 
 export interface TerminalTransport {
-  connect: (session: SessionInitResult, callbacks: TerminalTransportCallbacks) => Promise<void>
+  connect: (
+    session: SessionInitResult,
+    callbacks: TerminalTransportCallbacks,
+    options?: { token: string },
+  ) => Promise<void>
   send: (input: string) => void
   disconnect: () => void
+}
+
+export interface SessionEventItem {
+  id: number
+  kind: TerminalOutputKind
+  text: string
+  timestamp: number
+}
+
+export interface SessionEventsResult {
+  status: 'connecting' | 'connected' | 'disconnected' | 'error'
+  cursor: number
+  events: SessionEventItem[]
+}
+
+export interface SessionEventsServerResponse {
+  code?: number
+  message?: string
+  data?: SessionEventsResult
+}
+
+export interface TerminalCommandResponse {
+  accepted: boolean
+}
+
+export interface TerminalCommandServerResponse {
+  code?: number
+  message?: string
+  data?: TerminalCommandResponse
 }

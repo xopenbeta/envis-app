@@ -10,6 +10,7 @@ import type {
   TerminalTransport,
 } from '../types/terminal'
 import { MockTerminalTransport } from '../terminal/transports/mock'
+import { HttpPollingTerminalTransport } from '../terminal/transports/http-poll'
 import type { MobileHostItem } from '../types/home'
 
 const createOutputLine = (kind: TerminalOutputKind, text: string): TerminalOutputLine => ({
@@ -77,7 +78,10 @@ export const useTerminalSession = () => {
         `Session initialized via ${sessionResult.baseUrl}${sessionResult.mocked ? ' (mocked)' : ''}`,
       )
 
-      const transport = new MockTerminalTransport()
+      const transport =
+        sessionResult.mocked || sessionResult.transport === 'mock'
+          ? new MockTerminalTransport()
+          : new HttpPollingTerminalTransport()
       transportRef.current = transport
 
       await transport.connect(sessionResult, {
@@ -93,6 +97,8 @@ export const useTerminalSession = () => {
           appendOutput('stderr', message)
           setStatus('error')
         },
+      }, {
+        token: normalizedToken,
       })
     } catch (error) {
       setStatus('error')

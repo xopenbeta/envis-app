@@ -9,8 +9,8 @@ import { useAppTheme } from "./hooks/useTheme";
 import { Loading } from "../Loading";
 import { useAppTitleVersion } from "./hooks/useAppVersion";
 import { useRustLogger } from "./hooks/useRustLogger";
-import { useEffect } from "react";
 import { useI18n } from "./hooks/useI18n";
+import { useMobileBridge } from "./hooks/useMobileBridge";
 
 function App(): JSX.Element {
   useRustLogger(); // 附加 Rust 日志到浏览器控制台
@@ -19,6 +19,7 @@ function App(): JSX.Element {
   useI18n();
   useAppTheme();
   useAppTitleVersion();
+  useMobileBridge(isEnvisInited)
 
   return (
     <>

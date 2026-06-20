@@ -148,7 +148,7 @@ export default function Envis() {
         collapsible={true}
         minSize={20}
         maxSize={50}
-        animateCollapse={!isResizingPanels}
+        animateCollapse={false}
         onResize={(size) => {
           if (isAIPanelOpen) setAIPanelWidthRatio(size);
         }}

@@ -35,13 +35,21 @@ const isMobilePlatform = () => {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 }
 
+const isTauriRuntime = () => {
+  if (typeof window === 'undefined') return false
+  const runtimeWindow = window as typeof window & {
+    __TAURI__?: unknown
+    __TAURI_INTERNALS__?: unknown
+  }
+  return '__TAURI__' in runtimeWindow || '__TAURI_INTERNALS__' in runtimeWindow
+}
+
 const isMobile = isMobilePlatform()
 if (!isMobile) {
   suppressConsoleInProduction()
 }
 
-const App = isMobile ? MobileApp : PcApp
-// const App = MobileApp
+const App = !isMobile && isTauriRuntime() ? PcApp : MobileApp
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
