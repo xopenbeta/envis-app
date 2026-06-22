@@ -1,8 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './global.css'
-import './pc/i18n/config'
-import PcApp from './pc/App'
+import MobileApp from './mobile/App'
 
 function suppressConsoleInProduction() {
   if (!import.meta.env.PROD || typeof console === 'undefined') {
@@ -32,6 +31,6 @@ suppressConsoleInProduction()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <PcApp />
+    <MobileApp />
   </React.StrictMode>
 )

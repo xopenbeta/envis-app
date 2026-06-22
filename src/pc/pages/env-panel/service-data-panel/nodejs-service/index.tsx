@@ -62,11 +62,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
         setRegistry(serviceData.metadata?.NPM_CONFIG_REGISTRY || '')
         setPrefix(serviceData.metadata?.NPM_CONFIG_PREFIX || '')
         setPnpmHomeState(serviceData.metadata?.PNPM_HOME || '')
-
-        // 如果服务激活，自动加载全局包列表
-        if (isServiceDataActive) {
-            loadGlobalPackages()
-        }
+        setGlobalPackages([])
 
         // 检查版本管理器冲突
         checkVersionManagers().then(res => {
@@ -76,6 +72,15 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             }
         })
     }, [serviceData])
+
+    useEffect(() => {
+        if (!isServiceDataActive) {
+            setIsLoadingPackages(false)
+            return
+        }
+
+        void loadGlobalPackages()
+    }, [isServiceDataActive, serviceData.id, serviceData.version])
 
     const loadGlobalPackages = async () => {
         try {
