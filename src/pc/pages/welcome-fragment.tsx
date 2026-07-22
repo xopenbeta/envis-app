@@ -129,15 +129,14 @@ export function WelcomeFragment({ onOpen }: {
                             <p className="text-gray-500 dark:text-gray-400 text-sm">{t('welcome.subtitle')}</p>
                         </div>
                         <div className="w-full flex justify-center">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    setShowContactDialog(true)
-                                }}
-                                className="z-50 h-7 px-2.5 rounded-full mr-2 border border-blue-200 bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                            <a
+                                href="https://discord.gg/dqS55wdvd"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center z-50 h-7 px-2.5 rounded-full mr-2 border border-blue-200 bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
                             >
-                                QQ沟通群：1036572489
-                            </button>
+                                {t('welcome.discord_community')}
+                            </a>
                             <a
                                 href="https://github.com/xopenbeta/envis-app"
                                 target="_blank"
@@ -157,7 +156,7 @@ export function WelcomeFragment({ onOpen }: {
                             <div className="flex items-center gap-2 p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10">
                                 <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
                                 <div className="flex-1 text-xs text-red-700 dark:text-red-300">
-                                    {t('welcome.network_error', '检测到当前网络无法访问 Google，下载 Github Release 程序等功能可能会受限，请检查网络连接或使用代理。')}
+                                    {t('welcome.network_error')}
                                 </div>
                             </div>
                         </div>
@@ -261,8 +260,24 @@ export function WelcomeFragment({ onOpen }: {
                                     <Github className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-gray-900 dark:text-white">Github</div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-white">{t('welcome.github')}</div>
                                     <div className="text-[10px] text-gray-500 dark:text-gray-400">{t('welcome.feedback_desc')}</div>
+                                </div>
+                                <ArrowRight className="w-3 h-3 text-gray-400" />
+                            </a>
+
+                            <a
+                                href="https://discord.gg/dqS55wdvd"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                    <Globe className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="text-xs font-medium text-gray-900 dark:text-white">{t('welcome.discord')}</div>
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">{t('welcome.join_discord')}</div>
                                 </div>
                                 <ArrowRight className="w-3 h-3 text-gray-400" />
                             </a>
@@ -311,6 +326,20 @@ export function WelcomeFragment({ onOpen }: {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
+                        <a
+                            href="https://discord.gg/dqS55wdvd"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                        >
+                            <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                <Globe className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <div className="font-medium text-gray-900 dark:text-white">{t('welcome.discord')}</div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">{t('welcome.join_discord')}</div>
+                            </div>
+                        </a>
                         <div className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
                             <div className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg">
                                 <MessageCircle className="w-6 h-6" />
@@ -387,35 +416,35 @@ function DefenderWarningBanner() {
             <div className="flex items-start gap-3">
                 <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">{t('welcome.defender_warning_title', '性能优化建议')}</p>
+                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">{t('welcome.defender_warning_title')}</p>
                     <p className="text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed whitespace-pre-line">
-                        {t('welcome.defender_warning_desc', 'Windows Defender 实时保护会显著拖慢文件读写速度，建议将 Envis 的工作目录添加到排除列表以获得更好的性能。')}
+                        {t('welcome.defender_warning_desc')}
                     </p>
                 </div>
                 <button
                     onClick={handleDismiss}
                     className="shrink-0 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 transition-colors"
-                    aria-label="dismiss"
+                    aria-label={t('welcome.dismiss')}
                 >
                     <X className="w-3.5 h-3.5" />
                 </button>
             </div>
             <details className="text-[11px] text-blue-700 dark:text-blue-400">
                 <summary className="cursor-pointer select-none font-medium hover:text-blue-900 dark:hover:text-blue-200 transition-colors">
-                    {t('welcome.defender_warning_steps', '查看设置步骤')}
+                    {t('welcome.defender_warning_steps')}
                 </summary>
                 <div className="mt-2 p-3 rounded-lg bg-blue-100/60 dark:bg-black/30 text-blue-900 dark:text-blue-200 text-[10px] space-y-2 leading-relaxed">
-                    <p className="font-semibold">{t('welcome.defender_exclude_steps_title', '添加排除项步骤：')}</p>
+                    <p className="font-semibold">{t('welcome.defender_exclude_steps_title')}</p>
                     <ol className="list-decimal list-inside space-y-1.5 ml-1">
-                        <li>{t('welcome.defender_step_1', '打开 Windows 设置 → 隐私和安全性 → Windows 安全中心')}</li>
-                        <li>{t('welcome.defender_step_2', '点击"病毒和威胁防护"')}</li>
-                        <li>{t('welcome.defender_step_3', '滚动到"病毒和威胁防护设置"，点击"管理设置"')}</li>
-                        <li>{t('welcome.defender_step_4', '滚动到"排除项"，点击"添加或删除排除项"')}</li>
-                        <li>{t('welcome.defender_step_5', '点击"添加排除项" → "文件夹"')}</li>
-                        <li>{t('welcome.defender_step_6', '选择 Envis 的数据目录（通常在用户目录下的 .envis 文件夹）')}</li>
+                        <li>{t('welcome.defender_step_1')}</li>
+                        <li>{t('welcome.defender_step_2')}</li>
+                        <li>{t('welcome.defender_step_3')}</li>
+                        <li>{t('welcome.defender_step_4')}</li>
+                        <li>{t('welcome.defender_step_5')}</li>
+                        <li>{t('welcome.defender_step_6')}</li>
                     </ol>
                     <p className="mt-2 pt-2 border-t border-blue-200/50 dark:border-blue-400/20 text-blue-600 dark:text-blue-300">
-                        💡 {t('welcome.defender_tip', '提示：排除后，文件操作速度可能提升 2-10 倍')}
+                        💡 {t('welcome.defender_tip')}
                     </p>
                 </div>
             </details>
@@ -445,17 +474,7 @@ function CmdWarningBanner() {
         setDismissed(true)
     }
 
-    const cmdExample = `@echo off
-echo Welcome! Loading Envis environment...
-
-:: 设置路径（仅当前会话有效）
-set PATH=%PATH%;C:\\my\\custom\\bin
-
-:: 设置变量（仅当前会话有效）
-set MY_VAR=my_value
-
-:: 设置别名
-doskey ll=dir /b $*`
+    const cmdExample = t('welcome.cmd_warning_script_example')
 
     return (
         <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
@@ -468,7 +487,7 @@ doskey ll=dir /b $*`
                 <button
                     onClick={handleDismiss}
                     className="shrink-0 text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-200 transition-colors"
-                    aria-label="dismiss"
+                    aria-label={t('welcome.dismiss')}
                 >
                     <X className="w-3.5 h-3.5" />
                 </button>
