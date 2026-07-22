@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Plus, Trash2, Play, Info } from 'lucide-react'
 import { toast } from 'sonner'
+import { Trans, useTranslation } from 'react-i18next'
 
 interface AliasItem {
     key: string
@@ -25,6 +26,7 @@ export function AliasesConfigView({
     serviceData,
     status,
 }: AliasesConfigViewProps) {
+    const { t } = useTranslation()
     const { updateCustomServiceAliases, applyServiceMetadata } = useCustomService()
     const [aliases, setAliases] = useState<AliasItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -69,30 +71,30 @@ export function AliasesConfigView({
     // 执行 Alias 命令
     const executeAlias = async (alias: AliasItem) => {
         if (!alias.key || !alias.value) {
-            toast.error('别名或命令不能为空')
+            toast.error(t('custom_service.alias_empty_error'))
             return
         }
 
         try {
-            toast.info(`正在执行命令: ${alias.value}`)
+            toast.info(t('custom_service.executing_cmd', { cmd: alias.value }))
             
             // 通过 IPC 调用后端执行命令
             const result = await ipcExecuteCustomServiceAlias(alias.key, alias.value)
             
             if (result.success) {
                 const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
-                toast.success(`命令执行成功 (${alias.key})`, {
-                    description: data.stdout ? data.stdout.substring(0, 200) : '执行完成'
+                toast.success(t('custom_service.cmd_success', { alias: alias.key }), {
+                    description: data.stdout ? data.stdout.substring(0, 200) : t('custom_service.cmd_done')
                 })
             } else {
                 const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
-                toast.error(`命令执行失败 (${alias.key})`, {
-                    description: data?.stderr || result.message || '未知错误'
+                toast.error(t('custom_service.cmd_failed', { alias: alias.key }), {
+                    description: data?.stderr || result.message || t('common.unknown_error')
                 })
             }
         } catch (error) {
             console.error('执行命令失败:', error)
-            toast.error('执行命令失败', {
+            toast.error(t('custom_service.cmd_error'), {
                 description: String(error)
             })
         }
@@ -118,16 +120,16 @@ export function AliasesConfigView({
                 if (applyRes && applyRes.success) {
                     const vars = Object.entries(validAliases).map(([key, value]) => ({ key, value }))
                     setAliases(vars)
-                    toast.success('Alias 配置已保存')
+                    toast.success(t('custom_service.alias_saved'))
                 } else {
-                    toast.error('保存到本地状态失败')
+                    toast.error(t('custom_service.save_local_failed'))
                 }
             } else {
-                toast.error('保存 Alias 配置失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.save_alias_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('保存 Alias 配置失败:', error)
-            toast.error('保存 Alias 配置失败')
+            toast.error(t('custom_service.save_alias_failed', { message: t('common.unknown_error') }))
         } finally {
             setIsLoading(false)
         }
@@ -142,7 +144,7 @@ export function AliasesConfigView({
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                                     {/* <Command className="h-3.5 w-3.5" /> */}
-                                    Alias 配置
+                                    {t('custom_service.alias_config_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
@@ -150,13 +152,33 @@ export function AliasesConfigView({
                                 <div className="text-xs space-y-1">
                                     {isWindows ? (
                                         <>
-                                            <div>查看：<code>Get-Alias ll</code>（PowerShell）</div>
-                                            <div>设置：<code>Set-Alias -Name ll -Value Get-ChildItem</code>（PowerShell）</div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.alias_windows_view"
+                                                    components={[<code key="view" />]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.alias_windows_set"
+                                                    components={[<code key="set" />]}
+                                                />
+                                            </div>
                                         </>
                                     ) : (
                                         <>
-                                            <div>查看：<code>alias ll</code></div>
-                                            <div>设置：<code>alias ll='ls -l'</code></div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.alias_unix_view"
+                                                    components={[<code key="view" />]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.alias_unix_set"
+                                                    components={[<code key="set" />]}
+                                                />
+                                            </div>
                                         </>
                                     )}
                                 </div>
@@ -164,7 +186,7 @@ export function AliasesConfigView({
                         </Tooltip>
                     </TooltipProvider>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                        配置 Shell 别名 (Alias)
+                        {t('custom_service.alias_config_desc')}
                     </p>
                 </div>
                 <Button
@@ -175,7 +197,7 @@ export function AliasesConfigView({
                     className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                 >
                     <Plus className="h-3 w-3 mr-1" />
-                    添加 Alias
+                    {t('custom_service.add_alias')}
                 </Button>
             </div>
             
@@ -186,7 +208,7 @@ export function AliasesConfigView({
                             <Input
                                 value={item.key}
                                 onChange={(e) => updateAliasKey(index, e.target.value)}
-                                placeholder="别名 (如: ll)"
+                                placeholder={t('custom_service.alias_placeholder_key')}
                                 className="w-1/3 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                                 disabled={isLoading || !isServiceDataActive}
                             />
@@ -194,7 +216,7 @@ export function AliasesConfigView({
                             <Input
                                 value={item.value}
                                 onChange={(e) => updateAliasValue(index, e.target.value)}
-                                placeholder="命令 (如: ls -l)"
+                                placeholder={t('custom_service.alias_placeholder_value')}
                                 className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                                 disabled={isLoading || !isServiceDataActive}
                             />
@@ -204,7 +226,7 @@ export function AliasesConfigView({
                                 onClick={() => executeAlias(item)}
                                 disabled={isLoading || !item.key || !item.value}
                                 className="h-8 w-8 text-muted-foreground hover:text-green-600 dark:hover:text-green-400"
-                                title="执行命令"
+                                title={t('custom_service.execute_cmd_title')}
                             >
                                 <Play className="h-4 w-4" />
                             </Button>
@@ -225,8 +247,8 @@ export function AliasesConfigView({
 
                 {aliases.length === 0 && (
                     <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
-                        <p className="text-sm">还没有配置 Alias</p>
-                        <p className="text-xs mt-1">点击"添加 Alias"开始配置</p>
+                        <p className="text-sm">{t('custom_service.no_aliases')}</p>
+                        <p className="text-xs mt-1">{t('custom_service.no_aliases_hint')}</p>
                     </div>
                 )}
 
@@ -239,7 +261,7 @@ export function AliasesConfigView({
                         disabled={isLoading || !isServiceDataActive}
                         className="shadow-none h-8 text-xs"
                     >
-                        {isLoading ? '保存中...' : '保存配置'}
+                        {isLoading ? t('custom_service.saving') : t('custom_service.save_path_config')}
                     </Button>
                 </div>
 

@@ -8,6 +8,7 @@ import { FolderOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useCustomService } from '@/hooks/services/custom'
 import { toast } from 'sonner'
+import { Trans, useTranslation } from 'react-i18next'
 
 interface PathConfigViewProps {
     selectedEnvironmentId: string
@@ -20,6 +21,7 @@ export function PathConfigView({
     serviceData,
     status,
 }: PathConfigViewProps) {
+    const { t } = useTranslation()
     const { updateCustomServicePaths, applyServiceMetadata } = useCustomService()
     const [paths, setPaths] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -63,16 +65,16 @@ export function PathConfigView({
                 const applyRes = await applyServiceMetadata(selectedEnvironmentId, serviceData.id, newMetadata)
                 if (applyRes && applyRes.success) {
                     setPaths(validPaths)
-                    toast.success('路径配置已保存')
+                    toast.success(t('custom_service.path_saved'))
                 } else {
-                    toast.error('保存到本地状态失败')
+                    toast.error(t('custom_service.save_local_failed'))
                 }
             } else {
-                toast.error('保存路径配置失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.save_path_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('保存路径配置失败:', error)
-            toast.error('保存路径配置失败')
+            toast.error(t('custom_service.save_path_failed', { message: t('common.unknown_error') }))
         } finally {
             setIsLoading(false)
         }
@@ -87,7 +89,7 @@ export function PathConfigView({
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                                     {/* <FolderOpen className="h-3.5 w-3.5" /> */}
-                                    路径配置
+                                    {t('custom_service.path_config_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
@@ -95,13 +97,33 @@ export function PathConfigView({
                                 <div className="text-xs space-y-1">
                                     {isWindows ? (
                                         <>
-                                            <div>查看：<code>echo %PATH%</code>（CMD）或 <code>$env:PATH</code>（PowerShell）</div>
-                                            <div>设置：Envis 自动写入，或手动 <code>setx PATH "%PATH%;C:\path"</code></div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.path_windows_view"
+                                                    components={[<code key="cmd" />, <code key="pwsh" />]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.path_windows_set"
+                                                    components={[<code key="setx" />]}
+                                                />
+                                            </div>
                                         </>
                                     ) : (
                                         <>
-                                            <div>查看：<code>echo $PATH</code></div>
-                                            <div>设置：Envis 自动写入 shell 配置，或手动 <code>export PATH="/path:$PATH"</code></div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.path_unix_view"
+                                                    components={[<code key="view" />]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.path_unix_set"
+                                                    components={[<code key="set" />]}
+                                                />
+                                            </div>
                                         </>
                                     )}
                                 </div>
@@ -109,7 +131,7 @@ export function PathConfigView({
                         </Tooltip>
                     </TooltipProvider>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                        配置需要添加到 PATH 环境变量的路径
+                        {t('custom_service.path_config_desc')}
                     </p>
                 </div>
                 <Button
@@ -120,7 +142,7 @@ export function PathConfigView({
                     className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                 >
                     <Plus className="h-3 w-3 mr-1" />
-                    添加路径
+                    {t('custom_service.add_path')}
                 </Button>
             </div>
             
@@ -152,8 +174,8 @@ export function PathConfigView({
 
                 {paths.length === 0 && (
                     <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
-                        <p className="text-sm">还没有配置路径</p>
-                        <p className="text-xs mt-1">点击"添加路径"开始配置</p>
+                        <p className="text-sm">{t('custom_service.no_paths')}</p>
+                        <p className="text-xs mt-1">{t('custom_service.no_paths_hint')}</p>
                     </div>
                 )}
 
@@ -166,7 +188,7 @@ export function PathConfigView({
                         disabled={isLoading || !isServiceDataActive}
                         className="shadow-none h-8 text-xs"
                     >
-                        {isLoading ? '保存中...' : '保存配置'}
+                        {isLoading ? t('custom_service.saving') : t('custom_service.save_path_config')}
                     </Button>
                 </div>
 

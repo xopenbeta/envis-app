@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner'
 import { Code2, FolderOpen, Terminal, ChevronDown } from 'lucide-react'
 import { ipcOpenProjectInVSCode, ipcOpenFolderInFinder, ipcOpenTerminalInFolder } from '@/ipc/services/custom'
+import { useTranslation } from 'react-i18next'
 
 interface ProjectDirectoryViewProps {
     selectedEnvironmentId: string
@@ -18,6 +19,7 @@ interface ProjectDirectoryViewProps {
 }
 
 export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, status }: ProjectDirectoryViewProps) {
+    const { t } = useTranslation()
     const { updateCustomServiceChdir, applyServiceMetadata } = useCustomService()
     const [path, setPath] = useState('')
     const [enabled, setEnabled] = useState(false)
@@ -68,15 +70,15 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                     autoChdirPath: currentPath,
                 }
                 await applyServiceMetadata(selectedEnvironmentId, serviceData.id, newMetadata)
-                toast.success(newEnabled ? '终端自动跳转已启用' : '终端自动跳转已禁用')
+                toast.success(newEnabled ? t('custom_service.auto_chdir_enabled') : t('custom_service.auto_chdir_disabled'))
             } else {
                 // 回滚开关状态
                 setEnabled(!newEnabled)
-                toast.error('操作失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.op_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             setEnabled(!newEnabled)
-            toast.error('操作失败')
+            toast.error(t('custom_service.op_failed_generic'))
         } finally {
             setIsLoading(false)
         }
@@ -106,16 +108,16 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                     selectedEnvironmentId, serviceData.id, newMetadata
                 )
                 if (applyRes && applyRes.success) {
-                    toast.success('项目目录已保存')
+                    toast.success(t('custom_service.project_saved'))
                 } else {
-                    toast.error('保存到本地状态失败')
+                    toast.error(t('custom_service.save_local_failed'))
                 }
             } else {
-                toast.error('保存失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.save_dir_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('保存项目目录失败:', error)
-            toast.error('保存失败')
+            toast.error(t('custom_service.save_failed_generic'))
         } finally {
             setIsLoading(false)
         }
@@ -125,14 +127,14 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
     const handleOpenVSCode = async () => {
         const currentPath = path.trim()
         if (!currentPath) {
-            toast.error('请先输入项目目录')
+            toast.error(t('custom_service.project_dir_required'))
             return
         }
         try {
             await ipcOpenProjectInVSCode(currentPath, selectedEnvironmentId)
-            toast.success('正在用 VSCode 打开项目...')
+            toast.success(t('custom_service.opening_vscode'))
         } catch (error) {
-            toast.error('打开 VSCode 失败')
+            toast.error(t('custom_service.open_vscode_failed'))
         }
     }
 
@@ -140,14 +142,14 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
     const handleOpenFolder = async () => {
         const currentPath = path.trim()
         if (!currentPath) {
-            toast.error('请先输入项目目录')
+            toast.error(t('custom_service.project_dir_required'))
             return
         }
         try {
             await ipcOpenFolderInFinder(currentPath)
-            toast.success('正在打开文件夹...')
+            toast.success(t('custom_service.opening_folder'))
         } catch (error) {
-            toast.error('打开文件夹失败')
+            toast.error(t('custom_service.open_folder_failed'))
         }
     }
 
@@ -155,14 +157,14 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
     const handleOpenTerminal = async () => {
         const currentPath = path.trim()
         if (!currentPath) {
-            toast.error('请先输入项目目录')
+            toast.error(t('custom_service.project_dir_required'))
             return
         }
         try {
             await ipcOpenTerminalInFolder(currentPath)
-            toast.success('正在打开终端...')
+            toast.success(t('custom_service.opening_terminal'))
         } catch (error) {
-            toast.error('打开终端失败')
+            toast.error(t('custom_service.open_terminal_failed'))
         }
     }
 
@@ -171,10 +173,10 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
             <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
                 {/* 项目目录标题 */}
                 <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    项目目录
+                    {t('custom_service.project_dir_label')}
                 </Label>
                 <p className="text-[10px] text-muted-foreground mb-3">
-                    配置项目路径，快速用 VSCode、文件夹或终端打开
+                    {t('custom_service.project_dir_desc')}
                 </p>
 
                 {/* 输入框和操作按钮 */}
@@ -196,7 +198,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                         disabled={isLoading || !isServiceDataActive}
                         className="shadow-none h-8 text-xs"
                     >
-                        {isLoading ? '应用中...' : '应用'}
+                        {isLoading ? t('custom_service.applying') : t('custom_service.apply')}
                     </Button>
                 </div>
 
@@ -214,7 +216,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 <Code2 className="h-4 w-4" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>用 VSCode 打开</TooltipContent>
+                        <TooltipContent>{t('custom_service.open_vscode_title')}</TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
@@ -229,7 +231,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 <FolderOpen className="h-4 w-4" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>打开文件夹</TooltipContent>
+                        <TooltipContent>{t('custom_service.open_folder_title')}</TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
@@ -244,7 +246,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 <Terminal className="h-4 w-4" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>打开终端</TooltipContent>
+                        <TooltipContent>{t('custom_service.open_terminal_title')}</TooltipContent>
                     </Tooltip>
                 </div>
 
@@ -257,17 +259,17 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                             className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground w-full justify-start"
                         >
                             <ChevronDown className={`h-3 w-3 mr-1.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
-                            高级选项
+                            {t('custom_service.advanced_options')}
                         </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-2 pt-2 border-t border-gray-200 dark:border-white/5">
                         <div className="flex items-center justify-between">
                             <div>
                                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    打开终端自动跳转
+                                    {t('custom_service.auto_chdir_label')}
                                 </Label>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    打开终端时自动执行 cd 进入指定目录
+                                    {t('custom_service.auto_chdir_desc')}
                                 </p>
                             </div>
                             <Switch

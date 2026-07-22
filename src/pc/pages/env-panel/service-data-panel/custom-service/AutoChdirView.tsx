@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 interface AutoChdirViewProps {
     selectedEnvironmentId: string
@@ -14,6 +15,7 @@ interface AutoChdirViewProps {
 }
 
 export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirViewProps) {
+    const { t } = useTranslation()
     const { updateCustomServiceChdir, applyServiceMetadata } = useCustomService()
     const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, { enabled: true })
     const [path, setPath] = useState('')
@@ -64,15 +66,15 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
                     autoChdirPath: currentPath,
                 }
                 await applyServiceMetadata(selectedEnvironmentId, serviceData.id, newMetadata)
-                toast.success(newEnabled ? '终端自动跳转已启用' : '终端自动跳转已禁用')
+                toast.success(newEnabled ? t('custom_service.auto_chdir_enabled') : t('custom_service.auto_chdir_disabled'))
             } else {
                 // 回滚开关状态
                 setEnabled(!newEnabled)
-                toast.error('操作失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.op_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             setEnabled(!newEnabled)
-            toast.error('操作失败')
+            toast.error(t('custom_service.op_failed_generic'))
         } finally {
             setIsLoading(false)
         }
@@ -102,16 +104,16 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
                     selectedEnvironmentId, serviceData.id, newMetadata
                 )
                 if (applyRes && applyRes.success) {
-                    toast.success('目录配置已保存')
+                    toast.success(t('custom_service.dir_saved'))
                 } else {
-                    toast.error('保存到本地状态失败')
+                    toast.error(t('custom_service.save_local_failed'))
                 }
             } else {
-                toast.error('保存失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.save_dir_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('保存自动跳转目录失败:', error)
-            toast.error('保存失败')
+            toast.error(t('custom_service.save_failed_generic'))
         } finally {
             setIsLoading(false)
         }
@@ -122,10 +124,10 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
             <div className="flex items-center justify-between mb-2">
                 <div>
                     <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                        终端自动跳转目录
+                        {t('custom_service.auto_chdir_label')}
                     </Label>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                        打开终端时自动执行 cd 进入指定目录
+                        {t('custom_service.auto_chdir_desc')}
                     </p>
                 </div>
                 <Switch
@@ -154,7 +156,7 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
                         disabled={isLoading || !isServiceDataActive}
                         className="shadow-none h-8 text-xs"
                     >
-                        {isLoading ? '应用中...' : '应用'}
+                        {isLoading ? t('custom_service.applying') : t('custom_service.apply')}
                     </Button>
                 </div>
             )}

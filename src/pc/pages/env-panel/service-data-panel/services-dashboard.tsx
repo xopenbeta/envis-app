@@ -127,23 +127,23 @@ export function ServicesDashboard() {
   // 执行 alias 命令
   const executeAlias = async (aliasName: string, command: string) => {
     try {
-      toast.info(`正在执行命令: ${command}`)
+      toast.info(t('custom_service.executing_cmd', { cmd: command }))
       const result = await ipcExecuteCustomServiceAlias(aliasName, command)
 
       if (result.success) {
         const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
-        toast.success(`命令执行成功 (${aliasName})`, {
-          description: data.stdout ? data.stdout.substring(0, 200) : '执行完成'
+        toast.success(t('custom_service.cmd_success', { alias: aliasName }), {
+          description: data.stdout ? data.stdout.substring(0, 200) : t('custom_service.cmd_done')
         })
       } else {
         const data = result.data as { stdout?: string; stderr?: string; exitCode?: number }
-        toast.error(`命令执行失败 (${aliasName})`, {
-          description: data?.stderr || result.message || '未知错误'
+        toast.error(t('custom_service.cmd_failed', { alias: aliasName }), {
+          description: data?.stderr || result.message || t('common.unknown_error')
         })
       }
     } catch (error) {
       console.error('执行命令失败:', error)
-      toast.error('执行命令失败', {
+      toast.error(t('custom_service.cmd_error'), {
         description: String(error)
       })
     }
@@ -153,10 +153,10 @@ export function ServicesDashboard() {
   const handleOpenVSCode = async (path: string, serviceName: string) => {
     try {
       await ipcOpenProjectInVSCode(path, selectedEnvironmentId)
-      toast.success(`正在用 VSCode 打开 "${serviceName}"...`)
+      toast.success(t('custom_service.opening_vscode_service', { name: serviceName }))
     } catch (error) {
       console.error('打开 VSCode 失败:', error)
-      toast.error('打开 VSCode 失败')
+      toast.error(t('custom_service.open_vscode_failed'))
     }
   }
 
@@ -164,10 +164,10 @@ export function ServicesDashboard() {
   const handleOpenFolder = async (path: string, serviceName: string) => {
     try {
       await ipcOpenFolderInFinder(path)
-      toast.success(`正在打开 "${serviceName}" 文件夹...`)
+      toast.success(t('custom_service.opening_folder_service', { name: serviceName }))
     } catch (error) {
       console.error('打开文件夹失败:', error)
-      toast.error('打开文件夹失败')
+      toast.error(t('custom_service.open_folder_failed'))
     }
   }
 
@@ -175,10 +175,10 @@ export function ServicesDashboard() {
   const handleOpenTerminal = async (path: string, serviceName: string) => {
     try {
       await ipcOpenTerminalInFolder(path)
-      toast.success(`正在终端中打开 "${serviceName}"...`)
+      toast.success(t('custom_service.opening_terminal_service', { name: serviceName }))
     } catch (error) {
       console.error('打开终端失败:', error)
-      toast.error('打开终端失败')
+      toast.error(t('custom_service.open_terminal_failed'))
     }
   }
 
@@ -224,7 +224,7 @@ export function ServicesDashboard() {
         {(customServiceDirectories.length > 0 || customServiceAliases.length > 0) && (
           <TooltipProvider>
             <div className="w-full space-y-3">
-              <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">快捷指令</h2>
+              <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('alias.title')}</h2>
 
               {customServiceDirectories.length > 0 && (
                 <div className="space-y-2.5">
@@ -236,7 +236,7 @@ export function ServicesDashboard() {
                       <div className="flex items-center justify-between p-3">
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-semibold text-foreground truncate">
-                            Project
+                            {t('custom_service.project')}
                           </div>
                           <div className="text-[10px] text-muted-foreground truncate mt-0.5">
                             {dir.path}
@@ -254,7 +254,7 @@ export function ServicesDashboard() {
                                 <Code2 className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>用 VSCode 打开</TooltipContent>
+                            <TooltipContent>{t('custom_service.open_vscode_title')}</TooltipContent>
                           </Tooltip>
 
                           <Tooltip>
@@ -268,7 +268,7 @@ export function ServicesDashboard() {
                                 <FolderOpen className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>打开文件夹</TooltipContent>
+                            <TooltipContent>{t('custom_service.open_folder_title')}</TooltipContent>
                           </Tooltip>
 
                           <Tooltip>
@@ -282,7 +282,7 @@ export function ServicesDashboard() {
                                 <Terminal className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>打开终端</TooltipContent>
+                            <TooltipContent>{t('custom_service.open_terminal_title')}</TooltipContent>
                           </Tooltip>
                         </div>
                       </div>
@@ -315,7 +315,7 @@ export function ServicesDashboard() {
                             executeAlias(alias.aliasName, alias.command)
                           }}
                           className="h-7 w-7 flex-shrink-0 rounded-md bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-400/30 transition-all duration-200"
-                          title={t('alias.execute', '执行命令')}
+                          title={t('custom_service.execute_cmd_title')}
                         >
                           <Play className="h-3.5 w-3.5 fill-current" />
                         </Button>

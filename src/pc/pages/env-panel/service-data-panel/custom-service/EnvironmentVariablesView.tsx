@@ -8,6 +8,7 @@ import { Globe } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useCustomService } from '@/hooks/services/custom'
 import { toast } from 'sonner'
+import { Trans, useTranslation } from 'react-i18next'
 
 interface EnvironmentVariable {
     key: string
@@ -25,6 +26,7 @@ export function EnvironmentVariablesView({
     serviceData,
     status,
 }: EnvironmentVariablesViewProps) {
+    const { t } = useTranslation()
     const { updateCustomServiceEnvVars, applyServiceMetadata } = useCustomService()
     const [envVars, setEnvVars] = useState<EnvironmentVariable[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -86,16 +88,16 @@ export function EnvironmentVariablesView({
                 if (applyRes && applyRes.success) {
                     const vars = Object.entries(validEnvVars).map(([key, value]) => ({ key, value }))
                     setEnvVars(vars)
-                    toast.success('环境变量配置已保存')
+                    toast.success(t('custom_service.env_var_saved'))
                 } else {
-                    toast.error('保存到本地状态失败')
+                    toast.error(t('custom_service.save_local_failed'))
                 }
             } else {
-                toast.error('保存环境变量配置失败: ' + (res?.message || '未知错误'))
+                toast.error(t('custom_service.save_env_var_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('保存环境变量配置失败:', error)
-            toast.error('保存环境变量配置失败')
+            toast.error(t('custom_service.save_env_var_failed', { message: t('common.unknown_error') }))
         } finally {
             setIsLoading(false)
         }
@@ -110,7 +112,7 @@ export function EnvironmentVariablesView({
                             <TooltipTrigger asChild>
                                 <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                                     {/* <Globe className="h-3.5 w-3.5" /> */}
-                                    环境变量配置
+                                    {t('custom_service.env_var_config_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
                             </TooltipTrigger>
@@ -118,13 +120,33 @@ export function EnvironmentVariablesView({
                                 <div className="text-xs space-y-1">
                                     {isWindows ? (
                                         <>
-                                            <div>查看：<code>echo %KEY%</code>（CMD）或 <code>$env:KEY</code>（PowerShell）</div>
-                                            <div>设置：<code>setx KEY value</code>（CMD）或 <code>$env:KEY = "value"</code>（PowerShell）</div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.env_windows_view"
+                                                    components={[<code key="cmd" />, <code key="pwsh" />]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.env_windows_set"
+                                                    components={[<code key="setx" />, <code key="pwshset" />]}
+                                                />
+                                            </div>
                                         </>
                                     ) : (
                                         <>
-                                            <div>查看：<code>echo $KEY</code></div>
-                                            <div>设置：<code>export KEY=value</code></div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.env_unix_view"
+                                                    components={[<code key="view" />]}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Trans
+                                                    i18nKey="custom_service.env_unix_set"
+                                                    components={[<code key="set" />]}
+                                                />
+                                            </div>
                                         </>
                                     )}
                                 </div>
@@ -132,7 +154,7 @@ export function EnvironmentVariablesView({
                         </Tooltip>
                     </TooltipProvider>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                        配置自定义环境变量
+                        {t('custom_service.env_var_config_desc')}
                     </p>
                 </div>
                 <Button
@@ -143,7 +165,7 @@ export function EnvironmentVariablesView({
                     className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                 >
                     <Plus className="h-3 w-3 mr-1" />
-                    添加环境变量
+                    {t('custom_service.add_env_var')}
                 </Button>
             </div>
             
@@ -154,7 +176,7 @@ export function EnvironmentVariablesView({
                             <Input
                                 value={envVar.key}
                                 onChange={(e) => updateEnvVarKey(index, e.target.value)}
-                                placeholder="变量名"
+                                placeholder={t('custom_service.env_var_key_placeholder')}
                                 className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                                 disabled={isLoading || !isServiceDataActive}
                             />
@@ -162,7 +184,7 @@ export function EnvironmentVariablesView({
                             <Input
                                 value={envVar.value}
                                 onChange={(e) => updateEnvVarValue(index, e.target.value)}
-                                placeholder="变量值"
+                                placeholder={t('custom_service.env_var_value_placeholder')}
                                 className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
                                 disabled={isLoading || !isServiceDataActive}
                             />
@@ -183,8 +205,8 @@ export function EnvironmentVariablesView({
 
                 {envVars.length === 0 && (
                     <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
-                        <p className="text-sm">还没有配置环境变量</p>
-                        <p className="text-xs mt-1">点击"添加环境变量"开始配置</p>
+                        <p className="text-sm">{t('custom_service.no_env_vars')}</p>
+                        <p className="text-xs mt-1">{t('custom_service.no_env_vars_hint')}</p>
                     </div>
                 )}
 
@@ -197,7 +219,7 @@ export function EnvironmentVariablesView({
                         disabled={isLoading || !isServiceDataActive}
                         className="shadow-none h-8 text-xs"
                     >
-                        {isLoading ? '保存中...' : '保存配置'}
+                        {isLoading ? t('custom_service.saving') : t('custom_service.save_path_config')}
                     </Button>
                 </div>
 
