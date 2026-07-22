@@ -683,19 +683,19 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   // 初始化 MongoDB
   const handleInitialize = async (reset: boolean = false) => {
     if (!dialogData.adminUsername || !dialogData.adminPassword) {
-      toast.error('请输入管理员用户名和密码')
+      toast.error(t('mongodb.init_input_required'))
       return
     }
 
     // 如果是重置操作,检查 MongoDB 是否正在运行
     if (reset && serviceStatus === ServiceStatus.Running) {
-      toast.error('MongoDB 正在运行中,请先停止服务后再进行重置')
+      toast.error(t('mongodb.init_reset_running'))
       return
     }
 
     setIsInitializing(true)
     // 清空进度信息，准备接收新的进度更新
-    setDialogData(prev => ({ ...prev, initStep: '', initMessage: '准备初始化...' }))
+    setDialogData(prev => ({ ...prev, initStep: '', initMessage: t('mongodb.init_preparing') }))
 
     try {
       const result = await initializeMongoDB(
@@ -712,14 +712,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       console.log('zws 初始化结果:', result)
       if (result.success && result.data) {
         const data = result.data
-        let successMessage = 'MongoDB 初始化成功'
+        let successMessage = t('mongodb.init_success')
 
         // 根据副本集启用状态和初始化结果显示不同的消息
         if (dialogData.enableReplicaSet) {
           if (data?.replicaSetInitialized === false) {
-            successMessage += '（副本集初始化失败，服务可正常使用）'
+            successMessage += t('mongodb.init_success_replica_failed')
           } else if (data?.replicaSetInitialized === true) {
-            successMessage += '（副本集已启用）'
+            successMessage += t('mongodb.init_success_replica_enabled')
           }
         }
 
@@ -744,14 +744,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         setIsInitialized(true)
         setDialogData(prev => ({ ...prev, initStep: '', initMessage: '' }))
       } else {
-        const errorMsg = result.message || '初始化失败'
+        const errorMsg = result.message || t('mongodb.init_failed')
         toast.error(errorMsg)
-        setDialogData(prev => ({ ...prev, initStep: 'error', initMessage: '初始化失败: ' + errorMsg }))
+        setDialogData(prev => ({ ...prev, initStep: 'error', initMessage: t('mongodb.init_failed_with_message', { message: errorMsg }) }))
       }
     } catch (error) {
       const errorMsg = String(error)
-      toast.error('初始化失败: ' + errorMsg)
-      setDialogData(prev => ({ ...prev, initStep: 'error', initMessage: '初始化失败: ' + errorMsg }))
+      toast.error(t('mongodb.init_failed_with_message', { message: errorMsg }))
+      setDialogData(prev => ({ ...prev, initStep: 'error', initMessage: t('mongodb.init_failed_with_message', { message: errorMsg }) }))
     } finally {
       setIsInitializing(false)
     }
@@ -761,7 +761,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
   const handleSetConfigPath = async () => {
     if (!serviceData?.version) return
     if (!editingConfigPath) {
-      toast.error('配置文件路径不能为空')
+      toast.error(t('mongodb.config_path_required'))
       return
     }
 
@@ -776,13 +776,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         serviceDatas: selectedServiceDatas,
       })
       if (updatedServiceData) {
-        toast.success('配置文件路径设置成功')
+        toast.success(t('mongodb.config_path_set_success'))
         loadMongoConfig(updatedServiceData)
       } else {
-        toast.error('设置配置文件路径失败')
+        toast.error(t('mongodb.config_path_set_failed'))
       }
     } catch (error) {
-      toast.error('设置配置文件路径失败: ' + error)
+      toast.error(t('mongodb.config_path_set_failed_with_message', { message: error }))
     } finally {
       setIsLoading(false)
     }
@@ -796,33 +796,33 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              初始化 MongoDB
+              {t('mongodb.init_dialog_title')}
             </DialogTitle>
             <DialogDescription>
-              首次使用需要初始化 MongoDB。系统将创建配置文件、数据目录、keyfile，并设置管理员账户。
+              {t('mongodb.init_dialog_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="admin-username">管理员用户名</Label>
+              <Label htmlFor="admin-username">{t('mongodb.admin_username')}</Label>
               <Input
                 id="admin-username"
                 value={dialogData.adminUsername}
                 onChange={(e) => setDialogData(prev => ({ ...prev, adminUsername: e.target.value }))}
-                placeholder="输入管理员用户名"
+                placeholder={t('mongodb.admin_username_placeholder')}
                 disabled={isInitializing}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="admin-password">管理员密码</Label>
+              <Label htmlFor="admin-password">{t('mongodb.admin_password')}</Label>
               <Input
                 id="admin-password"
                 type="password"
                 value={dialogData.adminPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, adminPassword: e.target.value }))}
-                placeholder="输入管理员密码"
+                placeholder={t('mongodb.admin_password_placeholder')}
                 disabled={isInitializing}
               />
             </div>
@@ -834,13 +834,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               className="w-full"
               type="button"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('mongodb.hide_advanced_options') : t('mongodb.show_advanced_options')}
             </Button>
 
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="init-port">端口</Label>
+                  <Label htmlFor="init-port">{t('mongodb.port')}</Label>
                   <Input
                     id="init-port"
                     value={dialogData.port}
@@ -851,7 +851,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="init-bind-ip">绑定地址</Label>
+                  <Label htmlFor="init-bind-ip">{t('mongodb.bind_ip')}</Label>
                   <Input
                     id="init-bind-ip"
                     value={dialogData.bindIp}
@@ -860,7 +860,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     disabled={isInitializing}
                   />
                   <p className="text-xs text-muted-foreground">
-                    默认仅本地访问。如需远程访问请设置为 0.0.0.0
+                    {t('mongodb.bind_ip_hint')}
                   </p>
                 </div>
 
@@ -876,11 +876,11 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       htmlFor="enable-replica-set"
                       className="text-sm font-normal cursor-pointer"
                     >
-                      启用副本集 (Replica Set)
+                      {t('mongodb.enable_replica_set')}
                     </Label>
                   </div>
                   <p className="text-xs text-muted-foreground ml-6">
-                    副本集提供数据冗余和高可用性。开发环境通常不需要启用。
+                    {t('mongodb.replica_set_hint')}
                   </p>
                 </div>
               </>
@@ -895,7 +895,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   )}
                   {dialogData.initStep && dialogData.initStep !== 'error' && (
                     <div className="text-xs text-muted-foreground">
-                      步骤: {getStepLabel(dialogData.initStep)}
+                      {t('mongodb.step_prefix')} {getStepLabel(dialogData.initStep)}
                     </div>
                   )}
                 </AlertDescription>
@@ -904,8 +904,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  请牢记管理员账户信息。初始化包含：创建目录、生成密钥、创建管理员用户{dialogData.enableReplicaSet ? '、初始化副本集' : ''}。
-                  {dialogData.enableReplicaSet && '副本集用于实现数据复制和高可用性。'}
+                  {t('mongodb.init_notice', { includeReplicaSet: dialogData.enableReplicaSet ? t('mongodb.init_notice_replica') : '' })}
+                  {dialogData.enableReplicaSet && t('mongodb.init_notice_replica_extra')}
                 </AlertDescription>
               </Alert>
             )}
@@ -918,7 +918,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               disabled={isInitializing}
               className="shadow-none"
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => handleInitialize(false)}
@@ -927,10 +927,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  {'初始化中...'}
+                  {t('mongodb.initializing')}
                 </>
               ) : (
-                '开始初始化'
+                t('mongodb.start_init')
               )}
             </Button>
           </DialogFooter>
@@ -943,11 +943,11 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              重置 MongoDB
+              {t('mongodb.reset_dialog_title')}
             </DialogTitle>
             <DialogDescription>
-              重置将删除所有现有数据、配置文件和用户信息，然后重新初始化 MongoDB。
-              <span className="text-red-600 font-semibold">此操作不可恢复！</span>
+              {t('mongodb.reset_dialog_desc')}
+              <span className="text-red-600 font-semibold">{t('mongodb.irreversible')}</span>
             </DialogDescription>
           </DialogHeader>
 
@@ -957,32 +957,32 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    <strong>MongoDB 正在运行中！</strong> 请先停止 MongoDB 服务后再进行重置。
+                    <strong>{t('mongodb.running_warning_title')}</strong> {t('mongodb.running_warning_desc')}
                   </AlertDescription>
                 </div>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="reset-admin-username">新管理员用户名</Label>
+              <Label htmlFor="reset-admin-username">{t('mongodb.new_admin_username')}</Label>
               <Input
                 id="reset-admin-username"
                 value={dialogData.adminUsername}
                 onChange={(e) => setDialogData(prev => ({ ...prev, adminUsername: e.target.value }))}
-                placeholder="输入管理员用户名"
+                placeholder={t('mongodb.admin_username_placeholder')}
                 disabled={isInitializing}
                 className="shadow-none"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reset-admin-password">新管理员密码</Label>
+              <Label htmlFor="reset-admin-password">{t('mongodb.new_admin_password')}</Label>
               <Input
                 id="reset-admin-password"
                 type="password"
                 value={dialogData.adminPassword}
                 onChange={(e) => setDialogData(prev => ({ ...prev, adminPassword: e.target.value }))}
-                placeholder="输入管理员密码"
+                placeholder={t('mongodb.admin_password_placeholder')}
                 disabled={isInitializing}
                 className="shadow-none"
               />
@@ -994,13 +994,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               onClick={() => setDialogData(prev => ({ ...prev, showAdvanced: !prev.showAdvanced }))}
               className="w-full"
             >
-              {dialogData.showAdvanced ? '隐藏高级选项' : '显示高级选项'}
+              {dialogData.showAdvanced ? t('mongodb.hide_advanced_options') : t('mongodb.show_advanced_options')}
             </Button>
 
             {dialogData.showAdvanced && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="reset-port">端口</Label>
+                  <Label htmlFor="reset-port">{t('mongodb.port')}</Label>
                   <Input
                     id="reset-port"
                     value={dialogData.port}
@@ -1011,7 +1011,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="reset-bind-ip">绑定地址</Label>
+                  <Label htmlFor="reset-bind-ip">{t('mongodb.bind_ip')}</Label>
                   <Input
                     id="reset-bind-ip"
                     value={dialogData.bindIp}
@@ -1033,11 +1033,11 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       htmlFor="reset-enable-replica-set"
                       className="text-sm font-normal cursor-pointer"
                     >
-                      启用副本集 (Replica Set)
+                      {t('mongodb.enable_replica_set')}
                     </Label>
                   </div>
                   <p className="text-xs text-muted-foreground ml-6">
-                    副本集提供数据冗余和高可用性。开发环境通常不需要启用。
+                    {t('mongodb.replica_set_hint')}
                   </p>
                 </div>
               </>
@@ -1052,7 +1052,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   )}
                   {dialogData.initStep && dialogData.initStep !== 'error' && (
                     <div className="text-xs text-muted-foreground">
-                      步骤: {getStepLabel(dialogData.initStep)}
+                      {t('mongodb.step_prefix')} {getStepLabel(dialogData.initStep)}
                     </div>
                   )}
                 </AlertDescription>
@@ -1067,7 +1067,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               disabled={isInitializing}
               className="shadow-none"
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -1077,12 +1077,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               {isInitializing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  {'重置中...'}
+                  {t('mongodb.resetting')}
                 </>
               ) : (
                 <>
                   <AlertTriangle className="h-4 w-4 mr-2" />
-                  确认重置
+                  {t('mongodb.confirm_reset')}
                 </>
               )}
             </Button>
@@ -1097,10 +1097,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
                 <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
-                  MongoDB 尚未初始化
+                  {t('mongodb.uninitialized')}
                 </p>
                 <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
-                  首次使用需要初始化配置文件、数据目录、安全密钥文件，并创建管理员账户。
+                  {t('mongodb.uninitialized_desc')}
                 </p>
               </div>
             </div>
@@ -1110,7 +1110,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 onClick={() => setShowInitDialog(true)}
                 className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
               >
-                立即初始化
+                {t('mongodb.init_now')}
               </Button>
             </div>
           </div>
@@ -1120,7 +1120,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              服务控制
+              {t('mongodb.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
@@ -1129,8 +1129,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
               )} />
               <span className="text-xs font-normal text-muted-foreground">
-                {serviceStatus === ServiceStatus.Running ? '运行中' :
-                  serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知状态'}
+                {serviceStatus === ServiceStatus.Running ? t('status.service.running') :
+                  serviceStatus === ServiceStatus.Stopped ? t('status.service.stopped') : t('status.service.unknown')}
               </span>
             </div>
           </div>
@@ -1150,7 +1150,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 ) : (
                   <Power className="h-3.5 w-3.5 text-green-600" />
                 )}
-                启动
+                {t('mongodb.start')}
               </Button>
               <Button
                 size="sm"
@@ -1160,7 +1160,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <PowerOff className="h-3.5 w-3.5 text-red-600" />
-                停止
+                {t('mongodb.stop')}
               </Button>
               <Button
                 size="sm"
@@ -1170,7 +1170,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
-                重启
+                {t('mongodb.restart')}
               </Button>
             </div>
           )}
@@ -1196,12 +1196,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                        配置文件
+                        {t('mongodb.config_file')}
                         <Info className="h-3 w-3 text-muted-foreground" />
                       </Label>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <div className="text-xs">mongod.conf 文件的路径</div>
+                      <div className="text-xs">{t('mongodb.config_file_tooltip')}</div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -1209,7 +1209,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   <Input
                     value={editingConfigPath}
                     onChange={(e) => setEditingConfigPath(e.target.value)}
-                    placeholder="MongoDB 配置文件路径"
+                    placeholder={t('mongodb.config_file_placeholder')}
                     disabled={isLoading}
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10",
@@ -1222,7 +1222,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     onClick={handleSetConfigPath}
                     disabled={isLoading || !editingConfigPath || editingConfigPath === configPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="保存"
+                    title={t('common.save')}
                   >
                     <Save className="h-3.5 w-3.5" />
                   </Button>
@@ -1247,7 +1247,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
-                    title="打开目录"
+                    title={t('mongodb.open_dir')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -1256,10 +1256,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
               {/* 数据目录 */}
               <div className=" pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">数据目录（从配置文件读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.data_dir')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={mongoConfig?.dataPath || '未配置'}
+                    value={mongoConfig?.dataPath || t('mongodb.not_configured')}
                     readOnly
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
@@ -1294,10 +1294,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
               {/* 日志路径 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">日志文件（从配置文件读取）</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.log_file')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
-                    value={mongoConfig?.logPath || '未配置'}
+                    value={mongoConfig?.logPath || t('mongodb.not_configured')}
                     readOnly
                     className={cn(
                       "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
@@ -1333,7 +1333,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               {/* 主机 & 端口 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">主机（从配置文件读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.host')}</Label>
                   <Input
                     value={mongoConfig?.bindIp || 'localhost'}
                     readOnly
@@ -1341,7 +1341,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">端口（从配置文件读取）</Label>
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.port_readonly')}</Label>
                   <Input
                     value={mongoConfig?.port || 27017}
                     readOnly
@@ -1352,7 +1352,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
               {/* 管理工具 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">管理工具</Label>
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.tools')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
                     variant="outline"
@@ -1361,12 +1361,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       try {
                         const result = await openMongoDBCompass(selectedEnvironmentId, serviceData)
                         if (result.success) {
-                          toast.success('MongoDB Compass 已打开')
+                          toast.success(t('mongodb.compass_opened'))
                         } else {
-                          toast.error(result.message || '打开 MongoDB Compass 失败')
+                          toast.error(result.message || t('mongodb.compass_open_failed'))
                         }
                       } catch (error) {
-                        toast.error('打开 MongoDB Compass 失败: ' + error)
+                        toast.error(t('mongodb.compass_open_failed_with_message', { message: error }))
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
@@ -1382,12 +1382,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       try {
                         const result = await openMongoDBShell(selectedEnvironmentId, serviceData)
                         if (result.success) {
-                          toast.success('Mongo Shell 已打开')
+                          toast.success(t('mongodb.shell_opened'))
                         } else {
-                          toast.error(result.message || '打开 Mongo Shell 失败')
+                          toast.error(result.message || t('mongodb.shell_open_failed'))
                         }
                       } catch (error) {
-                        toast.error('打开 Mongo Shell 失败: ' + error)
+                        toast.error(t('mongodb.shell_open_failed_with_message', { message: error }))
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
@@ -1404,13 +1404,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活，无法显示配置信息</p>
-                  <p className="text-xs">请先激活 MongoDB 服务</p>
+                  <p className="text-sm">{t('mongodb.config_unavailable_inactive')}</p>
+                  <p className="text-xs">{t('mongodb.activate_mongodb_first')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">MongoDB 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('mongodb.uninitialized')}</p>
+                  <p className="text-xs">{t('mongodb.complete_init_first')}</p>
                 </>
               )}
             </div>
@@ -1422,7 +1422,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
               {/* <Database className="w-3.5 h-3.5" /> */}
-              数据库管理
+              {t('mongodb.database_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1432,7 +1432,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <Plus className="h-3 w-3 mr-1" />
-                新建数据库
+                {t('mongodb.new_database')}
               </Button>
             )}
           </div>
@@ -1492,12 +1492,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                                   {db.showAllCollections ? (
                                     <>
                                       <ChevronUp className="h-3 w-3 mr-1" />
-                                      收起 ({db.collections.length - 4} 个)
+                                      {t('mongodb.collapse_more_collections', { count: db.collections.length - 4 })}
                                     </>
                                   ) : (
                                     <>
                                       <ChevronDown className="h-3 w-3 mr-1" />
-                                      还有 {db.collections.length - 4} 个集合
+                                      {t('mongodb.more_collections', { count: db.collections.length - 4 })}
                                     </>
                                   )}
                                 </Button>
@@ -1505,7 +1505,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                             </div>
                           ) : (
                             <div className="text-xs text-gray-500 text-center py-2">
-                              暂无集合
+                              {t('mongodb.no_collections')}
                             </div>
                           )}
                         </div>
@@ -1522,12 +1522,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       {showAllDatabases ? (
                         <>
                           <ChevronUp className="h-3.5 w-3.5 mr-1" />
-                          收起 ({databases.length - 4} 个数据库)
+                          {t('mongodb.collapse_more_databases', { count: databases.length - 4 })}
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-3.5 w-3.5 mr-1" />
-                          还有 {databases.length - 4} 个数据库
+                          {t('mongodb.more_databases', { count: databases.length - 4 })}
                         </>
                       )}
                     </Button>
@@ -1535,7 +1535,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
-                  暂无数据库
+                  {t('mongodb.no_databases')}
                 </div>
               )}
             </div>
@@ -1544,18 +1544,18 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               <Database className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
-                  <p className="text-sm">服务未激活</p>
-                  <p className="text-xs">无法管理数据库</p>
+                  <p className="text-sm">{t('mongodb.service_inactive')}</p>
+                  <p className="text-xs">{t('mongodb.cannot_manage_databases')}</p>
                 </>
               ) : !isInitialized ? (
                 <>
-                  <p className="text-sm">MongoDB 尚未初始化</p>
-                  <p className="text-xs">请先完成初始化</p>
+                  <p className="text-sm">{t('mongodb.uninitialized')}</p>
+                  <p className="text-xs">{t('mongodb.complete_init_first')}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">服务未运行</p>
-                  <p className="text-xs">请先启动服务</p>
+                  <p className="text-sm">{t('mongodb.service_not_running')}</p>
+                  <p className="text-xs">{t('mongodb.start_service_first')}</p>
                 </>
               )}
             </div>
@@ -1566,7 +1566,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between mb-2">
             <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-              用户管理
+              {t('mongodb.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
               <Button
@@ -1583,7 +1583,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
               >
                 <UserPlus className="h-3 w-3 mr-1" />
-                新建用户
+                {t('mongodb.new_user')}
               </Button>
             )}
           </div>
@@ -1597,7 +1597,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                     <div>
                       <span className="font-medium text-gray-700 dark:text-gray-300">{serviceData.metadata['MONGODB_ADMIN_USERNAME']}</span>
-                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">管理员</span>
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{t('mongodb.admin_badge')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -1641,7 +1641,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                             variant="ghost"
                             className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                             onClick={() => openEditUserDialog(user)}
-                            title="编辑权限"
+                            title={t('mongodb.edit_permissions')}
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -1650,7 +1650,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                             variant="ghost"
                             className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                             onClick={() => handleDeleteUser(user.user)}
-                            title="删除用户"
+                            title={t('mongodb.delete_user')}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -1664,8 +1664,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           ) : (
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <Key className="h-6 w-6 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">服务未运行</p>
-              <p className="text-xs">请先启动服务</p>
+              <p className="text-sm">{t('mongodb.service_not_running')}</p>
+              <p className="text-xs">{t('mongodb.start_service_first')}</p>
             </div>
           )}
         </div>
@@ -1674,19 +1674,19 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <Dialog open={showCreateDbDialog} onOpenChange={setShowCreateDbDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>新建数据库</DialogTitle>
+              <DialogTitle>{t('mongodb.new_database')}</DialogTitle>
               <DialogDescription>
-                创建一个新的数据库。系统将自动创建一个名为 'test' 的集合以初始化数据库。
+                {t('mongodb.new_database_desc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="db-name">数据库名称</Label>
+                <Label htmlFor="db-name">{t('mongodb.database_name')}</Label>
                 <Input
                   id="db-name"
                   value={newDbName}
                   onChange={(e) => setNewDbName(e.target.value)}
-                  placeholder="输入数据库名称"
+                  placeholder={t('mongodb.database_name_placeholder')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newDbName) {
                       handleCreateDatabase()
@@ -1697,16 +1697,16 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             </div>
             <DialogFooter>
               <Button className="shadow-none" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
-                取消
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleCreateDatabase} disabled={!newDbName || isCreatingDb}>
                 {isCreatingDb ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    创建中...
+                    {t('mongodb.creating')}
                   </>
                 ) : (
-                  '创建'
+                  t('common.create')
                 )}
               </Button>
             </DialogFooter>
@@ -1719,33 +1719,33 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
-                新建用户
+                {t('mongodb.new_user')}
               </DialogTitle>
-              <DialogDescription>创建一个新的 MongoDB 用户并分配数据库权限。</DialogDescription>
+              <DialogDescription>{t('mongodb.new_user_desc')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="new-username">用户名</Label>
+                <Label htmlFor="new-username">{t('mongodb.username')}</Label>
                 <Input
                   id="new-username"
                   value={userForm.username}
                   onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
-                  placeholder="输入用户名"
+                  placeholder={t('mongodb.username_placeholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-user-password">密码</Label>
+                <Label htmlFor="new-user-password">{t('mongodb.password')}</Label>
                 <Input
                   id="new-user-password"
                   type="password"
                   value={userForm.password}
                   onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="输入密码"
+                  placeholder={t('mongodb.password_placeholder')}
                 />
               </div>
               {/* 数据库权限设置 */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium">数据库权限</Label>
+                <Label className="text-xs font-medium">{t('mongodb.database_permissions')}</Label>
                 {databases.length > 0 && (
                   <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
                     {databases.map((db) => (
@@ -1774,7 +1774,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                                   : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
                               )}
                             >
-                              {role === 'read' ? 'Read' : 'ReadWrite'}
+                              {role === 'read' ? t('mongodb.role_read') : t('mongodb.role_read_write')}
                             </button>
                           ))}
                         </div>
@@ -1787,7 +1787,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   <Input
                     value={customDbName}
                     onChange={(e) => setCustomDbName(e.target.value)}
-                    placeholder="自定义数据库名"
+                    placeholder={t('mongodb.custom_database_name')}
                     className="h-7 text-xs shadow-none"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && customDbName) {
@@ -1825,7 +1825,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                         key={db}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
                       >
-                        {db}: {role === 'readWrite' ? 'ReadWrite' : 'Read'}
+                        {db}: {role === 'readWrite' ? t('mongodb.role_read_write') : t('mongodb.role_read')}
                         <button
                           type="button"
                           onClick={() => setUserForm(prev => {
@@ -1842,9 +1842,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)}>{t('common.cancel')}</Button>
               <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password}>
-                创建
+                {t('common.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1856,9 +1856,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5" />
-                编辑权限 - {selectedUser}
+                {t('mongodb.edit_permissions')} - {selectedUser}
               </DialogTitle>
-              <DialogDescription>修改用户的数据库访问权限（全量替换）。</DialogDescription>
+              <DialogDescription>{t('mongodb.edit_permissions_desc')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               {databases.length > 0 && (
@@ -1889,7 +1889,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                                 : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
                             )}
                           >
-                            {role === 'read' ? 'Read' : 'ReadWrite'}
+                            {role === 'read' ? t('mongodb.role_read') : t('mongodb.role_read_write')}
                           </button>
                         ))}
                       </div>
@@ -1901,7 +1901,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 <Input
                   value={customDbName}
                   onChange={(e) => setCustomDbName(e.target.value)}
-                  placeholder="自定义数据库名"
+                  placeholder={t('mongodb.custom_database_name')}
                   className="h-7 text-xs shadow-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && customDbName) {
@@ -1938,7 +1938,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       key={db}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
                     >
-                      {db}: {role === 'readWrite' ? 'ReadWrite' : 'Read'}
+                      {db}: {role === 'readWrite' ? t('mongodb.role_read_write') : t('mongodb.role_read')}
                       <button
                         type="button"
                         onClick={() => setUserForm(prev => {
@@ -1954,9 +1954,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               )}
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)}>取消</Button>
+              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)}>{t('common.cancel')}</Button>
               <Button onClick={handleUpdateUser}>
-                保存
+                {t('common.save')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1966,7 +1966,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
           <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
             {/* <MoreHorizontal className="w-3.5 h-3.5" /> */}
-            其他操作
+            {t('mongodb.other_operations')}
           </Label>
 
           {isServiceActive && isInitialized ? (
@@ -1978,14 +1978,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
               >
                 <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-                重置初始化
+                {t('mongodb.reset_init')}
               </Button>
             </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
               <BarChart3 className="h-6 w-6 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">服务未激活</p>
-              <p className="text-xs">无法使用其他操作</p>
+              <p className="text-sm">{t('mongodb.service_inactive')}</p>
+              <p className="text-xs">{t('mongodb.cannot_use_other_ops')}</p>
             </div>
           )}
         </div>
