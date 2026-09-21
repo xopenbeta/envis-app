@@ -86,7 +86,7 @@ function ServiceRow({ service, onDelete, getReferences }: {
           {service.sizeFormatted === '计算中...' && (
             <RefreshCw className="h-3 w-3 animate-spin" />
           )}
-          <span className={service.sizeFormatted === '计算失败' ? 'text-destructive' : ''}>
+          <span className={service.sizeFormatted === '计算失败' ? ' text-danger' : ''}>
             {service.sizeFormatted === '计算中...' ? t('settings.calculating') :
              service.sizeFormatted === '计算失败' ? t('settings.calc_failed') :
              service.sizeFormatted}
@@ -114,17 +114,17 @@ function ServiceRow({ service, onDelete, getReferences }: {
               size="sm"
               disabled={!canDelete}
               className={`${canDelete
-                ? 'text-destructive hover:text-destructive hover:bg-destructive/10'
+                ? ' text-danger  hover:text-danger  hover:bg-danger/10'
                 : 'text-muted-foreground cursor-not-allowed'
                 }`}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="border border-divider rounded-2xl bg-content1 shadow-none">
+          <AlertDialogContent className="border border-divider rounded-2xl bg-content1">
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <AlertTriangle className="h-5 w-5 text-danger" />
                 {t('settings.confirm_delete_service')}
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -136,13 +136,13 @@ function ServiceRow({ service, onDelete, getReferences }: {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="heroui-button-secondary border-divider shadow-none">
+              <AlertDialogCancel className="transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 border-divider">
                 {t('nav_bar.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={loading}
-                className="heroui-button bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-danger text-danger-foreground  hover:bg-danger/90"
               >
                 {loading ? (
                   <>
@@ -470,7 +470,7 @@ export default function SettingsDialog(props: {
   return (
     <Dialog open={isSettingDialogOpen} onOpenChange={setIsSettingDialogOpen}>
       <DialogContent 
-        className="sm:max-w-[625px] h-[500px] border border-divider rounded-2xl bg-content1 shadow-none flex flex-col"
+        className="sm:max-w-[625px] h-[500px] border border-divider rounded-2xl bg-content1 flex flex-col"
         onOpenAutoFocus={(e) => e.preventDefault()} // 防止自动focus到content
       >
         <DialogHeader>
@@ -483,31 +483,31 @@ export default function SettingsDialog(props: {
           <TabsList className="grid w-full grid-cols-5 bg-content2 p-1 rounded-lg">
             <TabsTrigger
               value="general"
-              className="rounded-md heroui-transition data-[state=active]:bg-content1 data-[state=active]:shadow-none"
+              className="rounded-md transition-all duration-250 data-[state=active]:bg-content1"
             >
               {t('settings.general')}
             </TabsTrigger>
             <TabsTrigger
               value="system"
-              className="rounded-md heroui-transition data-[state=active]:bg-content1 data-[state=active]:shadow-none"
+              className="rounded-md transition-all duration-250 data-[state=active]:bg-content1"
             >
               {t('settings.system')}
             </TabsTrigger>
             <TabsTrigger
               value="services"
-              className="rounded-md heroui-transition data-[state=active]:bg-content1 data-[state=active]:shadow-none"
+              className="rounded-md transition-all duration-250 data-[state=active]:bg-content1"
             >
               {t('settings.services')}
             </TabsTrigger>
             <TabsTrigger
               value="editor"
-              className="rounded-md heroui-transition data-[state=active]:bg-content1 data-[state=active]:shadow-none"
+              className="rounded-md transition-all duration-250 data-[state=active]:bg-content1"
             >
               {t('settings.editor')}
             </TabsTrigger>
             <TabsTrigger
               value="ai"
-              className="rounded-md heroui-transition data-[state=active]:bg-content1 data-[state=active]:shadow-none"
+              className="rounded-md transition-all duration-250 data-[state=active]:bg-content1"
             >
               {t('settings.ai')}
             </TabsTrigger>
@@ -518,23 +518,23 @@ export default function SettingsDialog(props: {
               <div className="space-y-2">
                 <Label htmlFor="theme" className="text-sm font-medium text-foreground">{t('settings.theme_mode')}</Label>
                 <Select value={newTheme} onValueChange={(value: 'light' | 'dark' | 'system') => setNewTheme(value)}>
-                  <SelectTrigger className="bg-content2 dark:bg-content3 border-divider focus:border-primary heroui-transition shadow-none">
+                  <SelectTrigger className="bg-content2 dark:bg-content3 border-divider focus:border-primary transition-all duration-250">
                     <SelectValue placeholder={t('settings.select_theme')} />
                   </SelectTrigger>
-                  <SelectContent className="heroui-card">
-                    <SelectItem value="light" className="heroui-transition hover:bg-content2 dark:hover:bg-content3">
+                  <SelectContent className="bg-content1 border border-divider rounded-2xl">
+                    <SelectItem value="light" className="transition-all duration-250 hover:bg-content2 dark:hover:bg-content3">
                       <div className="flex items-center">
                         <Sun className="mr-2 h-4 w-4" />
                         {t('settings.light_mode')}
                       </div>
                     </SelectItem>
-                    <SelectItem value="dark" className="heroui-transition hover:bg-content2 dark:hover:bg-content3">
+                    <SelectItem value="dark" className="transition-all duration-250 hover:bg-content2 dark:hover:bg-content3">
                       <div className="flex items-center">
                         <Moon className="mr-2 h-4 w-4" />
                         {t('settings.dark_mode')}
                       </div>
                     </SelectItem>
-                    <SelectItem value="system" className="heroui-transition hover:bg-content2 dark:hover:bg-content3">
+                    <SelectItem value="system" className="transition-all duration-250 hover:bg-content2 dark:hover:bg-content3">
                       <div className="flex items-center">
                         <Monitor className="mr-2 h-4 w-4" />
                         {t('settings.follow_system')}
@@ -552,7 +552,7 @@ export default function SettingsDialog(props: {
                     value={newLanguage}
                     onValueChange={(value) => setNewLanguage(value)}
                   >
-                    <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
+                    <SelectTrigger className="bg-content2 dark:bg-content3">
                       <SelectValue placeholder={t('settings.select_language')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -567,7 +567,7 @@ export default function SettingsDialog(props: {
                 <Label className="text-sm font-medium text-foreground">{t('settings.about')}</Label>
                 <Button
                   variant="outline"
-                  className="w-full dark:bg-content3 justify-start heroui-button-secondary border-divider hover:border-primary shadow-none"
+                  className="w-full dark:bg-content3 justify-start transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 border-divider hover:border-primary"
                   onClick={() => window.open('https://github.com/xopenbeta/envis-app', '_blank')}
                 >
                   <Info className="mr-2 h-4 w-4" /> {t('settings.about_us')}
@@ -579,7 +579,7 @@ export default function SettingsDialog(props: {
                 <Button
                   onClick={onToggleDevTools}
                   variant="outline"
-                  className="w-full dark:bg-content3 justify-start heroui-button-secondary border-divider hover:border-primary shadow-none"
+                  className="w-full dark:bg-content3 justify-start transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 border-divider hover:border-primary"
                 >
                   <Code className="mr-2 h-4 w-4" /> {t('settings.open_dev_tools')}
                 </Button>
@@ -591,15 +591,15 @@ export default function SettingsDialog(props: {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full dark:bg-content3 justify-start heroui-button-secondary border-divider hover:border-destructive shadow-none text-destructive hover:text-destructive"
+                      className="w-full dark:bg-content3 justify-start transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 border-divider  hover:border-danger text-danger  hover:text-danger"
                     >
                       <LogOut className="mr-2 h-4 w-4" /> {t('settings.quit_app')}
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="border border-divider rounded-2xl bg-content1 shadow-none">
+                  <AlertDialogContent className="border border-divider rounded-2xl bg-content1">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        <AlertTriangle className="h-5 w-5 text-danger" />
                         {t('settings.confirm_quit')}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
@@ -615,12 +615,12 @@ export default function SettingsDialog(props: {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="heroui-button-secondary border-divider shadow-none">
+                      <AlertDialogCancel className="transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 border-divider">
                         {t('nav_bar.cancel')}
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={onQuitApp}
-                        className="heroui-button bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-danger text-danger-foreground  hover:bg-danger/90"
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         {t('settings.quit')}
@@ -708,7 +708,7 @@ export default function SettingsDialog(props: {
                       value={newTerminalTool}
                       onChange={(e) => setNewTerminalTool(e.target.value)}
                       placeholder={t('settings.system_default')}
-                      className="shadow-none bg-content2 dark:bg-content3"
+                      className="bg-content2 dark:bg-content3"
                     />
                     <p className="text-xs text-muted-foreground">
                       {t('settings.terminal_program_desc')}
@@ -757,13 +757,13 @@ export default function SettingsDialog(props: {
                         value={newEnvisFolder}
                         onChange={(e) => setNewEnvisFolder(e.target.value)}
                         placeholder="/usr/local/bin"
-                        className="flex-1 shadow-none bg-content2 dark:bg-content3"
+                        className="flex-1 bg-content2 dark:bg-content3"
                       />
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => onSelectFolder()}
-                        className="px-3 shadow-none"
+                        className="px-3"
                         title={t('settings.select_folder')}
                       >
                         <Folder className="h-4 w-4" />
@@ -772,7 +772,7 @@ export default function SettingsDialog(props: {
                         size="sm"
                         variant="outline"
                         onClick={() => onOpenFolder()}
-                        className="px-3 shadow-none"
+                        className="px-3"
                         title={t('settings.open_in_finder')}
                         disabled={!newEnvisFolder}
                       >
@@ -793,13 +793,13 @@ export default function SettingsDialog(props: {
                         readOnly
                         disabled
                         placeholder="~/.envis.json"
-                        className="flex-1 shadow-none bg-content2 dark:bg-content3 cursor-not-allowed"
+                        className="flex-1 bg-content2 dark:bg-content3 cursor-not-allowed"
                       />
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openAppConfigFolder()}
-                        className="px-3 shadow-none"
+                        className="px-3"
                         title={t('settings.open_config_folder')}
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -823,7 +823,7 @@ export default function SettingsDialog(props: {
                   <div className="space-y-2">
                     <Label htmlFor="proxyMode">{t('settings.proxy_mode')}</Label>
                     <Select value={newProxyMode} onValueChange={(value: ProxyMode) => setNewProxyMode(value)}>
-                      <SelectTrigger className="shadow-none bg-content2 dark:bg-content3">
+                      <SelectTrigger className="bg-content2 dark:bg-content3">
                         <SelectValue placeholder={t('settings.select_proxy_mode')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -844,7 +844,7 @@ export default function SettingsDialog(props: {
                         value={newProxyUrl}
                         onChange={(e) => setNewProxyUrl(e.target.value)}
                         placeholder={newProxyMode === 'http' ? 'http://127.0.0.1:7890' : 'socks5://127.0.0.1:1080'}
-                        className="shadow-none bg-content2 dark:bg-content3"
+                        className="bg-content2 dark:bg-content3"
                       />
                       <p className="text-xs text-muted-foreground">{t('settings.proxy_url_desc')}</p>
                     </div>
@@ -879,7 +879,7 @@ export default function SettingsDialog(props: {
                       <p className="text-sm text-muted-foreground">
                         {t('settings.open_system_env_vars')}
                       </p>
-                      <Button variant="outline" className="shadow-none" size="sm" onClick={onOpenSystemEnvSettings}>
+                      <Button variant="outline" className="" size="sm" onClick={onOpenSystemEnvSettings}>
                         {t('settings.open')}
                       </Button>
                     </div>
@@ -967,17 +967,17 @@ export default function SettingsDialog(props: {
                     setNewAIModel('deepseek-chat')
                   }
                 }}>
-                  <SelectTrigger className="bg-content2 border-divider focus:border-primary heroui-transition shadow-none">
+                  <SelectTrigger className="bg-content2 border-divider focus:border-primary transition-all duration-250">
                     <SelectValue placeholder={t('settings.select_ai_provider')} />
                   </SelectTrigger>
-                  <SelectContent className="heroui-card">
-                    <SelectItem value="openai" className="heroui-transition hover:bg-content2">
+                  <SelectContent className="bg-content1 border border-divider rounded-2xl">
+                    <SelectItem value="openai" className="transition-all duration-250 hover:bg-content2">
                       <div className="flex items-center">
                         <Bot className="mr-2 h-4 w-4" />
                         OpenAI
                       </div>
                     </SelectItem>
-                    <SelectItem value="deepseek" className="heroui-transition hover:bg-content2">
+                    <SelectItem value="deepseek" className="transition-all duration-250 hover:bg-content2">
                       <div className="flex items-center">
                         <Bot className="mr-2 h-4 w-4" />
                         DeepSeek
@@ -995,7 +995,7 @@ export default function SettingsDialog(props: {
                   value={newAIApiKey}
                   onChange={(e) => setNewAIApiKey(e.target.value)}
                   placeholder={t('settings.enter_api_key')}
-                  className="bg-content2 border-divider focus:border-primary heroui-transition shadow-none"
+                  className="bg-content2 border-divider focus:border-primary transition-all duration-250"
                 />
               </div>
 
@@ -1006,7 +1006,7 @@ export default function SettingsDialog(props: {
                   value={newAIBaseUrl}
                   onChange={(e) => setNewAIBaseUrl(e.target.value)}
                   placeholder={t('settings.api_endpoint')}
-                  className="bg-content2 border-divider focus:border-primary heroui-transition shadow-none"
+                  className="bg-content2 border-divider focus:border-primary transition-all duration-250"
                 />
               </div>
 
@@ -1017,7 +1017,7 @@ export default function SettingsDialog(props: {
                   value={newAIModel}
                   onChange={(e) => setNewAIModel(e.target.value)}
                   placeholder={t('settings.model_name')}
-                  className="bg-content2 border-divider focus:border-primary heroui-transition shadow-none"
+                  className="bg-content2 border-divider focus:border-primary transition-all duration-250"
                 />
               </div>
 
@@ -1044,14 +1044,14 @@ export default function SettingsDialog(props: {
             <Button
               onClick={onRevertBtnClick}
               variant="outline"
-              className="heroui-button heroui-button-secondary border border-divider hover:border-primary rounded-lg shadow-none"
+              className="transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 border border-divider hover:border-primary rounded-lg"
             >
               <RefreshCw className="mr-2 h-4 w-4" />{t('settings.revert_settings')}
             </Button>
             <Button
               ref={saveButtonRef}
               onClick={onSaveBtnClick}
-              className="heroui-button heroui-button-primary border-0 rounded-lg shadow-none"
+              className="transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-lg"
             >
               <HardDrive className="mr-2 h-4 w-4" />{t('settings.save_settings')}
             </Button>

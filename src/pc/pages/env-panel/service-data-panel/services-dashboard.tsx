@@ -183,7 +183,7 @@ export function ServicesDashboard() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br backdrop-blur-xl overflow-y-auto">
+    <div className="flex flex-col h-full bg-gradient-to-br overflow-y-auto">
       {/* Header */}
       <div className="p-2 border-b border-divider">
         <div className="flex items-center justify-between ml-2">
@@ -215,7 +215,7 @@ export function ServicesDashboard() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4 bg-gradient-to-br from-background/50 to-content1/30 backdrop-blur-xl">
+      <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4 bg-gradient-to-br from-background/50 to-content1/30">
 
         {/* System Monitor */}
         <SystemMonitor systemInfo={systemInfo} />
@@ -224,14 +224,14 @@ export function ServicesDashboard() {
         {(customServiceDirectories.length > 0 || customServiceAliases.length > 0) && (
           <TooltipProvider>
             <div className="w-full space-y-3">
-              <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('alias.title')}</h2>
+              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">{t('alias.title')}</h2>
 
               {customServiceDirectories.length > 0 && (
                 <div className="space-y-2.5">
                   {customServiceDirectories.map((dir) => (
                     <div
                       key={`${dir.serviceId}-directory`}
-                      className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
+                      className="group relative rounded-lg border border-divider bg-content1 transition-all duration-200"
                     >
                       <div className="flex items-center justify-between p-3">
                         <div className="flex-1 min-w-0">
@@ -249,7 +249,7 @@ export function ServicesDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenVSCode(dir.path, dir.serviceName)}
-                                className="h-7 w-7 rounded-md bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-400 border border-blue-200/50 dark:border-blue-400/30 transition-all duration-200"
+                                className="h-7 w-7 rounded-md bg-focus/10 hover:bg-focus/20 dark:bg-focus/20 dark:hover:bg-focus/30 text-focus dark:text-focus border border-focus/30 dark:border-focus/30 transition-all duration-200"
                               >
                                 <Code2 className="h-3.5 w-3.5" />
                               </Button>
@@ -263,7 +263,7 @@ export function ServicesDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenFolder(dir.path, dir.serviceName)}
-                                className="h-7 w-7 rounded-md bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-400/30 transition-all duration-200"
+                                className="h-7 w-7 rounded-md bg-warning/10 hover:bg-warning/20 dark:bg-warning/20 dark:hover:bg-warning/30 text-warning dark:text-warning border border-warning/30 dark:border-warning/30 transition-all duration-200"
                               >
                                 <FolderOpen className="h-3.5 w-3.5" />
                               </Button>
@@ -277,7 +277,7 @@ export function ServicesDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenTerminal(dir.path, dir.serviceName)}
-                                className="h-7 w-7 rounded-md bg-purple-500/10 hover:bg-purple-500/20 dark:bg-purple-500/20 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-400 border border-purple-200/50 dark:border-purple-400/30 transition-all duration-200"
+                                className="h-7 w-7 rounded-md bg-focus/10 hover:bg-focus/20 dark:bg-focus/20 dark:hover:bg-focus/30 text-focus dark:text-focus border border-focus/30 dark:border-focus/30 transition-all duration-200"
                               >
                                 <Terminal className="h-3.5 w-3.5" />
                               </Button>
@@ -296,7 +296,7 @@ export function ServicesDashboard() {
                   {customServiceAliases.map((alias, index) => (
                     <div
                       key={`${alias.serviceName}-${alias.aliasName}-${index}`}
-                      className="group relative rounded-lg shadow-sm border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] transition-all duration-200"
+                      className="group relative rounded-lg border border-divider bg-content1 transition-all duration-200"
                     >
                       <div className="flex items-center gap-3 p-3 cursor-help">
                         <div className="flex-1 min-w-0">
@@ -314,7 +314,7 @@ export function ServicesDashboard() {
                             e.stopPropagation()
                             executeAlias(alias.aliasName, alias.command)
                           }}
-                          className="h-7 w-7 flex-shrink-0 rounded-md bg-green-500/10 hover:bg-green-500/20 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-200/50 dark:border-green-400/30 transition-all duration-200"
+                          className="h-7 w-7 flex-shrink-0 rounded-md bg-success/10 hover:bg-success/20 dark:bg-success/20 dark:hover:bg-success/30 text-success dark:text-success border border-success/30 dark:border-success/30 transition-all duration-200"
                           title={t('custom_service.execute_cmd_title')}
                         >
                           <Play className="h-3.5 w-3.5 fill-current" />
@@ -331,26 +331,26 @@ export function ServicesDashboard() {
         {/* Service Resource Monitor */}
         {services.length > 0 && (
           <div className="w-full space-y-3">
-            <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
+            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">
               {t('resource_monitor.title')}
             </h2>
-            <div className="rounded-lg border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] overflow-hidden">
+            <div className="rounded-lg border border-divider bg-content1 overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-white/5">
-                    <th className="py-2 px-3 text-left text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                  <tr className="border-b border-divider">
+                    <th className="py-2 px-3 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                       {t('resource_monitor.col_service')}
                     </th>
-                    <th className="py-2 px-3 text-left text-[10px] font-medium text-gray-400 uppercase tracking-wider w-16">
+                    <th className="py-2 px-3 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-16">
                       {t('resource_monitor.col_version')}
                     </th>
-                    <th className="py-2 px-3 text-right text-[10px] font-medium text-gray-400 uppercase tracking-wider w-16">
+                    <th className="py-2 px-3 text-right text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-16">
                       {t('resource_monitor.col_cpu')}
                     </th>
-                    <th className="py-2 px-3 text-right text-[10px] font-medium text-gray-400 uppercase tracking-wider w-20">
+                    <th className="py-2 px-3 text-right text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-20">
                       {t('resource_monitor.col_memory')}
                     </th>
-                    <th className="py-2 px-3 text-right text-[10px] font-medium text-gray-400 uppercase tracking-wider w-28">
+                    <th className="py-2 px-3 text-right text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-28">
                       {t('resource_monitor.col_disk')}
                     </th>
                   </tr>
@@ -364,7 +364,7 @@ export function ServicesDashboard() {
                     return (
                       <tr
                         key={service.id}
-                        className={`${index > 0 ? 'border-t border-gray-200 dark:border-white/5' : ''} hover:bg-gray-100/50 dark:hover:bg-white/[0.02] transition-colors`}
+                        className={`${index > 0 ? 'border-t border-divider' : ''} hover:bg-content2 transition-colors`}
                       >
                         {/* 服务名 */}
                         <td className="py-2.5 px-3">
@@ -372,16 +372,16 @@ export function ServicesDashboard() {
                         </td>
                         {/* 版本 */}
                         <td className="py-2.5 px-3 text-left w-16">
-                          <span className="text-gray-400 text-[10px] flex-shrink-0">{service.version}</span>
+                          <span className="text-muted-foreground text-[10px] flex-shrink-0">{service.version}</span>
                         </td>
                         {/* CPU */}
                         <td className="py-2.5 px-3 text-right w-16">
                           {isRunning ? (
-                            <span className="text-gray-700 dark:text-gray-300 font-mono text-[10px]">
+                            <span className="text-foreground dark:text-foreground font-mono text-[10px]">
                               {stat!.cpuUsage.toFixed(1)}%
                             </span>
                           ) : (
-                            <span className="text-gray-300 dark:text-gray-600 text-[10px]">
+                            <span className="text-default dark:text-muted-foreground text-[10px]">
                               {hasProcess ? t('resource_monitor.not_running') : '--'}
                             </span>
                           )}
@@ -389,28 +389,28 @@ export function ServicesDashboard() {
                         {/* 内存 */}
                         <td className="py-2.5 px-3 text-right w-20">
                           {isRunning ? (
-                            <span className="text-gray-700 dark:text-gray-300 font-mono text-[10px]">
+                            <span className="text-foreground dark:text-foreground font-mono text-[10px]">
                               {formatBytes(stat!.memoryBytes)}
                             </span>
                           ) : (
-                            <span className="text-gray-300 dark:text-gray-600 text-[10px]">--</span>
+                            <span className="text-default dark:text-muted-foreground text-[10px]">--</span>
                           )}
                         </td>
                         {/* 磁盘 I/O */}
                         <td className="py-2.5 px-3 text-right w-28">
                           {isRunning ? (
-                            <div className="text-[10px] flex justify-end items-center gap-1 text-gray-500 whitespace-nowrap">
-                              <span className="text-gray-400">R</span>
-                              <span className="font-mono text-gray-700 dark:text-gray-300">
+                            <div className="text-[10px] flex justify-end items-center gap-1 text-muted-foreground whitespace-nowrap">
+                              <span className="text-muted-foreground">R</span>
+                              <span className="font-mono text-foreground">
                                 {formatBytes(stat!.diskReadBytes)}/s
                               </span>
-                              <span className="text-gray-400">W</span>
-                              <span className="font-mono text-gray-700 dark:text-gray-300">
+                              <span className="text-muted-foreground">W</span>
+                              <span className="font-mono text-foreground">
                                 {formatBytes(stat!.diskWriteBytes)}/s
                               </span>
                             </div>
                           ) : (
-                            <span className="text-gray-300 dark:text-gray-600 text-[10px]">--</span>
+                            <span className="text-default dark:text-muted-foreground text-[10px]">--</span>
                           )}
                         </td>
                       </tr>

@@ -285,16 +285,16 @@ export function NginxConfigView({
     return (
         <div className="w-full p-3 space-y-3">
             {/* Nginx 状态 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                         服务控制
                     </Label>
                     <div className="flex items-center gap-2">
                         <div className={cn(
                             "w-2 h-2 rounded-full",
-                            serviceStatus === ServiceStatus.Running ? "bg-green-500" : 
-                            serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+                            serviceStatus === ServiceStatus.Running ? " bg-success" : 
+                            serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
                         )} />
                         <span className="text-xs font-normal text-muted-foreground">
                             {serviceStatus === ServiceStatus.Running ? '运行中' : 
@@ -309,35 +309,35 @@ export function NginxConfigView({
                         <Button 
                             size="sm" 
                             variant="outline" 
-                            className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                             onClick={handleStartService}
                             disabled={serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}
                         >
                             {isStarting ? (
                             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                            <Power className="h-3.5 w-3.5 text-green-600" />
+                            <Power className="h-3.5 w-3.5 text-success" />
                             )}
                             启动
                         </Button>
                         <Button 
                             size="sm" 
                             variant="outline" 
-                            className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                             onClick={handleStopService}
                             disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                         >
-                            <PowerOff className="h-3.5 w-3.5 text-red-600" />
+                            <PowerOff className="h-3.5 w-3.5 text-danger" />
                             停止
                         </Button>
                         <Button 
                             size="sm" 
                             variant="outline" 
-                            className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                             onClick={handleRestartService}
                             disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                         >
-                            <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
+                            <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
                             重启
                         </Button>
                     </div>
@@ -345,7 +345,7 @@ export function NginxConfigView({
             </div>
 
             {/* 配置管理 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 {isServiceActive ? (
                     <div className="space-y-4">
                         {/* 配置文件路径 */}
@@ -353,7 +353,7 @@ export function NginxConfigView({
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                        <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                             配置文件
                                             <Info className="h-3 w-3 text-muted-foreground" />
                                         </Label>
@@ -369,14 +369,14 @@ export function NginxConfigView({
                                     onChange={(e) => setEditingConfigPath(e.target.value)}
                                     placeholder="Nginx 配置文件路径"
                                     disabled={isLoading}
-                                    className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                                 />
                                 <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={handleSetConfigPath}
                                     disabled={isLoading || !editingConfigPath || editingConfigPath === configPath}
-                                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                                     title="保存"
                                 >
                                     <Save className="h-3.5 w-3.5" />
@@ -386,7 +386,7 @@ export function NginxConfigView({
                                     variant="outline"
                                     onClick={handleOpenNginxFolder}
                                     disabled={!configPath}
-                                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                                     title="打开目录"
                                 >
                                     <FolderOpen className="h-3.5 w-3.5" />
@@ -396,8 +396,8 @@ export function NginxConfigView({
 
                         {/* 解析后的配置展示 */}
                         {parsedConfig && (
-                            <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-white/10">
-                                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">配置概览</Label>
+                            <div className="space-y-3 pt-2 border-t border-divider">
+                                <Label className="text-xs font-medium text-foreground">配置概览</Label>
 
                                 {/* 错误日志路径 */}
                                 {parsedConfig.errorLog && (
@@ -406,7 +406,7 @@ export function NginxConfigView({
                                             <ScrollText className="h-3 w-3" />
                                             Error Log
                                         </div>
-                                        <div className="bg-white dark:bg-white/5 p-2 rounded border border-gray-200 dark:border-white/10 text-xs">
+                                        <div className="bg-white dark:bg-content1/40 p-2 rounded border border-divider text-xs">
                                             <span className="font-mono break-all">{parsedConfig.errorLog}</span>
                                         </div>
                                     </div>
@@ -420,7 +420,7 @@ export function NginxConfigView({
                                     {parsedConfig.servers.length > 0 ? (
                                         <div className="space-y-2">
                                             {parsedConfig.servers.map((server, idx) => (
-                                                <div key={idx} className="bg-white dark:bg-white/5 p-2 rounded border border-gray-200 dark:border-white/10 text-xs space-y-1">
+                                                <div key={idx} className="bg-white dark:bg-content1/40 p-2 rounded border border-divider text-xs space-y-1">
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-muted-foreground">Listen:</span>
                                                         <span className="font-mono">{server.listen.join(', ')}</span>
@@ -442,7 +442,7 @@ export function NginxConfigView({
                         )}
                     </div>
                 ) : (
-                    <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                    <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
                         <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">服务未激活</p>
                         <p className="text-xs">请先激活 Nginx 服务</p>

@@ -23,12 +23,12 @@ function formatTime(ts: number) {
 
 function LevelBadge({ level }: { level: LogEntry['level'] }) {
   const color = level === 'error'
-    ? 'text-red-500'
+    ? ' text-danger'
     : level === 'warn'
-      ? 'text-yellow-500'
+      ? ' text-warning'
       : level === 'debug'
-        ? 'text-blue-500'
-        : 'text-green-500'
+        ? ' text-focus'
+        : ' text-success'
   return <span className={cn('text-xs font-medium', color)}>[{level.toUpperCase()}]</span>
 }
 
@@ -54,8 +54,8 @@ function LogEntryItem({ entry }: { entry: LogEntry }) {
         )}
       </div>
       {hasMeta && !collapsed && (
-        <div className="mt-1 ml-[74px] pl-2 border-l border-muted">
-          <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap break-words bg-muted/30 rounded p-1.5 max-h-32 overflow-auto">
+        <div className="mt-1 ml-[74px] pl-2 border-l border-divider">
+          <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap break-words bg-content2/30 rounded p-1.5 max-h-32 overflow-auto">
             {safeStringify(entry.meta, 2)}
           </pre>
         </div>
@@ -184,7 +184,7 @@ export default function LogPanel() {
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 px-1 pb-1 pointer-events-none">
-      <div className="bg-content2 border rounded-lg heroui-card pointer-events-auto overflow-hidden">
+      <div className="bg-content2 border rounded-lg bg-content1 border border-divider rounded-2xl pointer-events-auto overflow-hidden">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'logs' | 'state')}>
           {/* Header with Tabs */}
           <div
@@ -276,15 +276,15 @@ export default function LogPanel() {
                         <div className="space-y-2">
                           <div>
                             <div className="text-[11px] leading-tight text-muted-foreground mb-1">appSettings</div>
-                            <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-muted/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(appSettings, 2)}</pre>
+                            <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(appSettings, 2)}</pre>
                           </div>
                           <div>
                             <div className="text-[11px] leading-tight text-muted-foreground mb-1">systemSettings</div>
-                            <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-muted/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(systemSettings, 2)}</pre>
+                            <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(systemSettings, 2)}</pre>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                            <div className="bg-muted/30 rounded p-2">isLeftPanelOpen: {String(isNavPanelOpen)}</div>
-                            <div className="bg-muted/30 rounded p-2">isAppLoading: {String(isAppLoading)}</div>
+                            <div className="bg-content2/30 rounded p-2">isLeftPanelOpen: {String(isNavPanelOpen)}</div>
+                            <div className="bg-content2/30 rounded p-2">isAppLoading: {String(isAppLoading)}</div>
                           </div>
                         </div>
                       </AccordionContent>
@@ -295,10 +295,10 @@ export default function LogPanel() {
                       <AccordionContent>
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                            <div className="bg-muted/30 rounded p-2">selectedEnvironmentId: {selectedEnvId || '-'}</div>
-                            <div className="bg-muted/30 rounded p-2">environmentsCount: {envs?.length ?? 0}</div>
+                            <div className="bg-content2/30 rounded p-2">selectedEnvironmentId: {selectedEnvId || '-'}</div>
+                            <div className="bg-content2/30 rounded p-2">environmentsCount: {envs?.length ?? 0}</div>
                           </div>
-                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-muted/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(envs, 2)}</pre>
+                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(envs, 2)}</pre>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -308,10 +308,10 @@ export default function LogPanel() {
                       <AccordionContent>
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                            <div className="bg-muted/30 rounded p-2">selectedServiceDataId: {selectedServiceId || '-'}</div>
-                            <div className="bg-muted/30 rounded p-2">selectedEnvServDatasCount: {selectedServiceDatas?.length ?? 0}</div>
+                            <div className="bg-content2/30 rounded p-2">selectedServiceDataId: {selectedServiceId || '-'}</div>
+                            <div className="bg-content2/30 rounded p-2">selectedEnvServDatasCount: {selectedServiceDatas?.length ?? 0}</div>
                           </div>
-                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-muted/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(selectedServiceDatas, 2)}</pre>
+                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(selectedServiceDatas, 2)}</pre>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -321,11 +321,11 @@ export default function LogPanel() {
                       <AccordionContent>
                         <div className="space-y-2">
                           <div className="grid grid-cols-3 gap-2 text-[11px] leading-tight">
-                            <div className="bg-muted/30 rounded p-2">isAIPanelOpen: {String(isAIPanelOpen)}</div>
-                            <div className="bg-muted/30 rounded p-2">isAIResponseLoading: {String(isAIResponseLoading)}</div>
-                            <div className="bg-muted/30 rounded p-2">chatMessagesCount: {chatMessages?.length ?? 0}</div>
+                            <div className="bg-content2/30 rounded p-2">isAIPanelOpen: {String(isAIPanelOpen)}</div>
+                            <div className="bg-content2/30 rounded p-2">isAIResponseLoading: {String(isAIResponseLoading)}</div>
+                            <div className="bg-content2/30 rounded p-2">chatMessagesCount: {chatMessages?.length ?? 0}</div>
                           </div>
-                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-muted/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(chatMessages, 2)}</pre>
+                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(chatMessages, 2)}</pre>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -334,8 +334,8 @@ export default function LogPanel() {
                       <AccordionTrigger className="py-2 text-xs">Log ({t('log_panel.meta_info')})</AccordionTrigger>
                       <AccordionContent>
                         <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                          <div className="bg-muted/30 rounded p-2">logEntriesCount: {entries?.length ?? 0}</div>
-                          <div className="bg-muted/30 rounded p-2">autoScroll: {String(autoScroll)}</div>
+                          <div className="bg-content2/30 rounded p-2">logEntriesCount: {entries?.length ?? 0}</div>
+                          <div className="bg-content2/30 rounded p-2">autoScroll: {String(autoScroll)}</div>
                         </div>
                       </AccordionContent>
                     </AccordionItem>

@@ -136,13 +136,13 @@ export function AliasesConfigView({
     }
 
     return (
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
             <div className="flex items-center justify-between mb-2">
                 <div>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                     {/* <Command className="h-3.5 w-3.5" /> */}
                                     {t('custom_service.alias_config_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
@@ -194,7 +194,7 @@ export function AliasesConfigView({
                     size="sm"
                     onClick={addAlias}
                     disabled={isLoading || !isServiceDataActive}
-                    className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 >
                     <Plus className="h-3 w-3 mr-1" />
                     {t('custom_service.add_alias')}
@@ -209,7 +209,7 @@ export function AliasesConfigView({
                                 value={item.key}
                                 onChange={(e) => updateAliasKey(index, e.target.value)}
                                 placeholder={t('custom_service.alias_placeholder_key')}
-                                className="w-1/3 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="w-1/3 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                                 disabled={isLoading || !isServiceDataActive}
                             />
                             <span className="text-muted-foreground">=</span>
@@ -217,7 +217,7 @@ export function AliasesConfigView({
                                 value={item.value}
                                 onChange={(e) => updateAliasValue(index, e.target.value)}
                                 placeholder={t('custom_service.alias_placeholder_value')}
-                                className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                                 disabled={isLoading || !isServiceDataActive}
                             />
                             <Button
@@ -225,7 +225,7 @@ export function AliasesConfigView({
                                 size="icon"
                                 onClick={() => executeAlias(item)}
                                 disabled={isLoading || !item.key || !item.value}
-                                className="h-8 w-8 text-muted-foreground hover:text-green-600 dark:hover:text-green-400"
+                                className="h-8 w-8 text-muted-foreground hover:text-success dark:hover:text-success"
                                 title={t('custom_service.execute_cmd_title')}
                             >
                                 <Play className="h-4 w-4" />
@@ -236,7 +236,7 @@ export function AliasesConfigView({
                                     size="icon"
                                     onClick={() => removeAlias(index)}
                                     disabled={isLoading}
-                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    className="h-8 w-8 text-muted-foreground  hover:text-danger"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -246,7 +246,7 @@ export function AliasesConfigView({
                 </div>
 
                 {aliases.length === 0 && (
-                    <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                    <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
                         <p className="text-sm">{t('custom_service.no_aliases')}</p>
                         <p className="text-xs mt-1">{t('custom_service.no_aliases_hint')}</p>
                     </div>
@@ -259,7 +259,7 @@ export function AliasesConfigView({
                         size="sm"
                         onClick={saveAliases}
                         disabled={isLoading || !isServiceDataActive}
-                        className="shadow-none h-8 text-xs"
+                        className="h-8 text-xs"
                     >
                         {isLoading ? t('custom_service.saving') : t('custom_service.save_path_config')}
                     </Button>

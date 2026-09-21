@@ -104,13 +104,13 @@ export function EnvironmentVariablesView({
     }
 
     return (
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
             <div className="flex items-center justify-between mb-2">
                 <div>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                     {/* <Globe className="h-3.5 w-3.5" /> */}
                                     {t('custom_service.env_var_config_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
@@ -162,7 +162,7 @@ export function EnvironmentVariablesView({
                     size="sm"
                     onClick={addEnvVar}
                     disabled={isLoading || !isServiceDataActive}
-                    className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 >
                     <Plus className="h-3 w-3 mr-1" />
                     {t('custom_service.add_env_var')}
@@ -177,7 +177,7 @@ export function EnvironmentVariablesView({
                                 value={envVar.key}
                                 onChange={(e) => updateEnvVarKey(index, e.target.value)}
                                 placeholder={t('custom_service.env_var_key_placeholder')}
-                                className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                                 disabled={isLoading || !isServiceDataActive}
                             />
                             <span className="text-muted-foreground">=</span>
@@ -185,7 +185,7 @@ export function EnvironmentVariablesView({
                                 value={envVar.value}
                                 onChange={(e) => updateEnvVarValue(index, e.target.value)}
                                 placeholder={t('custom_service.env_var_value_placeholder')}
-                                className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                                 disabled={isLoading || !isServiceDataActive}
                             />
                             {isServiceDataActive && (
@@ -194,7 +194,7 @@ export function EnvironmentVariablesView({
                                     size="sm"
                                     onClick={() => removeEnvVar(index)}
                                     disabled={isLoading}
-                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                                    className="h-8 w-8 p-0 text-muted-foreground  hover:text-danger"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -204,7 +204,7 @@ export function EnvironmentVariablesView({
                 </div>
 
                 {envVars.length === 0 && (
-                    <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                    <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
                         <p className="text-sm">{t('custom_service.no_env_vars')}</p>
                         <p className="text-xs mt-1">{t('custom_service.no_env_vars_hint')}</p>
                     </div>
@@ -217,7 +217,7 @@ export function EnvironmentVariablesView({
                         size="sm"
                         onClick={saveEnvVars}
                         disabled={isLoading || !isServiceDataActive}
-                        className="shadow-none h-8 text-xs"
+                        className="h-8 text-xs"
                     >
                         {isLoading ? t('custom_service.saving') : t('custom_service.save_path_config')}
                     </Button>

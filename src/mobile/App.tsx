@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { setAppTheme } from '../theme'
 import { detectMobilePlatform } from './platform/adapter'
 import HomePage from './pages/home'
 import ContentPage from './pages/content'
@@ -9,6 +10,11 @@ type ActivePage = 'home' | 'content'
 
 function App(): JSX.Element {
   const platform = detectMobilePlatform()
+
+  // 跟随系统主题（激活全局 dark: 变体）
+  useEffect(() => {
+    setAppTheme('system')
+  }, [])
   const {
     auth,
     hosts,
@@ -46,14 +52,14 @@ function App(): JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-slate-100 text-slate-900 dark:bg-[#020202] dark:text-slate-100">
-      <div className="mx-auto flex h-full w-full max-w-4xl flex-col border-x border-slate-200 bg-white shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_80px_rgba(15,23,42,0.28)] dark:border-white/5 dark:bg-[#030303]">
-        <div className="border-b border-slate-200 bg-white px-4 py-2 text-[11px] text-slate-500 dark:border-white/5 dark:bg-[#0a0a0a] dark:text-slate-400">
+    <div className="fixed inset-0 overflow-hidden bg-background text-foreground dark:bg-background dark:text-foreground">
+      <div className="mx-auto flex h-full w-full max-w-4xl flex-col border-x border-divider bg-content1  dark:border-divider dark:bg-background">
+        <div className="border-b border-divider bg-content1 px-4 py-2 text-[11px] text-muted-foreground dark:border-divider dark:bg-content2 dark:text-muted-foreground">
           Mobile platform: {platform.platform} | Touch: {platform.isTouchDevice ? 'yes' : 'no'}
         </div>
 
-        <div className="flex-1 min-h-0 bg-slate-100 p-2 sm:p-3 dark:bg-[#020202]">
-          <div className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#030303]">
+        <div className="flex-1 min-h-0 bg-background p-2 sm:p-3 dark:bg-background">
+          <div className="h-full overflow-hidden rounded-2xl border border-divider bg-content1  dark:border-divider dark:bg-background">
             {canOpenContent && activeHost ? (
               <ContentPage
                 host={activeHost}

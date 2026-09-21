@@ -82,14 +82,14 @@ export function WelcomeFragment({ onOpen }: {
     }, []);
 
     return (
-        <div className="relative w-full h-full bg-white dark:bg-[#030303] text-gray-900 dark:text-white overflow-hidden flex flex-col font-sans selection:bg-blue-500/20 dark:selection:bg-white/20">
+        <div className="relative w-full h-full bg-content1 dark:bg-background text-foreground dark:text-primary-foreground overflow-hidden flex flex-col font-sans selection:bg-focus/20 dark:selection:bg-content1/20">
             {/* Cursor-style Background */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 {/* Subtle gradient glow at the top */}
-                <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-black/[0.02] dark:bg-white/[0.03] blur-[120px] rounded-full"></div>
+                <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-overlay/[0.02] dark:bg-content1/25 blur-[120px] rounded-full"></div>
 
                 {/* Grid pattern */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--default)/0.07)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--default)/0.07)_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,hsl(var(--overlay))_70%,transparent_100%)]"></div>
             </div>
 
             {/* Floating Buttons */}
@@ -101,7 +101,7 @@ export function WelcomeFragment({ onOpen }: {
                         e.stopPropagation()
                         onOpen()
                     }}
-                    className="absolute top-1.5 left-2 z-50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all h-8 w-8"
+                    className="absolute top-1.5 left-2 z-50 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-content2 transition-all h-8 w-8"
                 >
                     <PanelLeft className="h-4 w-4" />
                 </Button>
@@ -113,7 +113,7 @@ export function WelcomeFragment({ onOpen }: {
                     e.stopPropagation()
                     setIsAIPanelOpen(isAIPanelOpen => !isAIPanelOpen)
                 }}
-                className="absolute top-1.5 right-2 z-50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-all h-8 w-8"
+                className="absolute top-1.5 right-2 z-50 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-content2 transition-all h-8 w-8"
             >
                 <Bot className="h-4 w-4" />
             </Button>
@@ -125,15 +125,15 @@ export function WelcomeFragment({ onOpen }: {
                     {/* Brand Header */}
                     <div className="text-center space-y-4 mt-12">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">Envis</h1>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">{t('welcome.subtitle')}</p>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground dark:text-primary-foreground mb-2">Envis</h1>
+                            <p className="text-muted-foreground dark:text-muted-foreground text-sm">{t('welcome.subtitle')}</p>
                         </div>
                         <div className="w-full flex justify-center">
                             <a
                                 href="https://discord.gg/dqS55wdvd"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center z-50 h-7 px-2.5 rounded-full mr-2 border border-blue-200 bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                                className="inline-flex items-center z-50 h-7 px-2.5 rounded-full mr-2 border border-focus/30 bg-focus/10 text-focus text-xs font-medium hover:bg-focus/15 transition-colors dark:border-focus/30 dark:bg-focus/10 dark:text-focus dark:hover:bg-focus/20"
                             >
                                 {t('welcome.discord_community')}
                             </a>
@@ -141,7 +141,7 @@ export function WelcomeFragment({ onOpen }: {
                                 href="https://github.com/xopenbeta/envis-app"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20 dark:hover:bg-emerald-500/20"
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success border border-success/30 hover:bg-success/15 transition-colors dark:bg-success/10 dark:text-success dark:border-success/20 dark:hover:bg-success/20"
                             >
                                 <Github className="w-4 h-4" />
                                 <span className="text-xs">{t('welcome.github_star')}</span>
@@ -153,9 +153,9 @@ export function WelcomeFragment({ onOpen }: {
                     {/* 网络不畅通提示 */}
                     {networkError && (
                         <div className="w-full max-w-2xl mx-auto mt-6">
-                            <div className="flex items-center gap-2 p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10">
-                                <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
-                                <div className="flex-1 text-xs text-red-700 dark:text-red-300">
+                            <div className="flex items-center gap-2 p-3 rounded-lg border border-danger/30 bg-danger/10 dark:border-danger/30 dark:bg-danger/10">
+                                <AlertTriangle className="w-4 h-4 text-danger dark:text-danger" />
+                                <div className="flex-1 text-xs text-danger dark:text-danger">
                                     {t('welcome.network_error')}
                                 </div>
                             </div>
@@ -171,7 +171,7 @@ export function WelcomeFragment({ onOpen }: {
                     {/* Quick Actions */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <ActionCard
-                            icon={<Plus className="w-5 h-5 text-blue-500 dark:text-blue-400" />}
+                            icon={<Plus className="w-5 h-5 text-focus dark:text-focus" />}
                             title={t('welcome.new_environment')}
                             desc={t('welcome.new_environment_desc')}
                             onClick={() => {
@@ -180,19 +180,19 @@ export function WelcomeFragment({ onOpen }: {
                             }}
                         />
                         <ActionCard
-                            icon={<Terminal className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />}
+                            icon={<Terminal className="w-5 h-5 text-warning dark:text-warning" />}
                             title={t('welcome.open_terminal')}
                             desc={t('welcome.open_terminal_desc')}
                             onClick={() => openTerminal()}
                         />
                         <ActionCard
-                            icon={<Zap className="w-5 h-5 text-purple-500 dark:text-purple-400" />}
+                            icon={<Zap className="w-5 h-5 text-focus dark:text-focus" />}
                             title={t('welcome.ai_assistant')}
                             desc={t('welcome.ai_assistant_desc')}
                             onClick={() => setIsAIPanelOpen(true)}
                         />
                         <ActionCard
-                            icon={<Book className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
+                            icon={<Book className="w-5 h-5 text-success dark:text-success" />}
                             title={t('welcome.documentation')}
                             desc={t('welcome.documentation_desc')}
                             onClick={() => openExternal('https://envis.app/docs/')}
@@ -201,32 +201,32 @@ export function WelcomeFragment({ onOpen }: {
 
                     {/* Usage Scenarios */}
                     <div className="space-y-3">
-                        <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('welcome.use_cases')}</h2>
+                        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">{t('welcome.use_cases')}</h2>
                         <div className="grid grid-cols-1 gap-3">
                             {[
                                 {
-                                    icon: <Zap className="w-5 h-5 text-orange-500 dark:text-orange-400" />,
+                                    icon: <Zap className="w-5 h-5 text-warning dark:text-warning" />,
                                     title: t('welcome.rapid_setup'),
                                     description: t('welcome.rapid_setup_desc')
                                 },
                                 {
-                                    icon: <Layers className="w-5 h-5 text-blue-500 dark:text-blue-400" />,
+                                    icon: <Layers className="w-5 h-5 text-focus dark:text-focus" />,
                                     title: t('welcome.multi_project'),
                                     description: t('welcome.multi_project_desc')
                                 },
                                 {
-                                    icon: <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />,
+                                    icon: <Users className="w-5 h-5 text-success dark:text-success" />,
                                     title: t('welcome.team_standardization'),
                                     description: t('welcome.team_standardization_desc')
                                 }
                             ].map((scenario, index) => (
-                                <div key={index} className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:border-gray-300 dark:hover:border-white/10 transition-all group">
-                                    <div className="mt-1 p-2 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 group-hover:border-gray-300 dark:group-hover:border-white/10 transition-colors shrink-0">
+                                <div key={index} className="flex items-start gap-4 p-4 rounded-xl border border-divider bg-content1 hover:bg-content2 hover:border-default transition-all group">
+                                    <div className="mt-1 p-2 rounded-lg bg-content1 dark:bg-content1/40 border border-divider group-hover:border-default dark:group-hover:border-white/10 transition-colors shrink-0">
                                         {scenario.icon}
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{scenario.title}</h3>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{scenario.description}</p>
+                                        <h3 className="text-sm font-medium text-foreground dark:text-primary-foreground mb-1.5 group-hover:text-focus dark:group-hover:text-focus transition-colors">{scenario.title}</h3>
+                                        <p className="text-xs text-muted-foreground dark:text-muted-foreground leading-relaxed">{scenario.description}</p>
                                     </div>
                                 </div>
                             ))}
@@ -235,7 +235,7 @@ export function WelcomeFragment({ onOpen }: {
 
                     {/* Getting Started */}
                     <div className="space-y-3">
-                        <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('welcome.getting_started')}</h2>
+                        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">{t('welcome.getting_started')}</h2>
                         <div className="grid grid-cols-3 gap-3">
                             <Step number="1" title={t('welcome.step_1_title')} desc={t('welcome.step_1_desc')} />
                             <Step number="2" title={t('welcome.step_2_title')} desc={t('welcome.step_2_desc')} />
@@ -248,66 +248,66 @@ export function WelcomeFragment({ onOpen }: {
 
                     {/* Feedback & Suggestions */}
                     <div className="space-y-3 mb-6">
-                        <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('welcome.feedback')}</h2>
-                        <div className="flex flex-col rounded-lg border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] overflow-hidden">
+                        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">{t('welcome.feedback')}</h2>
+                        <div className="flex flex-col rounded-lg border border-divider bg-content1 overflow-hidden">
                             <a
                                 href="https://github.com/xopenbeta/envis-app"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
+                                className="flex items-center gap-3 p-3 hover:bg-content2 transition-colors cursor-pointer border-b border-divider last:border-0"
                             >
-                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-white">
+                                <div className="w-8 h-8 rounded-full bg-content3 dark:bg-content2 flex items-center justify-center text-foreground dark:text-primary-foreground">
                                     <Github className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-gray-900 dark:text-white">{t('welcome.github')}</div>
-                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">{t('welcome.feedback_desc')}</div>
+                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{t('welcome.github')}</div>
+                                    <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.feedback_desc')}</div>
                                 </div>
-                                <ArrowRight className="w-3 h-3 text-gray-400" />
+                                <ArrowRight className="w-3 h-3 text-muted-foreground" />
                             </a>
 
                             <a
                                 href="https://discord.gg/dqS55wdvd"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
+                                className="flex items-center gap-3 p-3 hover:bg-content2 transition-colors cursor-pointer border-b border-divider last:border-0"
                             >
-                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <div className="w-8 h-8 rounded-full bg-focus/15 dark:bg-focus/20 flex items-center justify-center text-focus dark:text-focus">
                                     <Globe className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-gray-900 dark:text-white">{t('welcome.discord')}</div>
-                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">{t('welcome.join_discord')}</div>
+                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{t('welcome.discord')}</div>
+                                    <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.join_discord')}</div>
                                 </div>
-                                <ArrowRight className="w-3 h-3 text-gray-400" />
+                                <ArrowRight className="w-3 h-3 text-muted-foreground" />
                             </a>
 
                             <div
                                 onClick={() => setShowContactDialog(true)}
-                                className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer border-b border-gray-200 dark:border-white/5 last:border-0"
+                                className="flex items-center gap-3 p-3 hover:bg-content2 transition-colors cursor-pointer border-b border-divider last:border-0"
                             >
-                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <div className="w-8 h-8 rounded-full bg-focus/15 dark:bg-focus/20 flex items-center justify-center text-focus dark:text-focus">
                                     <MessageCircle className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-gray-900 dark:text-white">QQ</div>
-                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">{t('welcome.join_qq')}</div>
+                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">QQ</div>
+                                    <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.join_qq')}</div>
                                 </div>
-                                <ArrowRight className="w-3 h-3 text-gray-400" />
+                                <ArrowRight className="w-3 h-3 text-muted-foreground" />
                             </div>
 
                             <div
                                 onClick={() => setShowContactDialog(true)}
-                                className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                                className="flex items-center gap-3 p-3 hover:bg-content2 transition-colors cursor-pointer"
                             >
-                                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                                <div className="w-8 h-8 rounded-full bg-success/15 dark:bg-success/20 flex items-center justify-center text-success dark:text-success">
                                     <MessageSquare className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-gray-900 dark:text-white">{t('welcome.wechat')}</div>
-                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">{t('welcome.join_wechat')}</div>
+                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{t('welcome.wechat')}</div>
+                                    <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.join_wechat')}</div>
                                 </div>
-                                <ArrowRight className="w-3 h-3 text-gray-400" />
+                                <ArrowRight className="w-3 h-3 text-muted-foreground" />
                             </div>
                         </div>
                     </div>
@@ -330,32 +330,32 @@ export function WelcomeFragment({ onOpen }: {
                             href="https://discord.gg/dqS55wdvd"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                            className="flex items-center gap-4 p-4 rounded-lg border border-divider bg-content1 hover:bg-content2 transition-colors"
                         >
-                            <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                            <div className="p-2 bg-focus/15 dark:bg-focus/20 text-focus dark:text-focus rounded-lg">
                                 <Globe className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-medium text-gray-900 dark:text-white">{t('welcome.discord')}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">{t('welcome.join_discord')}</div>
+                                <div className="font-medium text-foreground dark:text-primary-foreground">{t('welcome.discord')}</div>
+                                <div className="text-sm text-muted-foreground dark:text-muted-foreground">{t('welcome.join_discord')}</div>
                             </div>
                         </a>
-                        <div className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg">
+                        <div className="flex items-center gap-4 p-4 rounded-lg border border-divider bg-content1">
+                            <div className="p-2 bg-focus/15 dark:bg-focus/20 text-focus dark:text-focus rounded-lg">
                                 <MessageCircle className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-medium text-gray-900 dark:text-white">{t('welcome.qq_group')}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">{t('welcome.qq_group_id', { id: '1036572489' })}</div>
+                                <div className="font-medium text-foreground dark:text-primary-foreground">{t('welcome.qq_group')}</div>
+                                <div className="text-sm text-muted-foreground dark:text-muted-foreground">{t('welcome.qq_group_id', { id: '1036572489' })}</div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
-                            <div className="p-2 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-lg">
+                        <div className="flex items-center gap-4 p-4 rounded-lg border border-divider bg-content1">
+                            <div className="p-2 bg-success/15 dark:bg-success/20 text-success dark:text-success rounded-lg">
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-medium text-gray-900 dark:text-white">{t('welcome.wechat_group')}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">{t('welcome.wechat_group_desc')}</div>
+                                <div className="font-medium text-foreground dark:text-primary-foreground">{t('welcome.wechat_group')}</div>
+                                <div className="text-sm text-muted-foreground dark:text-muted-foreground">{t('welcome.wechat_group_desc')}</div>
                             </div>
                         </div>
                     </div>
@@ -369,14 +369,14 @@ function ActionCard({ icon, title, desc, onClick }: { icon: React.ReactNode, tit
     return (
         <button
             onClick={onClick}
-            className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:border-gray-300 dark:hover:border-white/10 transition-all text-left group"
+            className="flex items-start gap-4 p-4 rounded-xl border border-divider bg-content1 hover:bg-content2 hover:border-default transition-all text-left group"
         >
-            <div className="mt-1 p-2 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 group-hover:border-gray-300 dark:group-hover:border-white/10 transition-colors">
+            <div className="mt-1 p-2 rounded-lg bg-content1 dark:bg-content1/40 border border-divider group-hover:border-default dark:group-hover:border-white/10 transition-colors">
                 {icon}
             </div>
             <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{title}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                <h3 className="text-sm font-medium text-foreground dark:text-primary-foreground mb-1 group-hover:text-focus dark:group-hover:text-focus transition-colors">{title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
             </div>
         </button>
     )
@@ -384,12 +384,12 @@ function ActionCard({ icon, title, desc, onClick }: { icon: React.ReactNode, tit
 
 function Step({ number, title, desc }: { number: string, title: string, desc: string }) {
     return (
-        <div className="flex flex-col items-center text-center p-3 rounded-lg border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
-            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-gray-700 dark:text-white mb-2">
+        <div className="flex flex-col items-center text-center p-3 rounded-lg border border-divider bg-content1">
+            <div className="w-6 h-6 rounded-full bg-content3 dark:bg-content2 flex items-center justify-center text-xs font-bold text-foreground dark:text-primary-foreground mb-2">
                 {number}
             </div>
-            <div className="text-xs font-medium text-gray-900 dark:text-white">{title}</div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">{desc}</div>
+            <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{title}</div>
+            <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{desc}</div>
         </div>
     )
 }
@@ -412,28 +412,28 @@ function DefenderWarningBanner() {
     }
 
     return (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10 p-4 space-y-3">
+        <div className="rounded-xl border border-focus/30 bg-focus/10 dark:border-focus/30 dark:bg-focus/10 p-4 space-y-3">
             <div className="flex items-start gap-3">
-                <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+                <Info className="w-4 h-4 text-focus dark:text-focus shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">{t('welcome.defender_warning_title')}</p>
-                    <p className="text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed whitespace-pre-line">
+                    <p className="text-xs font-semibold text-focus dark:text-focus">{t('welcome.defender_warning_title')}</p>
+                    <p className="text-[11px] text-focus dark:text-focus leading-relaxed whitespace-pre-line">
                         {t('welcome.defender_warning_desc')}
                     </p>
                 </div>
                 <button
                     onClick={handleDismiss}
-                    className="shrink-0 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 transition-colors"
+                    className="shrink-0 text-focus hover:text-focus dark:text-focus  dark:hover:text-focus transition-colors"
                     aria-label={t('welcome.dismiss')}
                 >
                     <X className="w-3.5 h-3.5" />
                 </button>
             </div>
-            <details className="text-[11px] text-blue-700 dark:text-blue-400">
-                <summary className="cursor-pointer select-none font-medium hover:text-blue-900 dark:hover:text-blue-200 transition-colors">
+            <details className="text-[11px] text-focus dark:text-focus">
+                <summary className="cursor-pointer select-none font-medium hover:text-focus  dark:hover:text-focus transition-colors">
                     {t('welcome.defender_warning_steps')}
                 </summary>
-                <div className="mt-2 p-3 rounded-lg bg-blue-100/60 dark:bg-black/30 text-blue-900 dark:text-blue-200 text-[10px] space-y-2 leading-relaxed">
+                <div className="mt-2 p-3 rounded-lg bg-focus/10 dark:bg-overlay/30 text-focus  dark:text-focus text-[10px] space-y-2 leading-relaxed">
                     <p className="font-semibold">{t('welcome.defender_exclude_steps_title')}</p>
                     <ol className="list-decimal list-inside space-y-1.5 ml-1">
                         <li>{t('welcome.defender_step_1')}</li>
@@ -443,7 +443,7 @@ function DefenderWarningBanner() {
                         <li>{t('welcome.defender_step_5')}</li>
                         <li>{t('welcome.defender_step_6')}</li>
                     </ol>
-                    <p className="mt-2 pt-2 border-t border-blue-200/50 dark:border-blue-400/20 text-blue-600 dark:text-blue-300">
+                    <p className="mt-2 pt-2 border-t border-focus/30 dark:border-focus/20 text-focus dark:text-focus">
                         💡 {t('welcome.defender_tip')}
                     </p>
                 </div>
@@ -451,7 +451,7 @@ function DefenderWarningBanner() {
             <div className="flex justify-end">
                 <button
                     onClick={handleDismiss}
-                    className="text-[10px] text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                    className="text-[10px] text-focus dark:text-focus underline underline-offset-2 hover:text-focus  dark:hover:text-focus transition-colors"
                 >
                     {t('welcome.cmd_warning_dismiss')}
                 </button>
@@ -477,33 +477,33 @@ function CmdWarningBanner() {
     const cmdExample = t('welcome.cmd_warning_script_example')
 
     return (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
+        <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
             <div className="flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-warning dark:text-warning shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{t('welcome.cmd_warning_title')}</p>
-                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed whitespace-pre-line">{t('welcome.cmd_warning_desc')}</p>
+                    <p className="text-xs font-semibold text-warning dark:text-warning">{t('welcome.cmd_warning_title')}</p>
+                    <p className="text-[11px] text-warning dark:text-warning leading-relaxed whitespace-pre-line">{t('welcome.cmd_warning_desc')}</p>
                 </div>
                 <button
                     onClick={handleDismiss}
-                    className="shrink-0 text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-200 transition-colors"
+                    className="shrink-0 text-warning hover:text-warning dark:text-warning dark:hover:text-warning transition-colors"
                     aria-label={t('welcome.dismiss')}
                 >
                     <X className="w-3.5 h-3.5" />
                 </button>
             </div>
-            <details className="text-[11px] text-amber-700 dark:text-amber-400">
-                <summary className="cursor-pointer select-none font-medium hover:text-amber-900 dark:hover:text-amber-200 transition-colors">
+            <details className="text-[11px] text-warning dark:text-warning">
+                <summary className="cursor-pointer select-none font-medium hover:text-warning dark:hover:text-warning transition-colors">
                     {t('welcome.cmd_warning_example')}
                 </summary>
-                <pre className="mt-2 p-3 rounded-lg bg-amber-100/60 dark:bg-black/30 text-amber-900 dark:text-amber-200 font-mono text-[10px] overflow-x-auto leading-relaxed whitespace-pre">
+                <pre className="mt-2 p-3 rounded-lg bg-warning/15 dark:bg-overlay/30 text-warning dark:text-warning font-mono text-[10px] overflow-x-auto leading-relaxed whitespace-pre">
 {cmdExample}
                 </pre>
             </details>
             <div className="flex justify-end">
                 <button
                     onClick={handleDismiss}
-                    className="text-[10px] text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-200 transition-colors"
+                    className="text-[10px] text-warning dark:text-warning underline underline-offset-2 hover:text-warning dark:hover:text-warning transition-colors"
                 >
                     {t('welcome.cmd_warning_dismiss')}
                 </button>

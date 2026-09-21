@@ -65,14 +65,14 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
 
     return (
         <div className="w-full p-3 space-y-3">
-            <div className="w-full p-3 space-y-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 space-y-4 rounded-xl border border-divider bg-content1">
                 {/* RUST_HOME 显示 */}
                 <div>
                     <div className="flex items-center justify-between mb-1">
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                         {t('rust_service.rust_home_label')}
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </Label>
@@ -83,7 +83,7 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                         {t('rust_service.rust_home_desc')}
                     </p>
                     <div className="flex items-center gap-2">
@@ -92,14 +92,14 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                             readOnly
                             disabled
                             placeholder="/path/to/rust/home"
-                            className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                         />
                         {rustHome && (
                             <Button
                                 variant="outline"
                                 size="icon"
                                 onClick={() => openFolderInFinder(rustHome)}
-                                className="h-8 w-8 shrink-0 shadow-none border-gray-200 dark:border-white/10"
+                                className="h-8 w-8 shrink-0 border-divider"
                             >
                                 <FolderOpen className="h-3.5 w-3.5" />
                             </Button>
@@ -113,7 +113,7 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                         {t('rust_service.cargo_home_label')}
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </Label>
@@ -124,7 +124,7 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                         {t('rust_service.cargo_home_desc')}
                     </p>
                     <div className="flex items-center gap-2">
@@ -133,20 +133,20 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                             onChange={(e) => setCargoHomeState(e.target.value)}
                             placeholder={t('rust_service.cargo_home_placeholder')}
                             disabled={!isActive}
-                            className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                         />
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={handleApplyCargoHome}
                             disabled={isLoading || !isActive}
-                            className="h-8 text-xs shadow-none shrink-0"
+                            className="h-8 text-xs shrink-0"
                         >
                             {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
                             {t('rust_service.apply')}
                         </Button>
                     </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-2">
                         {t('rust_service.cargo_home_tip')}
                     </p>
                 </div>

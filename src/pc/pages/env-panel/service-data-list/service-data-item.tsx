@@ -424,10 +424,10 @@ export function SortableServiceItem({
       className={cn(
         "overflow-hidden", // 添加 overflow-hidden 以裁剪图标
         "mb-2",
-        "group relative flex items-center p-2 rounded-lg cursor-pointer heroui-transition",
+        "group relative flex items-center p-2 rounded-lg cursor-pointer transition-all duration-250",
         "border box-border",
         isSelected
-          ? "bg-gray-50 dark:bg-gray-800 dark:border-gray-600  dark:bg-white/10 dark:border-white/5"
+          ? " bg-background dark:bg-content3 dark:border-default  dark:bg-content2 dark:border-divider"
           : "hover:bg-content2 border-transparent dark:hover:bg-white/5",
         isDragging && "z-50"
       )}
@@ -462,18 +462,18 @@ export function SortableServiceItem({
             <div
               {...attributes}
               {...listeners}
-              className="mr-2 cursor-grab active:cursor-grabbing hover:text-default heroui-transition flex-shrink-0"
+              className="mr-2 cursor-grab active:cursor-grabbing hover:text-default transition-all duration-250 flex-shrink-0"
               title={t('service_item.drag_sort')}
               onClick={(e) => e.stopPropagation()}
             >
-              <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-500" />
+              <GripVertical className="h-4 w-4 text-default dark:text-muted-foreground" />
             </div>
           )}
 
 
           <div className="flex flex-col min-w-0">
             {/* 服务名字 */}
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300 min-w-0 truncate">
+            <span className="font-medium text-sm text-foreground min-w-0 truncate">
               {serviceData.type === ServiceType.Custom && (
                 <span className="mr-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded">{t('service_item.custom_tag')}</span>
               )}
@@ -482,7 +482,7 @@ export function SortableServiceItem({
                 <span className="text-xs text-muted-foreground ml-2">{serviceData.version}</span>
               )}
             </span>
-            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", serviceDataStatus === ServiceDataStatus.Active ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
+            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", serviceDataStatus === ServiceDataStatus.Active ? " text-success dark:text-success" : " text-muted-foreground")}>
               {/* 服务状态 */}
               <StatusView />
               {/* 下载进度展示区域 */}
@@ -536,7 +536,7 @@ export function SortableServiceItem({
       {/* 绝对定位的操作按钮 */}
       <div className={cn(
         "absolute right-3 top-1/2 transform -translate-y-1/2",
-        "flex items-center heroui-transition",
+        "flex items-center transition-all duration-250",
         "opacity-0 group-hover:opacity-100",
         "hover:backdrop-blur-sm rounded",
         "z-10" // 确保按钮在图标上方
@@ -624,7 +624,7 @@ export function SortableServiceItem({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className='shadow-none' onClick={() => {
+            <AlertDialogCancel className='' onClick={() => {
               setShowEnvironmentActivationDialog(false)
             }}>
               {t('common.cancel')}
@@ -647,11 +647,11 @@ export function SortableServiceItem({
           </DialogHeader>
 
           <div className="mt-2">
-            <Input className='shadow-none' value={renameValue} onChange={(e) => setRenameValue((e.target as HTMLInputElement).value)} placeholder={t('service_item.service_name_placeholder')} />
+            <Input className='' value={renameValue} onChange={(e) => setRenameValue((e.target as HTMLInputElement).value)} placeholder={t('service_item.service_name_placeholder')} />
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className='shadow-none' onClick={() => setShowRenameDialog(false)}>
+            <Button variant="outline" className='' onClick={() => setShowRenameDialog(false)}>
               {t('common.cancel')}
             </Button>
             <Button onClick={async () => {

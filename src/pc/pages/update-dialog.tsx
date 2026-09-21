@@ -123,7 +123,7 @@ export function UpdateDialog() {
             variant="outline" 
             onClick={handleRemindLater} 
             disabled={isUpdating}
-            className="shadow-none"
+            className=""
           >
             {t('update_dialog.later')}
           </Button>

@@ -183,9 +183,9 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
     return (
         <div className="w-full space-y-4">
             {/* CA 状态 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                         <Shield className="h-3.5 w-3.5" />
                         {t('ssl_service.ca_title')}
                     </Label>
@@ -194,7 +194,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                             size="sm"
                             variant="outline"
                             onClick={handleExportCA}
-                            className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         >
                             <FolderOpen className="h-3 w-3 mr-1" />
                             {t('ssl_service.open_ca_cert')}
@@ -203,7 +203,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                 </div>
 
                 {!isServiceActive && (
-                    <div className="text-center py-6 text-muted-foreground bg-white dark:bg-white/5 rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                    <div className="text-center py-6 text-muted-foreground bg-content1 dark:bg-content1/40 rounded-lg border border-dashed border-divider">
                         <AlertCircle className="h-6 w-6 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">{t('ssl_service.service_not_active')}</p>
                         <p className="text-xs">{t('ssl_service.service_not_active_hint')}</p>
@@ -219,7 +219,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
 
                 {isServiceActive && !isCheckingCA && !isCAInitialized && (
                     <div className="space-y-3">
-                        <Alert className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                        <Alert className="bg-white dark:bg-content1/40 border-divider">
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription className="text-xs">
                                 {t('ssl_service.ca_not_initialized')}
@@ -227,7 +227,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                         </Alert>
                         <Button
                             onClick={() => setShowCAInitDialog(true)}
-                            className="w-full h-8 text-xs shadow-none"
+                            className="w-full h-8 text-xs"
                         >
                             {t('ssl_service.init_ca')}
                         </Button>
@@ -247,7 +247,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                             <div className="flex items-center justify-between">
                                 <div className="text-xs font-medium text-muted-foreground">{t('ssl_service.ca_details')}</div>
                                 <CollapsibleTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs shadow-none hover:bg-white dark:hover:bg-white/10">
+                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs hover:bg-content1 dark:hover:bg-white/10">
                                         {showCADetails ? (
                                             <>
                                                 <ChevronUp className="h-3 w-3 mr-1" />
@@ -264,7 +264,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
                             </div>
 
                             <CollapsibleContent>
-                                <div className="space-y-2 text-xs mt-2 p-3 bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10">
+                                <div className="space-y-2 text-xs mt-2 p-3 bg-content1 dark:bg-content1/40 rounded border border-divider">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">{t('ssl_service.common_name')}</span>
                                         <span className="font-medium">{caInfo?.subject}</span>
@@ -293,15 +293,15 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
 
             {/* 证书管理 */}
             {isCAInitialized && (
-                <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="p-3 rounded-xl border border-divider bg-content1">
                     <div className="flex items-center justify-between mb-2">
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('ssl_service.cert_management')}</Label>
+                        <Label className="text-xs font-medium text-foreground">{t('ssl_service.cert_management')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setShowIssueCertDialog(true)}
                             disabled={!isServiceActive}
-                            className="h-7 px-2 shadow-none text-xs"
+                            className="h-7 px-2 text-xs"
                         >
                             <Plus className="h-3 w-3 mr-1" />
                             {t('ssl_service.issue_new_cert')}

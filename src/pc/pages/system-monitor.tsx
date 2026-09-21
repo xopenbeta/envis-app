@@ -181,30 +181,30 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
 
   return (
     <div className="w-full space-y-3">
-      <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">{t('system_monitor.title')}</h2>
+      <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">{t('system_monitor.title')}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* CPU */}
-        <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
+        <Card className="border-divider bg-content1">
           <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <Cpu className="w-3.5 h-3.5" /> {t('system_monitor.cpu')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 flex items-center justify-center">
-                <PieChart value={displayInfo.cpu.usage} size={40} strokeWidth={4} color="#3b82f6">
-                  <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400">{hasData ? `${displayInfo.cpu.usage.toFixed(0)}%` : '--'}</span>
+                <PieChart value={displayInfo.cpu.usage} size={40} strokeWidth={4} color="hsl(var(--focus))">
+                  <span className="text-[9px] font-bold text-focus dark:text-focus">{hasData ? `${displayInfo.cpu.usage.toFixed(0)}%` : '--'}</span>
                 </PieChart>
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">{t('system_monitor.system')}</span>
-                  <span className="text-gray-700 dark:text-gray-300">{hasData ? `${displayInfo.cpu.systemUsage.toFixed(1)}%` : '--'}</span>
+                  <span className="text-muted-foreground">{t('system_monitor.system')}</span>
+                  <span className="text-foreground dark:text-foreground">{hasData ? `${displayInfo.cpu.systemUsage.toFixed(1)}%` : '--'}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">{t('system_monitor.user')}</span>
-                  <span className="text-gray-700 dark:text-gray-300">{hasData ? `${displayInfo.cpu.userUsage.toFixed(1)}%` : '--'}</span>
+                  <span className="text-muted-foreground">{t('system_monitor.user')}</span>
+                  <span className="text-foreground dark:text-foreground">{hasData ? `${displayInfo.cpu.userUsage.toFixed(1)}%` : '--'}</span>
                 </div>
               </div>
             </div>
@@ -212,27 +212,27 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
         </Card>
 
         {/* Memory */}
-        <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
+        <Card className="border-divider bg-content1">
           <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <MemoryStick className="w-3.5 h-3.5" /> {t('system_monitor.memory')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 flex items-center justify-center">
-                <PieChart value={displayInfo.memory.usage} size={40} strokeWidth={4} color="#10b981">
-                  <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{hasData ? `${displayInfo.memory.usage.toFixed(0)}%` : '--'}</span>
+                <PieChart value={displayInfo.memory.usage} size={40} strokeWidth={4} color="hsl(var(--success))">
+                  <span className="text-[9px] font-bold text-success dark:text-success">{hasData ? `${displayInfo.memory.usage.toFixed(0)}%` : '--'}</span>
                 </PieChart>
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">{t('system_monitor.used')}</span>
-                  <span className="text-gray-700 dark:text-gray-300">{formatMetric(displayInfo.memory.used, formatBytes)}</span>
+                  <span className="text-muted-foreground">{t('system_monitor.used')}</span>
+                  <span className="text-foreground dark:text-foreground">{formatMetric(displayInfo.memory.used, formatBytes)}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">{t('system_monitor.total')}</span>
-                  <span className="text-gray-700 dark:text-gray-300">{formatMetric(displayInfo.memory.total, formatBytes)}</span>
+                  <span className="text-muted-foreground">{t('system_monitor.total')}</span>
+                  <span className="text-foreground dark:text-foreground">{formatMetric(displayInfo.memory.total, formatBytes)}</span>
                 </div>
               </div>
             </div>
@@ -240,27 +240,27 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
         </Card>
 
         {/* Disk */}
-        <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
+        <Card className="border-divider bg-content1">
           <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <HardDrive className="w-3.5 h-3.5" /> {t('system_monitor.disk')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 flex items-center justify-center">
-                <PieChart value={displayInfo.disk.usage} size={40} strokeWidth={4} color="#f59e0b">
-                  <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">{hasData ? `${displayInfo.disk.usage.toFixed(0)}%` : '--'}</span>
+                <PieChart value={displayInfo.disk.usage} size={40} strokeWidth={4} color="hsl(var(--warning))">
+                  <span className="text-[9px] font-bold text-warning dark:text-warning">{hasData ? `${displayInfo.disk.usage.toFixed(0)}%` : '--'}</span>
                 </PieChart>
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">{t('system_monitor.used')}</span>
-                  <span className="text-gray-700 dark:text-gray-300">{formatMetric(displayInfo.disk.used, formatBytes)}</span>
+                  <span className="text-muted-foreground">{t('system_monitor.used')}</span>
+                  <span className="text-foreground dark:text-foreground">{formatMetric(displayInfo.disk.used, formatBytes)}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400">{t('system_monitor.total')}</span>
-                  <span className="text-gray-700 dark:text-gray-300">{formatMetric(displayInfo.disk.total, formatBytes)}</span>
+                  <span className="text-muted-foreground">{t('system_monitor.total')}</span>
+                  <span className="text-foreground dark:text-foreground">{formatMetric(displayInfo.disk.total, formatBytes)}</span>
                 </div>
               </div>
             </div>
@@ -268,9 +268,9 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
         </Card>
 
         {/* Network */}
-        <Card className="shadow-sm border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
+        <Card className="border-divider bg-content1">
           <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-xs font-medium text-gray-500 flex items-center gap-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <Wifi className="w-3.5 h-3.5" /> {t('system_monitor.network')}
             </CardTitle>
           </CardHeader>
@@ -278,18 +278,18 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
             <div className="flex items-center gap-3">
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400 flex items-center gap-1">
-                    <ArrowUp className={`w-3 h-3 ${displayInfo.network.upload > 0 ? 'text-blue-500' : 'text-gray-300 dark:text-gray-600'}`} />
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <ArrowUp className={`w-3 h-3 ${displayInfo.network.upload > 0 ? ' text-focus' : ' text-default dark:text-muted-foreground'}`} />
                     {t('system_monitor.upload')}
                   </span>
-                  <span className="text-gray-700 dark:text-gray-300">{hasData ? `${formatBytes(displayInfo.network.upload)}/s` : '--'}</span>
+                  <span className="text-foreground dark:text-foreground">{hasData ? `${formatBytes(displayInfo.network.upload)}/s` : '--'}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-gray-400 flex items-center gap-1">
-                    <ArrowDown className={`w-3 h-3 ${displayInfo.network.download > 0 ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`} />
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <ArrowDown className={`w-3 h-3 ${displayInfo.network.download > 0 ? ' text-success' : ' text-default dark:text-muted-foreground'}`} />
                     {t('system_monitor.download')}
                   </span>
-                  <span className="text-gray-700 dark:text-gray-300">{hasData ? `${formatBytes(displayInfo.network.download)}/s` : '--'}</span>
+                  <span className="text-foreground dark:text-foreground">{hasData ? `${formatBytes(displayInfo.network.download)}/s` : '--'}</span>
                 </div>
               </div>
             </div>

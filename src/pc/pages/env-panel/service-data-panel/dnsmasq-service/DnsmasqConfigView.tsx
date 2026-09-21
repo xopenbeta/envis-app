@@ -162,9 +162,9 @@ export function DnsmasqConfigView({
 
     return (
         <div className="w-full p-3 space-y-4">
-            <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20 mb-4">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-                <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">
+            <Alert className="bg-warning/10 dark:bg-warning/10 border-warning/30 dark:border-warning/20 mb-4">
+                <AlertTriangle className="h-4 w-4 text-warning dark:text-warning" />
+                <AlertDescription className="text-warning dark:text-warning/90 text-xs mt-1.5 space-y-2">
                     {isMacOS && (
                         <p>
                             当前是 macOS：请先在 <span className="font-mono">/etc/resolver</span> 中准备对应域名的 resolver 配置，否则自定义域名可能无法通过 dnsmasq 正常解析。
@@ -174,16 +174,16 @@ export function DnsmasqConfigView({
             </Alert>
 
             {/* 控制面板 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                         服务控制
                     </Label>
                     <div className="flex items-center gap-2">
                         <div className={cn(
                             "w-2 h-2 rounded-full",
-                            serviceStatus === ServiceStatus.Running ? "bg-green-500" : 
-                            serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+                            serviceStatus === ServiceStatus.Running ? " bg-success" : 
+                            serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
                         )} />
                         <span className="text-xs font-normal text-muted-foreground">
                             {serviceStatus === ServiceStatus.Running ? '运行中' : 
@@ -195,39 +195,39 @@ export function DnsmasqConfigView({
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={handleStartService}
                         disabled={serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}
                     >
-                        <Play className="h-3.5 w-3.5 text-green-600" />
+                        <Play className="h-3.5 w-3.5 text-success" />
                         启动
                     </Button>
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={handleStopService}
                         disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                     >
-                        <Square className="h-3.5 w-3.5 text-red-600" />
+                        <Square className="h-3.5 w-3.5 text-danger" />
                         停止
                     </Button>
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={handleRestartService}
                         disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                     >
-                        <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
+                        <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
                         重启
                     </Button>
                 </div>
             </div>
 
             {/* 配置路径设置 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
+                <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
                     配置文件设置
                 </Label>
                 <div className="space-y-4">
@@ -239,14 +239,14 @@ export function DnsmasqConfigView({
                                 value={editingConfigPath} 
                                 onChange={(e) => setEditingConfigPath(e.target.value)}
                                 placeholder="输入绝对路径..."
-                                className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                             />
                             <Button 
                                 variant="outline" 
                                 size="icon" 
                                 onClick={handleOpenConfigFolder} 
                                 title="打开所在文件夹"
-                                className="h-8 w-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="h-8 w-8 bg-content1 dark:bg-content1/40 border-divider"
                             >
                                 <FolderOpen className="h-3.5 w-3.5" />
                             </Button>
@@ -257,7 +257,7 @@ export function DnsmasqConfigView({
                             size="sm" 
                             onClick={handleSetConfigPath} 
                             disabled={editingConfigPath === configPath}
-                            className="h-8 text-xs shadow-none"
+                            className="h-8 text-xs"
                         >
                             更新路径
                         </Button>

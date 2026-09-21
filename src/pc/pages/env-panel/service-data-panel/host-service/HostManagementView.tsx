@@ -371,22 +371,22 @@ export function HostManagementView({
     return (
         <div className="w-full p-3 space-y-4">
 
-            <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20 mb-4">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-                {/* <AlertTitle className="text-yellow-800 dark:text-yellow-500 text-xs font-semibold">
+            <Alert className="bg-warning/10 dark:bg-warning/10 border-warning/30 dark:border-warning/20 mb-4">
+                <AlertTriangle className="h-4 w-4 text-warning dark:text-warning" />
+                {/* <AlertTitle className="text-warning dark:text-warning text-xs font-semibold">
                         提示
                     </AlertTitle> */}
-                <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">
+                <AlertDescription className="text-warning dark:text-warning/90 text-xs mt-1.5 space-y-2">
                     <p>
                         管理系统 hosts 文件中的域名映射。注意：修改 Hosts 文件需要管理员权限，操作时可能需要输入密码。
                     </p>
                 </AlertDescription>
             </Alert>
 
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex justify-between w-full items-center mb-4">
                     <div>
-                        <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                             <Globe className="h-3.5 w-3.5" />
                             Hosts 管理
                         </Label>
@@ -397,7 +397,7 @@ export function HostManagementView({
                             size="sm"
                             onClick={handleOpenHostsFile}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-7 text-xs px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-7 text-xs px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             <FolderOpen className="h-3 w-3 mr-1" />
                             打开 hosts
@@ -407,7 +407,7 @@ export function HostManagementView({
                             size="sm"
                             onClick={handleAddClick}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-7 text-xs px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-7 text-xs px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             <Plus className="h-3 w-3 mr-1" />
                             添加 Host
@@ -417,7 +417,7 @@ export function HostManagementView({
 
                 <div className="space-y-2">
                     {hosts.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed border-gray-200 dark:border-white/10">
+                        <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed border-divider">
                             <p className="text-sm">还没有配置任何 host</p>
                             <p className="text-xs mt-1">点击"添加 Host"开始配置</p>
                         </div>
@@ -427,8 +427,8 @@ export function HostManagementView({
                                 <div
                                     key={host.id}
                                     className={`flex items-center justify-between gap-2 p-3 border rounded-lg transition-colors ${host.enabled
-                                            ? 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10'
-                                            : 'bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/10 opacity-75'
+                                            ? 'bg-white dark:bg-content1/40 border-divider'
+                                            : ' bg-background dark:bg-content1/20 border-divider opacity-75'
                                         }`}
                                 >
                                     <div className="flex flex-col gap-1 overflow-hidden">
@@ -437,7 +437,7 @@ export function HostManagementView({
                                             <span className={`text-sm font-medium leading-none ${!host.enabled && 'text-muted-foreground'}`}>
                                                 {host.hostname}
                                             </span>
-                                            <span className={`text-[12px] font-mono bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-muted-foreground leading-none`}>
+                                            <span className={`text-[12px] font-mono bg-content2 dark:bg-content2 px-1 py-0.5 rounded text-muted-foreground leading-none`}>
                                                 {host.ip}
                                             </span>
                                         </div>
@@ -475,7 +475,7 @@ export function HostManagementView({
                                             size="sm"
                                             onClick={() => handleDelete(host)}
                                             disabled={isLoading || !isServiceDataActive}
-                                            className="h-5 w-5 p-0 text-destructive hover:text-destructive hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            className="h-5 w-5 p-0 text-danger  hover:text-danger hover:bg-danger/10 dark:hover:bg-danger/20"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -506,7 +506,7 @@ export function HostManagementView({
                                 value={formData.ip}
                                 onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
                                 placeholder="例如: 127.0.0.1"
-                                className="shadow-none"
+                                className=""
                             />
                         </div>
                         <div className="space-y-2">
@@ -516,7 +516,7 @@ export function HostManagementView({
                                 value={formData.hostname}
                                 onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
                                 placeholder="例如: example.local"
-                                className="shadow-none"
+                                className=""
                             />
                         </div>
                         <div className="space-y-2">
@@ -526,7 +526,7 @@ export function HostManagementView({
                                 value={formData.comment}
                                 onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
                                 placeholder="添加说明信息"
-                                className="shadow-none"
+                                className=""
                             />
                         </div>
                         <div className="flex items-center space-x-2">
@@ -539,7 +539,7 @@ export function HostManagementView({
                         </div>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className='shadow-none' onClick={resetForm}>取消</AlertDialogCancel>
+                        <AlertDialogCancel className='' onClick={resetForm}>取消</AlertDialogCancel>
                         <AlertDialogAction onClick={handleSave} disabled={isLoading}>
                             {isLoading ? '保存中...' : '保存'}
                         </AlertDialogAction>
@@ -570,13 +570,13 @@ export function HostManagementView({
                                     }
                                 }}
                                 placeholder="输入您的系统密码"
-                                className="shadow-none"
+                                className=""
                                 autoFocus
                             />
                         </div>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className='shadow-none' onClick={() => {
+                        <AlertDialogCancel className='' onClick={() => {
                             setPassword('')
                             setPendingAction(null)
                         }}>

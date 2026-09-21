@@ -170,9 +170,9 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
 
     return (
         <TooltipProvider>
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 {/* 项目目录标题 */}
-                <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
                     {t('custom_service.project_dir_label')}
                 </Label>
                 <p className="text-[10px] text-muted-foreground mb-3">
@@ -185,7 +185,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                         value={path}
                         onChange={(e) => setPath(e.target.value)}
                         placeholder="/path/to/project"
-                        className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         disabled={isLoading || !isServiceDataActive}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') handleApply()
@@ -196,7 +196,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                         size="sm"
                         onClick={handleApply}
                         disabled={isLoading || !isServiceDataActive}
-                        className="shadow-none h-8 text-xs"
+                        className="h-8 text-xs"
                     >
                         {isLoading ? t('custom_service.applying') : t('custom_service.apply')}
                     </Button>
@@ -211,7 +211,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 size="sm"
                                 onClick={handleOpenVSCode}
                                 disabled={!path.trim() || !isServiceDataActive}
-                                className="h-8 w-8 p-0 shadow-none"
+                                className="h-8 w-8 p-0"
                             >
                                 <Code2 className="h-4 w-4" />
                             </Button>
@@ -226,7 +226,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 size="sm"
                                 onClick={handleOpenFolder}
                                 disabled={!path.trim() || !isServiceDataActive}
-                                className="h-8 w-8 p-0 shadow-none"
+                                className="h-8 w-8 p-0"
                             >
                                 <FolderOpen className="h-4 w-4" />
                             </Button>
@@ -241,7 +241,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 size="sm"
                                 onClick={handleOpenTerminal}
                                 disabled={!path.trim() || !isServiceDataActive}
-                                className="h-8 w-8 p-0 shadow-none"
+                                className="h-8 w-8 p-0"
                             >
                                 <Terminal className="h-4 w-4" />
                             </Button>
@@ -262,10 +262,10 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                             {t('custom_service.advanced_options')}
                         </Button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-2 pt-2 border-t border-gray-200 dark:border-white/5">
+                    <CollapsibleContent className="mt-2 pt-2 border-t border-divider">
                         <div className="flex items-center justify-between">
                             <div>
-                                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="text-xs font-medium text-foreground">
                                     {t('custom_service.auto_chdir_label')}
                                 </Label>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">

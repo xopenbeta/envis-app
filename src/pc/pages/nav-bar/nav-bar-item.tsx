@@ -89,7 +89,7 @@ export function SortableEnvironmentItem({
       <div
         className={cn(
           // 使 item 不被内部文字撑宽，并让文字能正确省略
-          "group relative flex items-center p-2 rounded-lg cursor-pointer heroui-transition overflow-hidden w-full min-w-0",
+          "group relative flex items-center p-2 rounded-lg cursor-pointer transition-all duration-250 overflow-hidden w-full min-w-0",
           isSelected && "bg-content4",
           isDragging && "z-50"
         )}
@@ -101,7 +101,7 @@ export function SortableEnvironmentItem({
             <div
               {...attributes}
               {...listeners}
-              className="mr-2 cursor-grab active:cursor-grabbing hover:text-foreground heroui-transition flex-shrink-0"
+              className="mr-2 cursor-grab active:cursor-grabbing hover:text-foreground transition-all duration-250 flex-shrink-0"
               title={t('nav_bar_item.drag_to_sort')}
               onClick={(e) => e.stopPropagation()}
             >
@@ -110,10 +110,10 @@ export function SortableEnvironmentItem({
           )}
 
           <div className="flex flex-col min-w-0">
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300 min-w-0 truncate">
+            <span className="font-medium text-sm text-foreground min-w-0 truncate">
               {environment.name}
             </span>
-            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", currentStatus === 'active' ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
+            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", currentStatus === 'active' ? " text-success dark:text-success" : " text-muted-foreground")}>
               {currentStatus === 'active' ? 'Active' : 'Inactive'}
             </span>
           </div>
@@ -123,7 +123,7 @@ export function SortableEnvironmentItem({
         <div
           className={cn(
             "absolute right-3 top-1/2 transform -translate-y-1/2",
-            "flex items-center heroui-transition",
+            "flex items-center transition-all duration-250",
             "opacity-0 group-hover:opacity-100",
             "hover:backdrop-blur-sm rounded"
           )}

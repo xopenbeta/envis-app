@@ -199,12 +199,12 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
     return (<>
         <div className="w-full p-3 space-y-3">
             {conflictManagers.length > 0 && (
-                <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/20">
-                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-500" />
-                    <AlertTitle className="text-red-800 dark:text-red-500 text-xs font-semibold flex items-center gap-2">
+                <Alert variant="destructive" className="bg-danger/10 dark:bg-danger/10 border-danger/30 dark:border-danger/20">
+                    <AlertTriangle className="h-4 w-4 text-danger dark:text-danger" />
+                    <AlertTitle className="text-danger dark:text-danger text-xs font-semibold flex items-center gap-2">
                         {t('node_service.conflict_manager_title', { defaultValue: '检测到版本管理器冲突' })}
                     </AlertTitle>
-                    <AlertDescription className="text-red-700 dark:text-red-600/90 text-xs mt-1.5">
+                    <AlertDescription className="text-danger dark:text-danger/90 text-xs mt-1.5">
                         <p>
                             {t('node_service.conflict_manager_desc', {
                                 managers: conflictManagers.join(', '),
@@ -216,12 +216,12 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             )}
 
             {showLegacyMacWarning && (
-                <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20">
-                    <AlertTitle className="text-yellow-800 dark:text-yellow-500 text-xs font-semibold flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+                <Alert className="bg-warning/10 dark:bg-warning/10 border-warning/30 dark:border-warning/20">
+                    <AlertTitle className="text-warning dark:text-warning text-xs font-semibold flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-warning dark:text-warning" />
                         {t('node_service.macos_silicon_warning_title')}
                     </AlertTitle>
-                    <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">
+                    <AlertDescription className="text-warning dark:text-warning/90 text-xs mt-1.5 space-y-2">
                         <p>
                             {t('node_service.macos_silicon_warning_desc_1')}
                         </p>
@@ -232,13 +232,13 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 </Alert>
             )}
 
-            <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 space-y-3 rounded-xl border border-divider bg-content1">
                 {/* Registry Configuration */}
                 <div>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                     {t('node_service.registry_url')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
@@ -251,7 +251,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                         {t('node_service.registry_tooltip')}
                     </p>
                     <div className="flex items-center space-x-2">
@@ -260,14 +260,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             onChange={(e) => setRegistry(e.target.value)}
                             placeholder={t('node_service.registry_url')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         />
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => applyRegistry(registry)}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('node_service.apply')}
                         </Button>
@@ -275,13 +275,13 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
 
                     {/* Quick Registry Options */}
                     <div className="flex flex-wrap gap-2 items-center mt-2">
-                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('node_service.quick_set')}</Label>
+                        <Label className="block text-[10px] text-muted-foreground uppercase tracking-wider">{t('node_service.quick_set')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => applyRegistry('https://registry.npmjs.org/')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('node_service.official')}
                         </Button>
@@ -290,7 +290,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             variant="outline"
                             onClick={() => applyRegistry('https://registry.npmmirror.com/')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('node_service.taobao')}
                         </Button>
@@ -302,7 +302,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                     {t('node_service.config_prefix')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
@@ -315,7 +315,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                         {t('node_service.prefix_tooltip')}
                     </p>
                     <div className="flex items-center space-x-2">
@@ -324,14 +324,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             onChange={(e) => setPrefix(e.target.value)}
                             placeholder={t('node_service.prefix_placeholder')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         />
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => applyPrefix(prefix)}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('node_service.apply')}
                         </Button>
@@ -343,7 +343,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                     PNPM_HOME
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
@@ -356,7 +356,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                         {t('node_service.pnpm_home_tooltip')}
                     </p>
                     <div className="flex items-center space-x-2">
@@ -365,14 +365,14 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                             onChange={(e) => setPnpmHomeState(e.target.value)}
                             placeholder={t('node_service.pnpm_home_placeholder')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         />
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => applyPnpmHome(pnpmHome)}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('node_service.apply')}
                         </Button>
@@ -381,21 +381,21 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
             </div>
 
             {/* Global npm Packages */}
-            <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-1">
                     <div>
                         <div className="flex items-center gap-2">
-                            {/* <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" /> */}
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {/* <Package className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" /> */}
+                            <Label className="text-xs font-medium text-foreground">
                                 {t('node_service.global_packages')}
                             </Label>
                             {isServiceDataActive && (
-                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                <span className="text-[10px] text-muted-foreground dark:text-muted-foreground">
                                     ({globalPackages.length})
                                 </span>
                             )}
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1">
                             {t('node_service.global_packages_tooltip')}
                         </p>
                     </div>
@@ -467,18 +467,18 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 </div>
 
                 {!isServiceDataActive ? (
-                    <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+                    <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
                         <Package className="h-6 w-6 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">{t('node_service.service_inactive', { defaultValue: '服务未激活' })}</p>
                         <p className="text-xs">{t('node_service.activate_to_view_packages', { defaultValue: '请先激活服务以查看全局包' })}</p>
                     </div>
                 ) : (
                     isLoadingPackages ? (
-                        <div className="flex items-center justify-center py-8 text-xs text-gray-500">
+                        <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
                             {t('node_service.loading_packages')}
                         </div>
                     ) : globalPackages.length === 0 ? (
-                        <div className="flex items-center justify-center py-8 text-xs text-gray-500">
+                        <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
                             {t('node_service.no_packages')}
                         </div>
                     ) : (

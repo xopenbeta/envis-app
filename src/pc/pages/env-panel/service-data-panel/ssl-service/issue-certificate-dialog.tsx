@@ -96,7 +96,7 @@ export function IssueCertificateDialog({
                             onChange={(e) => setDomain(e.target.value)}
                             placeholder={t('ssl_service.domain_placeholder')}
                             required
-                            className="shadow-none"
+                            className=""
                         />
                         <p className="text-xs text-muted-foreground">
                             {t('ssl_service.domain_hint')}
@@ -113,7 +113,7 @@ export function IssueCertificateDialog({
                             min={1}
                             max={825} // Chrome/Safari 最长支持 825 天
                             required
-                            className="shadow-none"
+                            className=""
                         />
                         <p className="text-xs text-muted-foreground">
                             {t('ssl_service.validity_hint')}
@@ -134,14 +134,14 @@ export function IssueCertificateDialog({
                                         handleAddSan()
                                     }
                                 }}
-                                className="shadow-none"
+                                className=""
                             />
                             <Button
                                 type="button"
                                 size="icon"
                                 variant="outline"
                                 onClick={handleAddSan}
-                                className="shadow-none"
+                                className=""
                             >
                                 <Plus className="h-4 w-4" />
                             </Button>
@@ -170,11 +170,11 @@ export function IssueCertificateDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
-                            className="shadow-none"
+                            className=""
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button type="submit" disabled={isLoading} className="shadow-none">
+                        <Button type="submit" disabled={isLoading} className="">
                             {isLoading ? t('ssl_service.issuing') : t('ssl_service.issue_cert_btn')}
                         </Button>
                     </DialogFooter>

@@ -5,15 +5,15 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium heroui-transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-heroui-sm hover:bg-primary/90 active:scale-95',
-        destructive: 'bg-danger text-danger-foreground shadow-heroui-sm hover:bg-danger/90 active:scale-95',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95',
+        destructive: 'bg-danger text-danger-foreground hover:bg-danger/90 active:scale-95',
         outline:
-          'border border-divider bg-background dark:bg-content3 shadow-heroui-sm hover:bg-content2 dark:hover:bg-content3 hover:border-primary active:scale-95',
-        secondary: 'bg-content2 dark:bg-content3 text-foreground shadow-heroui-sm hover:bg-content3 dark:hover:bg-content4 active:scale-95',
+          'border border-divider bg-background dark:bg-content3 hover:bg-content2 dark:hover:bg-content3 hover:border-primary active:scale-95',
+        secondary: 'bg-content2 dark:bg-content3 text-foreground hover:bg-content3 dark:hover:bg-content4 active:scale-95',
         ghost: 'hover:bg-content2 dark:hover:bg-content3 hover:text-foreground active:scale-95',
         link: 'text-primary underline-offset-4 hover:underline active:scale-95'
       },

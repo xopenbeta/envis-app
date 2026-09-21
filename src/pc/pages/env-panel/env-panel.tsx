@@ -84,7 +84,7 @@ export function EnvironmentPanel({ onOpen }: {
         <ServiceList onOpen={onOpen} />
       </ResizablePanel>
 
-      <ResizableHandle className="w-px bg-border hover:bg-default heroui-transition" />
+      <ResizableHandle className="w-px bg-border hover:bg-default transition-all duration-250" />
 
       {/* Service Detail or Dashboard */}
       <ResizablePanel defaultSize={69} minSize={40}>

@@ -86,13 +86,13 @@ export function PipConfigView({
 
     return (
         <div className="w-full p-3 pb-0">
-            <div className="w-full p-3 space-y-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 space-y-4 rounded-xl border border-divider bg-content1">
                 {/* Index URL Configuration */}
                 <div>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                     {t('python_service.pip_index_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
@@ -111,14 +111,14 @@ export function PipConfigView({
                             onChange={(e) => setConfig(prev => prev ? { ...prev, indexUrl: e.target.value } : { indexUrl: e.target.value, trustedHost: '' })}
                             placeholder={t('python_service.pip_index_placeholder')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="flex-1 h-8 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         />
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => config?.indexUrl && setIndexUrl(config.indexUrl)}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('python_service.apply')}
                         </Button>
@@ -126,13 +126,13 @@ export function PipConfigView({
 
                     {/* Quick Index URL Options */}
                     <div className="flex flex-wrap gap-2 items-center mt-2">
-                        <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('python_service.quick_set')}</Label>
+                        <Label className="block text-[10px] text-muted-foreground uppercase tracking-wider">{t('python_service.quick_set')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setIndexUrl('https://pypi.org/simple')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('python_service.official')}
                         </Button>
@@ -141,7 +141,7 @@ export function PipConfigView({
                             variant="outline"
                             onClick={() => setIndexUrl('https://pypi.tuna.tsinghua.edu.cn/simple')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('python_service.tuna')}
                         </Button>
@@ -150,7 +150,7 @@ export function PipConfigView({
                             variant="outline"
                             onClick={() => setIndexUrl('https://mirrors.aliyun.com/pypi/simple')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('python_service.aliyun')}
                         </Button>
@@ -159,7 +159,7 @@ export function PipConfigView({
                             variant="outline"
                             onClick={() => setIndexUrl('https://pypi.org/simple')}
                             disabled={isLoading || !isServiceDataActive}
-                            className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             {t('python_service.reset_default')}
                         </Button>
@@ -173,7 +173,7 @@ export function PipConfigView({
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div className="flex items-center gap-1.5 cursor-help w-fit">
-                                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('python_service.alias_label')}</Label>
+                                        <Label className="text-xs font-medium text-foreground">{t('python_service.alias_label')}</Label>
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </div>
                                 </TooltipTrigger>
@@ -182,7 +182,7 @@ export function PipConfigView({
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                        <p className="text-[10px] text-muted-foreground dark:text-muted-foreground">
                             {t('python_service.alias_desc')}
                         </p>
                     </div>
@@ -191,7 +191,7 @@ export function PipConfigView({
                             checked={python3AsPython}
                             onCheckedChange={handlePython3AsPythonChange}
                             disabled={isLoading || !isServiceDataActive}
-                            className="data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-white/20"
+                            className="data-[state=unchecked]:bg-content4 dark:data-[state=unchecked]:bg-content1/20"
                         />
                     </div>
                 </div>

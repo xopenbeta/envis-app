@@ -82,7 +82,7 @@ export function CAInitDialog({
                             onChange={(e) => setFormData({ ...formData, commonName: e.target.value })}
                             placeholder={t('ssl_service.cn_placeholder')}
                             required
-                            className="shadow-none"
+                            className=""
                         />
                     </div>
 
@@ -94,7 +94,7 @@ export function CAInitDialog({
                             onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
                             placeholder={t('ssl_service.org_placeholder')}
                             required
-                            className="shadow-none"
+                            className=""
                         />
                     </div>
 
@@ -105,7 +105,7 @@ export function CAInitDialog({
                             value={formData.organizationalUnit || ''}
                             onChange={(e) => setFormData({ ...formData, organizationalUnit: e.target.value })}
                             placeholder={t('ssl_service.ou_placeholder')}
-                            className="shadow-none"
+                            className=""
                         />
                     </div>
 
@@ -119,7 +119,7 @@ export function CAInitDialog({
                                 placeholder={t('ssl_service.country_placeholder')}
                                 maxLength={2}
                                 required
-                                className="shadow-none"
+                                className=""
                             />
                         </div>
 
@@ -133,7 +133,7 @@ export function CAInitDialog({
                                 min={365}
                                 max={7300}
                                 required
-                                className="shadow-none"
+                                className=""
                             />
                         </div>
                     </div>
@@ -146,7 +146,7 @@ export function CAInitDialog({
                             onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                             placeholder={t('ssl_service.state_placeholder')}
                             required
-                            className="shadow-none"
+                            className=""
                         />
                     </div>
 
@@ -158,7 +158,7 @@ export function CAInitDialog({
                             onChange={(e) => setFormData({ ...formData, locality: e.target.value })}
                             placeholder={t('ssl_service.locality_placeholder')}
                             required
-                            className="shadow-none"
+                            className=""
                         />
                     </div>
 
@@ -168,11 +168,11 @@ export function CAInitDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
-                            className="shadow-none"
+                            className=""
                         >
                             {t('common.cancel')}
                         </Button>
-                        <Button type="submit" disabled={isLoading} className="shadow-none">
+                        <Button type="submit" disabled={isLoading} className="">
                             {isLoading ? t('ssl_service.initializing') : t('ssl_service.init_ca_btn')}
                         </Button>
                     </DialogFooter>

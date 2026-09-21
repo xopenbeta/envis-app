@@ -173,7 +173,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
     if (isSupported === false) {
         return (
             <div className="w-full p-3 pb-0">
-                <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/20">
+                <Alert variant="destructive" className="bg-danger/10 dark:bg-danger/10 border-danger/30 dark:border-danger/20">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle className="ml-2">{t('python_service.venv_unsupported_title')}</AlertTitle>
                     <AlertDescription className="ml-2 mt-1 text-xs">
@@ -186,13 +186,13 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
 
     return (
         <div className="w-full p-3 space-y-6">
-            <div className="w-full p-3 space-y-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="w-full p-3 space-y-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                         {t('python_service.venv_title')}
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </Label>
@@ -209,7 +209,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-5 w-5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                            className="h-5 w-5 text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
                             onClick={loadVenvs}
                             disabled={isLoading || isSupported === null}
                         >
@@ -219,7 +219,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 text-xs bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 shadow-none"
+                        className="h-7 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={() => setShowCreateDialog(true)}
                         disabled={!isServiceActive}
                     >
@@ -254,12 +254,12 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                                     value={venvsDir}
                                     readOnly
                                     disabled
-                                    className="text-xs font-mono bg-gray-100 dark:bg-white/5"
+                                    className="text-xs font-mono bg-content2 dark:bg-content1/40"
                                 />
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={isCreating} className="shadow-none" size="sm">{t('python_service.cancel')}</Button>
+                            <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={isCreating} className="" size="sm">{t('python_service.cancel')}</Button>
                             <Button onClick={handleCreate} disabled={isCreating} size="sm">
                                 {isCreating ? t('python_service.creating') : t('python_service.create')}
                             </Button>
@@ -269,30 +269,30 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
 
                 {/* 列表区域 */}
                 {venvs.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground bg-white dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/5">
+                    <div className="text-center py-6 text-muted-foreground bg-content1 dark:bg-content1/40 rounded-lg border border-divider">
                         <Box className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p className="text-xs">{t('python_service.no_venvs')}</p>
                     </div>
                 ) : (
-                    <div className="rounded-lg border border-gray-200 dark:border-white/5 bg-white dark:bg-white/5">
+                    <div className="rounded-lg border border-divider bg-content1 dark:bg-content1/40">
                         <ScrollArea className="">
                             <div className="space-y-1 p-2">
                                 {venvs.map(venv => (
-                                    <div key={venv} className="flex items-center justify-between p-2 pl-3 rounded-md hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-all group border border-transparent hover:border-gray-100 dark:hover:border-white/5">
+                                    <div key={venv} className="flex items-center justify-between p-2 pl-3 rounded-md hover:bg-background dark:hover:bg-white/[0.03] transition-all group border border-transparent hover:border-divider dark:hover:border-white/5">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                            <div className="p-1.5 rounded-full bg-focus/10 dark:bg-focus/10 text-focus dark:text-focus">
                                                 <Terminal className="h-3.5 w-3.5" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{venv}</span>
-                                                {/* <span className="text-[10px] text-gray-400" title={`${venvsDir}/${venv}`}>{venvsDir}/{venv}</span> */}
+                                                <span className="text-xs font-medium text-foreground dark:text-foreground">{venv}</span>
+                                                {/* <span className="text-[10px] text-muted-foreground" title={`${venvsDir}/${venv}`}>{venvsDir}/{venv}</span> */}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="h-7 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                                className="h-7 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                                                 onClick={() => handleActivateVenv(venv)}
                                                 disabled={activatingVenvName === venv}
                                             >
@@ -303,7 +303,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        className="h-7 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                                        className="h-7 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                                                     >
                                                         <MoreHorizontal className="h-3 w-3" />
                                                     </Button>
@@ -315,7 +315,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => handleRemove(venv)}
-                                                        className="text-red-600"
+                                                        className="text-danger"
                                                     >
                                                         <Trash2 className="h-4 w-4 mr-2" />
                                                         {t('python_service.delete_venv')}

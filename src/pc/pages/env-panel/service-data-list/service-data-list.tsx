@@ -148,7 +148,7 @@ export function ServiceList({ onOpen }: {
             placeholder={t('service_list.search_services')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-8 w-full text-sm shadow-none rounded-lg"
+            className="pl-10 pr-8 w-full text-sm rounded-lg"
             autoFocus={isSearchExpanded}
           />
           <Button

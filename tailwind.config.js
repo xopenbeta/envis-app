@@ -19,54 +19,12 @@ module.exports = {
     extend: {
       colors: {
         border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))'
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))'
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))'
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))'
-        },
-        // HeroUI Design System colors
-        default: {
-          DEFAULT: 'hsl(var(--default))',
-          foreground: 'hsl(var(--default-foreground))'
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))'
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))'
-        },
-        danger: {
-          DEFAULT: 'hsl(var(--danger))',
-          foreground: 'hsl(var(--danger-foreground))'
         },
         content1: {
           DEFAULT: 'hsl(var(--content1))',
@@ -84,25 +42,50 @@ module.exports = {
           DEFAULT: 'hsl(var(--content4))',
           foreground: 'hsl(var(--content4-foreground))'
         },
+        default: {
+          DEFAULT: 'hsl(var(--default))',
+          foreground: 'hsl(var(--default-foreground))'
+        },
+        muted: {
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))'
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))'
+        },
+        danger: {
+          DEFAULT: 'hsl(var(--danger))',
+          foreground: 'hsl(var(--danger-foreground))'
+        },
         focus: 'hsl(var(--focus))',
         overlay: 'hsl(var(--overlay))',
         divider: 'hsl(var(--divider))'
       },
+      // Voxt 圆角刻度（定值见 global.css 三级区）：面板/对话框 16 / 卡片 12 / 控件 10 / 小件 8,6
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)'
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)'
       },
+      // 全应用唯一阴影，仅用于真正浮出的层（菜单/弹层/对话框/提示条），页面内表面一律无阴影
       boxShadow: {
-        'heroui-sm': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        'heroui-md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'heroui-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'heroui-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'heroui-2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        'heroui-inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+        pop: 'var(--shadow-pop)'
       },
       backdropBlur: {
-        'heroui': '20px',
+        pop: '20px'
+      },
+      // macOS 原生基准字号
+      fontSize: {
+        sm: ['13px', '20px']
+      },
+      transitionDuration: {
+        250: '250ms'
       },
       keyframes: {
         'accordion-down': {

@@ -124,7 +124,7 @@ export default function Envis() {
         }}
       >
         <div className='w-full h-screen flex justify-center items-center'>
-          <div style={{ width: 'calc(100% - 8px)', height: 'calc(100vh - 10px)' }} className="bg-white dark:bg-[#030303] flex flex-col overflow-hidden rounded-lg border border-gray-200 dark:border-white/5 shadow-sm">
+          <div style={{ width: 'calc(100% - 8px)', height: 'calc(100vh - 10px)' }} className="bg-white dark:bg-background flex flex-col overflow-hidden rounded-lg border border-divider">
             {selectedEnvironmentId ? (
               <EnvironmentPanel onOpen={isNavPanelOpen ? undefined : () => setIsNavPanelOpen(true)} />
             ) : (

@@ -110,12 +110,12 @@ export function CertificateList({
                     open={expandedCert === cert.id}
                     onOpenChange={(open) => setExpandedCert(open ? cert.id : null)}
                 >
-                    <div className="bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10 overflow-hidden">
+                    <div className="bg-white dark:bg-content1/40 rounded border border-divider overflow-hidden">
                         <CollapsibleTrigger className="w-full">
-                            <div className="p-2 hover:bg-accent/50 transition-colors">
+                            <div className="p-2  hover:bg-content2/50 transition-colors">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 ml-2">
-                                        <Shield className="h-4 w-4 text-green-600" />
+                                        <Shield className="h-4 w-4 text-success" />
                                         <div className="text-left">
                                             <div className="font-medium">{cert.domain}</div>
                                         </div>
@@ -128,7 +128,7 @@ export function CertificateList({
                                         )}
                                         <Button
                                             variant="ghost"
-                                            className="h-7 w-7 p-0 shadow-none"
+                                            className="h-7 w-7 p-0"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 handleOpenFolder(cert.certPath)
@@ -141,9 +141,9 @@ export function CertificateList({
                                             <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
                                                 <Button
                                                     variant="ghost"
-                                                    className="h-7 w-7 p-0 shadow-none"
+                                                    className="h-7 w-7 p-0"
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                    <Trash2 className="h-4 w-4 text-danger" />
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
@@ -191,7 +191,7 @@ export function CertificateList({
 
                                     {/* PEM 格式 */}
                                     {cert.formats.pem && (
-                                        <div className="flex items-center justify-between p-2 bg-accent/30 rounded text-xs">
+                                        <div className="flex items-center justify-between p-2 bg-content2/30 rounded text-xs">
                                             <div className="flex items-center gap-2">
                                                 <FileText className="h-3 w-3" />
                                                 <span className="font-medium">PEM (Nginx/Apache)</span>
@@ -200,7 +200,7 @@ export function CertificateList({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-6 px-2 shadow-none"
+                                                    className="h-6 px-2"
                                                     onClick={() => handleCopyPath(cert.formats.pem!)}
                                                 >
                                                     <Copy className="h-3 w-3" />
@@ -208,7 +208,7 @@ export function CertificateList({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-6 px-2 shadow-none"
+                                                    className="h-6 px-2"
                                                     onClick={() => handleOpenFolder(cert.formats.pem!)}
                                                 >
                                                     <FolderOpen className="h-3 w-3" />
@@ -219,7 +219,7 @@ export function CertificateList({
 
                                     {/* CRT + KEY 格式 */}
                                     {cert.formats.crt && cert.formats.key && (
-                                        <div className="flex items-center justify-between p-2 bg-accent/30 rounded text-xs">
+                                        <div className="flex items-center justify-between p-2 bg-content2/30 rounded text-xs">
                                             <div className="flex items-center gap-2">
                                                 <Key className="h-3 w-3" />
                                                 <span className="font-medium">CRT + KEY ({t('common.general')})</span>
@@ -228,7 +228,7 @@ export function CertificateList({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-6 px-2 shadow-none"
+                                                    className="h-6 px-2"
                                                     onClick={() => handleCopyPath(cert.formats.crt!)}
                                                 >
                                                     <Copy className="h-3 w-3" />
@@ -236,7 +236,7 @@ export function CertificateList({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-6 px-2 shadow-none"
+                                                    className="h-6 px-2"
                                                     onClick={() => handleOpenFolder(cert.formats.crt!)}
                                                 >
                                                     <FolderOpen className="h-3 w-3" />
@@ -247,7 +247,7 @@ export function CertificateList({
 
                                     {/* PFX 格式 */}
                                     {cert.formats.pfx && (
-                                        <div className="flex items-center justify-between p-2 bg-accent/30 rounded text-xs">
+                                        <div className="flex items-center justify-between p-2 bg-content2/30 rounded text-xs">
                                             <div className="flex items-center gap-2">
                                                 <Package className="h-3 w-3" />
                                                 <span className="font-medium">PFX (IIS/Windows)</span>
@@ -256,7 +256,7 @@ export function CertificateList({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-6 px-2 shadow-none"
+                                                    className="h-6 px-2"
                                                     onClick={() => handleCopyPath(cert.formats.pfx!)}
                                                 >
                                                     <Copy className="h-3 w-3" />
@@ -264,7 +264,7 @@ export function CertificateList({
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="h-6 px-2 shadow-none"
+                                                    className="h-6 px-2"
                                                     onClick={() => handleOpenFolder(cert.formats.pfx!)}
                                                 >
                                                     <FolderOpen className="h-3 w-3" />
@@ -280,7 +280,7 @@ export function CertificateList({
             ))}
 
             {/* 安装说明 */}
-            <div className="p-3 bg-muted/50 rounded text-xs space-y-2 mt-4">
+            <div className="p-3 bg-content2/50 rounded text-xs space-y-2 mt-4">
                 <div className="font-medium flex items-center gap-2">
                     <Shield className="h-3 w-3" />
                     {t('ssl_service.install_guide_title')}

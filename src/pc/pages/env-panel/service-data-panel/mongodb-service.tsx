@@ -916,7 +916,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               variant="outline"
               onClick={() => setShowInitDialog(false)}
               disabled={isInitializing}
-              className="shadow-none"
+              className=""
             >
               {t('common.cancel')}
             </Button>
@@ -941,13 +941,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-danger">
               <AlertTriangle className="h-5 w-5" />
               {t('mongodb.reset_dialog_title')}
             </DialogTitle>
             <DialogDescription>
               {t('mongodb.reset_dialog_desc')}
-              <span className="text-red-600 font-semibold">{t('mongodb.irreversible')}</span>
+              <span className="text-danger font-semibold">{t('mongodb.irreversible')}</span>
             </DialogDescription>
           </DialogHeader>
 
@@ -971,7 +971,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 onChange={(e) => setDialogData(prev => ({ ...prev, adminUsername: e.target.value }))}
                 placeholder={t('mongodb.admin_username_placeholder')}
                 disabled={isInitializing}
-                className="shadow-none"
+                className=""
               />
             </div>
 
@@ -984,7 +984,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 onChange={(e) => setDialogData(prev => ({ ...prev, adminPassword: e.target.value }))}
                 placeholder={t('mongodb.admin_password_placeholder')}
                 disabled={isInitializing}
-                className="shadow-none"
+                className=""
               />
             </div>
 
@@ -1065,7 +1065,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               variant="outline"
               onClick={() => setShowResetDialog(false)}
               disabled={isInitializing}
-              className="shadow-none"
+              className=""
             >
               {t('common.cancel')}
             </Button>
@@ -1093,13 +1093,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
       <div className="w-full space-y-3">
         {/* 未初始化提示 */}
         {isServiceActive && isInitialized === false && (
-          <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
-                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                <p className="text-xs font-semibold text-warning dark:text-warning">
                   {t('mongodb.uninitialized')}
                 </p>
-                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                   {t('mongodb.uninitialized_desc')}
                 </p>
               </div>
@@ -1108,7 +1108,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               <Button
                 size="sm"
                 onClick={() => setShowInitDialog(true)}
-                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                className="h-7 text-xs bg-warning hover:bg-warning/90 dark:bg-warning dark:hover:bg-warning/90 text-primary-foreground"
               >
                 {t('mongodb.init_now')}
               </Button>
@@ -1117,16 +1117,16 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         )}
 
         {/* MongoDB 状态 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
               {t('mongodb.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
                 "w-2 h-2 rounded-full",
-                serviceStatus === ServiceStatus.Running ? "bg-green-500" :
-                  serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+                serviceStatus === ServiceStatus.Running ? " bg-success" :
+                  serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
               )} />
               <span className="text-xs font-normal text-muted-foreground">
                 {serviceStatus === ServiceStatus.Running ? t('status.service.running') :
@@ -1141,35 +1141,35 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 onClick={startService}
                 disabled={serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 {isStarting ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Power className="h-3.5 w-3.5 text-green-600" />
+                  <Power className="h-3.5 w-3.5 text-success" />
                 )}
                 {t('mongodb.start')}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 onClick={stopService}
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
-                <PowerOff className="h-3.5 w-3.5 text-red-600" />
+                <PowerOff className="h-3.5 w-3.5 text-danger" />
                 {t('mongodb.stop')}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 onClick={restartService}
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
-                <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
+                <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
                 {t('mongodb.restart')}
               </Button>
             </div>
@@ -1177,12 +1177,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         </div>
 
         {/* 配置管理 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           {isServiceActive && isInitialized ? (
             <div className="space-y-4">
               {/* 解析错误提示 */}
               {mongoConfig?.parseError && (
-                <Alert variant="destructive" className="border-red-500 p-2">
+                <Alert variant="destructive" className="border-danger p-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-xs ml-2">
                     {mongoConfig.parseError}
@@ -1195,7 +1195,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                      <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                         {t('mongodb.config_file')}
                         <Info className="h-3 w-3 text-muted-foreground" />
                       </Label>
@@ -1212,8 +1212,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     placeholder={t('mongodb.config_file_placeholder')}
                     disabled={isLoading}
                     className={cn(
-                      "flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10",
-                      mongoConfig?.parseError && "border-red-500 focus-visible:ring-red-500"
+                      "flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider",
+                      mongoConfig?.parseError && " border-danger focus-visible:ring-danger"
                     )}
                   />
                   <Button
@@ -1221,7 +1221,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     variant="outline"
                     onClick={handleSetConfigPath}
                     disabled={isLoading || !editingConfigPath || editingConfigPath === configPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                     title={t('common.save')}
                   >
                     <Save className="h-3.5 w-3.5" />
@@ -1236,7 +1236,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       }
                     }}
                     disabled={!configPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                     title="复制"
                   >
                     <Copy className="h-3.5 w-3.5" />
@@ -1246,7 +1246,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     variant="outline"
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                     title={t('mongodb.open_dir')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1255,14 +1255,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               </div>
 
               {/* 数据目录 */}
-              <div className=" pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.data_dir')}</Label>
+              <div className="pt-2 border-t border-divider">
+                <Label className="text-xs font-medium text-foreground">{t('mongodb.data_dir')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={mongoConfig?.dataPath || t('mongodb.not_configured')}
                     readOnly
                     className={cn(
-                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      "flex-1 h-8 text-xs bg-content2 cursor-not-allowed border-divider",
                       !mongoConfig?.dataPath && "text-muted-foreground"
                     )}
                   />
@@ -1276,7 +1276,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       }
                     }}
                     disabled={!mongoConfig?.dataPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <Copy className="h-3.5 w-3.5" />
                   </Button> */}
@@ -1285,7 +1285,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     variant="outline"
                     onClick={() => mongoConfig?.dataPath && openFolderInFinder(mongoConfig.dataPath)}
                     disabled={!mongoConfig?.dataPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -1294,13 +1294,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
               {/* 日志路径 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.log_file')}</Label>
+                <Label className="text-xs font-medium text-foreground">{t('mongodb.log_file')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={mongoConfig?.logPath || t('mongodb.not_configured')}
                     readOnly
                     className={cn(
-                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      "flex-1 h-8 text-xs bg-content2 cursor-not-allowed border-divider",
                       !mongoConfig?.logPath && "text-muted-foreground"
                     )}
                   />
@@ -1314,7 +1314,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       }
                     }}
                     disabled={!mongoConfig?.logPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <Copy className="h-3.5 w-3.5" />
                   </Button> */}
@@ -1323,7 +1323,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     variant="outline"
                     onClick={() => mongoConfig?.logPath && openFolderInFinder(mongoConfig.logPath)}
                     disabled={!mongoConfig?.logPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                   </Button>
@@ -1333,26 +1333,26 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               {/* 主机 & 端口 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.host')}</Label>
+                  <Label className="text-xs font-medium text-foreground">{t('mongodb.host')}</Label>
                   <Input
                     value={mongoConfig?.bindIp || 'localhost'}
                     readOnly
-                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                    className="text-xs h-8 mt-1 bg-content2 cursor-not-allowed border-divider"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.port_readonly')}</Label>
+                  <Label className="text-xs font-medium text-foreground">{t('mongodb.port_readonly')}</Label>
                   <Input
                     value={mongoConfig?.port || 27017}
                     readOnly
-                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                    className="text-xs h-8 mt-1 bg-content2 cursor-not-allowed border-divider"
                   />
                 </div>
               </div>
 
               {/* 管理工具 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mongodb.tools')}</Label>
+                <Label className="text-xs font-medium text-foreground">{t('mongodb.tools')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
                     variant="outline"
@@ -1370,7 +1370,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
-                    className="flex items-center gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="flex items-center gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     MongoDB Compass
@@ -1391,7 +1391,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
-                    className="flex items-center gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="flex items-center gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <Terminal className="h-3.5 w-3.5" />
                     Mongo Shell
@@ -1400,7 +1400,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               </div>
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
@@ -1418,9 +1418,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         </div>
 
         {/* 数据库管理 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
               {/* <Database className="w-3.5 h-3.5" /> */}
               {t('mongodb.database_management')}
             </Label>
@@ -1429,7 +1429,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCreateDbDialog(true)}
-                className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 {t('mongodb.new_database')}
@@ -1440,17 +1440,17 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
             <div className="space-y-1">
               {databases.length > 0 ? (
-                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="border rounded-lg p-1 bg-content1 dark:bg-content1/40 border-divider">
                   {(showAllDatabases ? databases : databases.slice(0, 4)).map((db) => (
                     <div
                       key={db.name}
                       className="text-xs"
                     >
                       {/* 数据库行 */}
-                      <div onClick={() => toggleCollections(db.name)} className="flex items-center justify-between p-1 hover:bg-gray-50 dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer">
+                      <div onClick={() => toggleCollections(db.name)} className="flex items-center justify-between p-1 hover:bg-background dark:hover:bg-white/5 rounded-md transition-colors cursor-pointer">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Database className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium truncate text-gray-700 dark:text-gray-300">{db.name}</span>
+                          <Database className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <span className="font-medium truncate text-foreground">{db.name}</span>
                         </div>
                         <Button
                           size="sm"
@@ -1476,9 +1476,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                               {(db.showAllCollections ? db.collections : db.collections.slice(0, 4)).map((collection) => (
                                 <div
                                   key={collection}
-                                  className="flex items-center gap-1.5 py-1 px-1.5 rounded text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+                                  className="flex items-center gap-1.5 py-1 px-1.5 rounded text-xs text-muted-foreground hover:bg-content2 dark:hover:bg-white/10"
                                 >
-                                  <div className="h-1 w-1 rounded-full bg-gray-400 flex-shrink-0" />
+                                  <div className="h-1 w-1 rounded-full bg-default flex-shrink-0" />
                                   <span className="truncate">{collection}</span>
                                 </div>
                               ))}
@@ -1487,7 +1487,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => toggleAllCollections(db.name)}
-                                  className="w-full h-6 text-xs text-gray-500 hover:text-foreground mt-1"
+                                  className="w-full h-6 text-xs text-muted-foreground hover:text-foreground mt-1"
                                 >
                                   {db.showAllCollections ? (
                                     <>
@@ -1504,7 +1504,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                               )}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-500 text-center py-2">
+                            <div className="text-xs text-muted-foreground text-center py-2">
                               {t('mongodb.no_collections')}
                             </div>
                           )}
@@ -1517,7 +1517,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowAllDatabases(!showAllDatabases)}
-                      className="w-full h-7 text-xs shadow-none text-gray-500"
+                      className="w-full h-7 text-xs text-muted-foreground"
                     >
                       {showAllDatabases ? (
                         <>
@@ -1534,13 +1534,13 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   )}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
+                <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-divider">
                   {t('mongodb.no_databases')}
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <Database className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
@@ -1563,9 +1563,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         </div>
 
         {/* Users */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
               {t('mongodb.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1580,7 +1580,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   })
                   setShowCreateUserDialog(true)
                 }}
-                className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
               >
                 <UserPlus className="h-3 w-3 mr-1" />
                 {t('mongodb.new_user')}
@@ -1592,12 +1592,12 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             <div className="space-y-2">
               {/* Admin User */}
               {serviceData.metadata?.['MONGODB_ADMIN_USERNAME'] && (
-                <div className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs">
+                <div className="flex items-center justify-between p-2 rounded-lg border border-divider bg-content1 dark:bg-content1/40 text-xs">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                    <ShieldCheck className="h-3.5 w-3.5 text-warning flex-shrink-0" />
                     <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">{serviceData.metadata['MONGODB_ADMIN_USERNAME']}</span>
-                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{t('mongodb.admin_badge')}</span>
+                      <span className="font-medium text-foreground">{serviceData.metadata['MONGODB_ADMIN_USERNAME']}</span>
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-warning/10 dark:bg-warning/10 text-warning dark:text-warning border border-warning/30 dark:border-warning/30">{t('mongodb.admin_badge')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -1612,7 +1612,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        className="h-5 w-5 p-0 text-muted-foreground hover:text-muted-foreground dark:hover:text-default"
                         onClick={() => setShowPassword(v => !v)}
                       >
                         {!showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
@@ -1624,22 +1624,22 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
               {/* Normal Users */}
               {users.filter(u => u.user !== serviceData.metadata?.['MONGODB_ADMIN_USERNAME']).length > 0 && (
-                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="border rounded-lg p-1 bg-content1 dark:bg-content1/40 border-divider">
                   {users
                     .filter(u => u.user !== serviceData.metadata?.['MONGODB_ADMIN_USERNAME'])
                     .map((user) => (
-                      <div key={user._id} className="flex items-center justify-between p-1 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 text-xs">
+                      <div key={user._id} className="flex items-center justify-between p-1 rounded-md hover:bg-background dark:hover:bg-white/5 text-xs">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Users className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          <Users className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">{user.user}</span>
+                            <span className="font-medium text-foreground">{user.user}</span>
                           </div>
                         </div>
                         <div className="flex gap-1 flex-shrink-0">
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                            className="h-5 w-5 p-0 text-muted-foreground hover:text-focus hover:bg-focus/10 dark:hover:bg-focus/10"
                             onClick={() => openEditUserDialog(user)}
                             title={t('mongodb.edit_permissions')}
                           >
@@ -1648,7 +1648,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                            className="h-5 w-5 p-0 text-muted-foreground hover:text-danger hover:bg-danger/10 dark:hover:bg-danger/10"
                             onClick={() => handleDeleteUser(user.user)}
                             title={t('mongodb.delete_user')}
                           >
@@ -1662,7 +1662,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               )}
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <Key className="h-6 w-6 mx-auto mb-2 opacity-50" />
               <p className="text-sm">{t('mongodb.service_not_running')}</p>
               <p className="text-xs">{t('mongodb.start_service_first')}</p>
@@ -1696,7 +1696,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
+              <Button className="" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
                 {t('common.cancel')}
               </Button>
               <Button onClick={handleCreateDatabase} disabled={!newDbName || isCreatingDb}>
@@ -1747,10 +1747,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               <div className="space-y-2">
                 <Label className="text-xs font-medium">{t('mongodb.database_permissions')}</Label>
                 {databases.length > 0 && (
-                  <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
+                  <div className="space-y-1 border rounded-lg p-2 bg-content1 dark:bg-content1/40 max-h-40 overflow-y-auto">
                     {databases.map((db) => (
-                      <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                      <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-background dark:hover:bg-white/5">
+                        <span className="text-foreground dark:text-foreground font-medium">{db.name}</span>
                         <div className="flex gap-1">
                           {(['read', 'readWrite'] as const).map((role) => (
                             <button
@@ -1769,9 +1769,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                                 'px-2 py-0.5 rounded text-[10px] border transition-colors',
                                 userForm.databaseRoles[db.name] === role
                                   ? role === 'readWrite'
-                                    ? 'bg-blue-500 border-blue-500 text-white'
-                                    : 'bg-green-500 border-green-500 text-white'
-                                  : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                                    ? ' bg-focus border-focus text-primary-foreground'
+                                    : ' bg-success border-success text-primary-foreground'
+                                  : ' border-divider dark:border-default text-muted-foreground hover:border-default'
                               )}
                             >
                               {role === 'read' ? t('mongodb.role_read') : t('mongodb.role_read_write')}
@@ -1788,7 +1788,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     value={customDbName}
                     onChange={(e) => setCustomDbName(e.target.value)}
                     placeholder={t('mongodb.custom_database_name')}
-                    className="h-7 text-xs shadow-none"
+                    className="h-7 text-xs"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && customDbName) {
                         setUserForm(prev => ({
@@ -1803,7 +1803,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 px-2 text-xs shadow-none"
+                    className="h-7 px-2 text-xs"
                     disabled={!customDbName}
                     onClick={() => {
                       if (!customDbName) return
@@ -1823,7 +1823,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     {Object.entries(userForm.databaseRoles).map(([db, role]) => (
                       <span
                         key={db}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-focus/10 dark:bg-focus/10 text-focus dark:text-focus border border-focus/30 dark:border-focus/30"
                       >
                         {db}: {role === 'readWrite' ? t('mongodb.role_read_write') : t('mongodb.role_read')}
                         <button
@@ -1833,7 +1833,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                             delete newRoles[db]
                             return { ...prev, databaseRoles: newRoles }
                           })}
-                          className="hover:text-blue-900 dark:hover:text-blue-100"
+                          className="hover:text-focus  dark:hover:text-focus"
                         >×</button>
                       </span>
                     ))}
@@ -1842,7 +1842,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)}>{t('common.cancel')}</Button>
+              <Button className="" variant="outline" onClick={() => setShowCreateUserDialog(false)}>{t('common.cancel')}</Button>
               <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password}>
                 {t('common.create')}
               </Button>
@@ -1862,10 +1862,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
             </DialogHeader>
             <div className="space-y-4 py-4">
               {databases.length > 0 && (
-                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-48 overflow-y-auto">
+                <div className="space-y-1 border rounded-lg p-2 bg-content1 dark:bg-content1/40 max-h-48 overflow-y-auto">
                   {databases.map((db) => (
-                    <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                    <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-background dark:hover:bg-white/5">
+                      <span className="text-foreground dark:text-foreground font-medium">{db.name}</span>
                       <div className="flex gap-1">
                         {(['read', 'readWrite'] as const).map((role) => (
                           <button
@@ -1884,9 +1884,9 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                               'px-2 py-0.5 rounded text-[10px] border transition-colors',
                               userForm.databaseRoles[db.name] === role
                                 ? role === 'readWrite'
-                                  ? 'bg-blue-500 border-blue-500 text-white'
-                                  : 'bg-green-500 border-green-500 text-white'
-                                : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                                  ? ' bg-focus border-focus text-primary-foreground'
+                                  : ' bg-success border-success text-primary-foreground'
+                                : ' border-divider dark:border-default text-muted-foreground hover:border-default'
                             )}
                           >
                             {role === 'read' ? t('mongodb.role_read') : t('mongodb.role_read_write')}
@@ -1902,7 +1902,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   value={customDbName}
                   onChange={(e) => setCustomDbName(e.target.value)}
                   placeholder={t('mongodb.custom_database_name')}
-                  className="h-7 text-xs shadow-none"
+                  className="h-7 text-xs"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && customDbName) {
                       setUserForm(prev => ({
@@ -1917,7 +1917,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-7 px-2 text-xs shadow-none"
+                  className="h-7 px-2 text-xs"
                   disabled={!customDbName}
                   onClick={() => {
                     if (!customDbName) return
@@ -1936,7 +1936,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   {Object.entries(userForm.databaseRoles).map(([db, role]) => (
                     <span
                       key={db}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-focus/10 dark:bg-focus/10 text-focus dark:text-focus border border-focus/30 dark:border-focus/30"
                     >
                       {db}: {role === 'readWrite' ? t('mongodb.role_read_write') : t('mongodb.role_read')}
                       <button
@@ -1946,7 +1946,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                           delete newRoles[db]
                           return { ...prev, databaseRoles: newRoles }
                         })}
-                        className="hover:text-blue-900 dark:hover:text-blue-100"
+                        className="hover:text-focus  dark:hover:text-focus"
                       >×</button>
                     </span>
                   ))}
@@ -1954,7 +1954,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
               )}
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)}>{t('common.cancel')}</Button>
+              <Button className="" variant="outline" onClick={() => setShowEditUserDialog(false)}>{t('common.cancel')}</Button>
               <Button onClick={handleUpdateUser}>
                 {t('common.save')}
               </Button>
@@ -1963,8 +1963,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         </Dialog>
 
         {/* Other Operations */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
+          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
             {/* <MoreHorizontal className="w-3.5 h-3.5" /> */}
             {t('mongodb.other_operations')}
           </Label>
@@ -1975,14 +1975,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowResetDialog(true)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
+                className="text-danger hover:text-danger hover:bg-danger/10 h-8 text-xs"
               >
                 <AlertTriangle className="h-3.5 w-3.5 mr-1" />
                 {t('mongodb.reset_init')}
               </Button>
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <BarChart3 className="h-6 w-6 mx-auto mb-2 opacity-50" />
               <p className="text-sm">{t('mongodb.service_inactive')}</p>
               <p className="text-xs">{t('mongodb.cannot_use_other_ops')}</p>

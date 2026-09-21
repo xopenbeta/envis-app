@@ -528,7 +528,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             size="sm"
             variant="ghost"
-            className="h-7 text-default-500 hover:text-foreground hover:bg-content2 heroui-transition"
+            className="h-7 text-default-500 hover:text-foreground hover:bg-content2 transition-all duration-250"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -539,7 +539,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             onClick={handleClearChat}
             size="sm"
             variant="ghost"
-            className="h-7 text-default-500 hover:text-foreground hover:bg-content2 heroui-transition"
+            className="h-7 text-default-500 hover:text-foreground hover:bg-content2 transition-all duration-250"
             disabled={chatMessages.length === 0 && !isLoading && !typingMessage}
             title={isLoading || typingMessage ? t('ai_panel.interrupt_and_clear') : t('ai_panel.clear_chat')}
           >
@@ -644,7 +644,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             onCompositionEnd={handleCompositionEnd}
             placeholder={isAIReady ? t('ai_panel.placeholder') : t('ai_panel.disabled_placeholder')}
             disabled={!isAIReady || isLoading}
-            className="w-full bg-content2 border-divider focus:border-primary heroui-transition min-h-[80px] max-h-[200px] resize-none pr-12 pb-12"
+            className="w-full bg-content2 border-divider focus:border-primary transition-all duration-250 min-h-[80px] max-h-[200px] resize-none pr-12 pb-12"
             rows={3}
           />
           <Button
@@ -652,8 +652,8 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             disabled={(!inputValue.trim() && !isLoading && !typingMessage) || !isAIReady}
             size="sm"
             className={`absolute bottom-2 right-2 h-8 w-8 p-0 ${isLoading || typingMessage
-                ? 'heroui-button heroui-button-danger bg-danger hover:bg-danger/90'
-                : 'heroui-button heroui-button-primary'
+                ? 'transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-danger text-danger-foreground hover:bg-danger/90 bg-danger hover:bg-danger/90'
+                : 'transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
             title={isLoading || typingMessage ? t('ai_panel.interrupt_btn') : t('ai_panel.send_btn')}
           >

@@ -257,20 +257,20 @@ export function RedisService({ serviceData }: RedisServiceProps) {
     return (
       <>
         {isInitialized === null ? (
-          <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+          <div className="w-full p-3 rounded-xl border border-divider bg-content1">
             <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               {t('redis_service.checking_init')}
             </div>
           </div>
         ) : !isInitialized ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
-                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                <p className="text-xs font-semibold text-warning dark:text-warning">
                   {t('redis_service.not_initialized_title')}
                 </p>
-                <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                   {t('redis_service.not_initialized_desc')}
                 </p>
               </div>
@@ -281,7 +281,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 variant="outline"
                 onClick={() => setShowInitDialog(true)}
                 disabled={!isServiceActive || !isServiceActive || !isInstalled || isLoading}
-                className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
+                className="h-7 text-xs bg-warning hover:bg-warning/90 dark:bg-warning/90 dark:hover:bg-warning/90 text-primary-foreground"
               >
                 {t('redis_service.init_now')}
               </Button>
@@ -299,17 +299,17 @@ export function RedisService({ serviceData }: RedisServiceProps) {
 
       <InitRedisCard />
 
-      <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+      <div className="p-3 rounded-xl border border-divider bg-content1">
         <div className="flex items-center justify-between mb-2">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
             <Database className="h-3.5 w-3.5" />
             {t('redis_service.service_control')}
           </Label>
           <div className="flex items-center gap-2">
             <div className={cn(
               "w-2 h-2 rounded-full",
-              serviceStatus === ServiceStatus.Running ? "bg-green-500" :
-                serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+              serviceStatus === ServiceStatus.Running ? " bg-success" :
+                serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
             )} />
             <span className="text-xs text-muted-foreground">
               {serviceStatus === ServiceStatus.Running ? t('redis_service.running') : serviceStatus === ServiceStatus.Stopped ? t('redis_service.stopped') : t('redis_service.unknown_status')}
@@ -318,36 +318,36 @@ export function RedisService({ serviceData }: RedisServiceProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" className="shadow-none" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isServiceActive || !isInstalled || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
-            {isStarting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5 text-green-600" />}
+          <Button size="sm" className="" variant="outline" onClick={handleStart} disabled={!isServiceActive || !isServiceActive || !isInstalled || !isInitialized || serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+            {isStarting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5 text-success" />}
             &nbsp;{t('redis_service.start')}
           </Button>
-          <Button size="sm" className="shadow-none" variant="outline" onClick={handleStop} disabled={!isServiceActive || !isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
-            <PowerOff className="h-3.5 w-3.5 text-red-600" />
+          <Button size="sm" className="" variant="outline" onClick={handleStop} disabled={!isServiceActive || !isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+            <PowerOff className="h-3.5 w-3.5 text-danger" />
             &nbsp;{t('redis_service.stop')}
           </Button>
-          <Button size="sm" className="shadow-none" variant="outline" onClick={handleRestart} disabled={!isServiceActive || !isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
-            <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
+          <Button size="sm" className="" variant="outline" onClick={handleRestart} disabled={!isServiceActive || !isServiceActive || !isInstalled || serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}>
+            <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
             &nbsp;{t('redis_service.restart')}
           </Button>
         </div>
       </div>
 
-      <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
+      <div className="p-3 rounded-xl border border-divider bg-content1 space-y-3">
         <div className="grid grid-cols-1 gap-3 text-xs">
           <div>
-            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.config_file_label')}</Label>
+            <Label className="text-xs font-medium text-foreground">{t('redis_service.config_file_label')}</Label>
             <div className="flex items-center gap-2 mt-1">
               <Input
                 value={editConfigPath}
                 onChange={(e) => setEditConfigPath(e.target.value)}
-                className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 placeholder={t('redis_service.config_path_placeholder')}
               />
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                 onClick={handleBrowseConfigFile}
                 title={t('redis_service.select_file_title')}
               >
@@ -356,7 +356,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                 onClick={() => editConfigPath && openFolderInFinder(editConfigPath)}
                 disabled={!editConfigPath}
                 title={t('redis_service.open_dir_title')}
@@ -367,7 +367,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 px-3 shadow-none text-xs text-blue-600 hover:text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/20"
+                  className="h-8 px-3 text-xs text-focus hover:text-focus border-focus/30 hover:bg-focus/10 dark:border-focus dark:hover:bg-focus/20"
                   onClick={handleSaveConfigPath}
                   title={t('redis_service.save_title')}
                 >
@@ -376,19 +376,19 @@ export function RedisService({ serviceData }: RedisServiceProps) {
               )}
             </div>
           </div>
-          <div className="pt-2 border-t border-gray-200 dark:border-white/10 space-y-3">
+          <div className="pt-2 border-t border-divider space-y-3">
             <div>
-              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.log_file_label')}</Label>
+              <Label className="text-xs font-medium text-foreground">{t('redis_service.log_file_label')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Input
                   value={runtimeConfig.logPath}
                   disabled
-                  className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 />
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   onClick={() => runtimeConfig.logPath && openFolderInFinder(runtimeConfig.logPath)}
                   disabled={!runtimeConfig.logPath}
                   title={t('redis_service.open_dir_title')}
@@ -398,17 +398,17 @@ export function RedisService({ serviceData }: RedisServiceProps) {
               </div>
             </div>
             <div>
-              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.data_dir_label')}</Label>
+              <Label className="text-xs font-medium text-foreground">{t('redis_service.data_dir_label')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Input
                   value={runtimeConfig.dataPath}
                   disabled
-                  className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 />
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   onClick={() => runtimeConfig.dataPath && openFolderInFinder(runtimeConfig.dataPath)}
                   disabled={!runtimeConfig.dataPath}
                   title={t('redis_service.open_dir_title')}
@@ -419,32 +419,32 @@ export function RedisService({ serviceData }: RedisServiceProps) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.bind_address_label')}</Label>
+                <Label className="text-xs font-medium text-foreground">{t('redis_service.bind_address_label')}</Label>
                 <div className="mt-1">
                   <Input
                     value={runtimeConfig.bindIp}
                     disabled
-                    className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                   />
                 </div>
               </div>
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.port_label')}</Label>
+                <Label className="text-xs font-medium text-foreground">{t('redis_service.port_label')}</Label>
                 <div className="mt-1">
                   <Input
                     value={String(runtimeConfig.port)}
                     disabled
-                    className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                   />
                 </div>
               </div>
             </div>
             <div>
-              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.management_tools')}</Label>
+              <Label className="text-xs font-medium text-foreground">{t('redis_service.management_tools')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Button
                   size="sm"
-                  className="shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  className="bg-content1 dark:bg-content1/40 border-divider"
                   variant="outline"
                   onClick={async () => {
                     try {
@@ -469,12 +469,12 @@ export function RedisService({ serviceData }: RedisServiceProps) {
         </div>
       </div>
 
-      <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] space-y-3">
-        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('redis_service.other_operations')}</Label>
+      <div className="p-3 rounded-xl border border-divider bg-content1 space-y-3">
+        <Label className="text-xs font-medium text-foreground">{t('redis_service.other_operations')}</Label>
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-none"
+            className="h-8 text-xs text-danger hover:text-danger hover:bg-danger/10 dark:hover:bg-danger/20"
             variant="ghost"
             onClick={() => setShowResetDialog(true)}
             disabled={!isServiceActive || !isServiceActive || !isInstalled || isLoading || isInitialized !== true || serviceStatus === ServiceStatus.Running}

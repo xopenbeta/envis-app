@@ -120,10 +120,10 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
     }
 
     return (
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
             <div className="flex items-center justify-between mb-2">
                 <div>
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                         {t('custom_service.auto_chdir_label')}
                     </Label>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -143,7 +143,7 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
                         value={path}
                         onChange={(e) => setPath(e.target.value)}
                         placeholder="/path/to/project"
-                        className="flex-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         disabled={isLoading || !isServiceDataActive}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') handleApply()
@@ -154,7 +154,7 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
                         size="sm"
                         onClick={handleApply}
                         disabled={isLoading || !isServiceDataActive}
-                        className="shadow-none h-8 text-xs"
+                        className="h-8 text-xs"
                     >
                         {isLoading ? t('custom_service.applying') : t('custom_service.apply')}
                     </Button>

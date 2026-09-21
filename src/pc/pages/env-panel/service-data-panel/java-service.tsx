@@ -578,15 +578,15 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
         <>
             <div className="w-full p-3 space-y-3">
 
-                <div className="w-full p-3 space-y-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                <div className="w-full p-3 space-y-4 rounded-xl border border-divider bg-content1">
                     {/* JAVA_HOME 配置 */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            <Label className="text-xs font-medium text-foreground">
                                 {t('java_service.java_home_label')}
                             </Label>
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-40 mb-2">
+                        <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mb-2">
                             {t('java_service.java_home_desc')}
                         </p>
                         <Input
@@ -594,16 +594,16 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             readOnly
                             placeholder="/path/to/java/home"
                             disabled
-                            className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                            className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                         />
                     </div>
 
                     {/* JAVA_OPTS 配置 */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('java_service.java_opts_label')}</Label>
+                        <Label className="text-xs font-medium text-foreground">{t('java_service.java_opts_label')}</Label>
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2">
+                        <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mb-2">
                             {t('java_service.java_opts_desc')}
                         </p>
                         <div className="flex items-center gap-2">
@@ -612,14 +612,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 onChange={(e) => setJavaOptsState(e.target.value)}
                                 placeholder={t('java_service.java_opts_placeholder')}
                                 disabled={!isServiceDataActive}
-                                className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                             />
                             <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleSetJavaOpts(javaOpts)}
                                 disabled={isLoading || !isServiceDataActive}
-                                className="h-8 text-xs shadow-none shrink-0"
+                                className="h-8 text-xs shrink-0"
                             >
                                 {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
                                 {t('java_service.apply')}
@@ -633,14 +633,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             <Collapsible open={isJavaInfoExpanded} onOpenChange={setIsJavaInfoExpanded}>
                                 <CollapsibleTrigger asChild>
                                     <div className="flex items-center justify-between mb-2 cursor-pointer">
-                                        <Label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                        <Label className="text-xs font-medium text-foreground flex items-center gap-1">
                                             {t('java_service.java_version_info')}
                                         </Label>
                                         <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isJavaInfoExpanded ? 'rotate-180' : ''}`} />
                                     </div>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                    <div className="space-y-2 text-xs p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5">
+                                    <div className="space-y-2 text-xs p-3 rounded-lg border border-divider bg-content1 dark:bg-content1/40">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('java_service.java_version')}:</span>
                                             <span className="font-medium">{javaInfo.version}</span>
@@ -679,20 +679,20 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                 {/* Maven 配置卡片 */}
                 {isMavenChecking ? (
-                    <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="w-full p-3 rounded-xl border border-divider bg-content1">
                         <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
                             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                             {t('java_service.maven_checking')}
                         </div>
                     </div>
                 ) : !isMavenInstalled ? (
-                    <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+                    <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
                         <div className="flex items-start gap-3">
                             <div className="flex-1 space-y-1">
-                                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                                <p className="text-xs font-semibold text-warning dark:text-warning">
                                     {t('java_service.maven_not_installed_title')}
                                 </p>
-                                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                                <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                                     {t('java_service.maven_not_installed_desc')}
                                 </p>
                             </div>
@@ -703,13 +703,13 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     size="sm"
                                     onClick={handleDownloadMaven}
                                     disabled={!isServiceDataActive || isMavenDownloading || isLoading}
-                                    className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                                    className="h-7 text-xs bg-warning hover:bg-warning/90 dark:bg-warning dark:hover:bg-warning/90 text-primary-foreground"
                                 >
                                     {isMavenDownloading ? t('java_service.maven_downloading') : t('java_service.maven_download')}
                                 </Button>
                             )}
                             {!!mavenDownloadStatus && (
-                                <p className="text-[10px] text-orange-600 dark:text-orange-400">
+                                <p className="text-[10px] text-warning dark:text-warning">
                                     {mavenDownloadStatus}&nbsp;&nbsp;
                                 </p>
                             )}
@@ -719,20 +719,20 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 </div>
                             )}
                             {isMavenDownloading && (
-                                <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
+                                <div className="text-[10px] text-warning dark:text-warning text-right">
                                     &nbsp;&nbsp;{Math.round(mavenDownloadProgress)}%
                                 </div>
                             )}
                         </div>
                     </div>
                 ) : !mavenHome.trim() ? (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-3">
+                    <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
                         <div className="flex items-start gap-3">
                             <div className="flex-1 space-y-1">
-                                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                                <p className="text-xs font-semibold text-warning dark:text-warning">
                                     {t('java_service.maven_not_initialized_title')}
                                 </p>
-                                <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                                <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                                     {t('java_service.maven_not_initialized_desc')}
                                 </p>
                             </div>
@@ -743,21 +743,21 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 variant="outline"
                                 onClick={handleInitializeMaven}
                                 disabled={!isServiceDataActive || isMavenInitializing || isLoading}
-                                className="h-7 text-xs shadow-none bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white"
+                                className="h-7 text-xs bg-warning hover:bg-warning/90 dark:bg-warning/90 dark:hover:bg-warning/90 text-primary-foreground"
                             >
                                 {isMavenInitializing ? t('java_service.maven_initializing') : t('java_service.maven_initialize')}
                             </Button>
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="w-full p-3 rounded-xl border border-divider bg-content1">
                         <div className="space-y-4">
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                                     {t('java_service.maven_home_label')}
                                                     <Info className="h-3 w-3 text-muted-foreground" />
                                                 </Label>
@@ -768,7 +768,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         </Tooltip>
                                     </TooltipProvider>
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                                     {t('java_service.maven_home_desc')}
                                 </p>
 
@@ -777,7 +777,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     readOnly
                                     placeholder={t('java_service.maven_home_placeholder')}
                                     disabled
-                                    className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                    className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                                 />
                             </div>
 
@@ -786,7 +786,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                                     {t('java_service.maven_repo_label')}
                                                     <Info className="h-3 w-3 text-muted-foreground" />
                                                 </Label>
@@ -797,7 +797,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         </Tooltip>
                                     </TooltipProvider>
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                                     {t('java_service.maven_repo_desc')}
                                 </p>
 
@@ -807,14 +807,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         onChange={(e) => setMavenRepositoryState(e.target.value)}
                                         placeholder={t('java_service.maven_repo_placeholder')}
                                         disabled={!isServiceDataActive}
-                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                                     />
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={() => handleSetMavenRepository(mavenRepository)}
                                         disabled={!mavenRepository || isLoading || !isServiceDataActive}
-                                        className="h-8 text-xs shadow-none shrink-0"
+                                        className="h-8 text-xs shrink-0"
                                     >
                                         {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
                                         {t('java_service.apply')}
@@ -822,13 +822,13 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 </div>
 
                                 <div className="flex flex-wrap gap-2 items-center mt-2">
-                                    <Label className="block text-[10px] text-gray-500 uppercase tracking-wider">{t('java_service.maven_repo_quick_set')}</Label>
+                                    <Label className="block text-[10px] text-muted-foreground uppercase tracking-wider">{t('java_service.maven_repo_quick_set')}</Label>
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={() => handleSetMavenRepository('https://repo.maven.apache.org/maven2')}
                                         disabled={isLoading || !isServiceDataActive}
-                                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                                     >
                                         {t('java_service.maven_repo_official')}
                                     </Button>
@@ -837,7 +837,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         variant="outline"
                                         onClick={() => handleSetMavenRepository('https://maven.aliyun.com/repository/public')}
                                         disabled={isLoading || !isServiceDataActive}
-                                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                                     >
                                         {t('java_service.maven_repo_aliyun')}
                                     </Button>
@@ -846,7 +846,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         variant="outline"
                                         onClick={() => handleSetMavenRepository('https://mirrors.tuna.tsinghua.edu.cn/maven/')}
                                         disabled={isLoading || !isServiceDataActive}
-                                        className="h-6 text-[10px] px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="h-6 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                                     >
                                         {t('java_service.maven_repo_tsinghua')}
                                     </Button>
@@ -859,7 +859,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                                     {t('java_service.maven_local_repo_label')}
                                                     <Info className="h-3 w-3 text-muted-foreground" />
                                                 </Label>
@@ -870,7 +870,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         </Tooltip>
                                     </TooltipProvider>
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                                     {t('java_service.maven_local_repo_desc')}
                                 </p>
                                 <div className="flex items-center gap-2">
@@ -879,14 +879,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         onChange={(e) => setMavenLocalRepoState(e.target.value)}
                                         placeholder={t('java_service.maven_local_repo_placeholder')}
                                         disabled={!isServiceDataActive}
-                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                                     />
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={() => handleSetMavenLocalRepository(mavenLocalRepo)}
                                         disabled={!mavenLocalRepo || isLoading || !isServiceDataActive}
-                                        className="h-8 text-xs shadow-none shrink-0"
+                                        className="h-8 text-xs shrink-0"
                                     >
                                         {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
                                         {t('java_service.apply')}
@@ -899,20 +899,20 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
 
                 {/* Gradle 配置卡片 */}
                 {isGradleChecking ? (
-                    <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="w-full p-3 rounded-xl border border-divider bg-content1">
                         <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
                             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                             {t('java_service.gradle_checking')}
                         </div>
                     </div>
                 ) : !isGradleInstalled ? (
-                    <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+                    <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
                         <div className="flex items-start gap-3">
                             <div className="flex-1 space-y-1">
-                                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                                <p className="text-xs font-semibold text-warning dark:text-warning">
                                     {t('java_service.gradle_not_installed_title')}
                                 </p>
-                                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                                <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                                     {t('java_service.gradle_not_installed_desc')}
                                 </p>
                             </div>
@@ -923,13 +923,13 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     size="sm"
                                     onClick={handleDownloadGradle}
                                     disabled={!isServiceDataActive || isGradleDownloading || isLoading}
-                                    className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                                    className="h-7 text-xs bg-warning hover:bg-warning/90 dark:bg-warning dark:hover:bg-warning/90 text-primary-foreground"
                                 >
                                     {isGradleDownloading ? t('java_service.gradle_downloading') : t('java_service.gradle_download')}
                                 </Button>
                             )}
                             {!!gradleDownloadStatus && (
-                                <p className="text-[10px] text-orange-600 dark:text-orange-400">
+                                <p className="text-[10px] text-warning dark:text-warning">
                                     {gradleDownloadStatus}&nbsp;&nbsp;
                                 </p>
                             )}
@@ -939,14 +939,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                 </div>
                             )}
                             {isGradleDownloading && (
-                                <div className="text-[10px] text-orange-600 dark:text-orange-400 text-right">
+                                <div className="text-[10px] text-warning dark:text-warning text-right">
                                     &nbsp;&nbsp;{Math.round(gradleDownloadProgress)}%
                                 </div>
                             )}
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+                    <div className="w-full p-3 rounded-xl border border-divider bg-content1">
                         <div className="space-y-4">
 
                             {/* GRADLE_HOME */}
@@ -955,7 +955,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                                     {t('java_service.gradle_home_label')}
                                                     <Info className="h-3 w-3 text-muted-foreground" />
                                                 </Label>
@@ -966,7 +966,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         </Tooltip>
                                     </TooltipProvider>
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                                     {t('java_service.gradle_home_desc')}
                                 </p>
                                 <div className="flex items-center gap-2">
@@ -975,14 +975,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         onChange={(e) => setGradleHomeState(e.target.value)}
                                         placeholder={t('java_service.gradle_home_placeholder')}
                                         disabled={!isServiceDataActive}
-                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                                     />
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={() => handleSetGradleHome(gradleHome)}
                                         disabled={!gradleHome || isLoading || !isServiceDataActive}
-                                        className="h-8 text-xs shadow-none shrink-0"
+                                        className="h-8 text-xs shrink-0"
                                     >
                                         {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
                                         {t('java_service.apply')}
@@ -991,7 +991,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                             </div>
 
                             {/* 远程仓库提示 */}
-                            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 px-3 py-2.5 text-[11px] text-yellow-800 dark:text-yellow-400 leading-relaxed">
+                            <div className="rounded-lg bg-warning/10 dark:bg-warning/10 border border-warning/30 dark:border-warning/30 px-3 py-2.5 text-[11px] text-warning dark:text-warning leading-relaxed">
                                 {t('java_service.gradle_repo_tip')}
                             </div>
 
@@ -1001,7 +1001,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
                                                     {t('java_service.gradle_user_home_label')}
                                                     <Info className="h-3 w-3 text-muted-foreground" />
                                                 </Label>
@@ -1012,7 +1012,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         </Tooltip>
                                     </TooltipProvider>
                                 </div>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 mb-2">
+                                <p className="text-[10px] text-muted-foreground dark:text-muted-foreground mt-1 mb-2">
                                     {t('java_service.gradle_user_home_desc')}
                                 </p>
                                 <div className="flex items-center gap-2">
@@ -1021,14 +1021,14 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                         onChange={(e) => setGradleUserHomeState(e.target.value)}
                                         placeholder={t('java_service.gradle_user_home_placeholder')}
                                         disabled={!isServiceDataActive}
-                                        className="text-xs h-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                        className="text-xs h-8 bg-content1 dark:bg-content1/40 border-divider"
                                     />
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={() => handleSetGradleUserHome(gradleUserHome)}
                                         disabled={!gradleUserHome || isLoading || !isServiceDataActive}
-                                        className="h-8 text-xs shadow-none shrink-0"
+                                        className="h-8 text-xs shrink-0"
                                     >
                                         {isLoading ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : null}
                                         {t('java_service.apply')}

@@ -29,12 +29,8 @@ function App(): JSX.Element {
       <Toaster
         position="bottom-center"
         toastOptions={{
-          className: 'heroui-card heroui-transition',
+          className: 'bg-content1 border border-divider rounded-2xl transition-all duration-250',
           style: {
-            background: 'hsl(var(--content1))',
-            color: 'hsl(var(--foreground))',
-            border: '1px solid hsl(var(--divider) / 0.6)',
-            borderRadius: 'calc(var(--radius) * 1.5)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }

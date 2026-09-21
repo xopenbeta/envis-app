@@ -381,7 +381,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                     </Button> : <Button
                         size="sm"
                         variant="outline"
-                        className="mt-2 text-xs shadow-none"
+                        className="mt-2 text-xs"
                     >
                         {t('add_service.create_first')}
                     </Button>}
@@ -517,7 +517,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                                         <div className="space-y-2">
                                             <Label htmlFor="downloadProxyMode">{t('settings.proxy_mode')}</Label>
                                             <Select value={downloadProxyMode} onValueChange={(value: ProxyMode) => setDownloadProxyMode(value)}>
-                                                <SelectTrigger id="downloadProxyMode" className="shadow-none bg-content2 dark:bg-content3">
+                                                <SelectTrigger id="downloadProxyMode" className="bg-content2 dark:bg-content3">
                                                     <SelectValue placeholder={t('settings.select_proxy_mode')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -538,7 +538,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                                                     value={downloadProxyUrl}
                                                     onChange={(e) => setDownloadProxyUrl(e.target.value)}
                                                     placeholder={downloadProxyMode === 'http' ? 'http://127.0.0.1:7890' : 'socks5://127.0.0.1:1080'}
-                                                    className="shadow-none bg-content2 dark:bg-content3"
+                                                    className="bg-content2 dark:bg-content3"
                                                 />
                                                 <p className="text-xs text-muted-foreground">{t('settings.proxy_url_desc')}</p>
                                             </div>
@@ -572,7 +572,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                     )}
 
                     <AlertDialogFooter>
-                        <AlertDialogCancel className='shadow-none' onClick={handleDownloadCancel}>
+                        <AlertDialogCancel className='' onClick={handleDownloadCancel}>
                             {t('add_service.skip_download')}
                         </AlertDialogCancel>
                         <AlertDialogAction onClick={handleDownloadConfirm}>

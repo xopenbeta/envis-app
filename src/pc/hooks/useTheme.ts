@@ -1,4 +1,4 @@
-import { setAppTheme } from '@/utils/theme';
+import { setAppTheme } from '../../theme';
 import { useEffect } from 'react';
 import { useAtom } from "jotai";
 import { defaultAppSettings } from "@/store/app";

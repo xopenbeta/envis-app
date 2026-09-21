@@ -674,7 +674,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             </Alert>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInitDialog(false)} disabled={isInitializing} className="shadow-none">
+            <Button variant="outline" onClick={() => setShowInitDialog(false)} disabled={isInitializing} className="">
               {t('common.cancel')}
             </Button>
             <Button
@@ -696,13 +696,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-danger">
               <AlertTriangle className="h-5 w-5" />
               {t('mysql_service.reset_title')}
             </DialogTitle>
             <DialogDescription>
               {t('mysql_service.reset_desc')}
-              <span className="text-red-600 font-semibold">{t('mysql_service.reset_irrecoverable')}</span>
+              <span className="text-danger font-semibold">{t('mysql_service.reset_irrecoverable')}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -725,7 +725,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 onChange={(e) => setDialogData(prev => ({ ...prev, rootPassword: e.target.value }))}
                 placeholder={t('mysql_service.new_root_password_placeholder')}
                 disabled={isInitializing}
-                className="shadow-none"
+                className=""
               />
             </div>
             <Button
@@ -762,7 +762,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResetDialog(false)} disabled={isInitializing} className="shadow-none">
+            <Button variant="outline" onClick={() => setShowResetDialog(false)} disabled={isInitializing} className="">
               {t('common.cancel')}
             </Button>
             <Button
@@ -824,10 +824,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             <div className="space-y-2">
               <Label className="text-xs font-medium">{t('mysql_service.db_permissions')}</Label>
               {databases.length > 0 && (
-                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-40 overflow-y-auto">
+                <div className="space-y-1 border rounded-lg p-2 bg-content1 dark:bg-content1/40 max-h-40 overflow-y-auto">
                   {databases.map((db) => (
-                    <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                    <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-background dark:hover:bg-white/5">
+                      <span className="text-foreground dark:text-foreground font-medium">{db.name}</span>
                       <div className="flex gap-1">
                         {(['SELECT', 'ALL PRIVILEGES'] as const).map((priv) => (
                           <button
@@ -846,9 +846,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                               'px-2 py-0.5 rounded text-[10px] border transition-colors',
                               userForm.grants[db.name] === priv
                                 ? priv === 'ALL PRIVILEGES'
-                                  ? 'bg-blue-500 border-blue-500 text-white'
-                                  : 'bg-green-500 border-green-500 text-white'
-                                : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                                  ? ' bg-focus border-focus text-primary-foreground'
+                                  : ' bg-success border-success text-primary-foreground'
+                                : ' border-divider dark:border-default text-muted-foreground hover:border-default'
                             )}
                           >
                             {priv === 'SELECT' ? 'Read' : 'ReadWrite'}
@@ -864,7 +864,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   value={userForm.customDb}
                   onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
                   placeholder={t('mysql_service.custom_db_placeholder')}
-                  className="h-7 text-xs shadow-none"
+                  className="h-7 text-xs"
                   disabled={isSubmittingUser}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && userForm.customDb) {
@@ -880,7 +880,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-7 px-2 text-xs shadow-none"
+                  className="h-7 px-2 text-xs"
                   disabled={!userForm.customDb || isSubmittingUser}
                   onClick={() => {
                     if (!userForm.customDb) return
@@ -899,7 +899,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   {Object.entries(userForm.grants).map(([db, priv]) => (
                     <span
                       key={db}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-focus/10 dark:bg-focus/10 text-focus dark:text-focus border border-focus/30 dark:border-focus/30"
                     >
                       {db}: {priv === 'ALL PRIVILEGES' ? 'ReadWrite' : 'Read'}
                       <button
@@ -909,7 +909,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                           delete newGrants[db]
                           return { ...prev, grants: newGrants }
                         })}
-                        className="hover:text-blue-900 dark:hover:text-blue-100"
+                        className="hover:text-focus  dark:hover:text-focus"
                       >×</button>
                     </span>
                   ))}
@@ -918,7 +918,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button className="shadow-none" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
+            <Button className="" variant="outline" onClick={() => setShowCreateUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
             <Button onClick={handleCreateUser} disabled={!userForm.username || !userForm.password || isSubmittingUser}>
               {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mysql_service.creating')}</> : t('mysql_service.create')}
             </Button>
@@ -938,10 +938,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {databases.length > 0 && (
-              <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 max-h-48 overflow-y-auto">
+              <div className="space-y-1 border rounded-lg p-2 bg-content1 dark:bg-content1/40 max-h-48 overflow-y-auto">
                 {databases.map((db) => (
-                  <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-gray-50 dark:hover:bg-white/5">
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">{db.name}</span>
+                  <div key={db.name} className="flex items-center justify-between py-1 px-1.5 rounded text-xs hover:bg-background dark:hover:bg-white/5">
+                    <span className="text-foreground dark:text-foreground font-medium">{db.name}</span>
                     <div className="flex gap-1">
                       {(['SELECT', 'ALL PRIVILEGES'] as const).map((priv) => (
                         <button
@@ -960,9 +960,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                             'px-2 py-0.5 rounded text-[10px] border transition-colors',
                             userForm.grants[db.name] === priv
                               ? priv === 'ALL PRIVILEGES'
-                                ? 'bg-blue-500 border-blue-500 text-white'
-                                : 'bg-green-500 border-green-500 text-white'
-                              : 'border-gray-200 dark:border-white/20 text-gray-500 hover:border-gray-400'
+                                ? ' bg-focus border-focus text-primary-foreground'
+                                : ' bg-success border-success text-primary-foreground'
+                              : ' border-divider dark:border-default text-muted-foreground hover:border-default'
                           )}
                         >
                           {priv === 'SELECT' ? 'Read' : 'ReadWrite'}
@@ -978,7 +978,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 value={userForm.customDb}
                 onChange={(e) => setUserForm(prev => ({ ...prev, customDb: e.target.value }))}
                 placeholder={t('mysql_service.custom_db_placeholder')}
-                className="h-7 text-xs shadow-none"
+                className="h-7 text-xs"
                 disabled={isSubmittingUser}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && userForm.customDb) {
@@ -994,7 +994,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 type="button"
                 size="sm"
                 variant="outline"
-                className="h-7 px-2 text-xs shadow-none"
+                className="h-7 px-2 text-xs"
                 disabled={!userForm.customDb || isSubmittingUser}
                 onClick={() => {
                   if (!userForm.customDb) return
@@ -1013,7 +1013,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 {Object.entries(userForm.grants).map(([db, priv]) => (
                   <span
                     key={db}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-focus/10 dark:bg-focus/10 text-focus dark:text-focus border border-focus/30 dark:border-focus/30"
                   >
                     {db}: {priv === 'ALL PRIVILEGES' ? 'ReadWrite' : 'Read'}
                     <button
@@ -1023,7 +1023,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                         delete newGrants[db]
                         return { ...prev, grants: newGrants }
                       })}
-                      className="hover:text-blue-900 dark:hover:text-blue-100"
+                      className="hover:text-focus  dark:hover:text-focus"
                     >×</button>
                   </span>
                 ))}
@@ -1031,7 +1031,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             )}
           </div>
           <DialogFooter>
-            <Button className="shadow-none" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
+            <Button className="" variant="outline" onClick={() => setShowEditUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
             <Button onClick={handleUpdateUserGrants} disabled={isSubmittingUser}>
               {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('common.saving')}</> : t('common.save')}
             </Button>
@@ -1043,7 +1043,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       <Dialog open={showDeleteUserDialog} onOpenChange={setShowDeleteUserDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-danger">
               <Trash2 className="h-5 w-5" />
               {t('mysql_service.delete_user_title')}
             </DialogTitle>
@@ -1052,7 +1052,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="shadow-none" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
+            <Button className="" variant="outline" onClick={() => setShowDeleteUserDialog(false)} disabled={isSubmittingUser}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmittingUser}>
               {isSubmittingUser ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />{t('mysql_service.deleting')}</> : t('mysql_service.confirm_delete')}
             </Button>
@@ -1063,13 +1063,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
       <div className="w-full space-y-3">
         {/* 未初始化提示 */}
         {isServiceActive && isInitialized === false && (
-          <div className="rounded-xl border border-orange-200 bg-orange-50 dark:border-orange-500/30 dark:bg-orange-500/10 p-4 space-y-3">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 dark:border-warning/30 dark:bg-warning/10 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1">
-                <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                <p className="text-xs font-semibold text-warning dark:text-warning">
                   {t('mysql_service.not_initialized_title')}
                 </p>
-                <p className="text-[11px] text-orange-700 dark:text-orange-400 leading-relaxed">
+                <p className="text-[11px] text-warning dark:text-warning leading-relaxed">
                   {t('mysql_service.not_initialized_desc')}
                 </p>
               </div>
@@ -1078,7 +1078,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               <Button
                 size="sm"
                 onClick={() => setShowInitDialog(true)}
-                className="h-7 text-xs shadow-none bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+                className="h-7 text-xs bg-warning hover:bg-warning/90 dark:bg-warning dark:hover:bg-warning/90 text-primary-foreground"
               >
                 {t('mysql_service.init_now')}
               </Button>
@@ -1087,16 +1087,16 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         )}
 
         {/* 服务控制 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
               {t('mysql_service.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
                 "w-2 h-2 rounded-full",
-                serviceStatus === ServiceStatus.Running ? "bg-green-500" :
-                  serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+                serviceStatus === ServiceStatus.Running ? " bg-success" :
+                  serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
               )} />
               <span className="text-xs font-normal text-muted-foreground">
                 {serviceStatus === ServiceStatus.Running ? t('mysql_service.running') :
@@ -1109,35 +1109,35 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 onClick={startService}
                 disabled={serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
                 {isStarting ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Power className="h-3.5 w-3.5 text-green-600" />
+                  <Power className="h-3.5 w-3.5 text-success" />
                 )}
                 {t('mysql_service.start')}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 onClick={stopService}
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
-                <PowerOff className="h-3.5 w-3.5 text-red-600" />
+                <PowerOff className="h-3.5 w-3.5 text-danger" />
                 {t('mysql_service.stop')}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                 onClick={restartService}
                 disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
               >
-                <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
+                <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
                 {t('mysql_service.restart')}
               </Button>
             </div>
@@ -1145,25 +1145,25 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         </div>
 
         {/* 配置管理 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           {isServiceActive && isInitialized ? (
             <div className="space-y-4">
               {/* 配置文件路径 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.config_file_label')}</Label>
+                <Label className="text-xs font-medium text-foreground">{t('mysql_service.config_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={configPath}
                     readOnly
                     placeholder={t('mysql_service.config_path_placeholder')}
-                    className="flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                    className="flex-1 h-8 text-xs bg-content2 cursor-not-allowed border-divider"
                   />
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                     title={t('mysql_service.open_config_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1172,14 +1172,14 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               </div>
 
               {/* 数据目录 */}
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.data_dir_label')}</Label>
+              <div className="pt-2 border-t border-divider">
+                <Label className="text-xs font-medium text-foreground">{t('mysql_service.data_dir_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={mysqlConfig?.dataPath || t('mysql_service.not_configured')}
                     readOnly
                     className={cn(
-                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      "flex-1 h-8 text-xs bg-content2 cursor-not-allowed border-divider",
                       !mysqlConfig?.dataPath && "text-muted-foreground"
                     )}
                   />
@@ -1188,7 +1188,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     variant="outline"
                     onClick={() => mysqlConfig?.dataPath && openFolderInFinder(mysqlConfig.dataPath)}
                     disabled={!mysqlConfig?.dataPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                     title={t('mysql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1198,13 +1198,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
               {/* 日志文件 */}
               <div>
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.log_file_label')}</Label>
+                <Label className="text-xs font-medium text-foreground">{t('mysql_service.log_file_label')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={mysqlConfig?.logPath || t('mysql_service.not_configured')}
                     readOnly
                     className={cn(
-                      "flex-1 h-8 text-xs shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10",
+                      "flex-1 h-8 text-xs bg-content2 cursor-not-allowed border-divider",
                       !mysqlConfig?.logPath && "text-muted-foreground"
                     )}
                   />
@@ -1213,7 +1213,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     variant="outline"
                     onClick={() => mysqlConfig?.logPath && openFolderInFinder(mysqlConfig.logPath)}
                     disabled={!mysqlConfig?.logPath}
-                    className="h-8 px-2 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                     title={t('mysql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1224,32 +1224,32 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               {/* 主机 & 端口 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.host_label')}</Label>
+                  <Label className="text-xs font-medium text-foreground">{t('mysql_service.host_label')}</Label>
                   <Input
                     value={mysqlConfig?.bindIp || t('mysql_service.not_configured')}
                     readOnly
-                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                    className="text-xs h-8 mt-1 bg-content2 cursor-not-allowed border-divider"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.port_from_config')}</Label>
+                  <Label className="text-xs font-medium text-foreground">{t('mysql_service.port_from_config')}</Label>
                   <Input
                     value={mysqlConfig?.port ?? t('mysql_service.not_configured')}
                     readOnly
-                    className="text-xs h-8 mt-1 shadow-none bg-muted cursor-not-allowed border-gray-200 dark:border-white/10"
+                    className="text-xs h-8 mt-1 bg-content2 cursor-not-allowed border-divider"
                   />
                 </div>
               </div>
 
               {/* Root 密码 */}
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.root_password_label')}</Label>
+              <div className="pt-2 border-t border-divider">
+                <Label className="text-xs font-medium text-foreground">{t('mysql_service.root_password_label')}</Label>
                 <div className="relative mt-1">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={serviceData.metadata?.['MYSQL_ROOT_PASSWORD'] || t('mysql_service.not_set')}
                     readOnly
-                    className="h-8 text-xs shadow-none bg-muted cursor-not-allowed pr-10 border-gray-200 dark:border-white/10"
+                    className="h-8 text-xs bg-content2 cursor-not-allowed pr-10 border-divider"
                   />
                   <Button
                     size="sm"
@@ -1260,17 +1260,17 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     aria-label={showPassword ? t('mysql_service.hide_password') : t('mysql_service.show_password')}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-3 w-3 text-gray-500" />
+                      <EyeOff className="h-3 w-3 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-3 w-3 text-gray-500" />
+                      <Eye className="h-3 w-3 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
               </div>
 
               {/* 管理工具 */}
-              <div className="pt-2 border-t border-gray-200 dark:border-white/10">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('mysql_service.management_tools')}</Label>
+              <div className="pt-2 border-t border-divider">
+                <Label className="text-xs font-medium text-foreground">{t('mysql_service.management_tools')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Button
                     variant="outline"
@@ -1288,7 +1288,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                       }
                     }}
                     disabled={serviceStatus !== ServiceStatus.Running}
-                    className="flex items-center gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                    className="flex items-center gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                   >
                     <Terminal className="h-3.5 w-3.5" />
                     MySQL Client
@@ -1297,7 +1297,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               </div>
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
@@ -1315,9 +1315,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         </div>
 
         {/* 数据库管理 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
               {t('mysql_service.db_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1325,7 +1325,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCreateDbDialog(true)}
-                className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 {t('mysql_service.new_database')}
@@ -1336,17 +1336,17 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
             <div className="space-y-2">
               {databases.length > 0 ? (
-                <div className="space-y-1 border rounded-lg p-2 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="space-y-1 border rounded-lg p-2 bg-content1 dark:bg-content1/40 border-divider">
                   {(showAllDatabases ? databases : databases.slice(0, 4)).map((db) => (
                     <div key={db.name} className="text-xs">
                       {/* 数据库行 */}
                       <div
                         onClick={() => toggleTables(db.name)}
-                        className="flex items-center justify-between p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors cursor-pointer"
+                        className="flex items-center justify-between p-1.5 hover:bg-content2 dark:hover:bg-white/10 rounded-md transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Database className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium truncate text-gray-700 dark:text-gray-300">{db.name}</span>
+                          <Database className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <span className="font-medium truncate text-foreground">{db.name}</span>
                         </div>
                         <Button
                           size="sm"
@@ -1372,9 +1372,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                               {(db.showAllTables ? db.tables : db.tables.slice(0, 4)).map((table) => (
                                 <div
                                   key={table}
-                                  className="flex items-center gap-1.5 py-1 px-1.5 rounded text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+                                  className="flex items-center gap-1.5 py-1 px-1.5 rounded text-xs text-muted-foreground hover:bg-content2 dark:hover:bg-white/10"
                                 >
-                                  <div className="h-1 w-1 rounded-full bg-gray-400 flex-shrink-0" />
+                                  <div className="h-1 w-1 rounded-full bg-default flex-shrink-0" />
                                   <span className="truncate">{table}</span>
                                 </div>
                               ))}
@@ -1383,7 +1383,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => toggleAllTables(db.name)}
-                                  className="w-full h-6 text-xs text-gray-500 hover:text-foreground mt-1"
+                                  className="w-full h-6 text-xs text-muted-foreground hover:text-foreground mt-1"
                                 >
                                   {db.showAllTables ? (
                                     <>
@@ -1400,7 +1400,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                               )}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-500 text-center py-2">{t('mysql_service.no_tables')}</div>
+                            <div className="text-xs text-muted-foreground text-center py-2">{t('mysql_service.no_tables')}</div>
                           )}
                         </div>
                       )}
@@ -1411,7 +1411,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowAllDatabases(!showAllDatabases)}
-                      className="w-full h-7 text-xs shadow-none text-gray-500"
+                      className="w-full h-7 text-xs text-muted-foreground"
                     >
                       {showAllDatabases ? (
                         <>
@@ -1428,7 +1428,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   )}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
+                <div className="text-sm text-muted-foreground text-center py-8 border rounded-lg border-dashed border-divider">
                   {isLoadingDatabases ? (
                     <RefreshCw className="h-4 w-4 animate-spin mx-auto" />
                   ) : t('mysql_service.no_databases')}
@@ -1436,7 +1436,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               )}
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <Database className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <>
@@ -1484,7 +1484,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button className="shadow-none" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
+              <Button className="" variant="outline" onClick={() => setShowCreateDbDialog(false)}>
                 {t('common.cancel')}
               </Button>
               <Button onClick={handleCreateDatabase} disabled={!newDbName || isCreatingDb}>
@@ -1500,9 +1500,9 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         </Dialog>
 
         {/* 用户管理 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
               {t('mysql_service.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1510,7 +1510,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCreateUserDialog(true)}
-                className="h-7 px-2 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                className="h-7 px-2 text-xs bg-content1 dark:bg-content1/40 border-divider"
               >
                 <UserPlus className="h-3 w-3 mr-1" />
                 {t('mysql_service.new_user')}
@@ -1520,12 +1520,12 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
           {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running ? (
             <div className="space-y-2">
               {/* root 管理员卡片 */}
-              <div className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs">
+              <div className="flex items-center justify-between p-2 rounded-lg border border-divider bg-content1 dark:bg-content1/40 text-xs">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                  <ShieldCheck className="h-3.5 w-3.5 text-warning flex-shrink-0" />
                   <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">root</span>
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{t('mysql_service.admin_tag')}</span>
+                    <span className="font-medium text-foreground">root</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-warning/10 dark:bg-warning/10 text-warning dark:text-warning border border-warning/30 dark:border-warning/30">{t('mysql_service.admin_tag')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1540,7 +1540,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="h-5 w-5 p-0 text-muted-foreground hover:text-muted-foreground dark:hover:text-default"
                       onClick={() => setShowPassword(v => !v)}
                     >
                       {!showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
@@ -1550,18 +1550,18 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
               </div>
               {/* 普通用户列表 */}
               {users.length > 0 ? (
-                <div className="border rounded-lg p-1 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10">
+                <div className="border rounded-lg p-1 bg-content1 dark:bg-content1/40 border-divider">
                   {users.map((user) => (
-                    <div key={user.username} className="flex items-center justify-between p-1 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 text-xs">
+                    <div key={user.username} className="flex items-center justify-between p-1 rounded-md hover:bg-background dark:hover:bg-white/5 text-xs">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Users className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                        <span className="font-medium text-gray-700 dark:text-gray-300">{user.username}</span>
+                        <Users className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-foreground">{user.username}</span>
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                          className="h-5 w-5 p-0 text-muted-foreground hover:text-focus hover:bg-focus/10 dark:hover:bg-focus/10"
                           onClick={() => openEditUserDialog(user)}
                           title={t('mysql_service.edit_permissions_title')}
                         >
@@ -1570,7 +1570,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                          className="h-5 w-5 p-0 text-muted-foreground hover:text-danger hover:bg-danger/10 dark:hover:bg-danger/10"
                           onClick={() => {
                             setSelectedUsername(user.username)
                             setShowDeleteUserDialog(true)
@@ -1584,13 +1584,13 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed border-gray-200 dark:border-white/10">
+                <div className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed border-divider">
                   {t('mysql_service.no_normal_users')}
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
               {!isServiceActive ? (
                 <><p className="text-sm">{t('mysql_service.service_not_active_users')}</p><p className="text-xs">{t('mysql_service.cannot_manage_users')}</p></>
@@ -1604,8 +1604,8 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         </div>
 
         {/* 其他操作 */}
-        <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="p-3 rounded-xl border border-divider bg-content1">
+          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
             {t('mysql_service.other_operations')}
           </Label>
           {isServiceActive && isInitialized ? (
@@ -1614,14 +1614,14 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowResetDialog(true)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 text-xs"
+                className="text-danger hover:text-danger hover:bg-danger/10 h-8 text-xs"
               >
                 <AlertTriangle className="h-3.5 w-3.5 mr-1" />
                 {t('mysql_service.reset_init')}
               </Button>
             </div>
           ) : (
-            <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-dashed border-gray-200 dark:border-white/10">
+            <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
               <BarChart3 className="h-6 w-6 mx-auto mb-2 opacity-50" />
               <p className="text-sm">{t('mysql_service.service_not_active_config')}</p>
               <p className="text-xs">{t('mysql_service.activate_service_hint')}</p>
