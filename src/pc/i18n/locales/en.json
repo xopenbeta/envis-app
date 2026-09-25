@@ -2,12 +2,22 @@
   "common": {
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "create": "Create",
     "loading": "Loading...",
     "save": "Save",
     "saving": "Saving...",
     "edit": "Edit",
     "delete": "Delete",
-    "unknown_error": "Unknown error"
+    "unknown_error": "Unknown error",
+    "open_folder_failed": "Failed to open folder",
+    "general": "General",
+    "copied": "Copied to clipboard",
+    "copy": "Copy",
+    "refresh": "Refresh",
+    "add": "Add",
+    "open_folder": "Open Folder",
+    "close": "Close",
+    "clear_search": "Clear search"
   },
   "service_item": {
     "drag_sort": "Drag to sort",
@@ -284,7 +294,10 @@
     "import_read_error": "Failed to read file",
     "import_parse_error": "Invalid JSON format",
     "import_invalid_format": "Invalid file format: missing environment name",
-    "import_create_env_error": "Failed to create environment"
+    "import_create_env_error": "Failed to create environment",
+    "delete_env_title": "Delete Environment",
+    "delete_env_desc": "This permanently deletes \"{{name}}\" and all of its service configuration. This cannot be undone.",
+    "open_nav": "Open navigation bar"
   },
   "user_dialog": {
     "open_user_dialog_log": "Open user dialog",
@@ -527,65 +540,6 @@
     "downloading": "Downloading update...",
     "restart_warning": "The application will restart automatically after installation"
   },
-  "welcome": {
-    "github_star": "If you like Envis, give us a Star on GitHub",
-    "github": "GitHub",
-    "discord": "Discord",
-    "discord_community": "Discord Community",
-    "dismiss": "Dismiss",
-    "subtitle": "A cross-platform environment management tool",
-    "new_environment": "New Environment",
-    "new_environment_desc": "Create a new service stack",
-    "open_terminal": "Open Terminal",
-    "open_terminal_desc": "Import existing configuration",
-    "ai_assistant": "AI Assistant",
-    "ai_assistant_desc": "Chat with AI",
-    "documentation": "Documentation",
-    "documentation_desc": "Learn how to use Envis",
-    "use_cases": "Use Cases",
-    "rapid_setup": "Rapid Environment Setup",
-    "rapid_setup_desc": "When developing a new project, setting up the environment is often the hardest part. Download difficulties, tedious configuration, dependency errors - Envis solves these with one-click service installation, eliminating manual configuration and dependency troubleshooting, getting your project ready to run immediately.",
-    "multi_project": "Seamless Multi-Project Switching",
-    "multi_project_desc": "When working on multiple projects, Project A needs Node14, Java8, MySQL, while another needs Node20, Java11, MariaDB. Switching between projects means switching environments every time, which is tedious. With Envis, switch environments with one click and easily manage complex project dependencies.",
-    "team_standardization": "Team Environment Standardization",
-    "team_standardization_desc": "Configuring environments on every computer is troublesome. Envis supports exporting and importing environment configurations, allowing one-click setup of identical environments. Eliminate the 'it works on my machine' problem, ensure all team members have consistent development environments, and guarantee stable project execution across different devices.",
-    "getting_started": "Getting Started",
-    "step_1_title": "Create",
-    "step_1_desc": "New Environment",
-    "step_2_title": "Configure",
-    "step_2_desc": "Service Configuration",
-    "step_3_title": "Run",
-    "step_3_desc": "One-Click Start",
-    "cmd_warning_title": "Important Notice for Windows CMD Users",
-    "cmd_warning_desc": "Envis will set an AutoRun registry key pointing to a batch script, which loads environment variables when CMD starts.\n\nAll environment variables are session-only (set KEY=VALUE) and do NOT modify registry environment variables. We strongly recommend switching to PowerShell or WSL instead of CMD for a better experience.",
-    "cmd_warning_example": "CMD script example (session-only)",
-    "cmd_warning_script_example": "@echo off\necho Welcome! Loading Envis environment...\n\n:: Set PATH (current session only)\nset PATH=%PATH%;C:\\my\\custom\\bin\n\n:: Set variable (current session only)\nset MY_VAR=my_value\n\n:: Set alias\ndoskey ll=dir /b $*",
-    "cmd_warning_dismiss": "Got it, don't show again",
-    "feedback": "Feedback & Suggestions",
-    "feedback_desc": "Submit bug reports or feature requests",
-    "network_error": "Detected that the current network cannot access Google. Features like downloading GitHub Release binaries may be limited. Please check your network connection or use a proxy.",
-    "join_discord": "Join Discord Community",
-    "join_qq": "Join QQ Group",
-    "wechat": "WeChat",
-    "join_wechat": "Join WeChat Group",
-    "join_community": "Join Community",
-    "join_community_desc": "Scan QR code to join Envis user community",
-    "qq_group": "QQ Group",
-    "qq_group_id": "Group ID: {{id}}",
-    "wechat_group": "WeChat Group",
-    "wechat_group_desc": "Add on WeChat: zhang-4696, attach with \"Envis\" to join group",
-    "defender_warning_title": "Performance Optimization Suggestion",
-    "defender_warning_desc": "Windows Defender real-time protection can significantly slow down file I/O. It is recommended to add Envis working directories to exclusions for better performance.",
-    "defender_warning_steps": "View setup steps",
-    "defender_exclude_steps_title": "Steps to add exclusions:",
-    "defender_step_1": "Open Windows Settings -> Privacy & security -> Windows Security",
-    "defender_step_2": "Click \"Virus & threat protection\"",
-    "defender_step_3": "Scroll to \"Virus & threat protection settings\" and click \"Manage settings\"",
-    "defender_step_4": "Scroll to \"Exclusions\" and click \"Add or remove exclusions\"",
-    "defender_step_5": "Click \"Add an exclusion\" -> \"Folder\"",
-    "defender_step_6": "Select Envis data directory (usually .envis under your user directory)",
-    "defender_tip": "Tip: after exclusion, file operation speed may improve by 2-10x"
-  },
   "log_panel": {
     "expand_params": "Expand params",
     "collapse_params": "Collapse params",
@@ -609,7 +563,9 @@
     "service": "Service",
     "ai": "AI",
     "params": "Params",
-    "meta_info": "Meta Info"
+    "meta_info": "Meta Info",
+    "clear_all_confirm": "All current log entries will be discarded. This cannot be undone.",
+    "refresh_confirm": "This reloads the whole app and discards the current session state. Continue?"
   },
   "system_monitor": {
     "title": "System Monitor",
@@ -745,7 +701,9 @@
     "loading_packages": "Loading packages...",
     "no_packages": "No global packages installed",
     "conflict_manager_title": "Version Manager Conflict Detected",
-    "conflict_manager_desc": "The following Node.js version managers were detected: {{managers}}. These tools may conflict with this application. It is recommended to uninstall or disable them before using this application."
+    "conflict_manager_desc": "The following Node.js version managers were detected: {{managers}}. These tools may conflict with this application. It is recommended to uninstall or disable them before using this application.",
+    "service_inactive": "Service is not active",
+    "activate_to_view_packages": "Activate the service to view global packages"
   },
   "python_service": {
     "uv_conflict_title": "Potential uv conflict detected",
@@ -1262,7 +1220,18 @@
     "open_dir_title": "Open directory",
     "select_file_title": "Select file",
     "service_not_active": "Service not activated",
-    "service_not_active_hint": "Please activate Redis service first"
+    "service_not_active_hint": "Please activate Redis service first",
+    "config_path_set_success": "Redis configuration file path updated",
+    "config_path_set_failed": "Failed to update Redis configuration file path: {{message}}",
+    "reset_success": "Redis reset successfully",
+    "init_error": "Failed to initialize Redis: {{message}}",
+    "checking_init": "Checking initialization status...",
+    "save_title": "Save configuration file path",
+    "data_dir_label": "Data Directory (from config)",
+    "client_open_failed_msg": "Failed to open Redis client: {{message}}",
+    "persistence_label": "Persistence",
+    "enable_rdb": "Enable RDB persistence",
+    "enable_aof": "Enable AOF persistence"
   },
   "postgresql_service": {
     "db_create_success": "Database created successfully",
@@ -1426,7 +1395,11 @@
     "config_overview": "Configuration Overview",
     "no_server_config": "No server configuration detected",
     "service_not_active": "Service not activated",
-    "service_not_active_hint": "Please activate Nginx service first"
+    "service_not_active_hint": "Please activate Nginx service first",
+    "error_log": "Error Log",
+    "server_blocks": "Server Blocks",
+    "listen_label": "Listen:",
+    "server_name_label": "Server Name:"
   },
   "custom_service": {
     "path_config_label": "Path Configuration",
@@ -1509,7 +1482,7 @@
   "host_service": {
     "toggle_success": "Host status toggled successfully",
     "toggle_failed": "Failed to toggle status: {{message}}",
-    "password_error": "Password incorrect",
+    "password_error": "Password incorrect, please try again",
     "system_update_failed": "System file update failed",
     "open_hosts_success": "Hosts file folder opened",
     "open_hosts_failed": "Failed to open: {{message}}",
@@ -1537,7 +1510,18 @@
     "admin_required_desc": "Modifying the system hosts file requires administrator privileges, please enter your password.",
     "password_label": "Password *",
     "password_placeholder": "Enter your system password",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "password_required": "Please enter password",
+    "load_hosts_failed": "Failed to load hosts",
+    "ip_hostname_required": "IP address and hostname cannot be empty",
+    "invalid_ip": "Please enter a valid IP address",
+    "update_success": "Host updated successfully",
+    "add_success": "Host added successfully",
+    "update_failed": "Update failed: {{message}}",
+    "add_failed": "Add failed: {{message}}",
+    "delete_success": "Host deleted successfully",
+    "delete_failed": "Delete failed: {{message}}",
+    "no_comment": "No comment"
   },
   "ai_panel": {
     "title": "AI Assistant",
@@ -1561,7 +1545,9 @@
     "placeholder": "Type your question. Press Enter to send, Shift+Enter for a new line...",
     "disabled_placeholder": "Please configure AI service in settings first...",
     "loading": "Loading AI assistant...",
-    "typing": "Typing..."
+    "typing": "Typing...",
+    "copy_message": "Copy message",
+    "scroll_to_latest": "Back to latest"
   },
   "app_footer": {
     "update_available": "Update Available"

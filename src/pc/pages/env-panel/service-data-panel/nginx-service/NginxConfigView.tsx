@@ -30,6 +30,7 @@ import { useEnvironmentServiceData, useServiceData } from '@/hooks/env-serv-data
 import { useFileOperations } from '@/hooks/file-operations'
 import { useNginxService } from '@/hooks/services/nginx'
 import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
+import { useTranslation } from 'react-i18next'
 
 interface NginxConfigViewProps {
     selectedEnvironmentId: string
@@ -50,6 +51,7 @@ export function NginxConfigView({
     selectedEnvironmentId,
     serviceData,
 }: NginxConfigViewProps) {
+    const { t } = useTranslation()
     const { openFolderInFinder } = useFileOperations()
     const {
         startServiceData,
@@ -196,7 +198,7 @@ export function NginxConfigView({
             }
         } catch (error) {
             console.error('打开 Nginx 目录失败:', error)
-            toast.error('打开目录失败')
+            toast.error(t('nginx_service.open_dir_failed'))
         }
     }
 
@@ -213,13 +215,13 @@ export function NginxConfigView({
                 serviceDatas: selectedServiceDatas,
             })
             if (updated) {
-                toast.success('配置文件路径设置成功')
+                toast.success(t('nginx_service.config_path_set_success'))
             } else {
-                toast.error('配置文件路径设置失败')
+                toast.error(t('nginx_service.config_path_set_failed'))
             }
         } catch (error) {
             console.error('设置配置文件路径失败:', error)
-            toast.error('配置文件路径设置失败')
+            toast.error(t('nginx_service.config_path_set_failed'))
         } finally {
             setIsLoading(false)
         }
@@ -233,13 +235,13 @@ export function NginxConfigView({
             const res = await startServiceData(selectedEnvironmentId, serviceData)
             console.log('zws startServiceData result:', res)
             if (res && (res as any).success) {
-                toast.success('Nginx 服务启动成功')
+                toast.success(t('nginx_service.start_success'))
             } else {
-                toast.error((res as any)?.message || '启动失败')
+                toast.error((res as any)?.message || t('nginx_service.start_failed'))
             }
         } catch (error) {
             console.error('启动 Nginx 服务失败:', error)
-            toast.error('启动失败')
+            toast.error(t('nginx_service.start_failed'))
         } finally {
             console.log('zws nginx start finally')
             setIsStarting(false)
@@ -252,13 +254,13 @@ export function NginxConfigView({
             setIsStopping(true)
             const res = await stopServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
-                toast.success('Nginx 服务停止成功')
+                toast.success(t('nginx_service.stop_success'))
             } else {
-                toast.error((res as any)?.message || '停止失败')
+                toast.error((res as any)?.message || t('nginx_service.stop_failed'))
             }
         } catch (error) {
             console.error('停止 Nginx 服务失败:', error)
-            toast.error('停止失败')
+            toast.error(t('nginx_service.stop_failed'))
         } finally {
             setIsStopping(false)
         }
@@ -270,13 +272,13 @@ export function NginxConfigView({
             setIsRestarting(true)
             const res = await restartServiceData(selectedEnvironmentId, serviceData)
             if (res && (res as any).success) {
-                toast.success('Nginx 服务重启成功')
+                toast.success(t('nginx_service.restart_success'))
             } else {
-                toast.error((res as any)?.message || '重启失败')
+                toast.error((res as any)?.message || t('nginx_service.restart_failed'))
             }
         } catch (error) {
             console.error('重启 Nginx 服务失败:', error)
-            toast.error('重启失败')
+            toast.error(t('nginx_service.restart_failed'))
         } finally {
             setIsRestarting(false)
         }
@@ -287,8 +289,8 @@ export function NginxConfigView({
             {/* Nginx 状态 */}
             <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                        服务控制
+                    <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        {t('nginx_service.service_control')}
                     </Label>
                     <div className="flex items-center gap-2">
                         <div className={cn(
@@ -297,8 +299,8 @@ export function NginxConfigView({
                             serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
                         )} />
                         <span className="text-xs font-normal text-muted-foreground">
-                            {serviceStatus === ServiceStatus.Running ? '运行中' : 
-                             serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知状态'}
+                            {serviceStatus === ServiceStatus.Running ? t('nginx_service.running') : 
+                             serviceStatus === ServiceStatus.Stopped ? t('nginx_service.stopped') : t('nginx_service.unknown_status')}
                         </span>
                     </div>
                 </div>
@@ -318,7 +320,7 @@ export function NginxConfigView({
                             ) : (
                             <Power className="h-3.5 w-3.5 text-success" />
                             )}
-                            启动
+                            {t('nginx_service.start')}
                         </Button>
                         <Button 
                             size="sm" 
@@ -328,7 +330,7 @@ export function NginxConfigView({
                             disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                         >
                             <PowerOff className="h-3.5 w-3.5 text-danger" />
-                            停止
+                            {t('nginx_service.stop')}
                         </Button>
                         <Button 
                             size="sm" 
@@ -338,7 +340,7 @@ export function NginxConfigView({
                             disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                         >
                             <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
-                            重启
+                            {t('nginx_service.restart')}
                         </Button>
                     </div>
                 )}
@@ -354,12 +356,12 @@ export function NginxConfigView({
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
-                                            配置文件
+                                            {t('nginx_service.config_file_label')}
                                             <Info className="h-3 w-3 text-muted-foreground" />
                                         </Label>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <div className="text-xs">nginx.conf 文件的路径</div>
+                                        <div className="text-xs">{t('nginx_service.config_file_tooltip')}</div>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -367,9 +369,9 @@ export function NginxConfigView({
                                 <Input
                                     value={editingConfigPath}
                                     onChange={(e) => setEditingConfigPath(e.target.value)}
-                                    placeholder="Nginx 配置文件路径"
+                                    placeholder={t('nginx_service.config_path_placeholder')}
                                     disabled={isLoading}
-                                    className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
+                                    className="flex-1 h-8 text-xs bg-content2 border-divider"
                                 />
                                 <Button
                                     size="sm"
@@ -377,7 +379,8 @@ export function NginxConfigView({
                                     onClick={handleSetConfigPath}
                                     disabled={isLoading || !editingConfigPath || editingConfigPath === configPath}
                                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
-                                    title="保存"
+                                    aria-label={t('nginx_service.save_title')}
+                                    title={t('nginx_service.save_title')}
                                 >
                                     <Save className="h-3.5 w-3.5" />
                                 </Button>
@@ -387,7 +390,8 @@ export function NginxConfigView({
                                     onClick={handleOpenNginxFolder}
                                     disabled={!configPath}
                                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
-                                    title="打开目录"
+                                    aria-label={t('nginx_service.open_dir_title')}
+                                    title={t('nginx_service.open_dir_title')}
                                 >
                                     <FolderOpen className="h-3.5 w-3.5" />
                                 </Button>
@@ -397,14 +401,14 @@ export function NginxConfigView({
                         {/* 解析后的配置展示 */}
                         {parsedConfig && (
                             <div className="space-y-3 pt-2 border-t border-divider">
-                                <Label className="text-xs font-medium text-foreground">配置概览</Label>
+                                <Label className="text-xs font-medium text-foreground">{t('nginx_service.config_overview')}</Label>
 
                                 {/* 错误日志路径 */}
                                 {parsedConfig.errorLog && (
                                     <div className="space-y-1">
                                         <div className="text-xs text-muted-foreground flex items-center gap-1">
                                             <ScrollText className="h-3 w-3" />
-                                            Error Log
+                                            {t('nginx_service.error_log')}
                                         </div>
                                         <div className="bg-white dark:bg-content1/40 p-2 rounded border border-divider text-xs">
                                             <span className="font-mono break-all">{parsedConfig.errorLog}</span>
@@ -415,18 +419,18 @@ export function NginxConfigView({
                                 <div className="space-y-2">
                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                                         <Server className="h-3 w-3" />
-                                        Server Blocks
+                                        {t('nginx_service.server_blocks')}
                                     </div>
                                     {parsedConfig.servers.length > 0 ? (
                                         <div className="space-y-2">
                                             {parsedConfig.servers.map((server, idx) => (
                                                 <div key={idx} className="bg-white dark:bg-content1/40 p-2 rounded border border-divider text-xs space-y-1">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-muted-foreground">Listen:</span>
+                                                        <span className="text-muted-foreground">{t('nginx_service.listen_label')}</span>
                                                         <span className="font-mono">{server.listen.join(', ')}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-muted-foreground">Server Name:</span>
+                                                        <span className="text-muted-foreground">{t('nginx_service.server_name_label')}</span>
                                                         <span className="font-mono">{server.serverName.join(', ')}</span>
                                                     </div>
                                                 </div>
@@ -434,7 +438,7 @@ export function NginxConfigView({
                                         </div>
                                     ) : (
                                         <div className="text-xs text-muted-foreground text-center py-2">
-                                            未检测到 Server 配置
+                                            {t('nginx_service.no_server_config')}
                                         </div>
                                     )}
                                 </div>
@@ -444,8 +448,8 @@ export function NginxConfigView({
                 ) : (
                     <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
                         <Settings className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">服务未激活</p>
-                        <p className="text-xs">请先激活 Nginx 服务</p>
+                        <p className="text-sm">{t('nginx_service.service_not_active')}</p>
+                        <p className="text-xs">{t('nginx_service.service_not_active_hint')}</p>
                     </div>
                 )}
             </div>

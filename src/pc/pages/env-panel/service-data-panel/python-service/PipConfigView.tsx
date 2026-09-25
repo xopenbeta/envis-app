@@ -92,7 +92,7 @@ export function PipConfigView({
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
+                                <Label className="cursor-help flex items-center gap-1.5 text-sm font-semibold text-foreground">
                                     {t('python_service.pip_index_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>

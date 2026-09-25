@@ -110,7 +110,7 @@ export function EnvironmentVariablesView({
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
+                                <Label className="cursor-help flex items-center gap-1.5 text-sm font-semibold text-foreground">
                                     {/* <Globe className="h-3.5 w-3.5" /> */}
                                     {t('custom_service.env_var_config_label')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
@@ -194,6 +194,8 @@ export function EnvironmentVariablesView({
                                     size="sm"
                                     onClick={() => removeEnvVar(index)}
                                     disabled={isLoading}
+                                    aria-label={t('common.delete')}
+                                    title={t('common.delete')}
                                     className="h-8 w-8 p-0 text-muted-foreground  hover:text-danger"
                                 >
                                     <Trash2 className="h-4 w-4" />

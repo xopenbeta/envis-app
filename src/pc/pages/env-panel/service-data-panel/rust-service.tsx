@@ -99,6 +99,8 @@ function RustServiceCard({ serviceData, selectedEnvironmentId }: RustServiceCard
                                 variant="outline"
                                 size="icon"
                                 onClick={() => openFolderInFinder(rustHome)}
+                                aria-label={t('settings.open_in_finder')}
+                                title={t('settings.open_in_finder')}
                                 className="h-8 w-8 shrink-0 border-divider"
                             >
                                 <FolderOpen className="h-3.5 w-3.5" />

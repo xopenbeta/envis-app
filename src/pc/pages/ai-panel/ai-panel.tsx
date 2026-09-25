@@ -3,7 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAtom } from 'jotai'
-import { Bot, Send, Trash2, Square, X } from 'lucide-react'
+import { ArrowDown, Bot, Copy, Loader2, Send, Trash2, Square, X } from 'lucide-react'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { toast } from "sonner"
 import { chatMessagesAtom, addChatMessageAtom, clearChatMessagesAtom, isAIResponseLoadingAtom } from "@/store/ai"
@@ -44,14 +44,14 @@ const normalizeBaseUrl = (baseUrl: string) => baseUrl.trim().replace(/\/+$/, '')
 
 function MarkdownMessage({ content }: { content: string }) {
   return (
-    <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:my-2 prose-p:text-foreground prose-pre:my-2 prose-pre:overflow-x-auto prose-pre:rounded-lg prose-pre:bg-content3 prose-pre:p-3 prose-code:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-blockquote:text-default-600 dark:prose-invert">
+    <div className="md">
       <ReactMarkdown
         rehypePlugins={[rehypeHighlight]}
         components={{
           a: ({ node: _node, ...props }) => (
             <a
               {...props}
-              className="text-primary hover:underline"
+              className="text-focus hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             />
@@ -59,7 +59,7 @@ function MarkdownMessage({ content }: { content: string }) {
           blockquote: ({ node: _node, ...props }) => (
             <blockquote
               {...props}
-              className="border-l-4 border-primary pl-4 italic text-default-600"
+              className="border-l-[3px] border-divider pl-3 text-muted-foreground"
             />
           ),
         }}
@@ -94,6 +94,8 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
   // 智能滚动相关状态
   const userHasScrolledRef = useRef(false)
   const lastScrollTop = useRef(0)
+  // 「回到最新」按钮的显隐：ref 不触发重渲染，因此另需一份 state
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
 
   // 中断控制
   const [, setIsInterrupted] = useState(false)
@@ -139,6 +141,7 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
         userHasScrolledRef.current = true;
       }
 
+      setShowScrollToBottom(!isAtBottom)
       lastScrollTop.current = scrollTop
     }
   }, [])
@@ -469,7 +472,8 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       // 直接添加错误消息到聊天记录
       addChatMessage({
         role: 'assistant',
-        content: errorMessage
+        content: errorMessage,
+        error: true
       })
       
       toast.error(t('ai_panel.send_error'))
@@ -523,24 +527,27 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
     <div className="flex flex-col h-full bg-content1">
       {/* Header */}
       <div className="flex items-center justify-between p-2 border-b border-divider">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Button
             onClick={onClose}
-            size="sm"
+            size="icon"
             variant="ghost"
-            className="h-7 text-default-500 hover:text-foreground hover:bg-content2 transition-all duration-250"
+            className="h-7 w-7"
+            aria-label={t('ai_panel.title')}
+            title={t('ai_panel.title')}
           >
             <X className="h-4 w-4" />
           </Button>
-          <h2 className="text-[15px] font-semibold">{t('ai_panel.title')}</h2>
+          <h2 className="text-sm font-semibold">{t('ai_panel.title')}</h2>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleClearChat}
-            size="sm"
+            size="icon"
             variant="ghost"
-            className="h-7 text-default-500 hover:text-foreground hover:bg-content2 transition-all duration-250"
+            className="h-7 w-7"
             disabled={chatMessages.length === 0 && !isLoading && !typingMessage}
+            aria-label={isLoading || typingMessage ? t('ai_panel.interrupt_and_clear') : t('ai_panel.clear_chat')}
             title={isLoading || typingMessage ? t('ai_panel.interrupt_and_clear') : t('ai_panel.clear_chat')}
           >
             <Trash2 className="h-4 w-4" />
@@ -551,12 +558,12 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       {/* AI状态指示器 */}
       {(isLoading || typingMessage) && (
         <div className="px-4 py-2 bg-warning/10 border-b border-divider">
-          <div className="flex items-center space-x-2 text-xs text-warning-600">
-            <div className="animate-pulse w-2 h-2 bg-warning rounded-full"></div>
+          <div className="flex items-center gap-2 text-xs text-warning">
+            <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
             <span>
               {isLoading && !typingMessage ? t('ai_panel.ai_thinking') : t('ai_panel.ai_replying')}
             </span>
-            <span className="text-default-400">{t('ai_panel.press_esc')}</span>
+            <span className="text-muted-foreground">{t('ai_panel.press_esc')}</span>
           </div>
         </div>
       )}
@@ -564,37 +571,60 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       {/* 聊天区域 */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         {chatMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <Bot className="h-12 w-12 text-default-300 mb-4" />
-            <h3 className="text-lg font-medium text-default-500 mb-2">{t('ai_panel.empty_title')}</h3>
-            <p className="text-sm text-default-400 max-w-sm leading-relaxed">
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
+            <Bot className="h-10 w-10 text-muted-foreground mb-3" />
+            <h3 className="text-sm font-medium text-foreground">{t('ai_panel.empty_title')}</h3>
+            <p className="text-xs text-muted-foreground mt-1 max-w-[280px] leading-relaxed">
               {t('ai_panel.empty_description')}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div
+            className="space-y-4"
+            role="log"
+            aria-live="polite"
+            aria-label={t('ai_panel.title')}
+          >
             {chatMessages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-content2 text-foreground'
-                    }`}
-                >
-                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                    {message.role === 'assistant' ? (
-                      <MarkdownMessage content={message.content} />
-                    ) : (
-                      <div className="break-words">{message.content}</div>
-                    )}
+                <div className="group/bubble flex flex-col items-start max-w-[80%] min-w-0">
+                  <div
+                    className={`w-full rounded-lg p-3 ${message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : message.error
+                          ? 'bg-danger/10 border border-danger text-danger'
+                          : 'bg-content2 text-foreground'
+                      }`}
+                  >
+                    <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {message.role === 'assistant' && !message.error ? (
+                        <MarkdownMessage content={message.content} />
+                      ) : (
+                        <div className="break-words">{message.content}</div>
+                      )}
+                    </div>
+                    <div className={`text-xs mt-2 opacity-70 ${message.role === 'user' ? 'text-primary-foreground' : 'text-muted-foreground'
+                      }`}>
+                      {message.timestamp}
+                    </div>
                   </div>
-                  <div className={`text-xs mt-2 opacity-70 ${message.role === 'user' ? 'text-primary-foreground' : 'text-default-500'
-                    }`}>
-                    {message.timestamp}
-                  </div>
+                  {/* 复制：悬停或键盘聚焦时显形 */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(message.content)
+                      toast.success(t('common.copied'))
+                    }}
+                    className="mt-1 inline-flex items-center gap-1 rounded-xs px-1.5 py-0.5 text-2xs text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/bubble:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                    aria-label={t('ai_panel.copy_message')}
+                    title={t('ai_panel.copy_message')}
+                  >
+                    <Copy className="h-3 w-3" />
+                    {t('common.copy')}
+                  </button>
                 </div>
               </div>
             ))}
@@ -606,10 +636,10 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
                   <div className="text-sm whitespace-pre-wrap leading-relaxed">
                     <MarkdownMessage content={typingMessage.displayedContent} />
                     {typingMessage.isTyping && (
-                      <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                      <span className="inline-block w-2 h-4 bg-focus ml-1 animate-pulse align-text-bottom" />
                     )}
                   </div>
-                  <div className="text-xs mt-2 opacity-70 text-default-500">
+                  <div className="text-xs mt-2 opacity-70 text-muted-foreground">
                     {typingMessage.isTyping ? t('ai_panel.typing') : new Date().toLocaleTimeString()}
                   </div>
                 </div>
@@ -619,8 +649,8 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
             {isLoading && !typingMessage && (
               <div className="flex justify-start">
                 <div className="bg-content2 text-foreground rounded-lg p-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     <span className="text-sm">{t('ai_panel.ai_thinking')}</span>
                   </div>
                 </div>
@@ -635,26 +665,52 @@ export function AIPanel({ onClose }: { onClose: () => void }) {
       {/* 输入区域 */}
       <div className="p-2">
         <div className="relative">
+          {showScrollToBottom && (
+            <button
+              type="button"
+              onClick={() => {
+                userHasScrolledRef.current = false
+                setShowScrollToBottom(false)
+                const viewport = scrollViewportRef.current
+                if (viewport) viewport.scrollTop = viewport.scrollHeight
+              }}
+              className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 rounded-full border border-divider bg-content1 px-2.5 py-1 text-2xs text-foreground shadow-pop transition-colors duration-150 hover:bg-content2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              aria-label={t('ai_panel.scroll_to_latest')}
+            >
+              <ArrowDown className="h-3 w-3" />
+              {t('ai_panel.scroll_to_latest')}
+            </button>
+          )}
           <Textarea
             ref={inputRef}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value)
+              // 自动增高：此前 min-h-[80px] max-h-[200px] + resize-none 而没有实现自增高，
+              // max-h 是永远不会生效的死 CSS，输入框永远长不过 80px。
+              const el = e.target
+              el.style.height = 'auto'
+              el.style.height = `${Math.min(el.scrollHeight, 200)}px`
+            }}
             onKeyDown={handleKeyPress}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
             placeholder={isAIReady ? t('ai_panel.placeholder') : t('ai_panel.disabled_placeholder')}
             disabled={!isAIReady || isLoading}
-            className="w-full bg-content2 border-divider focus:border-primary transition-all duration-250 min-h-[80px] max-h-[200px] resize-none pr-12 pb-12"
+            aria-label={t('ai_panel.placeholder')}
+            className="w-full bg-content2 border-divider focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus transition-colors duration-150 py-2 pl-3 pr-12 resize-none overflow-y-auto"
+            style={{ minHeight: 80, maxHeight: 200 }}
             rows={3}
           />
           <Button
             onClick={isLoading || typingMessage ? handleInterrupt : handleSend}
             disabled={(!inputValue.trim() && !isLoading && !typingMessage) || !isAIReady}
-            size="sm"
-            className={`absolute bottom-2 right-2 h-8 w-8 p-0 ${isLoading || typingMessage
-                ? 'transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-danger text-danger-foreground hover:bg-danger/90 bg-danger hover:bg-danger/90'
-                : 'transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90'
+            size="icon"
+            className={`absolute bottom-2 right-2 h-8 w-8 ${isLoading || typingMessage
+                ? 'bg-danger text-danger-foreground hover:bg-danger/90'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
+            aria-label={isLoading || typingMessage ? t('ai_panel.interrupt_btn') : t('ai_panel.send_btn')}
             title={isLoading || typingMessage ? t('ai_panel.interrupt_btn') : t('ai_panel.send_btn')}
           >
             {isLoading || typingMessage ? (

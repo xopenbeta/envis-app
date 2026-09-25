@@ -279,14 +279,14 @@ export function SystemMonitor({ systemInfo }: { systemInfo: SystemInfo | null })
               <div className="space-y-1 flex-1">
                 <div className="flex justify-between text-[10px]">
                   <span className="text-muted-foreground flex items-center gap-1">
-                    <ArrowUp className={`w-3 h-3 ${displayInfo.network.upload > 0 ? ' text-focus' : ' text-default dark:text-muted-foreground'}`} />
+                    <ArrowUp className={`w-3 h-3 ${displayInfo.network.upload > 0 ? ' text-focus' : ' text-muted-foreground'}`} />
                     {t('system_monitor.upload')}
                   </span>
                   <span className="text-foreground dark:text-foreground">{hasData ? `${formatBytes(displayInfo.network.upload)}/s` : '--'}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
                   <span className="text-muted-foreground flex items-center gap-1">
-                    <ArrowDown className={`w-3 h-3 ${displayInfo.network.download > 0 ? ' text-success' : ' text-default dark:text-muted-foreground'}`} />
+                    <ArrowDown className={`w-3 h-3 ${displayInfo.network.download > 0 ? ' text-success' : ' text-muted-foreground'}`} />
                     {t('system_monitor.download')}
                   </span>
                   <span className="text-foreground dark:text-foreground">{hasData ? `${formatBytes(displayInfo.network.download)}/s` : '--'}</span>

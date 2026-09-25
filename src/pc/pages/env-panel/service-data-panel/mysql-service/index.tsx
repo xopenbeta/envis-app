@@ -644,6 +644,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 <div className="space-y-2">
                   <Label htmlFor="init-port">{t('mysql_service.port_label')}</Label>
                   <Input
+                    type="number"
+                    min={1}
+                    max={65535}
+                    inputMode="numeric"
                     id="init-port"
                     value={dialogData.port}
                     onChange={(e) => setDialogData(prev => ({ ...prev, port: e.target.value }))}
@@ -741,6 +745,10 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 <div className="space-y-2">
                   <Label htmlFor="reset-port">{t('mysql_service.port_label')}</Label>
                   <Input
+                    type="number"
+                    min={1}
+                    max={65535}
+                    inputMode="numeric"
                     id="reset-port"
                     value={dialogData.port}
                     onChange={(e) => setDialogData(prev => ({ ...prev, port: e.target.value }))}
@@ -882,6 +890,8 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                   variant="outline"
                   className="h-7 px-2 text-xs"
                   disabled={!userForm.customDb || isSubmittingUser}
+                  aria-label={t('common.add')}
+                  title={t('common.add')}
                   onClick={() => {
                     if (!userForm.customDb) return
                     setUserForm(prev => ({
@@ -996,6 +1006,8 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                 variant="outline"
                 className="h-7 px-2 text-xs"
                 disabled={!userForm.customDb || isSubmittingUser}
+                aria-label={t('common.add')}
+                title={t('common.add')}
                 onClick={() => {
                   if (!userForm.customDb) return
                   setUserForm(prev => ({
@@ -1089,7 +1101,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         {/* 服务控制 */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('mysql_service.service_control')}
             </Label>
             <div className="flex items-center gap-2">
@@ -1164,6 +1176,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('mysql_service.open_config_dir_title')}
                     title={t('mysql_service.open_config_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1189,6 +1202,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => mysqlConfig?.dataPath && openFolderInFinder(mysqlConfig.dataPath)}
                     disabled={!mysqlConfig?.dataPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('mysql_service.open_dir_title')}
                     title={t('mysql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1214,6 +1228,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                     onClick={() => mysqlConfig?.logPath && openFolderInFinder(mysqlConfig.logPath)}
                     disabled={!mysqlConfig?.logPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('mysql_service.open_dir_title')}
                     title={t('mysql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1317,7 +1332,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         {/* 数据库管理 */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('mysql_service.db_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1502,7 +1517,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
         {/* 用户管理 */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('mysql_service.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1563,6 +1578,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                           variant="ghost"
                           className="h-5 w-5 p-0 text-muted-foreground hover:text-focus hover:bg-focus/10 dark:hover:bg-focus/10"
                           onClick={() => openEditUserDialog(user)}
+                          aria-label={t('mysql_service.edit_permissions_title')}
                           title={t('mysql_service.edit_permissions_title')}
                         >
                           <Pencil className="h-3 w-3" />
@@ -1575,6 +1591,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
                             setSelectedUsername(user.username)
                             setShowDeleteUserDialog(true)
                           }}
+                          aria-label={t('mysql_service.delete_user_title')}
                           title={t('mysql_service.delete_user_title')}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -1605,7 +1622,7 @@ export function MySQLService({ serviceData }: MySQLServiceProps) {
 
         {/* 其他操作 */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
+          <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
             {t('mysql_service.other_operations')}
           </Label>
           {isServiceActive && isInitialized ? (

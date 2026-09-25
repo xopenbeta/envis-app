@@ -681,6 +681,10 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 <div className="space-y-2">
                   <Label htmlFor="postgres-init-port">{t('postgresql_service.port_label')}</Label>
                   <Input
+                    type="number"
+                    min={1}
+                    max={65535}
+                    inputMode="numeric"
                     id="postgres-init-port"
                     value={dialogData.port}
                     onChange={(e) => setDialogData(prev => ({ ...prev, port: e.target.value }))}
@@ -777,6 +781,10 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                 <div className="space-y-2">
                   <Label htmlFor="postgres-reset-port">{t('postgresql_service.port_label')}</Label>
                   <Input
+                    type="number"
+                    min={1}
+                    max={65535}
+                    inputMode="numeric"
                     id="postgres-reset-port"
                     value={dialogData.port}
                     onChange={(e) => setDialogData(prev => ({ ...prev, port: e.target.value }))}
@@ -849,7 +857,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('postgresql_service.service_control')}
             </Label>
             <div className="flex items-center gap-2">
@@ -922,6 +930,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('postgresql_service.open_config_dir_title')}
                     title={t('postgresql_service.open_config_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -946,6 +955,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     onClick={() => postgresqlConfig?.dataPath && openFolderInFinder(postgresqlConfig.dataPath)}
                     disabled={!postgresqlConfig?.dataPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('postgresql_service.open_dir_title')}
                     title={t('postgresql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -970,6 +980,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     onClick={() => postgresqlConfig?.logPath && openFolderInFinder(postgresqlConfig.logPath)}
                     disabled={!postgresqlConfig?.logPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('postgresql_service.open_dir_title')}
                     title={t('postgresql_service.open_dir_title')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1043,7 +1054,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('postgresql_service.db_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1317,6 +1328,8 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                     variant="outline"
                     className="h-7 px-2 text-xs"
                     disabled={!roleForm.customDb || isSubmittingRole}
+                    aria-label={t('common.add')}
+                    title={t('common.add')}
                     onClick={() => {
                       if (!roleForm.customDb) return
                       setRoleForm(prev => ({
@@ -1430,6 +1443,8 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                   variant="outline"
                   className="h-7 px-2 text-xs"
                   disabled={!roleForm.customDb || isSubmittingRole}
+                  aria-label={t('common.add')}
+                  title={t('common.add')}
                   onClick={() => {
                     if (!roleForm.customDb) return
                     setRoleForm(prev => ({
@@ -1495,7 +1510,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
 
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('postgresql_service.role_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1556,6 +1571,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                           variant="ghost"
                           className="h-5 w-5 p-0 text-muted-foreground hover:text-focus hover:bg-focus/10 dark:hover:bg-focus/10"
                           onClick={() => openEditRoleDialog(role)}
+                          aria-label={t('common.edit')}
                           title={t('common.edit')}
                         >
                           <Pencil className="h-3 w-3" />
@@ -1568,6 +1584,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
                             setSelectedRoleName(role.roleName)
                             setShowDeleteRoleDialog(true)
                           }}
+                          aria-label={t('common.delete')}
                           title={t('common.delete')}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -1597,7 +1614,7 @@ export function PostgreSQLService({ serviceData }: PostgreSQLServiceProps) {
         </div>
 
         <div className="p-3 rounded-xl border border-divider bg-content1">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
+          <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
             {t('postgresql_service.other_operations')}
           </Label>
           {isServiceActive && isInitialized ? (

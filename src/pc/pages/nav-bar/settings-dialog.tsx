@@ -113,6 +113,8 @@ function ServiceRow({ service, onDelete, getReferences }: {
               variant="ghost"
               size="sm"
               disabled={!canDelete}
+              aria-label={t('settings.delete_service')}
+              title={t('settings.delete_service')}
               className={`${canDelete
                 ? ' text-danger  hover:text-danger  hover:bg-danger/10'
                 : 'text-muted-foreground cursor-not-allowed'
@@ -764,6 +766,7 @@ export default function SettingsDialog(props: {
                         variant="outline"
                         onClick={() => onSelectFolder()}
                         className="px-3"
+                        aria-label={t('settings.select_folder')}
                         title={t('settings.select_folder')}
                       >
                         <Folder className="h-4 w-4" />
@@ -773,6 +776,7 @@ export default function SettingsDialog(props: {
                         variant="outline"
                         onClick={() => onOpenFolder()}
                         className="px-3"
+                        aria-label={t('settings.open_in_finder')}
                         title={t('settings.open_in_finder')}
                         disabled={!newEnvisFolder}
                       >
@@ -800,6 +804,7 @@ export default function SettingsDialog(props: {
                         variant="outline"
                         onClick={() => openAppConfigFolder()}
                         className="px-3"
+                        aria-label={t('settings.open_config_folder')}
                         title={t('settings.open_config_folder')}
                       >
                         <ExternalLink className="h-4 w-4" />

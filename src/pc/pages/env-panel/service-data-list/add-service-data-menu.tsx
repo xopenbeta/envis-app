@@ -375,6 +375,7 @@ export function AddServiceMenu({ buttonType = "icon" }: {
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0 hover:bg-content2"
+                        aria-label={t('add_service.add_service')}
                         title={t('add_service.add_service')}
                     >
                         <Plus className="h-4 w-4" />

@@ -238,7 +238,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
+                                <Label className="cursor-help flex items-center gap-1.5 text-sm font-semibold text-foreground">
                                     {t('node_service.registry_url')}
                                     <Info className="h-3 w-3 text-muted-foreground" />
                                 </Label>
@@ -386,7 +386,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                     <div>
                         <div className="flex items-center gap-2">
                             {/* <Package className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" /> */}
-                            <Label className="text-xs font-medium text-foreground">
+                            <Label className="text-sm font-semibold text-foreground">
                                 {t('node_service.global_packages')}
                             </Label>
                             {isServiceDataActive && (
@@ -406,6 +406,8 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                 variant="ghost"
                                 onClick={loadGlobalPackages}
                                 disabled={isLoadingPackages}
+                                aria-label={t('common.refresh')}
+                                title={t('common.refresh')}
                                 className="h-6 px-2 text-[10px]"
                             >
                                 <RefreshCw className={`h-3 w-3 ${isLoadingPackages ? 'animate-spin' : ''}`} />
@@ -417,6 +419,8 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                         size="sm"
                                         variant="ghost"
                                         disabled={isLoadingPackages}
+                                        aria-label={t('node_service.install_global_package')}
+                                        title={t('node_service.install_global_package')}
                                         className="h-6 px-2 text-[10px]"
                                     >
                                         <Plus className="h-3 w-3" />
@@ -469,8 +473,8 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                 {!isServiceDataActive ? (
                     <div className="text-center py-6 text-muted-foreground bg-content1 rounded-lg border border-dashed border-divider">
                         <Package className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">{t('node_service.service_inactive', { defaultValue: '服务未激活' })}</p>
-                        <p className="text-xs">{t('node_service.activate_to_view_packages', { defaultValue: '请先激活服务以查看全局包' })}</p>
+                        <p className="text-sm">{t('node_service.service_inactive')}</p>
+                        <p className="text-xs">{t('node_service.activate_to_view_packages')}</p>
                     </div>
                 ) : (
                     isLoadingPackages ? (
@@ -491,7 +495,7 @@ function NodeServiceCard({ serviceData, selectedEnvironmentId }: NodeServiceCard
                                         className="font-mono font-normal cursor-pointer"
                                         onClick={() => {
                                             navigator.clipboard.writeText(pkg.name)
-                                            toast.success(t('common.copied', { defaultValue: '已复制到剪贴板' }))
+                                            toast.success(t('common.copied'))
                                         }}
                                     >
                                         {pkg.name}

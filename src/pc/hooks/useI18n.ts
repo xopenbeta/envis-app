@@ -26,4 +26,16 @@ export function useI18n() {
     changeLanguage(appSettings.language);
   }, [appSettings?.language]);
 
+  // 让 <html lang> 跟随实际语言：影响读屏发音与 CJK 字体回退。
+  // 否则中文界面仍以 lang="en" 渲染，会被按英文规则断词和朗读。
+  useEffect(() => {
+    const syncLang = (lng: string) => {
+      document.documentElement.lang = lng.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en';
+    };
+    syncLang(i18n.language || DEFAULT_LANGUAGE);
+    i18n.on('languageChanged', syncLang);
+    return () => {
+      i18n.off('languageChanged', syncLang);
+    };
+  }, []);
 }

@@ -48,6 +48,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                                     size="sm"
                                     variant="ghost"
                                     onClick={handleCopyPath}
+                                    aria-label={t('common.copy')}
+                                    title={t('common.copy')}
                                     className="h-6 px-2"
                                 >
                                     <Copy className="h-3 w-3" />
@@ -64,6 +66,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopyCommand(`sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${certPath}"`)}
+                                aria-label={t('common.copy')}
+                                title={t('common.copy')}
                                 className="h-6 px-2 flex-shrink-0"
                             >
                                 <Copy className="h-3 w-3" />
@@ -91,6 +95,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                                     size="sm"
                                     variant="ghost"
                                     onClick={handleCopyPath}
+                                    aria-label={t('common.copy')}
+                                    title={t('common.copy')}
                                     className="h-6 px-2"
                                 >
                                     <Copy className="h-3 w-3" />
@@ -107,6 +113,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopyCommand(`Import-Certificate -FilePath "${certPath}" -CertStoreLocation Cert:\\LocalMachine\\Root`)}
+                                aria-label={t('common.copy')}
+                                title={t('common.copy')}
                                 className="h-6 px-2 flex-shrink-0"
                             >
                                 <Copy className="h-3 w-3" />
@@ -136,6 +144,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopyCommand(`sudo cp "${certPath}" /usr/local/share/ca-certificates/envis-ca.crt && sudo update-ca-certificates`)}
+                            aria-label={t('common.copy')}
+                            title={t('common.copy')}
                             className="h-6 px-2 flex-shrink-0"
                         >
                             <Copy className="h-3 w-3" />
@@ -153,6 +163,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopyCommand(`sudo cp "${certPath}" /etc/pki/ca-trust/source/anchors/envis-ca.crt && sudo update-ca-trust`)}
+                            aria-label={t('common.copy')}
+                            title={t('common.copy')}
                             className="h-6 px-2 flex-shrink-0"
                         >
                             <Copy className="h-3 w-3" />

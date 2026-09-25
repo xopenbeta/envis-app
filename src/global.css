@@ -4,35 +4,50 @@
 
 /*
  * ═══ 一级 · 基础原始值（主题无关，只在此定义一次）═══
- * 中性灰阶按明度锚点命名；--n-15/--n-12 为原 15.3+15.7、12.2+12.5 合并（Δ<0.5% 不可见）
+ * 数值直接取自 voxt 的 SettingsUIStyles.swift（含 macOS label 色实测合成值）：
+ * - 表面：windowBackground 98%/9%、panelFill 100%/12.5%、controlFill 96.5%/20%、
+ *   modelGroupFill 95.7%/18%、subtleFill 93.7%/20%、sidebarItemFill 93.3%/22%
+ * - 边框：panelBorder = 黑 α0.06 / 白 α0.07 合成、subtleBorder = 黑 α0.045 / 白 α0.075 合成、
+ *   controlHoverBorder = 黑 α0.105 / 白 α0.145 合成
+ * - 文字：labelColor = 黑 α0.847（亮 15.3%）/ 白 α0.847 过 9% 底（暗 86.1%）、
+ *   secondaryLabelColor = 黑 α0.498（亮 50.2%）/ 白 α0.549（暗 59%）
  */
 :root {
-  /* 中性灰阶 */
+  /* 中性灰阶（明度锚点命名） */
   --n-100: 0 0% 100%;
   --n-98: 0 0% 98%;
   --n-96: 0 0% 96.5%;
-  --n-95: 0 0% 95.7%;
-  --n-94: 0 0% 93.7%;
-  --n-93: 0 0% 93%;
-  --n-90: 0 0% 90%;
-  --n-88: 0 0% 88%;
-  --n-85: 0 0% 85%;
-  --n-80: 0 0% 80%;
-  --n-75: 0 0% 75%;
-  --n-60: 0 0% 60%;
-  --n-45: 0 0% 45%;
-  --n-30: 0 0% 30%;
+  --n-95: 0 0% 95.5%;
+  --n-94: 0 0% 94%;
+  --n-93: 0 0% 93.3%;
+  --n-90: 0 0% 90.2%;
+  --n-30: 0 0% 30%;         /* 暗色主按钮填充（白字对比度 ≈ 8.5:1） */
   --n-27: 0 0% 27%;
   --n-22: 0 0% 22%;
   --n-20: 0 0% 20%;
   --n-18: 0 0% 18%;
-  --n-15: 0 0% 15.5%;
-  --n-12: 0 0% 12.4%;
+  --n-16: 0 0% 15.8%;
+  --n-15: 0 0% 15.4%;
+  --n-13: 0 0% 12.7%;
+  --n-12: 0 0% 12.5%;
   --n-9: 0 0% 9%;
   --n-8: 0 0% 8%;
 
-  /* 品牌与状态色 */
-  --c-blue: 211 100% 52%;   /* 焦点 / 链接 / 选中 */
+  /* 文字色原始值（macOS label / secondaryLabel 合成） */
+  --c-label-l: 0 0% 15.3%;
+  --c-label-d: 0 0% 86.1%;
+  --c-label2-l: 0 0% 44%;   /* 次要文字：有意偏离 macOS secondaryLabel（50.2%）。
+                               50.2% 在白底上只有 3.95:1，而本应用把次要文字大量用在
+                               10–12px 的元信息上，低于 WCAG AA 4.5:1 底线。
+                               44% 在 content1/2/3 上分别为 4.95/4.58/4.50:1，全部达标，
+                               且与 foreground（15.3%）的层级差依旧清晰。
+                               若需严格还原 macOS 观感，把本值改回 50.2% 即可（单点回退）。 */
+  --c-label2-d: 0 0% 59%;   /* 暗色 59% 在 content1 上 5.51:1，达标，保持 macOS 原值 */
+
+  /* 主题色与状态色 */
+  --c-blue: 212 100% 47%;   /* 主题色。取自最初提交（38e2150）的 --primary/--ring/--focus 原值，
+                               而不是 Voxt 的 211 100% 52% —— 本次修正的目的就是回到已定套装。
+                               白字压在此蓝上对比度 4.59:1，达 AA。 */
   --c-red: 0 84% 60%;       /* danger */
   --c-green: 142 76% 36%;   /* success */
   --c-amber: 32 95% 44%;    /* warning 亮（可直接当文字色） */
@@ -53,27 +68,29 @@
  */
 @layer base {
   :root {
-    --background: var(--n-98);
-    --foreground: var(--n-8);
+    --background: var(--n-98);       /* Voxt windowBackground 亮 */
+    --foreground: var(--c-label-l);  /* macOS labelColor 亮 */
 
-    --primary: var(--n-8);          /* 主按钮近黑（亮）/ 浅灰（暗），不是蓝色 */
+    --primary: var(--c-blue);       /* 主题色：主按钮 / 选中填充 / 强调文字 / 进度 */
     --primary-foreground: var(--n-100);
 
     /* 表面层级：content1 面板 / content2 控件填充 / content3 分组 / content4 选中 */
     --content1: var(--n-100);
-    --content1-foreground: var(--n-8);
+    --content1-foreground: var(--c-label-l);
     --content2: var(--n-96);
-    --content2-foreground: var(--n-8);
+    --content2-foreground: var(--c-label-l);
     --content3: var(--n-95);
-    --content3-foreground: var(--n-8);
-    --content4: var(--n-94);
-    --content4-foreground: var(--n-8);
+    --content3-foreground: var(--c-label-l);
+    --content4: var(--n-93);
+    --content4-foreground: var(--c-label-l);
 
-    --default: var(--n-88);         /* hover 边框 / 分隔把手 */
-    --default-foreground: var(--n-8);
-    --muted-foreground: var(--n-45);
-    --divider: var(--n-95);         /* 1px 细线 */
-    --border: var(--n-94);
+    --default: var(--n-90);         /* Voxt controlHoverBorder 亮（hover 边框/把手；与 pressedFill 相差 0.7% 不可见） */
+    --default-foreground: var(--c-label-l);
+    --pressed: var(--n-90);         /* Voxt sidebarItemPressedFill 亮 */
+    --muted-foreground: var(--c-label2-l);  /* macOS secondaryLabelColor 亮 */
+    --divider: var(--n-95);         /* Voxt subtleBorder 亮合成 */
+    --border: var(--n-94);          /* Voxt panelBorder 亮合成 */
+    --dialog-border: var(--n-95);   /* Voxt dialogBorder 亮合成 */
 
     --success: var(--c-green);
     --success-foreground: var(--n-100);
@@ -82,32 +99,34 @@
     --danger: var(--c-red);
     --danger-foreground: var(--n-100);
 
-    --focus: var(--c-blue);         /* 焦点环 / 链接 / 选中（checkbox 等勾选用 bg-focus） */
+    --focus: var(--c-blue);         /* 焦点环 / 链接 / 选中（勾选态用 bg-focus）：与 --primary 同色，全站单一强调色 */
     --ring: var(--focus);
     --overlay: 0 0% 0%;
   }
 
   .dark {
-    --background: var(--n-9);
-    --foreground: var(--n-93);
+    --background: var(--n-9);       /* Voxt windowBackground 暗 */
+    --foreground: var(--c-label-d); /* macOS labelColor 暗 */
 
-    --primary: var(--n-30);
+    --primary: var(--c-blue);       /* 主题色在亮/暗两套主题下取同一个蓝（与最初提交一致） */
     --primary-foreground: var(--n-100);
 
     --content1: var(--n-12);
-    --content1-foreground: var(--n-93);
+    --content1-foreground: var(--c-label-d);
     --content2: var(--n-20);
-    --content2-foreground: var(--n-85);
+    --content2-foreground: var(--c-label-d);
     --content3: var(--n-18);
-    --content3-foreground: var(--n-80);
+    --content3-foreground: var(--c-label-d);
     --content4: var(--n-22);
-    --content4-foreground: var(--n-75);
+    --content4-foreground: var(--c-label-d);
 
-    --default: var(--n-27);
-    --default-foreground: var(--n-93);
-    --muted-foreground: var(--n-60);
-    --divider: var(--n-15);
-    --border: var(--n-15);
+    --default: var(--n-22);         /* Voxt controlHoverBorder 暗合成 */
+    --default-foreground: var(--c-label-d);
+    --pressed: var(--n-27);         /* Voxt sidebarItemPressedFill 暗 */
+    --muted-foreground: var(--c-label2-d);  /* macOS secondaryLabelColor 暗 */
+    --divider: var(--n-16);         /* Voxt subtleBorder 暗合成 */
+    --border: var(--n-15);          /* Voxt panelBorder 暗合成 */
+    --dialog-border: var(--n-13);   /* Voxt dialogBorder 暗合成 */
 
     --success: var(--c-green);
     --success-foreground: var(--n-100);
@@ -127,9 +146,29 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 长路径/长 ID 不撑破容器 */
+    overflow-wrap: break-word;
+  }
+
+  /*
+   * color-scheme：缺失时原生滚动条、date picker、下拉框、表单自动填充
+   * 在暗色主题下会保持亮色，与界面严重割裂。
+   */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+
+  ::selection {
+    background-color: hsl(var(--focus) / 0.25);
+    color: hsl(var(--foreground));
   }
 
   /* 细滚动条，走中性色 */
@@ -158,16 +197,72 @@
  * 全应用唯一阴影 shadow-pop，只用于真正浮出的层（对话框/菜单/弹层/tooltip/toast）
  */
 :root {
+  --radius-xs: 4px;         /* 行内 tag / 小色块（替代裸 rounded） */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
   --radius-xl: 12px;
   --radius-2xl: 16px;
   --shadow-pop: var(--shadow-pop-l);
+
+  /*
+   * 字族：UI 用系统字族并显式声明中文字族（否则 Windows 下中文落到宋体）；
+   * 等宽用于路径/命令/日志/配置/端口/版本号/ID。
+   */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+
+  /*
+   * 字号刻度：每个档位都带行高。
+   * 直接写 text-[10px] 只设 font-size，行高会继承父级 → 纵向节奏错乱，故立此 token。
+   * 中文不得低于 12px，10/11px 只允许纯数字/英文微标签。
+   */
+  --text-3xs: 10px;  --lh-3xs: 14px;
+  --text-2xs: 11px;  --lh-2xs: 16px;
+  --text-xs: 12px;   --lh-xs: 16px;
+  --text-sm: 13px;   --lh-sm: 20px;
+  --text-md: 14px;   --lh-md: 20px;
+  --text-base: 16px; --lh-base: 24px;
+  --text-lg: 18px;   --lh-lg: 26px;
+  --text-xl: 20px;   --lh-xl: 28px;
+  --text-2xl: 24px;  --lh-2xl: 32px;
+  --text-3xl: 30px;  --lh-3xl: 36px;
+
+  /* 动效：时长四档 + macOS 风格标准缓动 */
+  --dur-1: 100ms;   /* 按下反馈 */
+  --dur-2: 150ms;   /* 悬停 / 焦点 */
+  --dur-3: 250ms;   /* 浮层进出 / 面板展开（既有主力值） */
+  --dur-4: 400ms;   /* 大范围布局变化 */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /*
+   * 代码高亮专用色板（见下方 .md .hljs-*）。
+   * 刻意不复用 success/danger 等状态色——否则「关键字」会变成错误红，
+   * 把语法高亮误读成告警。亮色取深而低饱和，暗色取亮而低饱和。
+   */
+  --code-comment: 0 0% 46%;
+  --code-keyword: 276 45% 45%;
+  --code-string: 142 55% 30%;
+  --code-number: 24 80% 40%;
+  --code-function: 211 85% 43%;
+  --code-type: 190 75% 32%;
+  --code-variable: 0 0% 25%;
+  --code-punctuation: 0 0% 42%;
 }
 
 .dark {
   --shadow-pop: var(--shadow-pop-d);
+
+  --code-comment: 0 0% 58%;
+  --code-keyword: 276 60% 74%;
+  --code-string: 142 45% 62%;
+  --code-number: 30 75% 66%;
+  --code-function: 211 90% 70%;
+  --code-type: 187 65% 62%;
+  --code-variable: 0 0% 86%;
+  --code-punctuation: 0 0% 62%;
 }
 
 /* Safari/WKWebView compatibility: ensure backdrop blur works with -webkit- prefix */
@@ -178,5 +273,211 @@
       var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate)
       var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate)
       var(--tw-backdrop-sepia);
+  }
+
+  /* 数据对齐：进度、进程数、内存等数字列必须等宽 */
+  .nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/*
+ * ═══ Markdown 正文（AI 面板回答渲染）═══
+ * 原实现依赖 @tailwindcss/typography 的 prose-* 类，但该插件从未安装，
+ * 15 个 prose 类产出 0 条 CSS → markdown 退化成浏览器默认样式，
+ * 且 prose-pre:overflow-x-auto 失效导致长代码块溢出且无法横向滚动。
+ *
+ * 这里手写等价样式，直接走 token，不再引入依赖。
+ * 刻意不放在 @layer 里：Tailwind v3 会 tree-shake @layer components 中未在
+ * content 里匹配到的选择器，而这里需要 .md h1 / .md pre 等后代选择器全部保留。
+ */
+.md {
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
+  color: hsl(var(--foreground));
+  overflow-wrap: anywhere;
+}
+
+/* 只对块级相邻元素施加节奏，避免污染行内元素 */
+.md > * + * {
+  margin-top: 8px;
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4,
+.md h5,
+.md h6 {
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md h1 { font-size: var(--text-xl); }
+.md h2 { font-size: var(--text-lg); }
+.md h3 { font-size: var(--text-base); }
+.md h4,
+.md h5,
+.md h6 { font-size: var(--text-sm); }
+
+.md p {
+  margin: 8px 0;
+}
+
+.md a {
+  color: hsl(var(--focus));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.md strong { font-weight: 600; }
+.md em { font-style: italic; }
+.md del { color: hsl(var(--muted-foreground)); }
+
+.md ul,
+.md ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md ul ul { list-style: circle; }
+.md li { margin-top: 4px; }
+.md li::marker { color: hsl(var(--muted-foreground)); }
+.md li > p { margin: 0; }
+
+.md blockquote {
+  border-left: 3px solid hsl(var(--divider));
+  padding-left: 12px;
+  color: hsl(var(--muted-foreground));
+  margin: 8px 0;
+}
+
+.md hr {
+  border: 0;
+  border-top: 1px solid hsl(var(--divider));
+  margin: 16px 0;
+}
+
+/* 代码：块级可横向滚动（原 prose-pre:overflow-x-auto 是死类，长行会溢出） */
+.md pre {
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background-color: hsl(var(--content3));
+  border: 1px solid hsl(var(--divider));
+  overflow-x: auto;
+  max-width: 100%;
+}
+.md pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: var(--text-xs);
+  line-height: 1.65;
+  white-space: pre;
+  color: hsl(var(--foreground));
+}
+
+/* 行内代码 */
+.md :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background-color: hsl(var(--content2));
+  border: 1px solid hsl(var(--divider));
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+}
+
+.md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+  margin: 12px 0;
+  display: block;
+  overflow-x: auto;
+}
+.md th,
+.md td {
+  border: 1px solid hsl(var(--divider));
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.md th {
+  background-color: hsl(var(--content3));
+  font-weight: 500;
+}
+
+.md img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+/*
+ * 代码语法高亮：highlight.js 10 的 hljs-* 类名。
+ * 此前全仓没有任何 hljs 主题 CSS（grep -rn hljs src = 0），
+ * 所以 rehype-highlight 产出的 span 完全没有颜色。
+ */
+.md .hljs { color: hsl(var(--foreground)); background: transparent; }
+.md .hljs-comment,
+.md .hljs-quote { color: hsl(var(--code-comment)); font-style: italic; }
+.md .hljs-keyword,
+.md .hljs-selector-tag,
+.md .hljs-literal,
+.md .hljs-section,
+.md .hljs-doctag,
+.md .hljs-type,
+.md .hljs-name,
+.md .hljs-strong { color: hsl(var(--code-keyword)); }
+.md .hljs-string,
+.md .hljs-regexp,
+.md .hljs-addition,
+.md .hljs-attribute,
+.md .hljs-meta .hljs-string { color: hsl(var(--code-string)); }
+.md .hljs-number,
+.md .hljs-symbol,
+.md .hljs-bullet,
+.md .hljs-link,
+.md .hljs-selector-attr,
+.md .hljs-selector-pseudo,
+.md .hljs-template-variable,
+.md .hljs-variable { color: hsl(var(--code-number)); }
+.md .hljs-title,
+.md .hljs-title.function_,
+.md .hljs-function .hljs-title,
+.md .hljs-built_in { color: hsl(var(--code-function)); }
+.md .hljs-class .hljs-title,
+.md .hljs-title.class_,
+.md .hljs-params,
+.md .hljs-selector-class,
+.md .hljs-selector-id,
+.md .hljs-tag { color: hsl(var(--code-type)); }
+.md .hljs-attr,
+.md .hljs-property,
+.md .hljs-template-tag { color: hsl(var(--code-variable)); }
+.md .hljs-punctuation,
+.md .hljs-operator { color: hsl(var(--code-punctuation)); }
+.md .hljs-deletion { color: hsl(var(--danger)); }
+.md .hljs-emphasis { font-style: italic; }
+
+/*
+ * 尊重系统的「减弱动态效果」设置。
+ * 无障碍硬要求：前庭功能敏感用户开启后，所有动画与过渡降级为瞬时。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

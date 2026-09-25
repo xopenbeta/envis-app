@@ -2,12 +2,22 @@
   "common": {
     "cancel": "取消",
     "confirm": "确定",
+    "create": "创建",
     "loading": "加载中...",
     "save": "保存",
     "saving": "保存中...",
     "edit": "编辑",
     "delete": "删除",
-    "unknown_error": "未知错误"
+    "unknown_error": "未知错误",
+    "open_folder_failed": "打开文件夹失败",
+    "general": "通用",
+    "copied": "已复制到剪贴板",
+    "copy": "复制",
+    "refresh": "刷新",
+    "add": "添加",
+    "open_folder": "打开文件夹",
+    "close": "关闭",
+    "clear_search": "清除搜索"
   },
   "service_item": {
     "drag_sort": "拖动排序",
@@ -284,7 +294,10 @@
     "import_read_error": "读取文件失败",
     "import_parse_error": "JSON 格式无效",
     "import_invalid_format": "文件格式不正确，缺少环境名称",
-    "import_create_env_error": "创建环境失败"
+    "import_create_env_error": "创建环境失败",
+    "delete_env_title": "删除环境",
+    "delete_env_desc": "将永久删除「{{name}}」及其全部服务配置，且不可恢复。",
+    "open_nav": "打开导航栏"
   },
   "user_dialog": {
     "open_user_dialog_log": "打开用户对话框",
@@ -371,9 +384,6 @@
     "download_confirm_ask": "是否现在下载并安装？",
     "skip_download": "跳过下载",
     "download_install": "下载安装",
-    "advanced_options": "高级选项",
-    "use_prebuilt": "使用预编译包",
-    "compile_from_source": "从源码编译",
     "advanced_options": "高级选项",
     "use_prebuilt": "使用预编译包",
     "compile_from_source": "从源码编译",
@@ -612,7 +622,9 @@
     "service": "服务",
     "ai": "AI",
     "params": "参数",
-    "meta_info": "元信息"
+    "meta_info": "元信息",
+    "clear_all_confirm": "当前所有日志条目将被清除，且不可恢复。",
+    "refresh_confirm": "这会重新加载整个应用并丢失当前会话状态，是否继续？"
   },
   "system_monitor": {
     "title": "系统监控",
@@ -689,7 +701,9 @@
     "loading_packages": "正在加载包...",
     "no_packages": "未安装全局包",
     "conflict_manager_title": "检测到版本管理器冲突",
-    "conflict_manager_desc": "检测到系统中存在以下 Node.js 版本管理器: {{managers}}。这些工具可能会与当前应用冲突，建议在使用本应用前卸载或禁用它们。"
+    "conflict_manager_desc": "检测到系统中存在以下 Node.js 版本管理器: {{managers}}。这些工具可能会与当前应用冲突，建议在使用本应用前卸载或禁用它们。",
+    "service_inactive": "服务未激活",
+    "activate_to_view_packages": "请先激活服务以查看全局包"
   },
   "python_service": {
     "uv_conflict_title": "检测到 uv 可能冲突",
@@ -1206,7 +1220,18 @@
     "open_dir_title": "打开目录",
     "select_file_title": "选择文件",
     "service_not_active": "服务未激活",
-    "service_not_active_hint": "请先激活 Redis 服务"
+    "service_not_active_hint": "请先激活 Redis 服务",
+    "config_path_set_success": "Redis 配置文件路径已更新",
+    "config_path_set_failed": "更新 Redis 配置文件路径失败: {{message}}",
+    "reset_success": "Redis 重置成功",
+    "init_error": "初始化 Redis 失败: {{message}}",
+    "checking_init": "正在检查初始化状态...",
+    "save_title": "保存配置文件路径",
+    "data_dir_label": "数据目录（从配置读取）",
+    "client_open_failed_msg": "打开 Redis 客户端失败: {{message}}",
+    "persistence_label": "持久化",
+    "enable_rdb": "启用 RDB 持久化",
+    "enable_aof": "启用 AOF 持久化"
   },
   "postgresql_service": {
     "db_create_success": "数据库创建成功",
@@ -1370,7 +1395,11 @@
     "config_overview": "配置概览",
     "no_server_config": "未检测到 Server 配置",
     "service_not_active": "服务未激活",
-    "service_not_active_hint": "请先激活 Nginx 服务"
+    "service_not_active_hint": "请先激活 Nginx 服务",
+    "error_log": "错误日志",
+    "server_blocks": "服务块",
+    "listen_label": "监听：",
+    "server_name_label": "服务器名："
   },
   "custom_service": {
     "path_config_label": "路径配置",
@@ -1453,7 +1482,7 @@
   "host_service": {
     "toggle_success": "Host 状态切换成功",
     "toggle_failed": "切换状态失败: {{message}}",
-    "password_error": "密码错误",
+    "password_error": "密码错误，请重新输入",
     "system_update_failed": "系统文件更新失败",
     "open_hosts_success": "已打开 hosts 文件所在文件夹",
     "open_hosts_failed": "打开失败: {{message}}",
@@ -1481,7 +1510,18 @@
     "admin_required_desc": "修改系统 hosts 文件需要管理员权限，请输入您的密码。",
     "password_label": "密码 *",
     "password_placeholder": "输入您的系统密码",
-    "confirm": "确认"
+    "confirm": "确认",
+    "password_required": "请输入密码",
+    "load_hosts_failed": "加载 hosts 失败",
+    "ip_hostname_required": "IP 地址和主机名不能为空",
+    "invalid_ip": "请输入有效的 IP 地址",
+    "update_success": "Host 更新成功",
+    "add_success": "Host 添加成功",
+    "update_failed": "更新失败: {{message}}",
+    "add_failed": "添加失败: {{message}}",
+    "delete_success": "Host 删除成功",
+    "delete_failed": "删除失败: {{message}}",
+    "no_comment": "无备注"
   },
   "ai_panel": {
     "title": "AI 助手",
@@ -1505,7 +1545,9 @@
     "placeholder": "输入你的问题，Enter 发送，Shift+Enter 换行...",
     "disabled_placeholder": "请先在设置中配置AI服务...",
     "loading": "正在加载 AI 助手...",
-    "typing": "正在输入..."
+    "typing": "正在输入...",
+    "copy_message": "复制消息",
+    "scroll_to_latest": "回到最新"
   },
   "app_footer": {
     "update_available": "有可用更新"

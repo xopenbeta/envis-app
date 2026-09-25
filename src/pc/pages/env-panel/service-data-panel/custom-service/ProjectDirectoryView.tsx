@@ -172,7 +172,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
         <TooltipProvider>
             <div className="p-3 rounded-xl border border-divider bg-content1">
                 {/* 项目目录标题 */}
-                <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
+                <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
                     {t('custom_service.project_dir_label')}
                 </Label>
                 <p className="text-[10px] text-muted-foreground mb-3">
@@ -211,6 +211,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 size="sm"
                                 onClick={handleOpenVSCode}
                                 disabled={!path.trim() || !isServiceDataActive}
+                                aria-label={t('custom_service.open_vscode_title')}
                                 className="h-8 w-8 p-0"
                             >
                                 <Code2 className="h-4 w-4" />
@@ -226,6 +227,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 size="sm"
                                 onClick={handleOpenFolder}
                                 disabled={!path.trim() || !isServiceDataActive}
+                                aria-label={t('custom_service.open_folder_title')}
                                 className="h-8 w-8 p-0"
                             >
                                 <FolderOpen className="h-4 w-4" />
@@ -241,6 +243,7 @@ export function ProjectDirectoryView({ selectedEnvironmentId, serviceData, statu
                                 size="sm"
                                 onClick={handleOpenTerminal}
                                 disabled={!path.trim() || !isServiceDataActive}
+                                aria-label={t('custom_service.open_terminal_title')}
                                 className="h-8 w-8 p-0"
                             >
                                 <Terminal className="h-4 w-4" />

@@ -582,7 +582,7 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                     {/* JAVA_HOME 配置 */}
                     <div>
                         <div className="flex items-center justify-between mb-1">
-                            <Label className="text-xs font-medium text-foreground">
+                            <Label className="text-sm font-semibold text-foreground">
                                 {t('java_service.java_home_label')}
                             </Label>
                         </div>
@@ -655,6 +655,8 @@ function JavaServiceCard({ serviceData, selectedEnvironmentId }: JavaServiceCard
                                                     size="sm"
                                                     variant="ghost"
                                                     onClick={() => openFolderInFinder(javaInfo.home)}
+                                                    aria-label={t('settings.open_in_finder')}
+                                                    title={t('settings.open_in_finder')}
                                                     className="h-5 w-5 p-0"
                                                 >
                                                     <FolderOpen className="h-3 w-3" />

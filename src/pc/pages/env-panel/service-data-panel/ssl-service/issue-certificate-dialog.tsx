@@ -141,6 +141,8 @@ export function IssueCertificateDialog({
                                 size="icon"
                                 variant="outline"
                                 onClick={handleAddSan}
+                                aria-label={t('common.add')}
+                                title={t('common.add')}
                                 className=""
                             >
                                 <Plus className="h-4 w-4" />

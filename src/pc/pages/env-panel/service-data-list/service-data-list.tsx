@@ -126,6 +126,7 @@ export function ServiceList({ onOpen }: {
                 onOpen()
               }}
               className="h-7 w-7 p-0 hover:bg-content2"
+              aria-label={t('service_list.close_nav')}
               title={t('service_list.close_nav')}
             >
               <PanelLeft className="h-4 w-4" />
@@ -152,6 +153,8 @@ export function ServiceList({ onOpen }: {
             autoFocus={isSearchExpanded}
           />
           <Button
+            aria-label={t('common.clear_search')}
+            title={t('common.clear_search')}
             size="sm"
             variant="ghost"
             onClick={() => {
@@ -175,6 +178,7 @@ export function ServiceList({ onOpen }: {
               "h-7 w-7 p-0 hover:bg-content2 transition-opacity duration-300",
               isSearchExpanded && "opacity-0 pointer-events-none"
             )}
+            aria-label={t('service_list.search_services_title')}
             title={t('service_list.search_services_title')}
           >
             <Search className="h-4 w-4" />

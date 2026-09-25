@@ -97,8 +97,8 @@ export function UpdateDialog() {
         <div className="space-y-3">
           {update?.body && (
             <div>
-              <h4 className="text-sm font-medium mb-2">{t('update_dialog.whats_new')}</h4>
-              <ScrollArea className="h-48 rounded-md border border-border p-3">
+              <h4 className="text-base font-semibold mb-2">{t('update_dialog.whats_new')}</h4>
+              <ScrollArea className="h-48 rounded-lg border border-divider p-3">
                 <div className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {update.body}
                 </div>

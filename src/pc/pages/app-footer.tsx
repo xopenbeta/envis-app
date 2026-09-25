@@ -18,6 +18,8 @@ export function AppFooter(props: {
             <div className="flex items-center gap-3">
                 {props.isShowConsoleBtn && (
                     <Button
+                      aria-label={t('nav_bar.open_terminal')}
+                      title={t('nav_bar.open_terminal')}
                         variant="ghost"
                         className="h-4 w-4 text-[10px]"
                         onClick={props.onConsoleBtnClick}

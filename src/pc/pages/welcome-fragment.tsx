@@ -82,7 +82,7 @@ export function WelcomeFragment({ onOpen }: {
     }, []);
 
     return (
-        <div className="relative w-full h-full bg-content1 dark:bg-background text-foreground dark:text-primary-foreground overflow-hidden flex flex-col font-sans selection:bg-focus/20 dark:selection:bg-content1/20">
+        <div className="relative w-full h-full bg-content1 dark:bg-background text-foreground overflow-hidden flex flex-col font-sans">
             {/* Cursor-style Background */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 {/* Subtle gradient glow at the top */}
@@ -101,7 +101,9 @@ export function WelcomeFragment({ onOpen }: {
                         e.stopPropagation()
                         onOpen()
                     }}
-                    className="absolute top-1.5 left-2 z-50 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-content2 transition-all h-8 w-8"
+                    aria-label={t('nav_bar.open_nav')}
+                    title={t('nav_bar.open_nav')}
+                    className="absolute top-1.5 left-2 z-50 text-muted-foreground hover:text-foreground hover:bg-content2 transition-colors duration-150 h-8 w-8"
                 >
                     <PanelLeft className="h-4 w-4" />
                 </Button>
@@ -113,19 +115,21 @@ export function WelcomeFragment({ onOpen }: {
                     e.stopPropagation()
                     setIsAIPanelOpen(isAIPanelOpen => !isAIPanelOpen)
                 }}
-                className="absolute top-1.5 right-2 z-50 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-content2 transition-all h-8 w-8"
+                aria-label={t('welcome.ai_assistant')}
+                title={t('welcome.ai_assistant')}
+                className="absolute top-1.5 right-2 z-50 text-muted-foreground hover:text-foreground hover:bg-content2 transition-colors duration-150 h-8 w-8"
             >
                 <Bot className="h-4 w-4" />
             </Button>
 
             {/* Main Content - App Welcome Screen */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
+            <div className="flex-1 overflow-y-auto flex flex-col items-center">
                 <div className="w-full max-w-2xl px-6 flex flex-col gap-8">
 
                     {/* Brand Header */}
                     <div className="text-center space-y-4 mt-12">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-foreground dark:text-primary-foreground mb-2">Envis</h1>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Envis</h1>
                             <p className="text-muted-foreground dark:text-muted-foreground text-sm">{t('welcome.subtitle')}</p>
                         </div>
                         <div className="w-full flex justify-center">
@@ -225,7 +229,7 @@ export function WelcomeFragment({ onOpen }: {
                                         {scenario.icon}
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-medium text-foreground dark:text-primary-foreground mb-1.5 group-hover:text-focus dark:group-hover:text-focus transition-colors">{scenario.title}</h3>
+                                        <h3 className="text-sm font-medium text-foreground mb-1.5 group-hover:text-focus dark:group-hover:text-focus transition-colors">{scenario.title}</h3>
                                         <p className="text-xs text-muted-foreground dark:text-muted-foreground leading-relaxed">{scenario.description}</p>
                                     </div>
                                 </div>
@@ -256,11 +260,11 @@ export function WelcomeFragment({ onOpen }: {
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-3 p-3 hover:bg-content2 transition-colors cursor-pointer border-b border-divider last:border-0"
                             >
-                                <div className="w-8 h-8 rounded-full bg-content3 dark:bg-content2 flex items-center justify-center text-foreground dark:text-primary-foreground">
+                                <div className="w-8 h-8 rounded-full bg-content3 dark:bg-content2 flex items-center justify-center text-foreground">
                                     <Github className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{t('welcome.github')}</div>
+                                    <div className="text-xs font-medium text-foreground">{t('welcome.github')}</div>
                                     <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.feedback_desc')}</div>
                                 </div>
                                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
@@ -276,7 +280,7 @@ export function WelcomeFragment({ onOpen }: {
                                     <Globe className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{t('welcome.discord')}</div>
+                                    <div className="text-xs font-medium text-foreground">{t('welcome.discord')}</div>
                                     <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.join_discord')}</div>
                                 </div>
                                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
@@ -290,7 +294,7 @@ export function WelcomeFragment({ onOpen }: {
                                     <MessageCircle className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">QQ</div>
+                                    <div className="text-xs font-medium text-foreground">QQ</div>
                                     <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.join_qq')}</div>
                                 </div>
                                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
@@ -304,7 +308,7 @@ export function WelcomeFragment({ onOpen }: {
                                     <MessageSquare className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{t('welcome.wechat')}</div>
+                                    <div className="text-xs font-medium text-foreground">{t('welcome.wechat')}</div>
                                     <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('welcome.join_wechat')}</div>
                                 </div>
                                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
@@ -336,7 +340,7 @@ export function WelcomeFragment({ onOpen }: {
                                 <Globe className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-medium text-foreground dark:text-primary-foreground">{t('welcome.discord')}</div>
+                                <div className="font-medium text-foreground">{t('welcome.discord')}</div>
                                 <div className="text-sm text-muted-foreground dark:text-muted-foreground">{t('welcome.join_discord')}</div>
                             </div>
                         </a>
@@ -345,7 +349,7 @@ export function WelcomeFragment({ onOpen }: {
                                 <MessageCircle className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-medium text-foreground dark:text-primary-foreground">{t('welcome.qq_group')}</div>
+                                <div className="font-medium text-foreground">{t('welcome.qq_group')}</div>
                                 <div className="text-sm text-muted-foreground dark:text-muted-foreground">{t('welcome.qq_group_id', { id: '1036572489' })}</div>
                             </div>
                         </div>
@@ -354,7 +358,7 @@ export function WelcomeFragment({ onOpen }: {
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-medium text-foreground dark:text-primary-foreground">{t('welcome.wechat_group')}</div>
+                                <div className="font-medium text-foreground">{t('welcome.wechat_group')}</div>
                                 <div className="text-sm text-muted-foreground dark:text-muted-foreground">{t('welcome.wechat_group_desc')}</div>
                             </div>
                         </div>
@@ -375,7 +379,7 @@ function ActionCard({ icon, title, desc, onClick }: { icon: React.ReactNode, tit
                 {icon}
             </div>
             <div>
-                <h3 className="text-sm font-medium text-foreground dark:text-primary-foreground mb-1 group-hover:text-focus dark:group-hover:text-focus transition-colors">{title}</h3>
+                <h3 className="text-sm font-medium text-foreground mb-1 group-hover:text-focus dark:group-hover:text-focus transition-colors">{title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
             </div>
         </button>
@@ -385,10 +389,10 @@ function ActionCard({ icon, title, desc, onClick }: { icon: React.ReactNode, tit
 function Step({ number, title, desc }: { number: string, title: string, desc: string }) {
     return (
         <div className="flex flex-col items-center text-center p-3 rounded-lg border border-divider bg-content1">
-            <div className="w-6 h-6 rounded-full bg-content3 dark:bg-content2 flex items-center justify-center text-xs font-bold text-foreground dark:text-primary-foreground mb-2">
+            <div className="w-6 h-6 rounded-full bg-content3 dark:bg-content2 flex items-center justify-center text-xs font-bold text-foreground mb-2">
                 {number}
             </div>
-            <div className="text-xs font-medium text-foreground dark:text-primary-foreground">{title}</div>
+            <div className="text-xs font-medium text-foreground">{title}</div>
             <div className="text-[10px] text-muted-foreground dark:text-muted-foreground">{desc}</div>
         </div>
     )

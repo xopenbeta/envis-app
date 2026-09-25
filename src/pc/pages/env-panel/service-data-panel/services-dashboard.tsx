@@ -207,6 +207,7 @@ export function ServicesDashboard() {
               variant="ghost"
               onClick={() => setIsAIPanelOpen(isAIPanelOpen => !isAIPanelOpen)}
               className={"h-7 w-7 p-0 mr-1 hover:bg-content2"}
+              aria-label={t('dashboard.ai_assistant')}
               title={t('dashboard.ai_assistant')}
             >
               <Bot className="h-4 w-4" />
@@ -249,6 +250,7 @@ export function ServicesDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenVSCode(dir.path, dir.serviceName)}
+                                aria-label={t('custom_service.open_vscode_title')}
                                 className="h-7 w-7 rounded-md bg-focus/10 hover:bg-focus/20 dark:bg-focus/20 dark:hover:bg-focus/30 text-focus dark:text-focus border border-focus/30 dark:border-focus/30 transition-all duration-200"
                               >
                                 <Code2 className="h-3.5 w-3.5" />
@@ -263,6 +265,7 @@ export function ServicesDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenFolder(dir.path, dir.serviceName)}
+                                aria-label={t('custom_service.open_folder_title')}
                                 className="h-7 w-7 rounded-md bg-warning/10 hover:bg-warning/20 dark:bg-warning/20 dark:hover:bg-warning/30 text-warning dark:text-warning border border-warning/30 dark:border-warning/30 transition-all duration-200"
                               >
                                 <FolderOpen className="h-3.5 w-3.5" />
@@ -277,6 +280,7 @@ export function ServicesDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenTerminal(dir.path, dir.serviceName)}
+                                aria-label={t('custom_service.open_terminal_title')}
                                 className="h-7 w-7 rounded-md bg-focus/10 hover:bg-focus/20 dark:bg-focus/20 dark:hover:bg-focus/30 text-focus dark:text-focus border border-focus/30 dark:border-focus/30 transition-all duration-200"
                               >
                                 <Terminal className="h-3.5 w-3.5" />
@@ -315,6 +319,7 @@ export function ServicesDashboard() {
                             executeAlias(alias.aliasName, alias.command)
                           }}
                           className="h-7 w-7 flex-shrink-0 rounded-md bg-success/10 hover:bg-success/20 dark:bg-success/20 dark:hover:bg-success/30 text-success dark:text-success border border-success/30 dark:border-success/30 transition-all duration-200"
+                          aria-label={t('custom_service.execute_cmd_title')}
                           title={t('custom_service.execute_cmd_title')}
                         >
                           <Play className="h-3.5 w-3.5 fill-current" />
@@ -381,7 +386,7 @@ export function ServicesDashboard() {
                               {stat!.cpuUsage.toFixed(1)}%
                             </span>
                           ) : (
-                            <span className="text-default dark:text-muted-foreground text-[10px]">
+                            <span className="text-muted-foreground text-3xs">
                               {hasProcess ? t('resource_monitor.not_running') : '--'}
                             </span>
                           )}
@@ -393,7 +398,7 @@ export function ServicesDashboard() {
                               {formatBytes(stat!.memoryBytes)}
                             </span>
                           ) : (
-                            <span className="text-default dark:text-muted-foreground text-[10px]">--</span>
+                            <span className="text-muted-foreground text-3xs">--</span>
                           )}
                         </td>
                         {/* 磁盘 I/O */}
@@ -410,7 +415,7 @@ export function ServicesDashboard() {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-default dark:text-muted-foreground text-[10px]">--</span>
+                            <span className="text-muted-foreground text-3xs">--</span>
                           )}
                         </td>
                       </tr>

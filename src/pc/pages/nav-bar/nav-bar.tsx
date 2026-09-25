@@ -1,4 +1,14 @@
-import appIcon from '@/assets/envis.svg'
+import appIcon from '@/assets/envis-mark.svg'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -128,6 +138,8 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [selectedVipPlan, setSelectedVipPlan] = useState<VipPlan>('basic')
   const [vipPlanActivated, setVipPlanActivated] = useState<VipPlan | ''>('')
   const [uploadedJsonRecords, setUploadedJsonRecords] = useState<UploadedJsonRecord[]>([])
+  // 待删除的环境：删除是不可逆操作，必须先经 AlertDialog 确认
+  const [envPendingDelete, setEnvPendingDelete] = useState<Environment | null>(null)
   const isEnvNameComposingRef = useRef(false)
 
   const onEnvNameInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -178,13 +190,20 @@ export default function NavBar({ onClose }: NavBarProps) {
     }
   }
 
-  // 删除环境
-  const onDeleteEnvBtnClick = async (environment: Environment) => {
+  // 删除环境：先弹确认，再执行（不可逆操作不允许单击即生效）
+  const onDeleteEnvBtnClick = (environment: Environment) => {
     if (environment.status === EnvironmentStatus.Active) {
       toast.error(t('nav_bar.delete_active_env_error'))
       logError(t('nav_bar.delete_env_error_active', { name: environment.name }))
       return
     }
+    setEnvPendingDelete(environment)
+  }
+
+  const confirmDeleteEnv = async () => {
+    const environment = envPendingDelete
+    setEnvPendingDelete(null)
+    if (!environment) return
 
     logInfo(t('nav_bar.delete_env_log', { name: environment.name }))
     const res = await deleteEnvironment(environment)
@@ -602,6 +621,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                   onClose()
                 }}
                 className="h-7 w-7 p-0 hover:bg-content3"
+                aria-label={t('nav_bar.close_nav')}
                 title={t('nav_bar.close_nav')}
               >
                 <PanelLeft className="h-4 w-4 text-foreground" />
@@ -622,6 +642,8 @@ export default function NavBar({ onClose }: NavBarProps) {
             />
             {searchTerm && (
               <Button
+                aria-label={t('common.clear_search')}
+                title={t('common.clear_search')}
                 size="sm"
                 variant="ghost"
                 onClick={() => setSearchTerm('')}
@@ -632,6 +654,8 @@ export default function NavBar({ onClose }: NavBarProps) {
             )}
           </div>
           <Button
+            aria-label={t('nav_bar.create_env')}
+            title={t('nav_bar.create_env')}
             size="sm"
             variant="outline"
             onClick={() => onOpenNewDialogBtnClick()}
@@ -709,7 +733,9 @@ export default function NavBar({ onClose }: NavBarProps) {
               size="sm"
               variant="ghost"
               onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-              className="h-7 w-7 p-0 hover:bg-content3 flex-shrink-0 text-foreground"
+              // 这几个是导航栏的主操作，必须用主文字色——不能按 Voxt 的「信息图标」处理成浅灰。
+              // 尺寸 32px + 16px 图标，与设计语言的控件刻度一致。
+              className="h-8 w-8 p-0 rounded-md text-foreground hover:bg-content4 active:bg-pressed flex-shrink-0"
               title={action.title}
               data-action-btn="true"
             >
@@ -722,10 +748,11 @@ export default function NavBar({ onClose }: NavBarProps) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-content2"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 rounded-md text-foreground hover:bg-content4 active:bg-pressed"
+                  aria-label={t('nav_bar.more')}
                   title={t('nav_bar.more')}
                 >
-                  <MoreHorizontal className="h-4 w-4 text-foreground" />
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" className="min-w-[140px]">
@@ -924,6 +951,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                             size="sm"
                             className="h-7 px-2"
                             onClick={() => onDownloadUploadedJson(item)}
+                            aria-label={t('user_dialog.download_btn')}
                             title={t('user_dialog.download_btn')}
                           >
                             <Download className="h-4 w-4" />
@@ -933,6 +961,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                             size="sm"
                             className="h-7 px-2 text-danger  hover:text-danger"
                             onClick={() => onDeleteUploadedJson(item.id)}
+                            aria-label={t('user_dialog.delete_btn')}
                             title={t('user_dialog.delete_btn')}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -953,6 +982,30 @@ export default function NavBar({ onClose }: NavBarProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 删除环境确认：不可逆操作必须二次确认。此前点下拉菜单里的一项就直接删除。 */}
+      <AlertDialog
+        open={envPendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setEnvPendingDelete(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('nav_bar.delete_env_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('nav_bar.delete_env_desc', { name: envPendingDelete?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteEnv}
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
+            >
+              {t('nav_bar_item.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Settings Dialog */}
       <SettingsDialog

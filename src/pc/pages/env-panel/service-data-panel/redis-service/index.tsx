@@ -301,7 +301,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
 
       <div className="p-3 rounded-xl border border-divider bg-content1">
         <div className="flex items-center justify-between mb-2">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+          <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <Database className="h-3.5 w-3.5" />
             {t('redis_service.service_control')}
           </Label>
@@ -341,7 +341,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
               <Input
                 value={editConfigPath}
                 onChange={(e) => setEditConfigPath(e.target.value)}
-                className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
+                className="flex-1 h-8 text-xs bg-content2 border-divider"
                 placeholder={t('redis_service.config_path_placeholder')}
               />
               <Button
@@ -349,6 +349,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 variant="outline"
                 className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                 onClick={handleBrowseConfigFile}
+                aria-label={t('redis_service.select_file_title')}
                 title={t('redis_service.select_file_title')}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -359,6 +360,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                 onClick={() => editConfigPath && openFolderInFinder(editConfigPath)}
                 disabled={!editConfigPath}
+                aria-label={t('redis_service.open_dir_title')}
                 title={t('redis_service.open_dir_title')}
               >
                 <FolderOpen className="h-3.5 w-3.5" />
@@ -383,7 +385,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 <Input
                   value={runtimeConfig.logPath}
                   disabled
-                  className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
+                  className="flex-1 h-8 text-xs bg-content2 border-divider"
                 />
                 <Button
                   size="sm"
@@ -391,6 +393,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                   className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   onClick={() => runtimeConfig.logPath && openFolderInFinder(runtimeConfig.logPath)}
                   disabled={!runtimeConfig.logPath}
+                  aria-label={t('redis_service.open_dir_title')}
                   title={t('redis_service.open_dir_title')}
                 >
                   <FileText className="h-3.5 w-3.5" />
@@ -403,7 +406,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                 <Input
                   value={runtimeConfig.dataPath}
                   disabled
-                  className="flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
+                  className="flex-1 h-8 text-xs bg-content2 border-divider"
                 />
                 <Button
                   size="sm"
@@ -411,6 +414,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                   className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
                   onClick={() => runtimeConfig.dataPath && openFolderInFinder(runtimeConfig.dataPath)}
                   disabled={!runtimeConfig.dataPath}
+                  aria-label={t('redis_service.open_dir_title')}
                   title={t('redis_service.open_dir_title')}
                 >
                   <FolderOpen className="h-3.5 w-3.5" />
@@ -424,7 +428,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                   <Input
                     value={runtimeConfig.bindIp}
                     disabled
-                    className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
+                    className="h-8 text-xs bg-content2 border-divider"
                   />
                 </div>
               </div>
@@ -434,7 +438,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
                   <Input
                     value={String(runtimeConfig.port)}
                     disabled
-                    className="h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
+                    className="h-8 text-xs bg-content2 border-divider"
                   />
                 </div>
               </div>
@@ -470,7 +474,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
       </div>
 
       <div className="p-3 rounded-xl border border-divider bg-content1 space-y-3">
-        <Label className="text-xs font-medium text-foreground">{t('redis_service.other_operations')}</Label>
+        <Label className="text-sm font-semibold text-foreground">{t('redis_service.other_operations')}</Label>
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
@@ -527,7 +531,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInitDialog(false)}>{t('common.cancel')}</Button>
-            <Button onClick={() => handleInitialize(false)} disabled={isLoading}>{isLoading ? t('redis_service.processing') : t('redis_service.confirm_init')}</Button>
+            <Button onClick={() => handleInitialize(false)} disabled={isLoading}>{isLoading ? t('redis_service.initializing') : t('redis_service.start_init')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -575,7 +579,7 @@ export function RedisService({ serviceData }: RedisServiceProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowResetDialog(false)}>{t('common.cancel')}</Button>
-            <Button variant="destructive" onClick={() => handleInitialize(true)} disabled={isLoading}>{isLoading ? t('redis_service.processing') : t('redis_service.confirm_reset')}</Button>
+            <Button variant="destructive" onClick={() => handleInitialize(true)} disabled={isLoading}>{isLoading ? t('redis_service.resetting') : t('redis_service.confirm_reset')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

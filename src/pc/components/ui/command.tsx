@@ -6,7 +6,7 @@ import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { Command as CommandPrimitive } from 'cmdk'
 
 import { cn } from '@/lib/utils'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -15,7 +15,7 @@ const Command = React.forwardRef<
   <CommandPrimitive
     ref={ref}
     className={cn(
-      'flex h-full w-full flex-col overflow-hidden rounded-md bg-content1 text-foreground',
+      'flex h-full w-full flex-col overflow-hidden rounded-sm bg-content1 text-foreground',
       className
     )}
     {...props}
@@ -23,12 +23,17 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
-interface CommandDialogProps extends DialogProps {}
+interface CommandDialogProps extends DialogProps {
+  /** 无障碍标题：命令面板没有可见标题，用 sr-only 提供给读屏用户。调用方应传入已本地化的文案。 */
+  title?: string
+}
 
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
+const CommandDialog = ({ children, title = 'Command menu', ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0">
+      {/* aria-describedby={undefined}：命令面板没有描述文本，显式取消可避免 Radix 告警 */}
+      <DialogContent className="overflow-hidden p-0" aria-describedby={undefined}>
+        <DialogTitle className="sr-only">{title}</DialogTitle>
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           {children}
         </Command>

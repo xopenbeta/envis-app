@@ -133,7 +133,8 @@ export function CertificateList({
                                                 e.stopPropagation()
                                                 handleOpenFolder(cert.certPath)
                                             }}
-                                            title="打开证书文件夹"
+                                            aria-label={t('ssl_service.open_cert_folder')}
+                                            title={t('ssl_service.open_cert_folder')}
                                         >
                                             <FolderOpen className="h-4 w-4 text-muted-foreground" />
                                         </Button>
@@ -142,6 +143,8 @@ export function CertificateList({
                                                 <Button
                                                     variant="ghost"
                                                     className="h-7 w-7 p-0"
+                                                    aria-label={t('common.delete')}
+                                                    title={t('common.delete')}
                                                 >
                                                     <Trash2 className="h-4 w-4 text-danger" />
                                                 </Button>
@@ -202,6 +205,8 @@ export function CertificateList({
                                                     variant="ghost"
                                                     className="h-6 px-2"
                                                     onClick={() => handleCopyPath(cert.formats.pem!)}
+                                                    aria-label={t('common.copy')}
+                                                    title={t('common.copy')}
                                                 >
                                                     <Copy className="h-3 w-3" />
                                                 </Button>
@@ -210,6 +215,8 @@ export function CertificateList({
                                                     variant="ghost"
                                                     className="h-6 px-2"
                                                     onClick={() => handleOpenFolder(cert.formats.pem!)}
+                                                    aria-label={t('ssl_service.open_cert_folder')}
+                                                    title={t('ssl_service.open_cert_folder')}
                                                 >
                                                     <FolderOpen className="h-3 w-3" />
                                                 </Button>
@@ -230,6 +237,8 @@ export function CertificateList({
                                                     variant="ghost"
                                                     className="h-6 px-2"
                                                     onClick={() => handleCopyPath(cert.formats.crt!)}
+                                                    aria-label={t('common.copy')}
+                                                    title={t('common.copy')}
                                                 >
                                                     <Copy className="h-3 w-3" />
                                                 </Button>
@@ -238,6 +247,8 @@ export function CertificateList({
                                                     variant="ghost"
                                                     className="h-6 px-2"
                                                     onClick={() => handleOpenFolder(cert.formats.crt!)}
+                                                    aria-label={t('ssl_service.open_cert_folder')}
+                                                    title={t('ssl_service.open_cert_folder')}
                                                 >
                                                     <FolderOpen className="h-3 w-3" />
                                                 </Button>
@@ -258,6 +269,8 @@ export function CertificateList({
                                                     variant="ghost"
                                                     className="h-6 px-2"
                                                     onClick={() => handleCopyPath(cert.formats.pfx!)}
+                                                    aria-label={t('common.copy')}
+                                                    title={t('common.copy')}
                                                 >
                                                     <Copy className="h-3 w-3" />
                                                 </Button>
@@ -266,6 +279,8 @@ export function CertificateList({
                                                     variant="ghost"
                                                     className="h-6 px-2"
                                                     onClick={() => handleOpenFolder(cert.formats.pfx!)}
+                                                    aria-label={t('ssl_service.open_cert_folder')}
+                                                    title={t('ssl_service.open_cert_folder')}
                                                 >
                                                     <FolderOpen className="h-3 w-3" />
                                                 </Button>

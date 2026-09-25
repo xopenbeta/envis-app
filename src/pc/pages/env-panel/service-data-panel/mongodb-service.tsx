@@ -6,6 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from 'sonner'
 import {
@@ -414,12 +424,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
     }
   }
 
-  // 删除用户
-  const handleDeleteUser = async (username: string) => {
-    if (!confirm(t('mongodb.user.delete_confirm', { username: username }))) {
-      return
-    }
+  // 删除用户：不可逆操作，先弹应用内确认。
+  // 原来是原生 window.confirm —— 在 Tauri WebView 里是与应用完全不同的系统样式。
+  const [userPendingDelete, setUserPendingDelete] = useState<string | null>(null)
 
+  const handleDeleteUser = (username: string) => setUserPendingDelete(username)
+
+  const performDeleteUser = async (username: string) => {
+    setUserPendingDelete(null)
     try {
       const result = await deleteMongoDBUser(selectedEnvironmentId, serviceData, username)
       if (result.success) {
@@ -842,6 +854,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 <div className="space-y-2">
                   <Label htmlFor="init-port">{t('mongodb.port')}</Label>
                   <Input
+                    type="number"
+                    min={1}
+                    max={65535}
+                    inputMode="numeric"
                     id="init-port"
                     value={dialogData.port}
                     onChange={(e) => setDialogData(prev => ({ ...prev, port: e.target.value }))}
@@ -1002,6 +1018,10 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                 <div className="space-y-2">
                   <Label htmlFor="reset-port">{t('mongodb.port')}</Label>
                   <Input
+                    type="number"
+                    min={1}
+                    max={65535}
+                    inputMode="numeric"
                     id="reset-port"
                     value={dialogData.port}
                     onChange={(e) => setDialogData(prev => ({ ...prev, port: e.target.value }))}
@@ -1119,14 +1139,14 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         {/* MongoDB 状态 */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('mongodb.service_control')}
             </Label>
             <div className="flex items-center gap-2">
               <div className={cn(
                 "w-2 h-2 rounded-full",
                 serviceStatus === ServiceStatus.Running ? " bg-success" :
-                  serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
+                  serviceStatus === ServiceStatus.Error ? " bg-danger" : " bg-content4"
               )} />
               <span className="text-xs font-normal text-muted-foreground">
                 {serviceStatus === ServiceStatus.Running ? t('status.service.running') :
@@ -1212,7 +1232,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     placeholder={t('mongodb.config_file_placeholder')}
                     disabled={isLoading}
                     className={cn(
-                      "flex-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider",
+                      "flex-1 h-8 text-xs bg-content2 border-divider",
                       mongoConfig?.parseError && " border-danger focus-visible:ring-danger"
                     )}
                   />
@@ -1222,6 +1242,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     onClick={handleSetConfigPath}
                     disabled={isLoading || !editingConfigPath || editingConfigPath === configPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('common.save')}
                     title={t('common.save')}
                   >
                     <Save className="h-3.5 w-3.5" />
@@ -1247,6 +1268,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     onClick={() => configPath && openFolderInFinder(configPath)}
                     disabled={!configPath}
                     className="h-8 px-2 bg-content1 dark:bg-content1/40 border-divider"
+                    aria-label={t('mongodb.open_dir')}
                     title={t('mongodb.open_dir')}
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
@@ -1281,6 +1303,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     <Copy className="h-3.5 w-3.5" />
                   </Button> */}
                   <Button
+                    aria-label={t('common.open_folder')}
+                    title={t('common.open_folder')}
                     size="sm"
                     variant="outline"
                     onClick={() => mongoConfig?.dataPath && openFolderInFinder(mongoConfig.dataPath)}
@@ -1319,6 +1343,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     <Copy className="h-3.5 w-3.5" />
                   </Button> */}
                   <Button
+                    aria-label={t('common.open_folder')}
+                    title={t('common.open_folder')}
                     size="sm"
                     variant="outline"
                     onClick={() => mongoConfig?.logPath && openFolderInFinder(mongoConfig.logPath)}
@@ -1420,7 +1446,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         {/* 数据库管理 */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {/* <Database className="w-3.5 h-3.5" /> */}
               {t('mongodb.database_management')}
             </Label>
@@ -1565,7 +1591,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
         {/* Users */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
           <div className="flex items-center justify-between mb-2">
-            <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {t('mongodb.user_management')}
             </Label>
             {isServiceActive && isInitialized && serviceStatus === ServiceStatus.Running && (
@@ -1641,6 +1667,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                             variant="ghost"
                             className="h-5 w-5 p-0 text-muted-foreground hover:text-focus hover:bg-focus/10 dark:hover:bg-focus/10"
                             onClick={() => openEditUserDialog(user)}
+                            aria-label={t('mongodb.edit_permissions')}
                             title={t('mongodb.edit_permissions')}
                           >
                             <Pencil className="h-3 w-3" />
@@ -1650,6 +1677,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                             variant="ghost"
                             className="h-5 w-5 p-0 text-muted-foreground hover:text-danger hover:bg-danger/10 dark:hover:bg-danger/10"
                             onClick={() => handleDeleteUser(user.user)}
+                            aria-label={t('mongodb.delete_user')}
                             title={t('mongodb.delete_user')}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -1800,6 +1828,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                     }}
                   />
                   <Button
+                    aria-label={t('common.add')}
+                    title={t('common.add')}
                     type="button"
                     size="sm"
                     variant="outline"
@@ -1914,6 +1944,8 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
                   }}
                 />
                 <Button
+                  aria-label={t('common.add')}
+                  title={t('common.add')}
                   type="button"
                   size="sm"
                   variant="outline"
@@ -1964,7 +1996,7 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
 
         {/* Other Operations */}
         <div className="p-3 rounded-xl border border-divider bg-content1">
-          <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-2">
+          <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
             {/* <MoreHorizontal className="w-3.5 h-3.5" /> */}
             {t('mongodb.other_operations')}
           </Label>
@@ -1990,6 +2022,27 @@ export function MongoDBService({ serviceData }: MongoDBServiceProps) {
           )}
         </div>
       </div>
+      {/* 删除用户确认 */}
+      <AlertDialog open={userPendingDelete !== null} onOpenChange={(open) => { if (!open) setUserPendingDelete(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('mongodb.delete_user')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('mongodb.user.delete_confirm', { username: userPendingDelete ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => userPendingDelete && performDeleteUser(userPendingDelete)}
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   )
 }

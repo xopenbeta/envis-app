@@ -11,9 +11,12 @@ type ActivePage = 'home' | 'content'
 function App(): JSX.Element {
   const platform = detectMobilePlatform()
 
-  // 跟随系统主题（激活全局 dark: 变体）
+  // 移动端是终端客户端：整个应用恒定深色。
+  // 此前这里是 setAppTheme('system')，而只有 AndroidTerminalPanel 自己挂了 dark 类，
+  // 于是浅色手机上会出现「浅色外壳包着深色终端」的硬接缝。
+  // 写到 documentElement（而不是某个 div）也让 Radix 的 portal（toast/弹窗）继承到深色 token。
   useEffect(() => {
-    setAppTheme('system')
+    setAppTheme('dark')
   }, [])
   const {
     auth,
@@ -52,14 +55,10 @@ function App(): JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-background text-foreground dark:bg-background dark:text-foreground">
-      <div className="mx-auto flex h-full w-full max-w-4xl flex-col border-x border-divider bg-content1  dark:border-divider dark:bg-background">
-        <div className="border-b border-divider bg-content1 px-4 py-2 text-[11px] text-muted-foreground dark:border-divider dark:bg-content2 dark:text-muted-foreground">
-          Mobile platform: {platform.platform} | Touch: {platform.isTouchDevice ? 'yes' : 'no'}
-        </div>
-
-        <div className="flex-1 min-h-0 bg-background p-2 sm:p-3 dark:bg-background">
-          <div className="h-full overflow-hidden rounded-2xl border border-divider bg-content1  dark:border-divider dark:bg-background">
+    <div className="fixed inset-0 overflow-hidden bg-background text-foreground">
+      <div className="mx-auto flex h-full w-full max-w-4xl flex-col border-x border-divider bg-content1">
+        <div className="flex-1 min-h-0 bg-background p-2 sm:p-3">
+          <div className="h-full overflow-hidden rounded-2xl border border-divider bg-content1">
             {canOpenContent && activeHost ? (
               <ContentPage
                 host={activeHost}

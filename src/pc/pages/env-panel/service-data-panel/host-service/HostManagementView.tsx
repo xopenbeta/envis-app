@@ -30,6 +30,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { useTranslation } from 'react-i18next'
 
 interface HostManagementViewProps {
     selectedEnvironmentId: string
@@ -40,6 +41,7 @@ export function HostManagementView({
     selectedEnvironmentId,
     serviceData,
 }: HostManagementViewProps) {
+    const { t } = useTranslation()
     const { addHost, updateHost, deleteHost, toggleHost, openHostsFile } = useHostService()
     const { updateServiceData, selectedServiceDatas } = useEnvironmentServiceData()
     const { serviceDataStatus } = useServiceDataStatus(selectedEnvironmentId, serviceData.id, {
@@ -102,7 +104,7 @@ export function HostManagementView({
             // 如果是密码错误，清除存储的密码
             if (error?.message?.includes('密码错误')) {
                 clearStoredPassword()
-                toast.error('密码错误，请重新输入')
+                toast.error(t('host_service.password_error'))
                 // 重新显示密码对话框
                 setPendingAction(() => action)
                 setPassword('')
@@ -116,7 +118,7 @@ export function HostManagementView({
     // 确认密码输入
     const handlePasswordConfirm = async () => {
         if (!password.trim()) {
-            toast.error('请输入密码')
+            toast.error(t('host_service.password_required'))
             return
         }
 
@@ -137,7 +139,7 @@ export function HostManagementView({
             setHosts(metadataHosts || [])
         } catch (error) {
             console.error('加载 hosts 失败:', error)
-            toast.error('加载 hosts 失败')
+            toast.error(t('host_service.load_hosts_failed'))
         } finally {
             setIsLoading(false)
         }
@@ -181,14 +183,14 @@ export function HostManagementView({
     const handleSave = async () => {
         // 验证输入
         if (!formData.ip.trim() || !formData.hostname.trim()) {
-            toast.error('IP 地址和主机名不能为空')
+            toast.error(t('host_service.ip_hostname_required'))
             return
         }
 
         // 简单的 IP 地址格式验证
         const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
         if (!ipRegex.test(formData.ip.trim())) {
-            toast.error('请输入有效的 IP 地址')
+            toast.error(t('host_service.invalid_ip'))
             return
         }
 
@@ -217,7 +219,7 @@ export function HostManagementView({
                         if (res?.message?.includes('密码错误')) {
                             throw new Error('密码错误')
                         }
-                        throw new Error(res?.message || '系统文件更新失败')
+                        throw new Error(res?.message || t('host_service.system_update_failed'))
                     }
                 }
 
@@ -239,7 +241,7 @@ export function HostManagementView({
 
                 setHosts(newHosts)
 
-                toast.success(editingHost ? 'Host 更新成功' : 'Host 添加成功')
+                toast.success(editingHost ? t('host_service.update_success') : t('host_service.add_success'))
                 setShowAddDialog(false)
                 resetForm()
             } catch (error: any) {
@@ -247,7 +249,7 @@ export function HostManagementView({
                 if (error.message === '密码错误') {
                     throw error // 让 executeWithPassword 处理
                 }
-                toast.error((editingHost ? '更新失败: ' : '添加失败: ') + (error.message || '未知错误'))
+                toast.error(t(editingHost ? 'host_service.update_failed' : 'host_service.add_failed', { message: error.message || t('common.unknown_error') }))
             } finally {
                 setIsLoading(false)
             }
@@ -272,7 +274,7 @@ export function HostManagementView({
                         if (res?.message?.includes('密码错误')) {
                             throw new Error('密码错误')
                         }
-                        throw new Error(res?.message || '系统文件更新失败')
+                        throw new Error(res?.message || t('host_service.system_update_failed'))
                     }
                 }
 
@@ -286,13 +288,13 @@ export function HostManagementView({
                 })
                 setHosts(newHosts)
 
-                toast.success('Host 删除成功')
+                toast.success(t('host_service.delete_success'))
             } catch (error: any) {
                 console.error('删除失败:', error)
                 if (error.message === '密码错误') {
                     throw error
                 }
-                toast.error('删除失败: ' + (error.message || '未知错误'))
+                toast.error(t('host_service.delete_failed', { message: error.message || t('common.unknown_error') }))
             } finally {
                 setIsLoading(false)
             }
@@ -317,7 +319,7 @@ export function HostManagementView({
                         if (res?.message?.includes('密码错误')) {
                             throw new Error('密码错误')
                         }
-                        throw new Error(res?.message || '系统文件更新失败')
+                        throw new Error(res?.message || t('host_service.system_update_failed'))
                     }
                 }
 
@@ -333,13 +335,13 @@ export function HostManagementView({
                 })
                 setHosts(newHosts)
 
-                toast.success('Host 状态切换成功')
+                toast.success(t('host_service.toggle_success'))
             } catch (error: any) {
                 console.error('切换状态失败:', error)
                 if (error.message === '密码错误') {
                     throw error
                 }
-                toast.error('切换状态失败: ' + (error.message || '未知错误'))
+                toast.error(t('host_service.toggle_failed', { message: error.message || t('common.unknown_error') }))
             } finally {
                 setIsLoading(false)
             }
@@ -358,13 +360,13 @@ export function HostManagementView({
         try {
             const res = await openHostsFile()
             if (res && res.success) {
-                toast.success('已打开 hosts 文件所在文件夹')
+                toast.success(t('host_service.open_hosts_success'))
             } else {
-                toast.error('打开失败: ' + (res?.message || '未知错误'))
+                toast.error(t('host_service.open_hosts_failed', { message: res?.message || t('common.unknown_error') }))
             }
         } catch (error) {
             console.error('打开 hosts 文件失败:', error)
-            toast.error('打开 hosts 文件失败')
+            toast.error(t('host_service.open_hosts_error'))
         }
     }
 
@@ -378,7 +380,7 @@ export function HostManagementView({
                     </AlertTitle> */}
                 <AlertDescription className="text-warning dark:text-warning/90 text-xs mt-1.5 space-y-2">
                     <p>
-                        管理系统 hosts 文件中的域名映射。注意：修改 Hosts 文件需要管理员权限，操作时可能需要输入密码。
+                        {t('host_service.hosts_notice')}
                     </p>
                 </AlertDescription>
             </Alert>
@@ -386,9 +388,9 @@ export function HostManagementView({
             <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex justify-between w-full items-center mb-4">
                     <div>
-                        <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                        <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                             <Globe className="h-3.5 w-3.5" />
-                            Hosts 管理
+                            {t('host_service.hosts_management')}
                         </Label>
                     </div>
                     <div className="flex gap-2">
@@ -400,7 +402,7 @@ export function HostManagementView({
                             className="h-7 text-xs px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             <FolderOpen className="h-3 w-3 mr-1" />
-                            打开 hosts
+                            {t('host_service.open_hosts')}
                         </Button>
                         <Button
                             variant="outline"
@@ -410,7 +412,7 @@ export function HostManagementView({
                             className="h-7 text-xs px-2 bg-content1 dark:bg-content1/40 border-divider"
                         >
                             <Plus className="h-3 w-3 mr-1" />
-                            添加 Host
+                            {t('host_service.add_host')}
                         </Button>
                     </div>
                 </div>
@@ -418,8 +420,8 @@ export function HostManagementView({
                 <div className="space-y-2">
                     {hosts.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed border-divider">
-                            <p className="text-sm">还没有配置任何 host</p>
-                            <p className="text-xs mt-1">点击"添加 Host"开始配置</p>
+                            <p className="text-sm">{t('host_service.no_hosts')}</p>
+                            <p className="text-xs mt-1">{t('host_service.no_hosts_hint')}</p>
                         </div>
                     ) : (
                         <div className="space-y-2">
@@ -444,7 +446,7 @@ export function HostManagementView({
                                         {/* 第二行：备注 */}
                                         {!!host.comment && (
                                             <span className="text-xs text-muted-foreground truncate">
-                                                {host.comment || '无备注'}
+                                                {host.comment || t('host_service.no_comment')}
                                             </span>
                                         )}
                                     </div>
@@ -452,7 +454,7 @@ export function HostManagementView({
                                     {/* 操作按钮 */}
                                     <div className="flex items-center gap-1 shrink-0">
                                         <div className="flex items-center gap-1.5 mr-1">
-                                            <Label className="text-xs cursor-pointer" htmlFor={`switch-${host.id}`}>启用</Label>
+                                            <Label className="text-xs cursor-pointer" htmlFor={`switch-${host.id}`}>{t('host_service.enable_label')}</Label>
                                             <Switch
                                                 id={`switch-${host.id}`}
                                                 checked={host.enabled}
@@ -462,6 +464,8 @@ export function HostManagementView({
                                             />
                                         </div>
                                         <Button
+                                          aria-label={t('common.edit')}
+                                          title={t('common.edit')}
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleEditClick(host)}
@@ -471,6 +475,8 @@ export function HostManagementView({
                                             <Edit2 className="h-4 w-4" />
                                         </Button>
                                         <Button
+                                          aria-label={t('common.delete')}
+                                          title={t('common.delete')}
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleDelete(host)}
@@ -492,40 +498,40 @@ export function HostManagementView({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {editingHost ? '编辑 Host' : '添加 Host'}
+                            {editingHost ? t('host_service.edit_host_title') : t('host_service.add_host_title')}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            配置域名到 IP 地址的映射关系
+                            {t('host_service.host_mapping_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="ip">IP 地址 *</Label>
+                            <Label htmlFor="ip">{t('host_service.ip_label')}</Label>
                             <Input
                                 id="ip"
                                 value={formData.ip}
                                 onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
-                                placeholder="例如: 127.0.0.1"
+                                placeholder={t('host_service.ip_placeholder')}
                                 className=""
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="hostname">主机名 *</Label>
+                            <Label htmlFor="hostname">{t('host_service.hostname_label')}</Label>
                             <Input
                                 id="hostname"
                                 value={formData.hostname}
                                 onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
-                                placeholder="例如: example.local"
+                                placeholder={t('host_service.hostname_placeholder')}
                                 className=""
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="comment">备注（可选）</Label>
+                            <Label htmlFor="comment">{t('host_service.comment_label')}</Label>
                             <Input
                                 id="comment"
                                 value={formData.comment}
                                 onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                                placeholder="添加说明信息"
+                                placeholder={t('host_service.comment_placeholder')}
                                 className=""
                             />
                         </div>
@@ -535,13 +541,13 @@ export function HostManagementView({
                                 checked={formData.enabled}
                                 onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
                             />
-                            <Label htmlFor="enabled">启用此 Host</Label>
+                            <Label htmlFor="enabled">{t('host_service.enable_this_host')}</Label>
                         </div>
                     </div>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className='' onClick={resetForm}>取消</AlertDialogCancel>
+                        <AlertDialogCancel className='' onClick={resetForm}>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleSave} disabled={isLoading}>
-                            {isLoading ? '保存中...' : '保存'}
+                            {isLoading ? t('host_service.saving') : t('host_service.save')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -551,14 +557,14 @@ export function HostManagementView({
             <AlertDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>需要管理员权限</AlertDialogTitle>
+                        <AlertDialogTitle>{t('host_service.admin_required_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            修改系统 hosts 文件需要管理员权限，请输入您的密码。
+                            {t('host_service.admin_required_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="password">密码 *</Label>
+                            <Label htmlFor="password">{t('host_service.password_label')}</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -569,7 +575,7 @@ export function HostManagementView({
                                         handlePasswordConfirm()
                                     }
                                 }}
-                                placeholder="输入您的系统密码"
+                                placeholder={t('host_service.password_placeholder')}
                                 className=""
                                 autoFocus
                             />
@@ -580,10 +586,10 @@ export function HostManagementView({
                             setPassword('')
                             setPendingAction(null)
                         }}>
-                            取消
+                            {t('common.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction onClick={handlePasswordConfirm}>
-                            确认
+                            {t('host_service.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

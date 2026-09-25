@@ -123,7 +123,7 @@ export function AutoChdirView({ selectedEnvironmentId, serviceData }: AutoChdirV
         <div className="p-3 rounded-xl border border-divider bg-content1">
             <div className="flex items-center justify-between mb-2">
                 <div>
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                         {t('custom_service.auto_chdir_label')}
                     </Label>
                     <p className="text-[10px] text-muted-foreground mt-0.5">

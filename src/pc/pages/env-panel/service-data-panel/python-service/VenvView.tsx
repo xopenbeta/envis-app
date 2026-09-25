@@ -27,6 +27,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTranslation } from "react-i18next"
@@ -155,9 +165,13 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
         }
     }
 
-    const handleRemove = async (name: string) => {
-        if (!confirm(t('python_service.confirm_remove_venv', { name }))) return
+    // 删除虚拟环境：不可逆操作，先弹应用内确认（原来是原生 window.confirm）
+    const [venvPendingRemove, setVenvPendingRemove] = useState<string | null>(null)
 
+    const handleRemove = (name: string) => setVenvPendingRemove(name)
+
+    const performRemove = async (name: string) => {
+        setVenvPendingRemove(null)
         try {
             const res = await removeVenv(selectedEnvironmentId, serviceData, name)
             if (res.success) {
@@ -192,7 +206,7 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Label className="cursor-help flex items-center gap-1.5 text-xs font-medium text-foreground">
+                                    <Label className="cursor-help flex items-center gap-1.5 text-sm font-semibold text-foreground">
                                         {t('python_service.venv_title')}
                                         <Info className="h-3 w-3 text-muted-foreground" />
                                     </Label>
@@ -212,6 +226,8 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                             className="h-5 w-5 text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
                             onClick={loadVenvs}
                             disabled={isLoading || isSupported === null}
+                            aria-label={t('common.refresh')}
+                            title={t('common.refresh')}
                         >
                             <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
                         </Button>
@@ -295,6 +311,8 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                                                 className="h-7 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
                                                 onClick={() => handleActivateVenv(venv)}
                                                 disabled={activatingVenvName === venv}
+                                                aria-label={t('nav_bar.open_terminal')}
+                                                title={t('nav_bar.open_terminal')}
                                             >
                                                 <Play className="h-3 w-3" />
                                             </Button>
@@ -304,6 +322,8 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                                                         variant="outline"
                                                         size="sm"
                                                         className="h-7 text-[10px] px-2 bg-content1 dark:bg-content1/40 border-divider"
+                                                        aria-label={t('nav_bar.more')}
+                                                        title={t('nav_bar.more')}
                                                     >
                                                         <MoreHorizontal className="h-3 w-3" />
                                                     </Button>
@@ -330,6 +350,27 @@ export function VenvView({ selectedEnvironmentId, serviceData }: VenvViewProps) 
                     </div>
                 )}
             </div>
+            {/* 删除虚拟环境确认 */}
+            <AlertDialog open={venvPendingRemove !== null} onOpenChange={(open) => { if (!open) setVenvPendingRemove(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('python_service.delete_venv')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('python_service.confirm_remove_venv', { name: venvPendingRemove ?? '' })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => venvPendingRemove && performRemove(venvPendingRemove)}
+                            className="bg-danger text-danger-foreground hover:bg-danger/90"
+                        >
+                            {t('common.delete')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
         </div>
     )
 }

@@ -1,4 +1,14 @@
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
@@ -22,14 +32,16 @@ function formatTime(ts: number) {
 }
 
 function LevelBadge({ level }: { level: LogEntry['level'] }) {
+  // 日志级别配色：ERROR danger / WARN warning / INFO 主文字 / DEBUG 次要文字。
+  // 原来 INFO 用 success 绿、DEBUG 用 focus 蓝，把「正常信息」染成了状态色。
   const color = level === 'error'
     ? ' text-danger'
     : level === 'warn'
       ? ' text-warning'
       : level === 'debug'
-        ? ' text-focus'
-        : ' text-success'
-  return <span className={cn('text-xs font-medium', color)}>[{level.toUpperCase()}]</span>
+        ? ' text-muted-foreground'
+        : ' text-foreground'
+  return <span className={cn('text-xs font-mono font-medium', color)}>[{level.toUpperCase()}]</span>
 }
 
 function LogEntryItem({ entry }: { entry: LogEntry }) {
@@ -40,13 +52,14 @@ function LogEntryItem({ entry }: { entry: LogEntry }) {
   return (
     <div className="text-xs">
       <div className="flex gap-2">
-        <span className="text-muted-foreground min-w-[64px]">{formatTime(entry.time)}</span>
+        <span className="text-muted-foreground font-mono nums min-w-[64px]">{formatTime(entry.time)}</span>
         <LevelBadge level={entry.level} />
-        <span className="whitespace-pre-wrap break-words flex-1">{entry.message}</span>
+        <span className="whitespace-pre-wrap break-words flex-1 font-mono">{entry.message}</span>
         {hasMeta && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+            className="text-muted-foreground hover:text-foreground transition-colors duration-150 p-0.5 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            aria-label={collapsed ? t('log_panel.expand_params') : t('log_panel.collapse_params')}
             title={collapsed ? t('log_panel.expand_params') : t('log_panel.collapse_params')}
           >
             <ChevronRight className={cn('h-3 w-3 transition-transform', !collapsed && 'rotate-90')} />
@@ -55,7 +68,7 @@ function LogEntryItem({ entry }: { entry: LogEntry }) {
       </div>
       {hasMeta && !collapsed && (
         <div className="mt-1 ml-[74px] pl-2 border-l border-divider">
-          <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap break-words bg-content2/30 rounded p-1.5 max-h-32 overflow-auto">
+          <pre className="text-2xs font-mono text-muted-foreground whitespace-pre-wrap break-words bg-content2 rounded-xs p-1.5 max-h-32 overflow-auto">
             {safeStringify(entry.meta, 2)}
           </pre>
         </div>
@@ -143,7 +156,10 @@ export default function LogPanel() {
     await navigator.clipboard.writeText(text)
   }
 
-  const clearAll = () => setEntries([])
+  // 破坏性 / 打断性操作统一走确认弹窗，不再单击即生效
+  const [pendingConfirm, setPendingConfirm] = useState<
+    { title: string; desc: string; confirmLabel: string; danger?: boolean; run: () => void } | null
+  >(null)
 
   // ===== State Tab helpers =====
 
@@ -184,12 +200,12 @@ export default function LogPanel() {
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 px-1 pb-1 pointer-events-none">
-      <div className="bg-content2 border rounded-lg bg-content1 border border-divider rounded-2xl pointer-events-auto overflow-hidden">
+      <div className="bg-content1 border border-divider rounded-2xl shadow-pop pointer-events-auto overflow-hidden">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'logs' | 'state')}>
           {/* Header with Tabs */}
           <div
             className={cn(
-              'flex items-center justify-between px-2 py-1 border-b select-none',
+              'flex items-center justify-between px-2 py-1 border-b border-divider select-none',
               'cursor-ns-resize'
             )}
             onMouseDown={onHeaderMouseDown}
@@ -209,31 +225,86 @@ export default function LogPanel() {
                     variant="ghost"
                     className="h-7 px-2"
                     onClick={() => setAscending(v => !v)}
+                    aria-label={ascending ? t('log_panel.switch_desc') : t('log_panel.switch_asc')}
                     title={ascending ? t('log_panel.switch_desc') : t('log_panel.switch_asc')}
                   >
                     <span className="text-xs">{ascending ? t('log_panel.asc') : t('log_panel.desc')}</span>
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setAutoScroll(v => !v)} title={autoScroll ? t('log_panel.pause_scroll') : t('log_panel.enable_scroll')}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2"
+                    onClick={() => setAutoScroll(v => !v)}
+                    aria-label={autoScroll ? t('log_panel.pause_scroll') : t('log_panel.enable_scroll')}
+                    title={autoScroll ? t('log_panel.pause_scroll') : t('log_panel.enable_scroll')}
+                  >
                     {autoScroll ? <Pause className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copyAll} title={t('log_panel.copy_all')}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2"
+                    onClick={copyAll}
+                    aria-label={t('log_panel.copy_all')}
+                    title={t('log_panel.copy_all')}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={clearAll} title={t('log_panel.clear_all')}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2"
+                    onClick={() => setPendingConfirm({
+                      title: t('log_panel.clear_all'),
+                      desc: t('log_panel.clear_all_confirm'),
+                      confirmLabel: t('log_panel.clear_all'),
+                      danger: true,
+                      run: () => setEntries([]),
+                    })}
+                    aria-label={t('log_panel.clear_all')}
+                    title={t('log_panel.clear_all')}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copyAllState} title={t('log_panel.copy_state')}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2"
+                    onClick={copyAllState}
+                    aria-label={t('log_panel.copy_state')}
+                    title={t('log_panel.copy_state')}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </>
               )}
-              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => location.reload()} title={t('log_panel.refresh')}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2"
+                onClick={() => setPendingConfirm({
+                  title: t('log_panel.refresh'),
+                  desc: t('log_panel.refresh_confirm'),
+                  confirmLabel: t('log_panel.refresh'),
+                  danger: true,
+                  run: () => location.reload(),
+                })}
+                aria-label={t('log_panel.refresh')}
+                title={t('log_panel.refresh')}
+              >
                 <RefreshCcw className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setOpen(false)} title={t('log_panel.close')}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2"
+                onClick={() => setOpen(false)}
+                aria-label={t('log_panel.close')}
+                title={t('log_panel.close')}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -275,16 +346,16 @@ export default function LogPanel() {
                       <AccordionContent>
                         <div className="space-y-2">
                           <div>
-                            <div className="text-[11px] leading-tight text-muted-foreground mb-1">appSettings</div>
-                            <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(appSettings, 2)}</pre>
+                            <div className="text-2xs text-muted-foreground mb-1">appSettings</div>
+                            <pre className="text-2xs whitespace-pre-wrap break-words bg-content3 rounded-xs p-2 max-h-40 overflow-auto">{safeStringify(appSettings, 2)}</pre>
                           </div>
                           <div>
-                            <div className="text-[11px] leading-tight text-muted-foreground mb-1">systemSettings</div>
-                            <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(systemSettings, 2)}</pre>
+                            <div className="text-2xs text-muted-foreground mb-1">systemSettings</div>
+                            <pre className="text-2xs whitespace-pre-wrap break-words bg-content3 rounded-xs p-2 max-h-40 overflow-auto">{safeStringify(systemSettings, 2)}</pre>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                            <div className="bg-content2/30 rounded p-2">isLeftPanelOpen: {String(isNavPanelOpen)}</div>
-                            <div className="bg-content2/30 rounded p-2">isAppLoading: {String(isAppLoading)}</div>
+                          <div className="grid grid-cols-2 gap-2 text-2xs">
+                            <div className="bg-content3 rounded-xs p-2">isLeftPanelOpen: {String(isNavPanelOpen)}</div>
+                            <div className="bg-content3 rounded-xs p-2">isAppLoading: {String(isAppLoading)}</div>
                           </div>
                         </div>
                       </AccordionContent>
@@ -294,11 +365,11 @@ export default function LogPanel() {
                       <AccordionTrigger className="py-2 text-xs">{t('log_panel.environment')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                            <div className="bg-content2/30 rounded p-2">selectedEnvironmentId: {selectedEnvId || '-'}</div>
-                            <div className="bg-content2/30 rounded p-2">environmentsCount: {envs?.length ?? 0}</div>
+                          <div className="grid grid-cols-2 gap-2 text-2xs">
+                            <div className="bg-content3 rounded-xs p-2">selectedEnvironmentId: {selectedEnvId || '-'}</div>
+                            <div className="bg-content3 rounded-xs p-2">environmentsCount: {envs?.length ?? 0}</div>
                           </div>
-                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(envs, 2)}</pre>
+                          <pre className="text-2xs whitespace-pre-wrap break-words bg-content3 rounded-xs p-2 max-h-40 overflow-auto">{safeStringify(envs, 2)}</pre>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -307,11 +378,11 @@ export default function LogPanel() {
                       <AccordionTrigger className="py-2 text-xs">{t('log_panel.service')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                            <div className="bg-content2/30 rounded p-2">selectedServiceDataId: {selectedServiceId || '-'}</div>
-                            <div className="bg-content2/30 rounded p-2">selectedEnvServDatasCount: {selectedServiceDatas?.length ?? 0}</div>
+                          <div className="grid grid-cols-2 gap-2 text-2xs">
+                            <div className="bg-content3 rounded-xs p-2">selectedServiceDataId: {selectedServiceId || '-'}</div>
+                            <div className="bg-content3 rounded-xs p-2">selectedEnvServDatasCount: {selectedServiceDatas?.length ?? 0}</div>
                           </div>
-                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(selectedServiceDatas, 2)}</pre>
+                          <pre className="text-2xs whitespace-pre-wrap break-words bg-content3 rounded-xs p-2 max-h-40 overflow-auto">{safeStringify(selectedServiceDatas, 2)}</pre>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -320,12 +391,12 @@ export default function LogPanel() {
                       <AccordionTrigger className="py-2 text-xs">{t('log_panel.ai')}</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-2">
-                          <div className="grid grid-cols-3 gap-2 text-[11px] leading-tight">
-                            <div className="bg-content2/30 rounded p-2">isAIPanelOpen: {String(isAIPanelOpen)}</div>
-                            <div className="bg-content2/30 rounded p-2">isAIResponseLoading: {String(isAIResponseLoading)}</div>
-                            <div className="bg-content2/30 rounded p-2">chatMessagesCount: {chatMessages?.length ?? 0}</div>
+                          <div className="grid grid-cols-3 gap-2 text-2xs">
+                            <div className="bg-content3 rounded-xs p-2">isAIPanelOpen: {String(isAIPanelOpen)}</div>
+                            <div className="bg-content3 rounded-xs p-2">isAIResponseLoading: {String(isAIResponseLoading)}</div>
+                            <div className="bg-content3 rounded-xs p-2">chatMessagesCount: {chatMessages?.length ?? 0}</div>
                           </div>
-                          <pre className="text-[11px] leading-tight whitespace-pre-wrap break-words bg-content2/30 rounded p-2 max-h-40 overflow-auto">{safeStringify(chatMessages, 2)}</pre>
+                          <pre className="text-2xs whitespace-pre-wrap break-words bg-content3 rounded-xs p-2 max-h-40 overflow-auto">{safeStringify(chatMessages, 2)}</pre>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -333,9 +404,9 @@ export default function LogPanel() {
                     <AccordionItem value="log">
                       <AccordionTrigger className="py-2 text-xs">Log ({t('log_panel.meta_info')})</AccordionTrigger>
                       <AccordionContent>
-                        <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
-                          <div className="bg-content2/30 rounded p-2">logEntriesCount: {entries?.length ?? 0}</div>
-                          <div className="bg-content2/30 rounded p-2">autoScroll: {String(autoScroll)}</div>
+                        <div className="grid grid-cols-2 gap-2 text-2xs">
+                          <div className="bg-content3 rounded-xs p-2">logEntriesCount: {entries?.length ?? 0}</div>
+                          <div className="bg-content3 rounded-xs p-2">autoScroll: {String(autoScroll)}</div>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -346,6 +417,28 @@ export default function LogPanel() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* 清空日志 / 刷新页面：打断性操作先确认 */}
+      <AlertDialog
+        open={pendingConfirm !== null}
+        onOpenChange={(open) => { if (!open) setPendingConfirm(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pendingConfirm?.title ?? ''}</AlertDialogTitle>
+            <AlertDialogDescription>{pendingConfirm?.desc ?? ''}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { pendingConfirm?.run(); setPendingConfirm(null) }}
+              className={pendingConfirm?.danger ? 'bg-danger text-danger-foreground hover:bg-danger/90' : undefined}
+            >
+              {pendingConfirm?.confirmLabel ?? ''}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

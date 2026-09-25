@@ -88,7 +88,8 @@ export default function Envis() {
     previousAIPanelOpenRef.current = isAIPanelOpen;
   }, [isAIPanelOpen, aiPanelWidthRatio]);
 
-  const resizableHandleClassName = "w-px bg-content2 hover:bg-default transition-colors duration-100";
+  // 拖动把手：原来用 bg-content2，而根容器也是 bg-content2 → 三栏之间根本看不到分隔线
+  const resizableHandleClassName = "bg-divider hover:bg-focus data-[resize-handle-active]:bg-focus transition-colors duration-150";
   return <div className="fixed w-screen h-screen overflow-hidden bg-content2">
     <ResizablePanelGroup direction="horizontal" className="w-screen h-screen">
 
@@ -123,8 +124,8 @@ export default function Envis() {
           if (isEnvPanelOpen) setEnvPanelWidthRatio(size);
         }}
       >
-        <div className='w-full h-screen flex justify-center items-center'>
-          <div style={{ width: 'calc(100% - 8px)', height: 'calc(100vh - 10px)' }} className="bg-white dark:bg-background flex flex-col overflow-hidden rounded-lg border border-divider">
+        <div className='w-full h-screen p-1'>
+          <div className="w-full h-full bg-content1 flex flex-col overflow-hidden rounded-lg border border-divider">
             {selectedEnvironmentId ? (
               <EnvironmentPanel onOpen={isNavPanelOpen ? undefined : () => setIsNavPanelOpen(true)} />
             ) : (
@@ -153,9 +154,9 @@ export default function Envis() {
           if (isAIPanelOpen) setAIPanelWidthRatio(size);
         }}
       >
-        <div className='w-full h-full flex items-center'>
-          <div style={{ width: 'calc(100% - 5px)', height: 'calc(100% - 10px)' }} className="bg-white dark:bg-content3 flex flex-col overflow-hidden rounded-lg border">
-            <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-default-400">{t('ai_panel.loading')}</div>}>
+        <div className='w-full h-full p-1'>
+          <div className="w-full h-full bg-content1 flex flex-col overflow-hidden rounded-lg border border-divider">
+            <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t('ai_panel.loading')}</div>}>
               <LazyAIPanel onClose={() => setIsAIPanelOpen(false)} />
             </Suspense>
           </div>

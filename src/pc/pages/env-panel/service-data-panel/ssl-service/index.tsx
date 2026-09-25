@@ -185,7 +185,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
             {/* CA 状态 */}
             <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                         <Shield className="h-3.5 w-3.5" />
                         {t('ssl_service.ca_title')}
                     </Label>
@@ -295,7 +295,7 @@ export function SSLService({ serviceData, selectedEnvironment }: SSLServiceProps
             {isCAInitialized && (
                 <div className="p-3 rounded-xl border border-divider bg-content1">
                     <div className="flex items-center justify-between mb-2">
-                        <Label className="text-xs font-medium text-foreground">{t('ssl_service.cert_management')}</Label>
+                        <Label className="text-sm font-semibold text-foreground">{t('ssl_service.cert_management')}</Label>
                         <Button
                             size="sm"
                             variant="outline"
