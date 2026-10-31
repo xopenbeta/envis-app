@@ -13,9 +13,12 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+// 仓库根目录必须用 fileURLToPath 解析：URL.pathname 在 Windows 上会返回
+// "/D:/a/repo"，被判成盘符根下的相对路径，readFileSync 直接 ENOENT。
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const LOCALES = {
   en: join(ROOT, 'src/pc/i18n/locales/en.json'),
   zh: join(ROOT, 'src/pc/i18n/locales/zh.json'),
@@ -25,11 +28,14 @@ const SRC = join(ROOT, 'src')
 const problems = []
 const note = (msg) => problems.push(msg)
 
+/** 统一按 LF 读取，保证行号与断言在 CRLF 检出的工作区里也一致。 */
+const read = (file) => readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
+
 // ───────────────────────────── 1. 重复键（原始文本扫描） ─────────────────────────────
 // 依据：这些文件由工具格式化，每个键独占一行且值为单行；JSON 字符串不能含裸换行。
 // 注意：重复检测只能靠原始文本——JSON.parse 会静默保留最后一个，事后无从发现。
 function findDuplicateKeys(file) {
-  const text = readFileSync(file, 'utf8')
+  const text = read(file)
   const lines = text.split('\n')
   const stack = [] // { indent, key }
   const seen = new Set()
@@ -62,7 +68,7 @@ function flatten(obj, prefix = '', out = new Set()) {
 
 const leafSets = {}
 for (const [lang, file] of Object.entries(LOCALES)) {
-  leafSets[lang] = flatten(JSON.parse(readFileSync(file, 'utf8')))
+  leafSets[lang] = flatten(JSON.parse(read(file)))
   for (const d of findDuplicateKeys(file)) {
     note(`重复键  ${relative(ROOT, file)}:${d.line}  ${d.path}  （JSON.parse 只保留最后一个，前面的定义是死词条）`)
   }
@@ -90,7 +96,7 @@ const RE_TRANS = /i18nKey=\{?['"]([A-Za-z0-9_.-]+)['"]/g
 
 let checked = 0
 for (const file of walk(SRC)) {
-  const text = readFileSync(file, 'utf8')
+  const text = read(file)
   for (const re of [RE_T, RE_TRANS]) {
     re.lastIndex = 0
     let m

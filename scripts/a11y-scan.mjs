@@ -17,8 +17,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = process.cwd()
+// 用脚本自身位置推导仓库根（而不是 process.cwd()），并避免 URL.pathname
+// 在 Windows 上产生 "/D:/..." 这种非法路径。
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+/** 统一按 LF 读取，保证行号在 CRLF 检出的工作区里也一致。 */
+const readSource = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8').replace(/\r\n/g, '\n')
 
 /** 扫描 src 下全部 tsx（跳过第三方与构建产物）。 */
 function expandScope() {
@@ -218,7 +223,7 @@ function stripTags(s) {
 }
 
 function analyze(file, src) {
-  if (src === undefined) src = fs.readFileSync(path.join(ROOT, file), 'utf8')
+  if (src === undefined) src = readSource(file)
   // 注释屏蔽后再分析：行号不变，但注释掉的 JSX 不再计入
   src = maskComments(src)
   // Radix's AlertDialog.Title is DialogPrimitive.Title too, so either satisfies the
@@ -280,7 +285,8 @@ function analyze(file, src) {
 /** Read the committed (HEAD) version of an in-scope file, or null when untracked/absent. */
 function headSource(file) {
   try {
-    return execFileSync('git', ['show', `HEAD:${file}`], { cwd: ROOT, encoding: 'utf8' })
+    // git 的 pathspec 只接受正斜杠；Windows 下 file 会是 src\\pc\\... 形式
+    return execFileSync('git', ['show', `HEAD:${file.split(path.sep).join('/')}`], { cwd: ROOT, encoding: 'utf8' })
   } catch {
     return null
   }

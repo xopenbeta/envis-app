@@ -32,6 +32,7 @@
 - ♻️ 对话框关闭按钮改为 28×28 命中区，浮动层圆角统一为 16px
 - ♻️ 端口输入改为数字输入并限制在 1–65535
 - ♻️ envis-core 版本列表新增 Node.js v24.21.0 (LTS Krypton)
+- ♻️ 构建守卫兼容 Windows：路径解析改用 `fileURLToPath`（`URL.pathname` 在 Windows 上会得到 `/D:/...` 导致 ENOENT），换行统一按 LF 处理
 - ♻️ 重写中英 README：修正协议声明（MIT → GPL-3.0）、补齐 15 种服务清单、架构分层、配置与数据位置、FAQ
 
 ## [0.13.15] - 2026-06-19
