@@ -1,16 +1,22 @@
 # 更新日志 / Changelog
 
-## [Unreleased]
+## [0.14.0] - 2026-11-01
 
 ### 新增 / Added
-- ✨ 新增 Apache HTTP Server 服务：支持 2.4.69 下载安装、环境级 `httpd.conf` 生成、启动 / 停止 / 重启、配置校验（`httpd -t`）与运行状态探测
-- ✨ Apache 服务面板：展示监听端口、ServerName、DocumentRoot、ErrorLog、已加载模块与虚拟主机概览
+- ✨ 新增 Apache HTTP Server 服务（2.4.69）：支持从 apache-archive 下载安装（Windows / macOS / Linux）、生成环境级 `httpd.conf`、启动 / 停止 / 重启、配置校验（`httpd -t`）与运行状态探测
+- ✨ Apache 服务面板：展示监听端口、ServerName、DocumentRoot、ErrorLog、已加载模块与虚拟主机概览，并支持一键校验配置、打开配置目录
+- ✨ Apache 环境隔离：`APACHE_HOME` / `APACHE_CONF` 随环境激活注入，站点目录与日志按环境独立
+- ✨ Apache 独立进程管理：Windows 使用 `-X` 单进程模式启动，Unix 非 root 时自动覆盖 `User` / `Group`，与发行包自带 `apachectl` 行为一致
 
 ### 改进 / Improved
-- ♻️ 抽取 `archive` / `probe` 公共模块：Nginx 与 Apache 复用归档解压、目录提升、pid 与端口探测逻辑
+- ♻️ 抽取 `archive`（zip / tar.gz 解压、单层目录提升、目录清理）与 `probe`（pid 文件、进程名、监听端口探测）公共模块，Nginx 与 Apache 共用，Nginx 侧减少约 240 行重复实现
+- ♻️ GUI 全局锁统一改为 poison 恢复（`unwrap_or_else(|p| p.into_inner())`），单个后台 panic 不再引发后续 IPC 连锁失败
 
 ### 修复 / Fixed
-- 🐛 修复 Windows 下 Apache 父进程向子进程传递含空格 ServerRoot 失败的问题（改用 `-X` 单进程模式启动）
+- 🐛 修复 ShellManager 初始化失败（shell 配置备份被占用 / 拒绝访问）导致应用启动崩溃的问题：改为记录日志并降级运行，不再 panic
+- 🐛 修复创建服务数据目录、写入服务配置文件在安全软件短暂锁定时直接失败的问题：增加约 2.5 秒重试，并在错误信息中带上完整路径与系统错误
+- 🐛 修复 esbuild 临时文件被安全软件锁定导致构建失败的问题：Vite 构建临时目录改用项目内 `.tmp/vite-temp`
+- 🐛 修复 Windows 下 Apache 父进程向子进程传递含空格 ServerRoot 失败（`AH00419`）的问题
 
 ## [0.13.16] - 2026-09-25
 
