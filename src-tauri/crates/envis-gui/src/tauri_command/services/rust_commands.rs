@@ -107,7 +107,7 @@ pub async fn set_cargo_home(
     cargo_home: String,
 ) -> Result<CommandResponse, String> {
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,

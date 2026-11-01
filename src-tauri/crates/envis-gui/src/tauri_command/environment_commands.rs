@@ -33,7 +33,7 @@ pub async fn get_all_environments() -> Result<EnvironmentCommandResult, String> 
     let manager = EnvironmentManager::global();
 
     let lock_wait_start = Instant::now();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let lock_wait_elapsed = lock_wait_start.elapsed();
 
     log::debug!(
@@ -78,7 +78,7 @@ pub async fn create_environment(
     description: Option<String>,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.create_environment(name, description) {
         Ok(result) => Ok(result.into()),
@@ -96,7 +96,7 @@ pub async fn save_environment(
     environment: Environment,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.save_environment(&environment) {
         Ok(result) => Ok(result.into()),
@@ -114,7 +114,7 @@ pub async fn delete_environment(
     environment: Environment,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.delete_environment(&environment) {
         Ok(result) => Ok(result.into()),
@@ -130,7 +130,7 @@ pub async fn delete_environment(
 #[tauri::command]
 pub async fn get_environment(environment_id: String) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.get_environment(&environment_id) {
         Ok(result) => Ok(result.into()),
@@ -148,7 +148,7 @@ pub async fn is_environment_exists(
     environment: Environment,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.is_environment_exists(&environment) {
         Ok(exists) => {
@@ -173,7 +173,7 @@ pub async fn activate_environment(
     mut environment: Environment,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.activate_environment(&mut environment) {
         Ok(result) => {
@@ -197,7 +197,7 @@ pub async fn activate_environment_and_services(
 ) -> Result<EnvironmentCommandResult, String> {
     let result = {
         let manager = EnvironmentManager::global();
-        let manager = manager.lock().unwrap();
+        let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         manager.activate_environment_and_services(&mut environment, password)
     };
 
@@ -236,7 +236,7 @@ pub async fn deactivate_environment(
     mut environment: Environment,
 ) -> Result<EnvironmentCommandResult, String> {
     let manager = EnvironmentManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.deactivate_environment(&mut environment) {
         Ok(result) => {
@@ -260,7 +260,7 @@ pub async fn deactivate_environment_and_services(
 ) -> Result<EnvironmentCommandResult, String> {
     let result = {
         let manager = EnvironmentManager::global();
-        let manager = manager.lock().unwrap();
+        let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         manager.deactivate_environment_and_services(&mut environment, password)
     };
 
@@ -305,7 +305,7 @@ pub async fn switch_environment_and_services(
 ) -> Result<EnvironmentCommandResult, String> {
     let result = {
         let manager = EnvironmentManager::global();
-        let manager = manager.lock().unwrap();
+        let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         manager.switch_environment_and_services(&environment_id, password, deactivate_others)
     };
 

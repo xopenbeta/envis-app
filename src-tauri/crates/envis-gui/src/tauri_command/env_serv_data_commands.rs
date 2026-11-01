@@ -10,7 +10,7 @@ use envis_core::types::{
 #[tauri::command]
 pub async fn get_environment_all_service_datas(environment_id: String) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     match manager.get_environment_all_service_datas(&environment_id) {
         Ok(service_datas) => Ok(serde_json::json!({
             "success": true,
@@ -29,7 +29,7 @@ pub async fn get_environment_all_service_datas(environment_id: String) -> Result
 #[tauri::command]
 pub async fn get_service_data(environment_id: String, service_id: String) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     match manager.get_service_data(&environment_id, &service_id) {
         Ok(service_data) => Ok(serde_json::json!({
             "success": true,
@@ -51,7 +51,7 @@ pub async fn create_service_data(
     request: CreateServiceDataRequest,
 ) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.create_service_data(&environment_id, request.service_type, request.version) {
         Ok(result) => Ok(serde_json::to_value(result).map_err(|e| e.to_string())?),
@@ -69,7 +69,7 @@ pub async fn update_service_data(
     request: UpdateServiceDataRequest,
 ) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.update_service_data(&environment_id, request) {
         Ok(result) => Ok(serde_json::to_value(result).map_err(|e| e.to_string())?),
@@ -87,7 +87,7 @@ pub async fn delete_service_data(
     service_id: String,
 ) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     match manager.delete_service_data(&environment_id, &service_id) {
         Ok(result) => Ok(serde_json::to_value(result).map_err(|e| e.to_string())?),
@@ -106,7 +106,7 @@ pub async fn active_service_data(
     password: Option<String>,
 ) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     match manager.active_service_data(&environment_id, &mut service_data, password) {
         Ok(result) => {
             // 服务数据状态已变更，始终推送事件
@@ -128,7 +128,7 @@ pub async fn deactive_service_data(
     password: Option<String>,
 ) -> Result<Value, String> {
     let manager = EnvServDataManager::global();
-    let manager = manager.lock().unwrap();
+    let manager = manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     match manager.deactive_service_data(&environment_id, &mut service_data, password) {
         Ok(result) => {
             // 服务数据状态已变更，始终推送事件

@@ -108,7 +108,7 @@ pub async fn set_npm_registry(
 ) -> Result<CommandResponse, String> {
     // 先写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -144,7 +144,7 @@ pub async fn set_npm_config_prefix(
 ) -> Result<CommandResponse, String> {
     // 先写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -180,7 +180,7 @@ pub async fn set_pnpm_home(
 ) -> Result<CommandResponse, String> {
     // 先写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,

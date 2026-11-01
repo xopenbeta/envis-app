@@ -31,3 +31,4 @@ target
 .vscode
 skills
 prompts
+.tmp/

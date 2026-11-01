@@ -122,7 +122,7 @@ pub async fn set_pip_index_url(
 ) -> Result<CommandResponse, String> {
     // 先写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -158,7 +158,7 @@ pub async fn set_pip_trusted_host(
 ) -> Result<CommandResponse, String> {
     // 先写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -194,7 +194,7 @@ pub async fn set_python3_as_python(
 ) -> Result<CommandResponse, String> {
     // 先写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,

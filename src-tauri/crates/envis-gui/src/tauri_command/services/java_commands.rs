@@ -147,7 +147,7 @@ pub async fn initialize_maven(
 
             if let Some(maven_home) = maven_home.clone() {
                 let env_serv_data_manager = EnvServDataManager::global();
-                let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+                let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
                 let _ = env_serv_data_manager.set_metadata(
                     &environment_id,
                     &mut service_data,
@@ -211,7 +211,7 @@ pub async fn set_java_home(
 ) -> Result<CommandResponse, String> {
     // 写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -237,7 +237,7 @@ pub async fn set_java_opts(
 ) -> Result<CommandResponse, String> {
     // 写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -263,7 +263,7 @@ pub async fn set_maven_home(
 ) -> Result<CommandResponse, String> {
     // 写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -289,7 +289,7 @@ pub async fn set_gradle_home(
 ) -> Result<CommandResponse, String> {
     // 写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -314,7 +314,7 @@ pub async fn set_gradle_user_home(
     gradle_user_home: String,
 ) -> Result<CommandResponse, String> {
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,
@@ -365,7 +365,7 @@ pub async fn initialize_gradle(
 
             if let Some(gradle_home_path) = gradle_home.clone() {
                 let env_serv_data_manager = EnvServDataManager::global();
-                let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+                let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
                 let _ = env_serv_data_manager.set_metadata(
                     &environment_id,
                     &mut service_data,
@@ -428,7 +428,7 @@ pub async fn set_maven_local_repository(
 
     // 写入 metadata
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let _ = env_serv_data_manager.set_metadata(
         &environment_id,
         &mut service_data,

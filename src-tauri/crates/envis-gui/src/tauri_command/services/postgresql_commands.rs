@@ -12,7 +12,7 @@ fn persist_postgresql_metadata(
     super_password: Option<String>,
 ) -> Result<(), String> {
     let env_serv_data_manager = EnvServDataManager::global();
-    let env_serv_data_manager = env_serv_data_manager.lock().unwrap();
+    let env_serv_data_manager = env_serv_data_manager.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
     let metadata = service_data.metadata.get_or_insert_with(HashMap::new);
 
