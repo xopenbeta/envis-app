@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 function getServiceProcessNames(type: ServiceType): string[] {
   switch (type) {
     case ServiceType.Nginx: return ['nginx']
+    case ServiceType.Apache: return ['httpd']
     case ServiceType.Mongodb: return ['mongod']
     case ServiceType.Redis: return ['redis-server']
     case ServiceType.Mariadb: return ['mariadbd', 'mysqld_safe']

@@ -62,6 +62,7 @@ export enum ServiceType {
   Mysql = "mysql",
   Postgresql = "postgresql",
   Nginx = "nginx",
+  Apache = "apache",
   Nodejs = "nodejs",
   Python = "python",
   Java = "java",
@@ -77,6 +78,7 @@ export enum ServiceType {
 export const serviceTypeNames: Record<ServiceType, string> = {
   [ServiceType.Nodejs]: 'Node.js',
   [ServiceType.Nginx]: 'Nginx',
+  [ServiceType.Apache]: 'Apache',
   [ServiceType.Redis]: 'Redis',
   [ServiceType.Mongodb]: 'MongoDB',
   [ServiceType.Mariadb]: 'MariaDB',
@@ -118,6 +120,7 @@ export const serviceCategories = {
   },
   'servers': {
     nginx: 'Nginx',
+    apache: 'Apache',
     // dnsmasq: 'Dnsmasq',
   },
 }
@@ -125,6 +128,7 @@ export const serviceCategories = {
 export const NeedDownloadServices: ServiceType[] = [
   ServiceType.Nodejs,
   ServiceType.Nginx,
+  ServiceType.Apache,
   ServiceType.Redis,
   ServiceType.Mongodb,
   ServiceType.Mariadb,
@@ -145,6 +149,7 @@ export const NoNeedDownloadServices: ServiceType[] = [
 // 一般用这个
 export const CanRunServices: ServiceType[] = [
   ServiceType.Nginx,
+  ServiceType.Apache,
   ServiceType.Redis,
   ServiceType.Mongodb,
   ServiceType.Mariadb,

@@ -16,6 +16,7 @@ use tauri_command::env_serv_data_commands::*;
 use tauri_command::environment_commands::*;
 use tauri_command::file_commands::*;
 use tauri_command::service_commands::*;
+use tauri_command::services::apache_commands::*;
 use tauri_command::services::custom_commands::*;
 use tauri_command::services::dnsmasq_commands::*;
 use tauri_command::services::host_commands::*;
@@ -228,6 +229,20 @@ pub fn run(ctx: tauri::Context<tauri::Wry>) {
             stop_nginx_service,
             restart_nginx_service,
             get_nginx_service_status,
+            // Apache 服务命令
+            check_apache_installed,
+            get_apache_versions,
+            download_apache,
+            cancel_download_apache,
+            get_apache_download_progress,
+            // Apache 配置命令
+            get_apache_config,
+            validate_apache_config,
+            // Apache 控制命令
+            start_apache_service,
+            stop_apache_service,
+            restart_apache_service,
+            get_apache_service_status,
             // 自定义服务命令
             update_custom_service_paths,
             update_custom_service_env_vars,

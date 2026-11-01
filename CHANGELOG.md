@@ -1,5 +1,17 @@
 # 更新日志 / Changelog
 
+## [Unreleased]
+
+### 新增 / Added
+- ✨ 新增 Apache HTTP Server 服务：支持 2.4.69 下载安装、环境级 `httpd.conf` 生成、启动 / 停止 / 重启、配置校验（`httpd -t`）与运行状态探测
+- ✨ Apache 服务面板：展示监听端口、ServerName、DocumentRoot、ErrorLog、已加载模块与虚拟主机概览
+
+### 改进 / Improved
+- ♻️ 抽取 `archive` / `probe` 公共模块：Nginx 与 Apache 复用归档解压、目录提升、pid 与端口探测逻辑
+
+### 修复 / Fixed
+- 🐛 修复 Windows 下 Apache 父进程向子进程传递含空格 ServerRoot 失败的问题（改用 `-X` 单进程模式启动）
+
 ## [0.13.15] - 2026-06-19
 
 ### 修复 / Fixed

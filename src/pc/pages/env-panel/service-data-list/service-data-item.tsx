@@ -76,6 +76,7 @@ export interface ServiceDownloadProgress {
 const SERVICE_TYPE_ICONS: Record<ServiceType, string> = {
   [ServiceType.Nodejs]: 'nodejs',
   [ServiceType.Nginx]: 'nginx',
+  [ServiceType.Apache]: 'apache',
   [ServiceType.Redis]: 'redis',
   [ServiceType.Mongodb]: 'mongodb',
   [ServiceType.Mariadb]: 'mariadb',

@@ -54,6 +54,7 @@ pub async fn get_services_process_stats(service_types: Vec<ServiceType>) -> Resu
     fn service_type_to_process_names(service_type: &ServiceType) -> &'static [&'static str] {
         match service_type {
             ServiceType::Nginx => &["nginx"],
+            ServiceType::Apache => &["httpd"],
             ServiceType::Mongodb => &["mongod"],
             ServiceType::Redis => &["redis-server"],
             ServiceType::Mariadb => &["mariadbd", "mysqld_safe"],

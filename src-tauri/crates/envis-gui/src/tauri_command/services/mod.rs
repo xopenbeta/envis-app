@@ -1,3 +1,4 @@
+pub mod apache_commands;
 pub mod custom_commands;
 pub mod dnsmasq_commands;
 pub mod host_commands;

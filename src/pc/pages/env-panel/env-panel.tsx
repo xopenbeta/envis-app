@@ -13,6 +13,7 @@ import { MariaDBService } from './service-data-panel/mariadb-service'
 import { MySQLService } from './service-data-panel/mysql-service'
 import { PostgreSQLService } from './service-data-panel/postgresql-service'
 import { NginxService } from './service-data-panel/nginx-service'
+import { ApacheService } from './service-data-panel/apache-service'
 import { CustomService } from './service-data-panel/custom-service'
 import { HostService } from './service-data-panel/host-service'
 import { PythonService } from './service-data-panel/python-service'
@@ -42,6 +43,8 @@ function ServiceDetailRouter() {
       return <NodeService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Nginx:
       return <NginxService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
+    case ServiceType.Apache:
+      return <ApacheService selectedEnvironment={selectedEnvironment} serviceData={selectedServiceData} />
     case ServiceType.Mariadb:
       return <MariaDBService serviceData={selectedServiceData} />
     case ServiceType.Mysql:

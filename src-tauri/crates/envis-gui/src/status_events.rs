@@ -1,7 +1,7 @@
 use envis_core::manager::app_config_manager::AppConfigManager;
 use envis_core::manager::services::{
-    DnsmasqService, DownloadManager, MariadbService, MongodbService, MysqlService, NginxService,
-    PostgresqlService, RedisService,
+    ApacheService, DnsmasqService, DownloadManager, MariadbService, MongodbService, MysqlService,
+    NginxService, PostgresqlService, RedisService,
 };
 use envis_core::types::{ServiceData, ServiceType};
 use serde_json::Value;
@@ -457,6 +457,12 @@ fn start_service_status_watcher() {
 fn get_service_running_status(environment_id: &str, service_data: &ServiceData) -> Option<String> {
     match service_data.service_type {
         ServiceType::Nginx => NginxService::global()
+            .get_service_status(service_data)
+            .ok()
+            .and_then(|s| serde_json::to_value(s).ok())
+            .and_then(|v| v.as_str().map(|s| s.to_string())),
+
+        ServiceType::Apache => ApacheService::global()
             .get_service_status(service_data)
             .ok()
             .and_then(|s| serde_json::to_value(s).ok())

@@ -1385,6 +1385,7 @@ dependencies = [
  "flate2",
  "futures-util",
  "image",
+ "libc",
  "log",
  "num_cpus",
  "rand 0.8.5",

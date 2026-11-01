@@ -63,6 +63,10 @@ export function AddServiceMenu({ buttonType = "icon" }: {
             isLoading: false,
             availableVersions: [],
         },
+        [ServiceType.Apache]: {
+            isLoading: false,
+            availableVersions: [],
+        },
         [ServiceType.Redis]: {
             isLoading: false,
             availableVersions: [],
