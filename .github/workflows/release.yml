@@ -92,6 +92,12 @@ jobs:
           echo "${NOTES}" >> "$GITHUB_OUTPUT"
           echo "${delimiter}" >> "$GITHUB_OUTPUT"
 
+      # 守卫脚本嵌在 tauri build 的 beforeBuildCommand 里跑，失败时只会报
+      # "Build and Create Release failed"，看不出是守卫挂的。这里单独跑一遍，
+      # 让失败点直接对应到具体守卫（重复执行代价很小）。
+      - name: Frontend guards (i18n / a11y)
+        run: pnpm check:i18n && pnpm check:a11y
+
       - name: Add Rust targets for macOS
         if: matrix.platform == 'macos-latest'
         run: rustup target add x86_64-apple-darwin aarch64-apple-darwin

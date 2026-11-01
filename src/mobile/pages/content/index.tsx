@@ -80,19 +80,19 @@ export default function ContentPage(props: ContentPageProps): JSX.Element {
   const statusText = useMemo(() => status.toUpperCase(), [status])
 
   return (
-    <div className="h-full flex flex-col bg-slate-100 dark:bg-[#030303]">
-      <div className="px-3 py-2 border-b border-slate-200 bg-white/95 flex items-center justify-between gap-2 dark:border-white/5 dark:bg-[#0a0a0a]/95">
+    <div className="h-full flex flex-col bg-background dark:bg-background">
+      <div className="px-3 py-2 border-b border-divider bg-content1/95 flex items-center justify-between gap-2 dark:border-divider dark:bg-content2/95">
         <button
           type="button"
           onClick={props.onBack}
-          className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm dark:border-white/10 dark:bg-[#111111] dark:text-slate-200"
+          className="inline-flex items-center gap-1 rounded-md border border-divider bg-content1 px-2 py-1 text-xs text-foreground  dark:border-divider dark:bg-content2 dark:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> 返回
         </button>
 
         <div className="text-right">
-          <p className="text-xs text-slate-800 dark:text-slate-200">{props.host.name}</p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-500">
+          <p className="text-xs text-foreground dark:text-foreground">{props.host.name}</p>
+          <p className="text-[11px] text-muted-foreground dark:text-muted-foreground">
             {props.host.username}@{props.host.host}:{props.host.port}
           </p>
         </div>
@@ -103,14 +103,14 @@ export default function ContentPage(props: ContentPageProps): JSX.Element {
             clearOutput()
             sendCommand('status')
           }}
-          className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm dark:border-white/10 dark:bg-[#111111] dark:text-slate-200"
+          className="inline-flex items-center gap-1 rounded-md border border-divider bg-content1 px-2 py-1 text-xs text-foreground  dark:border-divider dark:bg-content2 dark:text-foreground"
         >
           <RefreshCw className="h-3.5 w-3.5" /> 状态
         </button>
       </div>
 
       <div className="flex-1 p-2 sm:p-3">
-        <div className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#030303]">
+        <div className="h-full overflow-hidden rounded-2xl border border-divider bg-content1  dark:border-divider dark:bg-background">
           <AndroidTerminalPanel
             statusText={statusText}
             session={session}

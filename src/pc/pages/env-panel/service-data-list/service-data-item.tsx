@@ -370,13 +370,17 @@ export function SortableServiceItem({
         <span
           className={cn(
             "text-xs font-medium",
+            // 状态语义：色 + 字（文字即为状态名，故不必再加图标）。
+            // 此前 pending / downloading / downloaded / installing 四态全部映射成
+            // text-success，用户无法区分「正在下载」与「已装好」。
+            // 现在：进行中 = warning，已下载待安装 = focus，已完成/未开始/已取消 = 中性，失败 = danger。
             downloadStatus === DownloadStatus.NotInstalled && "text-muted-foreground",
             downloadStatus === DownloadStatus.Cancelled && "text-muted-foreground",
-            downloadStatus === DownloadStatus.Pending && "text-success",
-            downloadStatus === DownloadStatus.Downloading && "text-success",
-            downloadStatus === DownloadStatus.Downloaded && "text-success",
-            downloadStatus === DownloadStatus.Installing && "text-success",
-            downloadStatus === DownloadStatus.Unknown && "text-danger",
+            downloadStatus === DownloadStatus.Unknown && "text-muted-foreground",
+            downloadStatus === DownloadStatus.Pending && "text-warning",
+            downloadStatus === DownloadStatus.Downloading && "text-warning",
+            downloadStatus === DownloadStatus.Installing && "text-warning",
+            downloadStatus === DownloadStatus.Downloaded && "text-focus",
             downloadStatus === DownloadStatus.Failed && "text-danger"
           )}
         >
@@ -422,17 +426,33 @@ export function SortableServiceItem({
     <div
       ref={setNodeRef}
       style={style}
+      // 服务列表行：原来只有 onClick，键盘与读屏无法选择服务。
+      role="button"
+      tabIndex={0}
+      aria-current={isSelected ? 'true' : undefined}
+      aria-label={serviceData.name}
       className={cn(
         "overflow-hidden", // 添加 overflow-hidden 以裁剪图标
         "mb-2",
-        "group relative flex items-center p-2 rounded-lg cursor-pointer heroui-transition",
+        "group relative flex items-center p-2 rounded-lg cursor-pointer transition-colors duration-150",
         "border box-border",
+        // 密集列表行用内描边焦点环，避免与外层行重叠
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset",
+        // 选中态：此前这里叠了 4 个互相冲突的类（dark:bg-content3 + dark:bg-content2、
+        // dark:border-default + dark:border-divider），由样式表顺序决定谁生效，
+        // 且亮色分支 bg-background 与侧栏同色 → 看不出选中了哪一行。收敛为单一状态。
         isSelected
-          ? "bg-gray-50 dark:bg-gray-800 dark:border-gray-600  dark:bg-white/10 dark:border-white/5"
-          : "hover:bg-content2 border-transparent dark:hover:bg-white/5",
+          ? "bg-content4 border-divider"
+          : "border-transparent hover:bg-content2",
         isDragging && "z-50"
       )}
       onClick={onServiceItemClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onServiceItemClick()
+        }
+      }}
     >
       {/* 背景图标 */}
       <div
@@ -449,10 +469,9 @@ export function SortableServiceItem({
         <img
           src={getDeviconUrl(serviceData.type)}
           alt=""
-          className="h-full w-auto object-contain" // 高度100%，宽度自动以保持比例
-          style={{
-            filter: 'brightness(1.2)', // 稍微提亮
-          }}
+          // 原来这里写死 filter: brightness(1.2)，在暗色主题下会变成一块无法用 token 控制的高光。
+          // 改为按主题补偿：亮色保持原色，暗色压暗。
+          className="h-full w-auto object-contain dark:brightness-[0.8]" // 高度100%，宽度自动以保持比例
         />
       </div>
 
@@ -463,18 +482,18 @@ export function SortableServiceItem({
             <div
               {...attributes}
               {...listeners}
-              className="mr-2 cursor-grab active:cursor-grabbing hover:text-default heroui-transition flex-shrink-0"
+              className="mr-2 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors duration-150 flex-shrink-0"
               title={t('service_item.drag_sort')}
               onClick={(e) => e.stopPropagation()}
             >
-              <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-500" />
+              <GripVertical className="h-4 w-4" />
             </div>
           )}
 
 
           <div className="flex flex-col min-w-0">
             {/* 服务名字 */}
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300 min-w-0 truncate">
+            <span className="text-md font-medium text-foreground min-w-0 truncate">
               {serviceData.type === ServiceType.Custom && (
                 <span className="mr-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded">{t('service_item.custom_tag')}</span>
               )}
@@ -483,7 +502,7 @@ export function SortableServiceItem({
                 <span className="text-xs text-muted-foreground ml-2">{serviceData.version}</span>
               )}
             </span>
-            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", serviceDataStatus === ServiceDataStatus.Active ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500")}>
+            <span className={cn("text-xs truncate font-mono flex items-center gap-1.5", serviceDataStatus === ServiceDataStatus.Active ? " text-success dark:text-success" : " text-muted-foreground")}>
               {/* 服务状态 */}
               <StatusView />
               {/* 下载进度展示区域 */}
@@ -523,6 +542,7 @@ export function SortableServiceItem({
                         onCancelServiceDownloadBtnClick(serviceData)
                       }}
                       className="h-6 w-6 p-0 text-muted-foreground hover:text-danger"
+                      aria-label={t('service_item.cancel_download')}
                       title={t('service_item.cancel_download')}
                     >
                       <XCircle className="h-4 w-4" />
@@ -537,8 +557,8 @@ export function SortableServiceItem({
       {/* 绝对定位的操作按钮 */}
       <div className={cn(
         "absolute right-3 top-1/2 transform -translate-y-1/2",
-        "flex items-center heroui-transition",
-        "opacity-0 group-hover:opacity-100",
+        "flex items-center transition-all duration-250",
+        "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
         "hover:backdrop-blur-sm rounded",
         "z-10" // 确保按钮在图标上方
       )}>
@@ -552,6 +572,7 @@ export function SortableServiceItem({
               e.stopPropagation()
               onDownloadServiceBtnClick()
             }}
+            aria-label={t('service_item.download_install')}
             title={t('service_item.download_install')}
           >
             <Download className="h-3 w-3" />
@@ -581,6 +602,8 @@ export function SortableServiceItem({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
+              aria-label={t('nav_bar.more')}
+              title={t('nav_bar.more')}
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
@@ -625,7 +648,7 @@ export function SortableServiceItem({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className='shadow-none' onClick={() => {
+            <AlertDialogCancel className='' onClick={() => {
               setShowEnvironmentActivationDialog(false)
             }}>
               {t('common.cancel')}
@@ -648,11 +671,11 @@ export function SortableServiceItem({
           </DialogHeader>
 
           <div className="mt-2">
-            <Input className='shadow-none' value={renameValue} onChange={(e) => setRenameValue((e.target as HTMLInputElement).value)} placeholder={t('service_item.service_name_placeholder')} />
+            <Input className='' value={renameValue} onChange={(e) => setRenameValue((e.target as HTMLInputElement).value)} placeholder={t('service_item.service_name_placeholder')} />
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className='shadow-none' onClick={() => setShowRenameDialog(false)}>
+            <Button variant="outline" className='' onClick={() => setShowRenameDialog(false)}>
               {t('common.cancel')}
             </Button>
             <Button onClick={async () => {

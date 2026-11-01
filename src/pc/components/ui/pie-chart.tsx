@@ -13,7 +13,7 @@ export function PieChart({
   value, 
   size = 60, 
   strokeWidth = 6,
-  color = '#3b82f6',
+  color = 'hsl(var(--focus))',
   className = "",
   children 
 }: PieChartProps) {
@@ -33,7 +33,7 @@ export function PieChart({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="hsl(var(--muted))"
+          stroke="hsl(var(--content2))"
           strokeWidth={strokeWidth}
           fill="none"
           opacity={0.2}

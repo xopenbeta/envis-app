@@ -25,9 +25,9 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
 
     if (isInstalled) {
         return (
-            <Alert className="border-green-500/50 bg-green-500/10">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <AlertDescription className="text-green-700 dark:text-green-400 text-xs">
+            <Alert className="border-success/50 bg-success/10">
+                <CheckCircle className="h-4 w-4 text-success" />
+                <AlertDescription className="text-success dark:text-success text-xs">
                     {t('ssl_service.ca_installed_desc')}
                 </AlertDescription>
             </Alert>
@@ -36,18 +36,20 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
 
     // macOS 安装指南
     const macOSGuide = (
-        <div className="bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10 p-4 space-y-3">
+        <div className="bg-white dark:bg-content1/40 rounded border border-divider p-4 space-y-3">
                 <div className="text-sm font-medium">{t('ssl_service.macos_system')}</div>
                 <ol className="text-xs space-y-3 text-muted-foreground list-decimal pl-4">
                     <li>
                         <div className="mb-1">{t('ssl_service.macos_step1')}</div>
                         {certPath && (
-                            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded font-mono">
+                            <div className="flex items-center gap-2 p-2 bg-content2/50 rounded font-mono">
                                 <code className="text-xs flex-1 truncate">{certPath}</code>
                                 <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={handleCopyPath}
+                                    aria-label={t('common.copy')}
+                                    title={t('common.copy')}
                                     className="h-6 px-2"
                                 >
                                     <Copy className="h-3 w-3" />
@@ -56,7 +58,7 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                         )}
                     </li>
                     <li>{t('ssl_service.macos_step2')}:
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded font-mono mt-1">
+                        <div className="flex items-center gap-2 p-2 bg-content2/50 rounded font-mono mt-1">
                             <code className="text-xs flex-1 break-all">
                                 sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "{certPath}"
                             </code>
@@ -64,6 +66,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopyCommand(`sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${certPath}"`)}
+                                aria-label={t('common.copy')}
+                                title={t('common.copy')}
                                 className="h-6 px-2 flex-shrink-0"
                             >
                                 <Copy className="h-3 w-3" />
@@ -79,18 +83,20 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
 
     // Windows 安装指南
     const windowsGuide = (
-        <div className="bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10 p-4 space-y-3">
+        <div className="bg-white dark:bg-content1/40 rounded border border-divider p-4 space-y-3">
                 <div className="text-sm font-medium">{t('ssl_service.windows_system')}</div>
                 <ol className="text-xs space-y-3 text-muted-foreground list-decimal pl-4">
                     <li>
                         <div className="mb-1">{t('ssl_service.windows_step1')}</div>
                         {certPath && (
-                            <div className="flex items-center gap-2 p-2 bg-muted/50 rounded font-mono">
+                            <div className="flex items-center gap-2 p-2 bg-content2/50 rounded font-mono">
                                 <code className="text-xs flex-1 truncate">{certPath}</code>
                                 <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={handleCopyPath}
+                                    aria-label={t('common.copy')}
+                                    title={t('common.copy')}
                                     className="h-6 px-2"
                                 >
                                     <Copy className="h-3 w-3" />
@@ -99,7 +105,7 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                         )}
                     </li>
                     <li>{t('ssl_service.windows_step2')}:
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded font-mono mt-1">
+                        <div className="flex items-center gap-2 p-2 bg-content2/50 rounded font-mono mt-1">
                             <code className="text-xs flex-1 break-all">
                                 Import-Certificate -FilePath "{certPath}" -CertStoreLocation Cert:\LocalMachine\Root
                             </code>
@@ -107,6 +113,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopyCommand(`Import-Certificate -FilePath "${certPath}" -CertStoreLocation Cert:\\LocalMachine\\Root`)}
+                                aria-label={t('common.copy')}
+                                title={t('common.copy')}
                                 className="h-6 px-2 flex-shrink-0"
                             >
                                 <Copy className="h-3 w-3" />
@@ -123,12 +131,12 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
 
     // Linux 安装指南
     const linuxGuide = (
-        <div className="bg-white dark:bg-white/5 rounded border border-gray-200 dark:border-white/10 p-4 space-y-3">
+        <div className="bg-white dark:bg-content1/40 rounded border border-divider p-4 space-y-3">
                 <div className="text-sm font-medium">{t('ssl_service.linux_system')}</div>
                 
                 <div className="space-y-2">
                     <div className="text-xs font-medium text-muted-foreground">{t('ssl_service.ubuntu_debian')}</div>
-                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded font-mono">
+                    <div className="flex items-center gap-2 p-2 bg-content2/50 rounded font-mono">
                         <code className="text-xs flex-1 break-all">
                             sudo cp "{certPath}" /usr/local/share/ca-certificates/envis-ca.crt && sudo update-ca-certificates
                         </code>
@@ -136,6 +144,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopyCommand(`sudo cp "${certPath}" /usr/local/share/ca-certificates/envis-ca.crt && sudo update-ca-certificates`)}
+                            aria-label={t('common.copy')}
+                            title={t('common.copy')}
                             className="h-6 px-2 flex-shrink-0"
                         >
                             <Copy className="h-3 w-3" />
@@ -145,7 +155,7 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
 
                 <div className="space-y-2">
                     <div className="text-xs font-medium text-muted-foreground">{t('ssl_service.centos_rhel')}</div>
-                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded font-mono">
+                    <div className="flex items-center gap-2 p-2 bg-content2/50 rounded font-mono">
                         <code className="text-xs flex-1 break-all">
                             sudo cp "{certPath}" /etc/pki/ca-trust/source/anchors/envis-ca.crt && sudo update-ca-trust
                         </code>
@@ -153,6 +163,8 @@ export function CAInstallGuide({ isInstalled, certPath }: CAInstallGuideProps) {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopyCommand(`sudo cp "${certPath}" /etc/pki/ca-trust/source/anchors/envis-ca.crt && sudo update-ca-trust`)}
+                            aria-label={t('common.copy')}
+                            title={t('common.copy')}
                             className="h-6 px-2 flex-shrink-0"
                         >
                             <Copy className="h-3 w-3" />

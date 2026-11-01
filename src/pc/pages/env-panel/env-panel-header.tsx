@@ -22,9 +22,9 @@ export function EnvPanelHeader() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white cursor-default hover:underline underline-offset-4">
+                <h2 className="text-base font-semibold text-foreground cursor-default hover:underline underline-offset-4">
                   {selectedServiceData.name}
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-muted-foreground dark:text-muted-foreground">
                     &nbsp;&nbsp;{selectedServiceData.version}
                   </span>
                 </h2>
@@ -43,6 +43,7 @@ export function EnvPanelHeader() {
           variant="ghost"
           onClick={() => setIsAIPanelOpen(true)}
           className="h-7 w-7 p-0 mr-1 hover:bg-content2"
+          aria-label={t('dashboard.ai_assistant')}
           title={t('dashboard.ai_assistant')}
         >
           <Bot className="h-4 w-4" />

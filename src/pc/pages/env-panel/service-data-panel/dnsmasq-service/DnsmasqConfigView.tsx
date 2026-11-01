@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useServiceDataStatus, useServiceStatus } from '@/hooks/useStatus'
+import { Trans, useTranslation } from 'react-i18next'
 
 interface DnsmasqConfigViewProps {
     selectedEnvironmentId: string
@@ -22,6 +23,7 @@ export function DnsmasqConfigView({
     selectedEnvironmentId,
     serviceData,
 }: DnsmasqConfigViewProps) {
+    const { t } = useTranslation()
     const { openFolderInFinder } = useFileOperations()
     const {
         startServiceData,
@@ -77,7 +79,7 @@ export function DnsmasqConfigView({
                 }
             } catch (error) {
                 console.error('加载配置失败:', error)
-                toast.error('加载配置文件失败')
+                toast.error(t('dnsmasq_service.load_config_failed'))
             } finally {
                 setIsLoading(false)
             }
@@ -94,7 +96,7 @@ export function DnsmasqConfigView({
             const folderPath = targetPath.substring(0, targetPath.lastIndexOf(targetPath.includes('\\') ? '\\' : '/'))
             await openFolderInFinder(folderPath)
         } catch (error) {
-            toast.error('打开文件夹失败')
+            toast.error(t('common.open_folder_failed'))
         }
     }
 
@@ -110,10 +112,10 @@ export function DnsmasqConfigView({
                 updates: updatedServiceData,
                 serviceDatas: selectedServiceDatas,
             })
-            toast.success('配置文件路径已更新')
+            toast.success(t('dnsmasq_service.config_path_updated'))
         } catch (error) {
             console.error('更新配置路径失败:', error)
-            toast.error('更新配置路径失败')
+            toast.error(t('dnsmasq_service.config_path_update_failed'))
         }
     }
 
@@ -122,11 +124,11 @@ export function DnsmasqConfigView({
         try {
             setIsStarting(true)
             await startServiceData(selectedEnvironmentId, serviceData)
-            toast.success('服务启动命令已发送')
+            toast.success(t('dnsmasq_service.start_success'))
             // 状态更新会通过轮询自动完成
         } catch (error) {
             console.error('启动服务失败:', error)
-            toast.error('启动服务失败')
+            toast.error(t('dnsmasq_service.start_failed'))
         } finally {
             setIsStarting(false)
         }
@@ -137,10 +139,10 @@ export function DnsmasqConfigView({
         try {
             setIsStopping(true)
             await stopServiceData(selectedEnvironmentId, serviceData)
-            toast.success('服务停止命令已发送')
+            toast.success(t('dnsmasq_service.stop_success'))
         } catch (error) {
             console.error('停止服务失败:', error)
-            toast.error('停止服务失败')
+            toast.error(t('dnsmasq_service.stop_failed'))
         } finally {
             setIsStopping(false)
         }
@@ -151,10 +153,10 @@ export function DnsmasqConfigView({
         try {
             setIsRestarting(true)
             await restartServiceData(selectedEnvironmentId, serviceData)
-            toast.success('服务重启命令已发送')
+            toast.success(t('dnsmasq_service.restart_success'))
         } catch (error) {
             console.error('重启服务失败:', error)
-            toast.error('重启服务失败')
+            toast.error(t('dnsmasq_service.restart_failed'))
         } finally {
             setIsRestarting(false)
         }
@@ -162,32 +164,35 @@ export function DnsmasqConfigView({
 
     return (
         <div className="w-full p-3 space-y-4">
-            <Alert className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/20 mb-4">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-                <AlertDescription className="text-yellow-700 dark:text-yellow-600/90 text-xs mt-1.5 space-y-2">
+            <Alert className="bg-warning/10 dark:bg-warning/10 border-warning/30 dark:border-warning/20 mb-4">
+                <AlertTriangle className="h-4 w-4 text-warning dark:text-warning" />
+                <AlertDescription className="text-warning dark:text-warning/90 text-xs mt-1.5 space-y-2">
                     {isMacOS && (
                         <p>
-                            当前是 macOS：请先在 <span className="font-mono">/etc/resolver</span> 中准备对应域名的 resolver 配置，否则自定义域名可能无法通过 dnsmasq 正常解析。
+                            <Trans
+                                i18nKey="dnsmasq_service.macos_resolver_hint"
+                                components={[<span key="resolver" className="font-mono" />]}
+                            />
                         </p>
                     )}
                 </AlertDescription>
             </Alert>
 
             {/* 控制面板 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
+            <div className="p-3 rounded-xl border border-divider bg-content1">
                 <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                        服务控制
+                    <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        {t('dnsmasq_service.service_control')}
                     </Label>
                     <div className="flex items-center gap-2">
                         <div className={cn(
                             "w-2 h-2 rounded-full",
-                            serviceStatus === ServiceStatus.Running ? "bg-green-500" : 
-                            serviceStatus === ServiceStatus.Stopped ? "bg-red-500" : "bg-gray-300"
+                            serviceStatus === ServiceStatus.Running ? " bg-success" : 
+                            serviceStatus === ServiceStatus.Stopped ? " bg-danger" : " bg-content4"
                         )} />
                         <span className="text-xs font-normal text-muted-foreground">
-                            {serviceStatus === ServiceStatus.Running ? '运行中' : 
-                             serviceStatus === ServiceStatus.Stopped ? '已停止' : '未知状态'}
+                            {serviceStatus === ServiceStatus.Running ? t('dnsmasq_service.running') : 
+                             serviceStatus === ServiceStatus.Stopped ? t('dnsmasq_service.stopped') : t('dnsmasq_service.unknown_status')}
                         </span>
                     </div>
                 </div>
@@ -195,58 +200,59 @@ export function DnsmasqConfigView({
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={handleStartService}
                         disabled={serviceStatus === ServiceStatus.Running || isStarting || isStopping || isRestarting}
                     >
-                        <Play className="h-3.5 w-3.5 text-green-600" />
-                        启动
+                        <Play className="h-3.5 w-3.5 text-success" />
+                        {t('dnsmasq_service.start')}
                     </Button>
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={handleStopService}
                         disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                     >
-                        <Square className="h-3.5 w-3.5 text-red-600" />
-                        停止
+                        <Square className="h-3.5 w-3.5 text-danger" />
+                        {t('dnsmasq_service.stop')}
                     </Button>
                     <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                        className="gap-1 h-8 text-xs bg-content1 dark:bg-content1/40 border-divider"
                         onClick={handleRestartService}
                         disabled={serviceStatus !== ServiceStatus.Running || isStarting || isStopping || isRestarting}
                     >
-                        <RotateCw className={cn("h-3.5 w-3.5 text-blue-600", isRestarting && "animate-spin")} />
-                        重启
+                        <RotateCw className={cn("h-3.5 w-3.5 text-focus", isRestarting && "animate-spin")} />
+                        {t('dnsmasq_service.restart')}
                     </Button>
                 </div>
             </div>
 
             {/* 配置路径设置 */}
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02]">
-                <Label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    配置文件设置
+            <div className="p-3 rounded-xl border border-divider bg-content1">
+                <Label className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
+                    {t('dnsmasq_service.config_file_settings')}
                 </Label>
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="config-path" className="text-xs text-muted-foreground font-normal">配置文件路径 (dnsmasq.conf)</Label>
+                        <Label htmlFor="config-path" className="text-xs text-muted-foreground font-normal">{t('dnsmasq_service.config_path_label')}</Label>
                         <div className="flex gap-2">
                             <Input 
                                 id="config-path" 
                                 value={editingConfigPath} 
                                 onChange={(e) => setEditingConfigPath(e.target.value)}
-                                placeholder="输入绝对路径..."
-                                className="h-8 text-xs shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                placeholder={t('dnsmasq_service.config_path_placeholder')}
+                                className="h-8 text-xs bg-content2 border-divider"
                             />
                             <Button 
                                 variant="outline" 
                                 size="icon" 
                                 onClick={handleOpenConfigFolder} 
-                                title="打开所在文件夹"
-                                className="h-8 w-8 shadow-none bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                                aria-label={t('dnsmasq_service.open_folder_title')}
+                                title={t('dnsmasq_service.open_folder_title')}
+                                className="h-8 w-8 bg-content1 dark:bg-content1/40 border-divider"
                             >
                                 <FolderOpen className="h-3.5 w-3.5" />
                             </Button>
@@ -257,9 +263,9 @@ export function DnsmasqConfigView({
                             size="sm" 
                             onClick={handleSetConfigPath} 
                             disabled={editingConfigPath === configPath}
-                            className="h-8 text-xs shadow-none"
+                            className="h-8 text-xs"
                         >
-                            更新路径
+                            {t('dnsmasq_service.update_path')}
                         </Button>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 export function Loading() {
-  return <div className="fixed inset-0 z-100 flex items-center justify-center bg-overlay/40 backdrop-blur-sm">
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay/40 backdrop-blur-sm">
           {/* Apple style spinner */}
           <svg className="animate-spin h-12 w-12 text-primary" viewBox="0 0 50 50">
             <circle

@@ -19,54 +19,12 @@ module.exports = {
     extend: {
       colors: {
         border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))'
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))'
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))'
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))'
-        },
-        // HeroUI Design System colors
-        default: {
-          DEFAULT: 'hsl(var(--default))',
-          foreground: 'hsl(var(--default-foreground))'
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))'
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))'
-        },
-        danger: {
-          DEFAULT: 'hsl(var(--danger))',
-          foreground: 'hsl(var(--danger-foreground))'
         },
         content1: {
           DEFAULT: 'hsl(var(--content1))',
@@ -84,25 +42,79 @@ module.exports = {
           DEFAULT: 'hsl(var(--content4))',
           foreground: 'hsl(var(--content4-foreground))'
         },
+        default: {
+          DEFAULT: 'hsl(var(--default))',
+          foreground: 'hsl(var(--default-foreground))'
+        },
+        muted: {
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))'
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))'
+        },
+        danger: {
+          DEFAULT: 'hsl(var(--danger))',
+          foreground: 'hsl(var(--danger-foreground))'
+        },
         focus: 'hsl(var(--focus))',
         overlay: 'hsl(var(--overlay))',
-        divider: 'hsl(var(--divider))'
+        divider: 'hsl(var(--divider))',
+        dialogBorder: 'hsl(var(--dialog-border))',
+        pressed: 'hsl(var(--pressed))'
       },
+      // Voxt 圆角刻度（定值见 global.css 三级区）：面板/对话框 16 / 卡片 12 / 控件 10 / 小件 8,6,4
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)'
+        xs: 'var(--radius-xs)',
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)'
       },
+      // 全应用唯一阴影，仅用于真正浮出的层（菜单/弹层/对话框/提示条），页面内表面一律无阴影
       boxShadow: {
-        'heroui-sm': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        'heroui-md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'heroui-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'heroui-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'heroui-2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        'heroui-inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+        pop: 'var(--shadow-pop)'
       },
       backdropBlur: {
-        'heroui': '20px',
+        pop: '20px'
+      },
+      /*
+       * 字族：显式声明中文字族，否则 Windows 下中文落到宋体，与 UI 明显割裂。
+       * 等宽用于路径/命令/日志/配置/端口/版本号/ID。
+       */
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)']
+      },
+      /*
+       * 字号刻度：每档都带行高（定值见 global.css 三级区）。
+       * 禁止在业务代码里写 text-[10px] 这类任意值——它只设 font-size，
+       * 行高会继承父级，导致纵向节奏错乱。缺档就补 token。
+       */
+      fontSize: {
+        '3xs': ['var(--text-3xs)', 'var(--lh-3xs)'],
+        '2xs': ['var(--text-2xs)', 'var(--lh-2xs)'],
+        xs: ['var(--text-xs)', 'var(--lh-xs)'],
+        sm: ['var(--text-sm)', 'var(--lh-sm)'],
+        md: ['var(--text-md)', 'var(--lh-md)'],
+        base: ['var(--text-base)', 'var(--lh-base)'],
+        lg: ['var(--text-lg)', 'var(--lh-lg)'],
+        xl: ['var(--text-xl)', 'var(--lh-xl)'],
+        '2xl': ['var(--text-2xl)', 'var(--lh-2xl)'],
+        '3xl': ['var(--text-3xl)', 'var(--lh-3xl)']
+      },
+      // 动效时长四档：100 按下 / 150 悬停焦点 / 250 浮层与面板 / 400 大范围布局
+      transitionDuration: {
+        250: '250ms',
+        400: 'var(--dur-4)'
+      },
+      transitionTimingFunction: {
+        standard: 'var(--ease-standard)'
       },
       keyframes: {
         'accordion-down': {

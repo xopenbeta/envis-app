@@ -1,10 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/envis.svg" />
+    <link rel="icon" type="image/png" href="/envis.png" sizes="192x192" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri + React + Typescript</title>
+    <title>Envis</title>
+    <script>
+      // 首屏防闪烁（FOUC）：主题来自后端 appSettings，首个渲染帧之前拿不到，
+      // 因此先按默认值 theme:'system' 落一次主题类，待设置加载完成后由 useAppTheme 覆盖。
+      try {
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.add(dark ? 'dark' : 'light');
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
   </head>
 
   <body>

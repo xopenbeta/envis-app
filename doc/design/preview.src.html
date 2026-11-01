@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Envis · UI 设计语言速查</title>
+<style>/*__TAILWIND__*/</style>
+<style>
+  /* 仅用于本速查页自身的排版，不属于产品 token */
+  .swatch { height: 44px; border-radius: var(--radius-sm); border: 1px solid hsl(var(--border)); }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .spec { font-family: var(--font-mono); font-size: 10px; line-height: 14px; color: hsl(var(--muted-foreground)); }
+  .sec > h2 { font-size: 18px; line-height: 26px; font-weight: 600; }
+  .demo { background: hsl(var(--background)); color: hsl(var(--foreground)); padding: 16px; border-radius: var(--radius-lg); }
+  .ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body class="bg-background text-foreground">
+
+<!-- ══════════ 品牌与标题 ══════════ -->
+<header class="max-w-[1100px] mx-auto px-6 pt-10 pb-6">
+  <div class="flex items-center gap-4">
+    <svg viewBox="0 0 64 64" class="h-12 w-12" aria-hidden="true">
+      <path d="M8 40 C 24 40, 24 10, 32 10 C 40 10, 40 40, 56 40"
+            fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Envis · UI 设计语言</h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        视觉速查表 · 所有色值/字号/圆角/动效均取自 <span class="font-mono text-xs">src/global.css</span> 的真实 token。
+        <span class="text-focus font-medium">主题色为蓝</span>，亮/暗同值，`--primary` / `--focus` / `--ring` 三者一致。
+      </p>
+    </div>
+  </div>
+  <p class="text-xs text-muted-foreground mt-4">
+    左右两栏是同一套 token 在亮色与暗色下的实际渲染结果。暗色栏通过子树根节点挂 <span class="font-mono">dark</span> 类实现，不依赖 <span class="font-mono">html.dark</span>。
+  </p>
+</header>
+
+<div class="max-w-[1100px] mx-auto px-6 pb-20 space-y-10">
+
+<!-- ══════════ 1 色彩 ══════════ -->
+<section id="s1" class="sec space-y-4">
+  <h2>1 · 色彩</h2>
+
+  <h3 class="text-sm font-semibold">1.1 中性灰阶（一级原始值）</h3>
+  <div class="demo">
+    <div class="grid grid-cols-9 gap-2">
+      <!-- light ramp -->
+      <div><div class="swatch" style="background:hsl(0 0% 100%)"></div><div class="spec">n-100</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 98%)"></div><div class="spec">n-98</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 96.5%)"></div><div class="spec">n-96</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 95.5%)"></div><div class="spec">n-95</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 94%)"></div><div class="spec">n-94</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 93.3%)"></div><div class="spec">n-93</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 90.2%)"></div><div class="spec">n-90</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 50.2%)"></div><div class="spec">label2</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 15.3%)"></div><div class="spec">label</div></div>
+    </div>
+    <div class="grid grid-cols-9 gap-2 mt-4">
+      <div><div class="swatch" style="background:hsl(0 0% 30%)"></div><div class="spec">n-30 ★</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 27%)"></div><div class="spec">n-27</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 22%)"></div><div class="spec">n-22</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 20%)"></div><div class="spec">n-20</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 18%)"></div><div class="spec">n-18</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 15.8%)"></div><div class="spec">n-16</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 15.4%)"></div><div class="spec">n-15</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 12.5%)"></div><div class="spec">n-12</div></div>
+      <div><div class="swatch" style="background:hsl(0 0% 9%)"></div><div class="spec">n-9</div></div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-3"><span class="font-mono">n-30</span> 是暗色中性阶的补档。<span class="font-mono">--primary</span> 现在指向主题蓝而不是中性档位，因此不再依赖它。</p>
+  </div>
+
+  <h3 class="text-sm font-semibold">1.2 语义色（二级）</h3>
+  <div class="grid gap-3 md:grid-cols-2">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Light</p>
+      <p class="text-2xs text-muted-foreground mb-3"><span class="text-focus font-medium">primary = focus = ring = 主题蓝 <span class="font-mono">212 100% 47%</span></span>（亮/暗同值）</p>
+      <div class="grid-auto">
+        <div><div class="swatch" style="background:hsl(var(--background))"></div><div class="spec">background</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content1))"></div><div class="spec">content1</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content2))"></div><div class="spec">content2</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content3))"></div><div class="spec">content3</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content4))"></div><div class="spec">content4</div></div>
+        <div><div class="swatch" style="background:hsl(var(--primary))"></div><div class="spec">primary ★ 主题蓝</div></div>
+        <div><div class="swatch" style="background:hsl(var(--success))"></div><div class="spec">success</div></div>
+        <div><div class="swatch" style="background:hsl(var(--warning))"></div><div class="spec">warning</div></div>
+        <div><div class="swatch" style="background:hsl(var(--danger))"></div><div class="spec">danger</div></div>
+        <div><div class="swatch" style="background:hsl(var(--focus))"></div><div class="spec">focus</div></div>
+        <div><div class="swatch" style="background:hsl(var(--default))"></div><div class="spec">default</div></div>
+        <div><div class="swatch" style="background:hsl(var(--divider))"></div><div class="spec">divider</div></div>
+      </div>
+    </div>
+    <div class="dark demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Dark</p>
+      <div class="grid-auto">
+        <div><div class="swatch" style="background:hsl(var(--background))"></div><div class="spec">background</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content1))"></div><div class="spec">content1</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content2))"></div><div class="spec">content2</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content3))"></div><div class="spec">content3</div></div>
+        <div><div class="swatch" style="background:hsl(var(--content4))"></div><div class="spec">content4</div></div>
+        <div><div class="swatch" style="background:hsl(var(--primary))"></div><div class="spec">primary ★ 主题蓝</div></div>
+        <div><div class="swatch" style="background:hsl(var(--success))"></div><div class="spec">success</div></div>
+        <div><div class="swatch" style="background:hsl(var(--warning))"></div><div class="spec">warning</div></div>
+        <div><div class="swatch" style="background:hsl(var(--danger))"></div><div class="spec">danger</div></div>
+        <div><div class="swatch" style="background:hsl(var(--focus))"></div><div class="spec">focus</div></div>
+        <div><div class="swatch" style="background:hsl(var(--default))"></div><div class="spec">default</div></div>
+        <div><div class="swatch" style="background:hsl(var(--divider))"></div><div class="spec">divider</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 2 表面层级 ══════════ -->
+<section id="s2" class="sec space-y-4">
+  <h2>2 · 表面层级（层级用表面，不用阴影）</h2>
+  <div class="grid gap-3 md:grid-cols-2">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Light · 逐级下沉</p>
+      <div class="bg-content1 border border-divider rounded-xl p-4">
+        <p class="text-xs text-muted-foreground mb-3">content1 · 面板底</p>
+        <div class="bg-content2 rounded-lg p-3">
+          <p class="text-xs text-muted-foreground mb-3">content2 · 控件填充 / 悬浮行</p>
+          <div class="bg-content3 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground mb-3">content3 · 分组块</p>
+            <div class="bg-content4 rounded-md p-3">
+              <p class="text-xs text-muted-foreground">content4 · 选中填充</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dark demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Dark · 逐级上升</p>
+      <div class="bg-content1 border border-divider rounded-xl p-4">
+        <p class="text-xs text-muted-foreground mb-3">content1 · 面板底</p>
+        <div class="bg-content2 rounded-lg p-3">
+          <p class="text-xs text-muted-foreground mb-3">content2 · 控件填充 / 悬浮行</p>
+          <div class="bg-content3 rounded-lg p-3">
+            <p class="text-xs text-muted-foreground mb-3">content3 · 分组块</p>
+            <div class="bg-content4 rounded-md p-3">
+              <p class="text-xs text-muted-foreground">content4 · 选中填充</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="text-xs text-muted-foreground">
+    全应用唯一阴影 <span class="font-mono">shadow-pop</span>，只允许出现在浮层上（对话框 / 菜单 / 弹层 / tooltip / toast）。页面内表面一律无阴影。
+  </p>
+</section>
+
+<!-- ══════════ 3 排版 ══════════ -->
+<section id="s3" class="sec space-y-4">
+  <h2>3 · 排版（基准 13px，每档都带行高）</h2>
+  <div class="demo border border-divider space-y-1">
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2">
+      <span class="spec w-[92px] shrink-0">text-3xs</span>
+      <span class="spec w-[72px] shrink-0">10 / 14</span>
+      <span class="text-3xs">微标签 · 3306 · 87%</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-2xs</span>
+      <span class="spec w-[72px] shrink-0">11 / 16</span>
+      <span class="text-2xs">辅助信息 · v0.13.15 · 2 分钟前</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-xs</span>
+      <span class="spec w-[72px] shrink-0">12 / 16</span>
+      <span class="text-xs text-muted-foreground">次要正文与元信息（主力档）· 未激活</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-sm ★</span>
+      <span class="spec w-[72px] shrink-0">13 / 20</span>
+      <span class="text-sm">正文与控件默认档 · 安装 Node.js</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-md</span>
+      <span class="spec w-[72px] shrink-0">14 / 20</span>
+      <span class="text-md">强调正文 / 列表主标题</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-base</span>
+      <span class="spec w-[72px] shrink-0">16 / 24</span>
+      <span class="text-base">小标题</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-lg</span>
+      <span class="spec w-[72px] shrink-0">18 / 26</span>
+      <span class="text-lg font-semibold">区块标题 / 对话框标题</span>
+    </div>
+    <div class="flex items-baseline gap-4 border-b border-divider pb-2 pt-2">
+      <span class="spec w-[92px] shrink-0">text-xl</span>
+      <span class="spec w-[72px] shrink-0">20 / 28</span>
+      <span class="text-xl font-semibold">面板标题</span>
+    </div>
+    <div class="flex items-baseline gap-4 pt-2">
+      <span class="spec w-[92px] shrink-0">text-2xl</span>
+      <span class="spec w-[72px] shrink-0">24 / 32</span>
+      <span class="text-2xl font-semibold tracking-tight">页面主标题</span>
+    </div>
+  </div>
+
+  <div class="grid gap-3 md:grid-cols-3">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">字重 · 只用三档</p>
+      <p class="text-sm font-normal">font-normal 400 · 正文与表单值</p>
+      <p class="text-sm font-medium mt-2">font-medium 500 · 标签与按钮（主力）</p>
+      <p class="text-sm font-semibold mt-2">font-semibold 600 · 标题</p>
+    </div>
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">等宽 · 路径 / 命令 / 端口</p>
+      <p class="font-mono text-sm">/usr/local/var/mysql</p>
+      <p class="font-mono text-sm mt-1">mysqld --port=3306</p>
+      <p class="font-mono text-xs text-muted-foreground mt-1">MYSQL_HOME=/opt/mysql</p>
+    </div>
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">数字对齐</p>
+      <p class="text-sm nums">1,234.56 MB</p>
+      <p class="text-sm nums">9.99 MB</p>
+      <p class="text-xs text-muted-foreground mt-2">数字列必须 tabular-nums，否则跳动</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 4 间距 / 圆角 / 阴影 ══════════ -->
+<section id="s4" class="sec space-y-4">
+  <h2>4 · 间距 · 圆角 · 阴影</h2>
+  <div class="grid gap-3 md:grid-cols-2">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">间距（4px 基准）</p>
+      <div class="space-y-2">
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">1 / 4px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:4px"></div></div>
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">1.5 / 6px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:6px"></div></div>
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">2 / 8px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:8px"></div></div>
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">3 / 12px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:12px"></div></div>
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">4 / 16px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:16px"></div></div>
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">6 / 24px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:24px"></div></div>
+        <div class="flex items-center gap-3"><span class="spec w-[64px]">8 / 32px</span><div class="h-3 bg-focus/40 rounded-xs" style="width:32px"></div></div>
+      </div>
+    </div>
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">圆角刻度 · 嵌套取小两档</p>
+      <div class="grid grid-cols-4 gap-3">
+        <div><div class="h-12 bg-content3 rounded-xs"></div><div class="spec">xs 4</div></div>
+        <div><div class="h-12 bg-content3 rounded-sm"></div><div class="spec">sm 6</div></div>
+        <div><div class="h-12 bg-content3 rounded-md"></div><div class="spec">md 8</div></div>
+        <div><div class="h-12 bg-content3 rounded-lg"></div><div class="spec">lg 10 ★</div></div>
+        <div><div class="h-12 bg-content3 rounded-xl"></div><div class="spec">xl 12</div></div>
+        <div><div class="h-12 bg-content3 rounded-2xl"></div><div class="spec">2xl 16</div></div>
+        <div><div class="h-12 bg-content3 rounded-full"></div><div class="spec">full</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="demo border border-divider">
+    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">阴影 · 全应用仅一种</p>
+    <div class="flex items-center gap-6">
+      <div class="shadow-pop bg-content1 border border-dialog-border rounded-2xl px-4 py-3">
+        <p class="text-sm font-medium">浮层</p><p class="spec">shadow-pop ✓</p>
+      </div>
+      <div class="bg-content1 border border-divider rounded-xl px-4 py-3">
+        <p class="text-sm font-medium">静态面板</p><p class="spec">无阴影 ✓</p>
+      </div>
+      <div class="bg-content1 border border-divider rounded-xl px-4 py-3 shadow-md">
+        <p class="text-sm font-medium text-danger">静态面板</p><p class="spec">shadow-md ✗ 禁止</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 5 图标 ══════════ -->
+<section id="s5" class="sec space-y-4">
+  <h2>5 · 图标（统一 lucide-react，16px，stroke 2）</h2>
+  <div class="demo border border-divider">
+    <div class="flex flex-wrap items-center gap-6">
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+        <span class="spec">terminal</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+        <span class="spec">server</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+        <span class="spec">database</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        <span class="spec">folder</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <span class="spec">loader-2 ★</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        <span class="spec">refresh-cw</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="spec">settings</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="spec">search</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+        <span class="spec">grip-vertical</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        <span class="spec">trash-2</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <span class="spec">plus</span></div>
+      <div class="flex flex-col items-center gap-1">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="spec">eye</span></div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-4">
+      <span class="font-mono">RefreshCw</span> 只用于「刷新」动作本身；加载中一律用 <span class="font-mono">Loader2 + animate-spin</span>。现状是 <span class="font-mono">RefreshCw</span> 被当 spinner 用了 52 次、<span class="font-mono">Loader2</span> 只用了 2 次。
+    </p>
+  </div>
+</section>
+
+<!-- ══════════ 6 组件 ══════════ -->
+<section id="s6" class="sec space-y-4">
+  <h2>6 · 组件</h2>
+
+  <!-- 按钮 -->
+  <div id="b-btn" class="grid gap-3 md:grid-cols-2">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Button · 变体（Light）</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 bg-primary text-primary-foreground transition-colors duration-150">主操作</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 bg-content2 text-foreground transition-colors duration-150">次级</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 border border-divider bg-content1 text-foreground transition-colors duration-150">描边</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 text-foreground transition-colors duration-150">幽灵</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 bg-danger text-danger-foreground transition-colors duration-150">删除环境</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 text-focus underline-offset-4 underline transition-colors duration-150">查看日志</button>
+      </div>
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-5 mb-3">尺寸 · 一行内必须等高</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="inline-flex items-center gap-1.5 rounded-md text-xs font-medium h-6 px-2 bg-content2 text-foreground">xs 24</button>
+        <button class="inline-flex items-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 bg-content2 text-foreground">sm 32</button>
+        <button class="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium h-9 px-4 bg-content2 text-foreground">md 36 ★</button>
+        <button class="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium h-10 px-5 bg-content2 text-foreground">lg 40</button>
+        <button class="inline-flex items-center justify-center rounded-lg h-9 w-9 text-foreground bg-content2" aria-label="设置">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-5 mb-3">状态</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="inline-flex items-center gap-2 rounded-lg text-sm font-medium h-9 px-4 bg-primary text-primary-foreground opacity-50 pointer-events-none">禁用</button>
+        <button class="inline-flex items-center gap-2 rounded-lg text-sm font-medium h-9 px-4 bg-primary text-primary-foreground">
+          <svg class="ic animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          安装中…
+        </button>
+        <button class="inline-flex items-center gap-2 rounded-lg text-sm font-medium h-9 px-4 bg-content1 border border-divider text-foreground outline-none" style="outline:2px solid hsl(var(--focus)); outline-offset:2px">焦点态</button>
+      </div>
+    </div>
+
+    <div class="dark demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Button · 变体（Dark）</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 bg-primary text-primary-foreground transition-colors duration-150">主操作</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 bg-content2 text-foreground transition-colors duration-150">次级</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 border border-divider bg-content1 text-foreground transition-colors duration-150">描边</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 text-foreground transition-colors duration-150">幽灵</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 bg-danger text-danger-foreground transition-colors duration-150">删除环境</button>
+        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium h-9 px-4 text-focus underline-offset-4 underline transition-colors duration-150">查看日志</button>
+      </div>
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-5 mb-3">尺寸 · 一行内必须等高</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="inline-flex items-center gap-1.5 rounded-md text-xs font-medium h-6 px-2 bg-content2 text-foreground">xs 24</button>
+        <button class="inline-flex items-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 bg-content2 text-foreground">sm 32</button>
+        <button class="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium h-9 px-4 bg-content2 text-foreground">md 36 ★</button>
+        <button class="inline-flex items-center gap-1.5 rounded-lg text-sm font-medium h-10 px-5 bg-content2 text-foreground">lg 40</button>
+        <button class="inline-flex items-center justify-center rounded-lg h-9 w-9 text-foreground bg-content2" aria-label="设置">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-5 mb-3">状态</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="inline-flex items-center gap-2 rounded-lg text-sm font-medium h-9 px-4 bg-primary text-primary-foreground opacity-50 pointer-events-none">禁用</button>
+        <button class="inline-flex items-center gap-2 rounded-lg text-sm font-medium h-9 px-4 bg-primary text-primary-foreground">
+          <svg class="ic animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          安装中…
+        </button>
+        <button class="inline-flex items-center gap-2 rounded-lg text-sm font-medium h-9 px-4 bg-content1 border border-divider text-foreground outline-none" style="outline:2px solid hsl(var(--focus)); outline-offset:2px">焦点态</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 表单 -->
+  <div id="b-form" class="grid gap-3 md:grid-cols-2">
+    <div class="demo border border-divider space-y-4">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">表单 · Light</p>
+      <div class="flex items-start gap-4">
+        <label class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">端口</label>
+        <div class="flex-1 min-w-0 space-y-1.5">
+          <input class="flex h-9 w-full rounded-lg border border-divider bg-content2 px-3 text-sm font-mono text-foreground outline-none" value="3306" />
+          <p class="text-xs text-muted-foreground">默认 3306，被占用时可改为 3307</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <label class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">数据目录</label>
+        <div class="flex-1 min-w-0">
+          <div class="flex h-9 items-center justify-between rounded-lg border border-divider bg-content2 px-3 text-sm">
+            <span class="truncate font-mono">/usr/local/var/mysql</span>
+            <svg class="ic shrink-0 text-muted-foreground" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <label class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">root 密码</label>
+        <div class="flex-1 min-w-0 relative">
+          <input type="password" class="flex h-9 w-full rounded-lg border border-divider bg-content2 px-3 pr-9 text-sm" value="secret" />
+          <svg class="ic absolute right-2.5 top-2.5 text-muted-foreground" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <span class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">校验错误</span>
+        <div class="flex-1 min-w-0 space-y-1.5">
+          <input class="flex h-9 w-full rounded-lg border border-danger bg-content2 px-3 text-sm font-mono text-foreground outline-none" value="70000" />
+          <p class="text-xs text-danger">端口范围为 1–65535</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <span class="w-[88px] shrink-0 pt-1 text-sm font-medium text-right">控件</span>
+        <div class="flex-1 flex items-center gap-6 pt-1">
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-primary"><span class="h-4 w-4 rounded-full bg-content1"></span></span>
+            <span class="text-sm">已开启</span>
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-content4"><span class="h-4 w-4 rounded-full bg-content1"></span></span>
+            <span class="text-sm text-muted-foreground">已关闭</span>
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-4 w-4 items-center justify-center rounded-xs bg-primary text-primary-foreground"><svg class="h-3 w-3" viewBox="0 0 24 24" style="stroke:currentColor;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span class="text-sm">开机自启</span>
+          </span>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <span class="w-[88px] shrink-0 text-sm font-medium text-right pt-1">Tabs</span>
+        <div class="flex-1">
+          <div class="inline-flex h-9 items-center rounded-lg bg-content2 p-1 gap-1">
+            <button class="inline-flex items-center rounded-md px-3 h-7 text-sm font-medium bg-content1 text-foreground">配置</button>
+            <button class="inline-flex items-center rounded-md px-3 h-7 text-sm font-normal text-muted-foreground">日志</button>
+            <button class="inline-flex items-center rounded-md px-3 h-7 text-sm font-normal text-muted-foreground">数据</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dark demo border border-divider space-y-4">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">表单 · Dark</p>
+      <div class="flex items-start gap-4">
+        <label class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">端口</label>
+        <div class="flex-1 min-w-0 space-y-1.5">
+          <input class="flex h-9 w-full rounded-lg border border-divider bg-content2 px-3 text-sm font-mono text-foreground outline-none" value="3306" />
+          <p class="text-xs text-muted-foreground">默认 3306，被占用时可改为 3307</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <label class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">数据目录</label>
+        <div class="flex-1 min-w-0">
+          <div class="flex h-9 items-center justify-between rounded-lg border border-divider bg-content2 px-3 text-sm">
+            <span class="truncate font-mono">/usr/local/var/mysql</span>
+            <svg class="ic shrink-0 text-muted-foreground" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <label class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">root 密码</label>
+        <div class="flex-1 min-w-0 relative">
+          <input type="password" class="flex h-9 w-full rounded-lg border border-divider bg-content2 px-3 pr-9 text-sm" value="secret" />
+          <svg class="ic absolute right-2.5 top-2.5 text-muted-foreground" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <span class="w-[88px] shrink-0 pt-2 text-sm font-medium text-right">校验错误</span>
+        <div class="flex-1 min-w-0 space-y-1.5">
+          <input class="flex h-9 w-full rounded-lg border border-danger bg-content2 px-3 text-sm font-mono text-foreground outline-none" value="70000" />
+          <p class="text-xs text-danger">端口范围为 1–65535</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <span class="w-[88px] shrink-0 pt-1 text-sm font-medium text-right">控件</span>
+        <div class="flex-1 flex items-center gap-6 pt-1">
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-primary"><span class="h-4 w-4 rounded-full bg-content1"></span></span>
+            <span class="text-sm">已开启</span>
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-5 w-9 items-center rounded-full p-0.5 bg-content4"><span class="h-4 w-4 rounded-full bg-content1"></span></span>
+            <span class="text-sm text-muted-foreground">已关闭</span>
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-flex h-4 w-4 items-center justify-center rounded-xs bg-primary text-primary-foreground"><svg class="h-3 w-3" viewBox="0 0 24 24" style="stroke:currentColor;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span class="text-sm">开机自启</span>
+          </span>
+        </div>
+      </div>
+      <div class="flex items-start gap-4">
+        <span class="w-[88px] shrink-0 text-sm font-medium text-right pt-1">Tabs</span>
+        <div class="flex-1">
+          <div class="inline-flex h-9 items-center rounded-lg bg-content2 p-1 gap-1">
+            <button class="inline-flex items-center rounded-md px-3 h-7 text-sm font-medium bg-content1 text-foreground">配置</button>
+            <button class="inline-flex items-center rounded-md px-3 h-7 text-sm font-normal text-muted-foreground">日志</button>
+            <button class="inline-flex items-center rounded-md px-3 h-7 text-sm font-normal text-muted-foreground">数据</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 三态 -->
+  <div id="b-state" class="grid gap-3 md:grid-cols-3">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Empty State</p>
+      <div class="flex flex-col items-center justify-center py-8 text-center">
+        <svg class="ic mb-3 text-muted-foreground" style="width:40px;height:40px" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+        <p class="text-sm font-medium">还没有配置数据库</p>
+        <p class="text-xs text-muted-foreground mt-1 max-w-[280px]">服务启动后会自动创建默认库，也可以手动添加</p>
+        <button class="inline-flex items-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-divider bg-content1 mt-4">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>新建数据库
+        </button>
+      </div>
+    </div>
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Loading · 骨架屏</p>
+      <div class="space-y-3">
+        <div class="h-4 w-1/3 rounded-md bg-content4 animate-pulse"></div>
+        <div class="h-9 w-full rounded-lg bg-content4 animate-pulse"></div>
+        <div class="h-9 w-full rounded-lg bg-content4 animate-pulse"></div>
+        <div class="h-9 w-2/3 rounded-lg bg-content4 animate-pulse"></div>
+      </div>
+    </div>
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Error State</p>
+      <div class="flex flex-col items-center justify-center py-8 text-center">
+        <svg class="ic mb-3 text-danger" style="width:40px;height:40px" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <p class="text-sm font-medium">MySQL 启动失败</p>
+        <p class="text-xs text-muted-foreground mt-1 max-w-[280px]">端口 3306 被其他进程占用</p>
+        <div class="flex gap-2 mt-4">
+          <button class="inline-flex items-center rounded-md text-xs font-medium h-8 px-3 border border-divider bg-content1">重试</button>
+          <button class="inline-flex items-center rounded-md text-xs font-medium h-8 px-3 border border-divider bg-content1">查看日志</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 状态语义 -->
+  <div id="b-status" class="demo border border-divider">
+    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">状态语义 · 颜色 + 形状 + 文字（缺一不可）</p>
+    <div class="grid gap-2 md:grid-cols-2">
+      <div class="flex items-center gap-2 text-sm"><span class="text-success">●</span><span class="text-success">已激活</span><span class="text-muted-foreground">·</span><span class="text-success">运行中</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-muted-foreground">○</span><span class="text-muted-foreground">未激活</span><span class="text-muted-foreground">·</span><span class="text-muted-foreground">已停止</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-danger">▲</span><span class="text-danger">错误</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-warning">◐</span><span class="text-warning">下载中</span><span class="text-2xs text-muted-foreground nums">47%</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-warning">◷</span><span class="text-warning">排队中</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-focus">▪</span><span class="text-focus">已下载待安装</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-success">✔</span><span class="text-success">已安装</span></div>
+      <div class="flex items-center gap-2 text-sm"><span class="text-danger">✕</span><span class="text-danger">安装失败</span></div>
+    </div>
+    <div class="h-2 w-full overflow-hidden rounded-full bg-content4 mt-4">
+      <div class="h-full w-[47%] bg-focus"></div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-3">
+      现状缺陷：<span class="font-mono">pending / downloading / downloaded / installing</span> 四态在 <span class="font-mono">service-data-item.tsx:365-370</span> 被映射成同一个 <span class="font-mono">text-success</span>，用户无法区分「正在下载」与「已装好」。
+    </p>
+  </div>
+
+  <!-- 日志 -->
+  <div id="b-log" class="demo border border-divider">
+    <div class="flex items-center gap-2 mb-3">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Log Viewer · 必须等宽</p>
+      <div class="ml-auto flex items-center gap-2">
+        <button class="inline-flex items-center rounded-md text-xs font-medium h-6 px-2 border border-divider bg-content1">自动换行</button>
+        <button class="inline-flex items-center rounded-md text-xs font-medium h-6 px-2 border border-divider bg-content1">复制</button>
+      </div>
+    </div>
+    <div class="bg-content3 rounded-lg p-3 font-mono text-xs leading-relaxed overflow-x-auto">
+      <div><span class="text-muted-foreground">2025-09-25 00:12:03</span> <span class="text-success">INFO </span> mysqld: ready for connections. port=3306</div>
+      <div><span class="text-muted-foreground">2025-09-25 00:12:04</span> <span class="text-warning">WARN </span> InnoDB: buffer pool size is small (128M)</div>
+      <div><span class="text-muted-foreground">2025-09-25 00:12:07</span> <span class="text-foreground">INFO </span> Event Scheduler: Loaded 0 events</div>
+      <div><span class="text-muted-foreground">2025-09-25 00:12:09</span> <span class="text-danger">ERROR</span> Cannot bind to 3306: address already in use</div>
+      <div><span class="text-muted-foreground">2025-09-25 00:12:09</span> <span class="text-muted-foreground">DEBUG</span> retry in 2000ms…</div>
+    </div>
+  </div>
+
+  <!-- 对话框 -->
+  <div id="b-dialog" class="demo border border-divider relative overflow-hidden" style="min-height:260px">
+    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Dialog · rounded-2xl / max-w-lg / 必须有 Title + Description</p>
+    <div class="absolute inset-0 bg-overlay/40 backdrop-blur-sm flex items-center justify-center p-6">
+      <div class="relative w-full max-w-lg rounded-2xl border border-dialog-border bg-content1 shadow-pop backdrop-blur-pop">
+        <!-- 关闭按钮：必须是真的 28×28 命中区，hover 用 content4（content2 压在 background 上看不见） -->
+        <span class="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground bg-content4 text-foreground"><svg class="ic" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
+        <div class="p-6 space-y-1.5">
+          <h3 class="text-lg font-semibold leading-none tracking-tight">删除环境</h3>
+          <p class="text-sm text-muted-foreground">此操作会停止该环境下所有服务，且不可撤销。</p>
+        </div>
+        <div class="px-6">
+          <div class="rounded-xl border border-divider bg-content3 p-3 space-y-1">
+            <p class="text-sm font-medium">project-b</p>
+            <p class="text-xs text-muted-foreground">MySQL 8.0 · Redis 7.2 · Nginx 1.24</p>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 p-6">
+          <button class="inline-flex items-center rounded-lg text-sm font-medium h-9 px-4 border border-divider bg-content1">取消</button>
+          <button class="inline-flex items-center rounded-lg text-sm font-medium h-9 px-4 bg-danger text-danger-foreground">删除环境</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 7 动效 ══════════ -->
+<section id="s7" class="sec space-y-4">
+  <h2>7 · 动效</h2>
+  <div class="demo border border-divider">
+    <div class="grid gap-3 md:grid-cols-4">
+      <div class="rounded-lg border border-divider p-3">
+        <p class="spec">duration-100</p><p class="text-sm font-medium mt-1">按下反馈</p>
+        <p class="text-xs text-muted-foreground mt-1">active:scale-95</p>
+      </div>
+      <div class="rounded-lg border border-divider p-3">
+        <p class="spec">duration-150 ★</p><p class="text-sm font-medium mt-1">悬停 / 焦点</p>
+        <p class="text-xs text-muted-foreground mt-1">颜色与描边</p>
+      </div>
+      <div class="rounded-lg border border-divider p-3">
+        <p class="spec">duration-250</p><p class="text-sm font-medium mt-1">浮层 / 面板</p>
+        <p class="text-xs text-muted-foreground mt-1">进出场</p>
+      </div>
+      <div class="rounded-lg border border-divider p-3">
+        <p class="spec">duration-400</p><p class="text-sm font-medium mt-1">大范围布局</p>
+        <p class="text-xs text-muted-foreground mt-1">极少用</p>
+      </div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-4">
+      只动 <span class="font-mono">color / background-color / border-color / opacity / transform</span>；
+      禁止动 <span class="font-mono">width / height / top / left / margin / box-shadow / filter</span>。
+      已全局声明 <span class="font-mono">prefers-reduced-motion</span> 降级。
+    </p>
+  </div>
+</section>
+
+<!-- ══════════ 9 Markdown 正文 ══════════ -->
+<section id="s9" class="sec space-y-4">
+  <h2>9 · Markdown 正文（AI 面板回答）</h2>
+  <div class="grid gap-3 md:grid-cols-2">
+    <div class="demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Light</p>
+      <div class="md">
+        <h3>安装 MySQL 的步骤</h3>
+        <p>先确认端口未被占用，然后执行下面的命令。详细说明见 <a href="#">官方文档</a>。</p>
+        <ul>
+          <li>检查 <code>3306</code> 是否被占用</li>
+          <li>设置 <strong>root 密码</strong></li>
+          <li>初始化数据目录</li>
+        </ul>
+        <blockquote>如果端口冲突，请先停止占用进程，或改用 3307。</blockquote>
+        <pre><code><span class="hljs-comment"># 初始化数据目录</span>
+<span class="hljs-variable">$MYSQL_HOME</span>/bin/mysqld <span class="hljs-attr">--initialize-insecure</span> \
+  <span class="hljs-attr">--datadir</span>=<span class="hljs-string">"/usr/local/var/mysql"</span> \
+  <span class="hljs-attr">--port</span>=<span class="hljs-number">3306</span>
+<span class="hljs-keyword">if</span> [ $? -eq <span class="hljs-number">0</span> ]; <span class="hljs-keyword">then</span>
+  <span class="hljs-built_in">echo</span> <span class="hljs-string">"初始化完成"</span>
+<span class="hljs-keyword">fi</span></code></pre>
+        <table>
+          <thead><tr><th>字段</th><th>默认值</th></tr></thead>
+          <tbody>
+            <tr><td>端口</td><td><code>3306</code></td></tr>
+            <tr><td>字符集</td><td><code>utf8mb4</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="dark demo border border-divider">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Dark</p>
+      <div class="md">
+        <h3>安装 MySQL 的步骤</h3>
+        <p>先确认端口未被占用，然后执行下面的命令。详细说明见 <a href="#">官方文档</a>。</p>
+        <ul>
+          <li>检查 <code>3306</code> 是否被占用</li>
+          <li>设置 <strong>root 密码</strong></li>
+          <li>初始化数据目录</li>
+        </ul>
+        <blockquote>如果端口冲突，请先停止占用进程，或改用 3307。</blockquote>
+        <pre><code><span class="hljs-comment"># 初始化数据目录</span>
+<span class="hljs-variable">$MYSQL_HOME</span>/bin/mysqld <span class="hljs-attr">--initialize-insecure</span> \
+  <span class="hljs-attr">--datadir</span>=<span class="hljs-string">"/usr/local/var/mysql"</span> \
+  <span class="hljs-attr">--port</span>=<span class="hljs-number">3306</span>
+<span class="hljs-keyword">if</span> [ $? -eq <span class="hljs-number">0</span> ]; <span class="hljs-keyword">then</span>
+  <span class="hljs-built_in">echo</span> <span class="hljs-string">"初始化完成"</span>
+<span class="hljs-keyword">fi</span></code></pre>
+        <table>
+          <thead><tr><th>字段</th><th>默认值</th></tr></thead>
+          <tbody>
+            <tr><td>端口</td><td><code>3306</code></td></tr>
+            <tr><td>字符集</td><td><code>utf8mb4</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="text-xs text-muted-foreground">
+    这些样式来自 <span class="font-mono">global.css</span> 的 <span class="font-mono">.md</span> 样式组。
+    此前 AI 面板用的是 15 个 <span class="font-mono">prose*</span> 类，而 <span class="font-mono">@tailwindcss/typography</span>
+    从未安装 → 产出 0 条 CSS，markdown 退化成浏览器默认样式、代码块溢出且无法横向滚动，且全仓没有任何 hljs 主题。
+    现改为手写样式，代码块可横向滚动，并新增 <span class="font-mono">--code-*</span> 色板（亮/暗两套）。
+  </p>
+</section>
+
+<!-- ══════════ 10 列表行层级 ══════════ -->
+<section id="s10" class="sec space-y-4">
+  <h2>10 · 列表行层级与主操作</h2>
+  <div class="grid gap-3 md:grid-cols-2">
+<div class="demo border border-divider space-y-2">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">LIGHT · 环境列表</p>
+
+      <!-- 未选中 -->
+      <div class="group relative flex items-center p-2 rounded-lg border border-transparent hover:bg-content4 cursor-pointer">
+        <div class="flex items-center w-full min-w-0">
+          <span class="mr-2 text-muted-foreground"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-md font-medium text-foreground truncate">网站后台开发环境</span>
+            <span class="text-xs truncate mt-0.5 text-muted-foreground">未激活</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 选中 -->
+      <div class="group relative flex items-center p-2 rounded-lg bg-content4 border border-divider cursor-pointer">
+        <div class="flex items-center w-full min-w-0">
+          <span class="mr-2 text-muted-foreground"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-md font-medium text-foreground truncate">frontend-dev</span>
+            <span class="text-xs truncate mt-0.5 text-success">运行中 · 已激活</span>
+          </div>
+          <div class="ml-auto flex items-center gap-1">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground hover:bg-content3"><svg class="ic" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span>
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground hover:bg-content3"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4 mb-1">服务列表</p>
+
+      <div class="group relative flex items-center p-2 rounded-lg bg-content4 border border-divider cursor-pointer">
+        <div class="flex flex-col min-w-0">
+          <span class="text-md font-medium text-foreground truncate">MySQL <span class="text-xs text-muted-foreground ml-2">8.0.35</span></span>
+          <span class="text-xs truncate mt-0.5 text-success">已激活 · 运行中</span>
+        </div>
+      </div>
+      <div class="group relative flex items-center p-2 rounded-lg border border-transparent hover:bg-content2 cursor-pointer">
+        <div class="flex flex-col min-w-0">
+          <span class="text-md font-medium text-foreground truncate">Redis <span class="text-xs text-muted-foreground ml-2">7.2.4</span></span>
+          <span class="text-xs truncate mt-0.5 text-muted-foreground">未激活 · 已停止</span>
+        </div>
+      </div>
+
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4 mb-1">导航栏底部主操作</p>
+      <div class="flex items-center gap-1">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground bg-content4"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground"><svg class="ic" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground"><svg class="ic" viewBox="0 0 24 24"><path d="M10 2v7L5 19a2 2 0 0 0 1.7 3h10.6A2 2 0 0 0 19 19l-5-10V2"/></svg></span>
+        <span class="ml-2 text-2xs text-muted-foreground">← 主文字色 16px 图标 32px 命中区</span>
+      </div>
+    </div>
+<div class="dark demo border border-divider space-y-2">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">DARK · 环境列表</p>
+
+      <!-- 未选中 -->
+      <div class="group relative flex items-center p-2 rounded-lg border border-transparent hover:bg-content4 cursor-pointer">
+        <div class="flex items-center w-full min-w-0">
+          <span class="mr-2 text-muted-foreground"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-md font-medium text-foreground truncate">网站后台开发环境</span>
+            <span class="text-xs truncate mt-0.5 text-muted-foreground">未激活</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 选中 -->
+      <div class="group relative flex items-center p-2 rounded-lg bg-content4 border border-divider cursor-pointer">
+        <div class="flex items-center w-full min-w-0">
+          <span class="mr-2 text-muted-foreground"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-md font-medium text-foreground truncate">frontend-dev</span>
+            <span class="text-xs truncate mt-0.5 text-success">运行中 · 已激活</span>
+          </div>
+          <div class="ml-auto flex items-center gap-1">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground hover:bg-content3"><svg class="ic" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span>
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground hover:bg-content3"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4 mb-1">服务列表</p>
+
+      <div class="group relative flex items-center p-2 rounded-lg bg-content4 border border-divider cursor-pointer">
+        <div class="flex flex-col min-w-0">
+          <span class="text-md font-medium text-foreground truncate">MySQL <span class="text-xs text-muted-foreground ml-2">8.0.35</span></span>
+          <span class="text-xs truncate mt-0.5 text-success">已激活 · 运行中</span>
+        </div>
+      </div>
+      <div class="group relative flex items-center p-2 rounded-lg border border-transparent hover:bg-content2 cursor-pointer">
+        <div class="flex flex-col min-w-0">
+          <span class="text-md font-medium text-foreground truncate">Redis <span class="text-xs text-muted-foreground ml-2">7.2.4</span></span>
+          <span class="text-xs truncate mt-0.5 text-muted-foreground">未激活 · 已停止</span>
+        </div>
+      </div>
+
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4 mb-1">导航栏底部主操作</p>
+      <div class="flex items-center gap-1">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground bg-content4"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground"><svg class="ic" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground"><svg class="ic" viewBox="0 0 24 24"><path d="M10 2v7L5 19a2 2 0 0 0 1.7 3h10.6A2 2 0 0 0 19 19l-5-10V2"/></svg></span>
+        <span class="ml-2 text-2xs text-muted-foreground">← 主文字色 16px 图标 32px 命中区</span>
+      </div>
+    </div>
+  </div>
+  <div class="demo border border-divider text-xs text-muted-foreground space-y-1">
+    <p><strong class="text-foreground">列表行层级</strong>：标题 <span class="font-mono">text-md</span>（14px / medium / 主文字色），副标题 <span class="font-mono">text-xs</span>（12px / 次要色），二者之间 <span class="font-mono">mt-0.5</span>。关键是<strong>标题不能落在正文档上</strong>——原来标题 13px（正文档）+ 副标题 12px，只差 1px 且没有档位差，看起来完全同级。卡片标题另从 12px 提到 13px semibold，避免标题比正文还小。</p>
+    <p><strong class="text-foreground">导航栏底部按钮</strong>：是主操作，用 <span class="font-mono">text-foreground</span> + 32px 命中区 + 16px 图标；<span class="font-mono">hover:bg-content4</span>，按下 <span class="font-mono">active:bg-pressed</span>。被模仿的 Voxt 那套是「设置侧栏信息图标」的浅灰处理，用在这里会让主操作退到背景里。</p>
+  </div>
+</section>
+
+<!-- ══════════ 8 禁止清单 ══════════ -->
+<section id="s8" class="sec space-y-4">
+  <h2>8 · 禁止清单</h2>
+  <div class="demo border border-divider">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left border-b border-divider">
+          <th class="py-2 pr-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">禁止</th>
+          <th class="py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">替代</th>
+        </tr>
+      </thead>
+      <tbody class="font-mono text-xs">
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">text-[10px] text-[11px] text-[15px]</td><td class="py-2 text-success">text-3xs / text-2xs / text-md</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">bg-white · text-white · bg-black</td><td class="py-2 text-success">bg-content1 · text-foreground</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">text-default（当文字色）</td><td class="py-2 text-success">text-muted-foreground（90.2% 灰在白底上 = 1.25:1）</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">text-default-400/500/600</td><td class="py-2 text-success">text-muted-foreground（这些类不存在）</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">bg-white/5 · dark:hover:bg-white/10</td><td class="py-2 text-success">bg-content2 · bg-content4</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">shadow-sm/md/lg/xl</td><td class="py-2 text-success">shadow-pop（仅浮层）</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">border-2 · rounded（裸值）</td><td class="py-2 text-success">border · rounded-xs</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">window.confirm()</td><td class="py-2 text-success">AlertDialog</td></tr>
+        <tr class="border-b border-divider"><td class="py-2 pr-4 text-danger">font-bold</td><td class="py-2 text-success">font-semibold / font-medium</td></tr>
+        <tr><td class="py-2 pr-4 text-danger">RefreshCw 当 spinner</td><td class="py-2 text-success">Loader2 + animate-spin</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="max-w-[1100px] mx-auto px-6 pb-16">
+  <p class="text-xs text-muted-foreground">
+    完整规范见 <span class="font-mono">doc/design/UI-LANGUAGE.md</span>；
+    缺陷清单见 <span class="font-mono">doc/design/UI-AUDIT.md</span>。
+    本页由真实 token 渲染，可作回归对照。
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

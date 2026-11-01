@@ -1,4 +1,14 @@
-import appIcon from '@/assets/envis.svg'
+import appIcon from '@/assets/envis-mark.svg'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -128,6 +138,8 @@ export default function NavBar({ onClose }: NavBarProps) {
   const [selectedVipPlan, setSelectedVipPlan] = useState<VipPlan>('basic')
   const [vipPlanActivated, setVipPlanActivated] = useState<VipPlan | ''>('')
   const [uploadedJsonRecords, setUploadedJsonRecords] = useState<UploadedJsonRecord[]>([])
+  // 待删除的环境：删除是不可逆操作，必须先经 AlertDialog 确认
+  const [envPendingDelete, setEnvPendingDelete] = useState<Environment | null>(null)
   const isEnvNameComposingRef = useRef(false)
 
   const onEnvNameInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -178,13 +190,20 @@ export default function NavBar({ onClose }: NavBarProps) {
     }
   }
 
-  // 删除环境
-  const onDeleteEnvBtnClick = async (environment: Environment) => {
+  // 删除环境：先弹确认，再执行（不可逆操作不允许单击即生效）
+  const onDeleteEnvBtnClick = (environment: Environment) => {
     if (environment.status === EnvironmentStatus.Active) {
       toast.error(t('nav_bar.delete_active_env_error'))
       logError(t('nav_bar.delete_env_error_active', { name: environment.name }))
       return
     }
+    setEnvPendingDelete(environment)
+  }
+
+  const confirmDeleteEnv = async () => {
+    const environment = envPendingDelete
+    setEnvPendingDelete(null)
+    if (!environment) return
 
     logInfo(t('nav_bar.delete_env_log', { name: environment.name }))
     const res = await deleteEnvironment(environment)
@@ -588,10 +607,10 @@ export default function NavBar({ onClose }: NavBarProps) {
               <img
               src={appIcon}
               alt="App Icon"
-              className="h-[22px] w-[22px] mr-1 rounded heroui-transition"
+              className="h-[22px] w-[22px] mr-1 rounded transition-all duration-250"
               style={{ filter: currentTheme === 'dark' ? 'invert(1)' : 'none' }}
               />
-              <span className="text-base font-semibold text-foreground group-hover:text-primary hover:underline heroui-transition">Envis</span>
+              <span className="text-base font-semibold text-foreground group-hover:text-primary hover:underline transition-all duration-250">Envis</span>
             </div>
             {onClose && (
               <Button
@@ -602,9 +621,10 @@ export default function NavBar({ onClose }: NavBarProps) {
                   onClose()
                 }}
                 className="h-7 w-7 p-0 hover:bg-content3"
+                aria-label={t('nav_bar.close_nav')}
                 title={t('nav_bar.close_nav')}
               >
-                <PanelLeft className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                <PanelLeft className="h-4 w-4 text-foreground" />
               </Button>
             )}
           </div>
@@ -618,24 +638,28 @@ export default function NavBar({ onClose }: NavBarProps) {
               placeholder={t('nav_bar.search_env')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`pl-8 ${searchTerm ? 'pr-8' : ''} h-8 text-sm shadow-none`}
+              className={`pl-8 ${searchTerm ? 'pr-8' : ''} h-8 text-sm`}
             />
             {searchTerm && (
               <Button
+                aria-label={t('common.clear_search')}
+                title={t('common.clear_search')}
                 size="sm"
                 variant="ghost"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 shadow-none"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
               >
                 <X className="h-3 w-3" />
               </Button>
             )}
           </div>
           <Button
+            aria-label={t('nav_bar.create_env')}
+            title={t('nav_bar.create_env')}
             size="sm"
             variant="outline"
             onClick={() => onOpenNewDialogBtnClick()}
-            className="h-8 w-8 p-0 flex-shrink-0 shadow-none"
+            className="h-8 w-8 p-0 flex-shrink-0"
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -709,7 +733,9 @@ export default function NavBar({ onClose }: NavBarProps) {
               size="sm"
               variant="ghost"
               onClick={(e) => { e.stopPropagation(); action.onClick(); }}
-              className="h-7 w-7 p-0 hover:bg-content3 flex-shrink-0 text-gray-700 dark:text-gray-300"
+              // 这几个是导航栏的主操作，必须用主文字色——不能按 Voxt 的「信息图标」处理成浅灰。
+              // 尺寸 32px + 16px 图标，与设计语言的控件刻度一致。
+              className="h-8 w-8 p-0 rounded-md text-foreground hover:bg-content4 active:bg-pressed flex-shrink-0"
               title={action.title}
               data-action-btn="true"
             >
@@ -722,10 +748,11 @@ export default function NavBar({ onClose }: NavBarProps) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-content2"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 rounded-md text-foreground hover:bg-content4 active:bg-pressed"
+                  aria-label={t('nav_bar.more')}
                   title={t('nav_bar.more')}
                 >
-                  <MoreHorizontal className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" className="min-w-[140px]">
@@ -777,7 +804,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                 }}
                 onKeyDown={onEnvNameInputKeyDown}
                 placeholder={t('nav_bar.env_name_placeholder')}
-                className="mt-1 shadow-none"
+                className="mt-1"
               />
             </div>
           </div>
@@ -786,7 +813,7 @@ export default function NavBar({ onClose }: NavBarProps) {
             <div className="flex w-full items-center justify-between">
               <Button
                 variant="outline"
-                className="shadow-none"
+                className=""
                 onClick={onImportEnvBtnClick}
                 disabled={!!editingEnvironment}
                 title={t('nav_bar.import_env')}
@@ -795,7 +822,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                 {t('nav_bar.import_env')}
               </Button>
               <div className="flex gap-2">
-                <Button variant="outline" className='shadow-none' onClick={() => setIsNewDialogOpen(false)}>
+                <Button variant="outline" className='' onClick={() => setIsNewDialogOpen(false)}>
                   {t('nav_bar.cancel')}
                 </Button>
                 <Button onClick={onDialogSaveEnvBtnClick}>
@@ -836,11 +863,11 @@ export default function NavBar({ onClose }: NavBarProps) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="user-demo-name">{t('user_dialog.profile.name_label')}</Label>
-                  <Input id="user-demo-name" value={t('user_dialog.profile.demo_name')} readOnly className="mt-1 shadow-none" />
+                  <Input id="user-demo-name" value={t('user_dialog.profile.demo_name')} readOnly className="mt-1" />
                 </div>
                 <div>
                   <Label htmlFor="user-demo-email">{t('user_dialog.profile.email_label')}</Label>
-                  <Input id="user-demo-email" value={t('user_dialog.profile.demo_email')} readOnly className="mt-1 shadow-none" />
+                  <Input id="user-demo-email" value={t('user_dialog.profile.demo_email')} readOnly className="mt-1" />
                 </div>
               </div>
             </TabsContent>
@@ -857,13 +884,13 @@ export default function NavBar({ onClose }: NavBarProps) {
                       type="button"
                       onClick={() => setSelectedVipPlan(plan)}
                       className={cn(
-                        'rounded-md border p-3 text-left heroui-transition',
+                        'rounded-md border p-3 text-left transition-all duration-250',
                         isSelected ? 'border-primary bg-primary/5' : 'border-divider hover:border-primary/60',
                       )}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold">{t(`user_dialog.plan_name.${plan}`)}</span>
-                        {isActive ? <Check className="h-4 w-4 text-green-600" /> : null}
+                        {isActive ? <Check className="h-4 w-4 text-success" /> : null}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">{t(`user_dialog.plan_desc.${plan}`)}</div>
                       <div className="mt-2 text-sm font-medium">{t(`user_dialog.plan_price.${plan}`)}</div>
@@ -893,7 +920,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                 <div className="text-sm text-muted-foreground">
                   {t('user_dialog.uploaded_count', { count: uploadedJsonRecords.length })}
                 </div>
-                <Button variant="outline" className="shadow-none" onClick={onUploadEnvironmentJson}>
+                <Button variant="outline" className="" onClick={onUploadEnvironmentJson}>
                   <Upload className="h-4 w-4 mr-2" />
                   {t('user_dialog.upload_btn')}
                 </Button>
@@ -924,6 +951,7 @@ export default function NavBar({ onClose }: NavBarProps) {
                             size="sm"
                             className="h-7 px-2"
                             onClick={() => onDownloadUploadedJson(item)}
+                            aria-label={t('user_dialog.download_btn')}
                             title={t('user_dialog.download_btn')}
                           >
                             <Download className="h-4 w-4" />
@@ -931,8 +959,9 @@ export default function NavBar({ onClose }: NavBarProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            className="h-7 px-2 text-danger  hover:text-danger"
                             onClick={() => onDeleteUploadedJson(item.id)}
+                            aria-label={t('user_dialog.delete_btn')}
                             title={t('user_dialog.delete_btn')}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -947,12 +976,36 @@ export default function NavBar({ onClose }: NavBarProps) {
           </Tabs>
 
           <DialogFooter>
-            <Button variant="outline" className="shadow-none" onClick={() => setIsUserDialogOpen(false)}>
+            <Button variant="outline" className="" onClick={() => setIsUserDialogOpen(false)}>
               {t('user_dialog.close_btn')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 删除环境确认：不可逆操作必须二次确认。此前点下拉菜单里的一项就直接删除。 */}
+      <AlertDialog
+        open={envPendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setEnvPendingDelete(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('nav_bar.delete_env_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('nav_bar.delete_env_desc', { name: envPendingDelete?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteEnv}
+              className="bg-danger text-danger-foreground hover:bg-danger/90"
+            >
+              {t('nav_bar_item.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Settings Dialog */}
       <SettingsDialog
