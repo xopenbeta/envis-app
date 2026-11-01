@@ -1,6 +1,20 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from 'path'
+import fs from 'node:fs'
+
+// esbuild 默认把临时产物写到系统临时目录。Windows 上安全软件会在写入后短暂
+// 锁定该文件，导致构建时报 “remove ...: Access is denied” 而中断。
+// 统一改用项目内的临时目录（已在 .gitignore 中忽略），规避系统临时目录的锁定。
+const viteTempDir = path.resolve('.tmp', 'vite-temp')
+try {
+  fs.mkdirSync(viteTempDir, { recursive: true })
+  process.env.TMPDIR = viteTempDir
+  process.env.TEMP = viteTempDir
+  process.env.TMP = viteTempDir
+} catch {
+  // 创建失败时退回系统临时目录，不阻断构建
+}
 
 const host = process.env.TAURI_DEV_HOST;
 
